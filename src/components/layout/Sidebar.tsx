@@ -23,6 +23,7 @@ import {
   LayoutTemplate,
   Plus,
   Check,
+  Boxes,
   Search as SearchIcon,
 } from "lucide-react";
 import { api, isTauri } from "@/lib/ipc";
@@ -53,6 +54,7 @@ export function Sidebar() {
     openAnimation,
     openExport,
     openApiKeys,
+    openModels,
     openProject,
     setWizardOpen,
     setSearchOpen,
@@ -125,6 +127,7 @@ export function Sidebar() {
 
         <NavGroup label="System">
           <NavItem icon={<KeyRound className="h-4 w-4" />} label="API Keys" active={view === "apikeys"} onClick={openApiKeys} />
+          <NavItem icon={<Boxes className="h-4 w-4" />} label="AI Models" active={view === "models"} onClick={openModels} />
           <NavItem icon={<Settings className="h-4 w-4" />} label="Settings" active={view === "settings"} onClick={openSettings} />
         </NavGroup>
 

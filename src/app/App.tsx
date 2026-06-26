@@ -13,6 +13,7 @@ import { ScriptStudio } from "@/features/scripts/ScriptStudio";
 import { AnimationLab } from "@/features/animation/AnimationLab";
 import { BibleExport } from "@/features/export/BibleExport";
 import { ApiKeyDashboard } from "@/features/apikeys/ApiKeyDashboard";
+import { ModelRegistryView } from "@/features/models/ModelRegistryView";
 import { SongStudio } from "@/features/song/SongStudio";
 import { MvDirector } from "@/features/mvdirector/MvDirector";
 import { CastView } from "@/features/cast/CastView";
@@ -83,6 +84,7 @@ export default function App() {
         {view === "animation" && <AnimationLab />}
         {view === "export" && <BibleExport />}
         {view === "apikeys" && <ApiKeyDashboard />}
+        {view === "models" && <ModelRegistryView />}
       </main>
 
       {/* RIGHT — inspector (only in project view) */}

@@ -9,7 +9,7 @@ use crate::models::{
 };
 use crate::providers::{
     audio::ElevenLabsProvider,
-    image::{FalImageProvider, GoogleImagenProvider, OpenAiImageProvider, StabilityImageProvider},
+    image::{FalImageProvider, GoogleImagenProvider, GrokImageProvider, OpenAiImageProvider, StabilityImageProvider},
     kie::{KieImageProvider, KieVideoProvider},
     replicate::ReplicateProvider,
     text::GeminiTextProvider,
@@ -282,6 +282,13 @@ pub async fn generate_image_pro(
             let key = get("stability")?.ok_or("Add a Stability key in the API Key Dashboard.")?;
             StabilityImageProvider::new(key)
                 .with_seed(seed)
+                .generate_image_ref(&prompt, width, height, r)
+                .await
+                .map_err(err)?
+        }
+        "grok" => {
+            let key = get("grok")?.ok_or("Add a Grok / xAI key in the API Key Dashboard.")?;
+            GrokImageProvider::new(key)
                 .generate_image_ref(&prompt, width, height, r)
                 .await
                 .map_err(err)?

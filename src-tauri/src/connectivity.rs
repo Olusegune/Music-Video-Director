@@ -89,6 +89,10 @@ pub async fn test(provider: &str, key: &str) -> ConnectionResult {
                 .send()
                 .await
         }
+        "grok" => {
+            // xAI is OpenAI-compatible; /v1/models validates the bearer cheaply.
+            c.get("https://api.x.ai/v1/models").bearer_auth(key).send().await
+        }
         "stability" => {
             c.get("https://api.stability.ai/v1/user/account")
                 .bearer_auth(key)

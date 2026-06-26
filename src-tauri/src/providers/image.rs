@@ -448,3 +448,46 @@ impl ImageProvider for StabilityImageProvider {
         B64.decode(b64).context("decoding Stability image")
     }
 }
+
+/// Grok / xAI image generation — OpenAI-compatible `/v1/images/generations`
+/// (model `grok-2-image`). Returns base64 image bytes.
+pub struct GrokImageProvider {
+    api_key: String,
+}
+
+impl GrokImageProvider {
+    pub fn new(api_key: String) -> Self {
+        Self { api_key }
+    }
+}
+
+impl ImageProvider for GrokImageProvider {
+    async fn generate_image(&self, prompt: &str) -> Result<Vec<u8>> {
+        self.generate_image_sized(prompt, 1024, 1024).await
+    }
+
+    async fn generate_image_sized(&self, prompt: &str, _width: u32, _height: u32) -> Result<Vec<u8>> {
+        // xAI's image API takes prompt + n only (no size/seed); aspect is implicit.
+        let resp = reqwest::Client::new()
+            .post("https://api.x.ai/v1/images/generations")
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .json(&json!({ "model": "grok-2-image", "prompt": prompt, "n": 1, "response_format": "b64_json" }))
+            .send()
+            .await
+            .context("calling Grok image")?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Grok image error {status}: {text}"));
+        }
+        let v: serde_json::Value = resp.json().await.context("parsing Grok response")?;
+        if let Some(b64) = v["data"][0]["b64_json"].as_str() {
+            return B64.decode(b64).context("decoding Grok image");
+        }
+        let url = v["data"][0]["url"]
+            .as_str()
+            .ok_or_else(|| anyhow!("unexpected Grok response: {v}"))?;
+        let bytes = reqwest::Client::new().get(url).send().await?.bytes().await?;
+        Ok(bytes.to_vec())
+    }
+}

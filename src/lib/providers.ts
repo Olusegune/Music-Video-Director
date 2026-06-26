@@ -54,6 +54,7 @@ export const PROVIDERS: ProviderInfo[] = [
   { id: "gpt_image", name: "GPT Image", capabilities: ["image"], quality: 5, speed: 3, cheap: 2, hint: "OpenAI image models", status: "wired" },
   { id: "stability", name: "Stability AI", capabilities: ["image"], quality: 4, speed: 4, cheap: 4, hint: "Stability API key (SDXL)", status: "wired" },
   { id: "midjourney", name: "Midjourney", capabilities: ["image"], quality: 5, speed: 3, cheap: 3, hint: "Prompt export + import after generation", status: "manual" },
+  { id: "grok", name: "Grok / xAI", capabilities: ["image"], quality: 4, speed: 4, cheap: 3, hint: "xAI API key — grok-2-image", status: "wired" },
 
   // Video
   { id: "kie", name: "kie.ai", capabilities: ["image", "video"], quality: 4, speed: 4, cheap: 4, hint: "kie.ai key — unified jobs API (GPT Image/Veo/Kling)", status: "wired" },

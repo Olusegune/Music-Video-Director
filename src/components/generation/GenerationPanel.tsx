@@ -33,6 +33,7 @@ import {
   resolveSize,
   IMAGE_MODELS,
 } from "@/lib/imageGen";
+import { controlsForProviderKey } from "@/lib/modelRegistry";
 
 /** Minimal model shape shared by image + video model lists. */
 export interface GenModel {
@@ -69,6 +70,7 @@ export interface GenerateOpts {
   seed?: number;
   variations: number;
   references: string[];
+  referenceStrength?: number; // 0..100, where supported
   // video-only
   duration?: number;
   fps?: number;
@@ -165,6 +167,7 @@ export function GenerationPanel({
   const [sizeId, setSizeId] = useState(defaultSizeId);
   const [seed, setSeed] = useState("");
   const [variations, setVariations] = useState(1);
+  const [refStrength, setRefStrength] = useState(60);
   // video-only controls
   const [duration, setDuration] = useState(5);
   const [fps, setFps] = useState(24);
@@ -187,6 +190,12 @@ export function GenerationPanel({
   const isBusy = busy || externalBusy;
   const activeModel = modelList.find((m) => m.id === modelId) ?? modelList[0];
   const isManual = !!activeModel?.manual;
+  // Capability-driven UI: only show controls the selected model actually supports.
+  const caps = useMemo(
+    () => new Set(controlsForProviderKey(activeModel?.providerKey ?? "custom", isVideo ? "video" : "image")),
+    [activeModel?.providerKey, isVideo]
+  );
+  const can = (c: string) => caps.has(c as never);
 
   // Manual providers (Midjourney) have no API — copy the prompt for the user.
   const copyForManual = async () => {
@@ -224,6 +233,7 @@ export function GenerationPanel({
         seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
         variations: Math.max(1, Math.min(4, variations)),
         references: allRefs,
+        ...(caps.has("referenceStrength") ? { referenceStrength: refStrength } : {}),
         ...(isVideo ? { duration, fps, motion, camera } : {}),
       });
       setResults(urls);
@@ -292,111 +302,154 @@ export function GenerationPanel({
             <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
+        {!isManual && caps.size > 0 && (
+          <p className="mt-1 text-[10px] text-muted">
+            Supports: {[...caps].join(" · ")}
+          </p>
+        )}
       </label>
 
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block">
-          <Label>Aspect</Label>
-          <select value={aspect} onChange={(e) => setAspect(e.target.value)} className={selectCls} aria-label="Aspect ratio">
-            {ASPECT_RATIOS.filter((a) => a !== "custom").map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <Label>Size / quality</Label>
-          <select value={sizeId} onChange={(e) => setSizeId(e.target.value)} className={selectCls} aria-label="Image size">
-            {SIZE_PRESETS.filter((s) => s.id !== "custom").map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {isVideo && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
+      {(can("aspect") || can("resolution")) && (
+        <div className="grid grid-cols-2 gap-2">
+          {can("aspect") && (
             <label className="block">
-              <Label>Duration (sec)</Label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={duration}
-                onChange={(e) => setDuration(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
-                className={selectCls}
-                aria-label="Duration"
-              />
-            </label>
-            <label className="block">
-              <Label>FPS</Label>
-              <select value={fps} onChange={(e) => setFps(Number(e.target.value))} className={selectCls} aria-label="FPS">
-                {[12, 24, 30, 60].map((f) => (
-                  <option key={f} value={f}>{f}</option>
+              <Label>Aspect</Label>
+              <select value={aspect} onChange={(e) => setAspect(e.target.value)} className={selectCls} aria-label="Aspect ratio">
+                {ASPECT_RATIOS.filter((a) => a !== "custom").map((a) => (
+                  <option key={a} value={a}>{a}</option>
                 ))}
               </select>
             </label>
-          </div>
-          <label className="block">
-            <Label>Camera movement</Label>
-            <select value={camera} onChange={(e) => setCamera(e.target.value)} className={selectCls} aria-label="Camera movement">
-              {CAMERA_MOVES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <Label>Motion strength ({motion})</Label>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={motion}
-              onChange={(e) => setMotion(Number(e.target.value))}
-              className="mt-1 w-full accent-[var(--color-primary)]"
-              aria-label="Motion strength"
-            />
-          </label>
+          )}
+          {can("resolution") && (
+            <label className="block">
+              <Label>Size / quality</Label>
+              <select value={sizeId} onChange={(e) => setSizeId(e.target.value)} className={selectCls} aria-label="Image size">
+                {SIZE_PRESETS.filter((s) => s.id !== "custom").map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+
+      {isVideo && (
+        <>
+          {(can("duration") || can("fps")) && (
+            <div className="grid grid-cols-2 gap-2">
+              {can("duration") && (
+                <label className="block">
+                  <Label>Duration (sec)</Label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={duration}
+                    onChange={(e) => setDuration(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
+                    className={selectCls}
+                    aria-label="Duration"
+                  />
+                </label>
+              )}
+              {can("fps") && (
+                <label className="block">
+                  <Label>FPS</Label>
+                  <select value={fps} onChange={(e) => setFps(Number(e.target.value))} className={selectCls} aria-label="FPS">
+                    {[12, 24, 30, 60].map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
+          {can("camera") && (
+            <label className="block">
+              <Label>Camera movement</Label>
+              <select value={camera} onChange={(e) => setCamera(e.target.value)} className={selectCls} aria-label="Camera movement">
+                {CAMERA_MOVES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {can("motion") && (
+            <label className="block">
+              <Label>Motion strength ({motion})</Label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={motion}
+                onChange={(e) => setMotion(Number(e.target.value))}
+                className="mt-1 w-full accent-[var(--color-primary)]"
+                aria-label="Motion strength"
+              />
+            </label>
+          )}
         </>
       )}
 
-      {advanced && (
+      {advanced && (can("seed") || can("variations") || can("negativePrompt") || can("referenceStrength")) && (
         <>
-          <div className="grid grid-cols-2 gap-2">
+          {(can("seed") || can("variations")) && (
+            <div className="grid grid-cols-2 gap-2">
+              {can("seed") && (
+                <label className="block">
+                  <Label>Seed (consistency)</Label>
+                  <input
+                    value={seed}
+                    onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="random"
+                    inputMode="numeric"
+                    className={selectCls}
+                    aria-label="Seed"
+                  />
+                </label>
+              )}
+              {can("variations") && (
+                <label className="block">
+                  <Label>Variations ({variations})</Label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={4}
+                    value={variations}
+                    onChange={(e) => setVariations(Number(e.target.value))}
+                    className="mt-2 w-full accent-[var(--color-primary)]"
+                    aria-label="Variations"
+                  />
+                </label>
+              )}
+            </div>
+          )}
+          {can("referenceStrength") && (
             <label className="block">
-              <Label>Seed (consistency)</Label>
-              <input
-                value={seed}
-                onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))}
-                placeholder="random"
-                inputMode="numeric"
-                className={selectCls}
-                aria-label="Seed"
-              />
-            </label>
-            <label className="block">
-              <Label>Variations ({variations})</Label>
+              <Label>Reference strength ({refStrength}%)</Label>
               <input
                 type="range"
-                min={1}
-                max={4}
-                value={variations}
-                onChange={(e) => setVariations(Number(e.target.value))}
-                className="mt-2 w-full accent-[var(--color-primary)]"
-                aria-label="Variations"
+                min={0}
+                max={100}
+                value={refStrength}
+                onChange={(e) => setRefStrength(Number(e.target.value))}
+                className="mt-1 w-full accent-[var(--color-primary)]"
+                aria-label="Reference strength"
               />
             </label>
-          </div>
-          <label className="block">
-            <Label>Negative prompt</Label>
-            <Textarea
-              value={negativePrompt}
-              onChange={(e) => setNegativePrompt(e.target.value)}
-              placeholder="What to avoid (where the model supports it)…"
-              className="min-h-12 text-[13px]"
-              aria-label="Negative prompt"
-            />
-          </label>
+          )}
+          {can("negativePrompt") && (
+            <label className="block">
+              <Label>Negative prompt</Label>
+              <Textarea
+                value={negativePrompt}
+                onChange={(e) => setNegativePrompt(e.target.value)}
+                placeholder="What to avoid…"
+                className="min-h-12 text-[13px]"
+                aria-label="Negative prompt"
+              />
+            </label>
+          )}
         </>
       )}
 

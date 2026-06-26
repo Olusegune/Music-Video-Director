@@ -7,7 +7,7 @@ use keyring::Entry;
 const SERVICE: &str = "ai.wheelbarrow.motionforge";
 
 /// Allowed provider ids — mirrors `ProviderId` in the frontend.
-pub const PROVIDERS: [&str; 19] = [
+pub const PROVIDERS: [&str; 25] = [
     "gemini",
     "openai",
     "fal",
@@ -27,6 +27,12 @@ pub const PROVIDERS: [&str; 19] = [
     "suno",
     "replicate",
     "local_endpoint",
+    "grok",
+    "wavespeed",
+    "happyhorse",
+    "minimax",
+    "recraft",
+    "ideogram",
 ];
 
 fn entry(provider: &str) -> Result<Entry> {

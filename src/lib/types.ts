@@ -57,7 +57,8 @@ export type ProviderId =
   | "elevenlabs"
   | "suno"
   | "replicate"
-  | "local_endpoint";
+  | "local_endpoint"
+  | "grok";
 
 export interface ProviderKeyStatus {
   provider: ProviderId;

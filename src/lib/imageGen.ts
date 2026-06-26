@@ -32,6 +32,7 @@ export const IMAGE_MODELS: ImageModel[] = [
   { id: "fal", label: "Fal.ai (FLUX)", providerKey: "fal", keyIds: ["fal"], hint: "fal.ai FLUX image" },
   { id: "kie", label: "kie.ai (GPT Image · Nano Banana)", providerKey: "kie", keyIds: ["kie"], hint: "kie.ai unified jobs API" },
   { id: "stability", label: "Stability (SDXL)", providerKey: "stability", keyIds: ["stability"], hint: "Stability SDXL" },
+  { id: "grok", label: "Grok / xAI (grok-2-image)", providerKey: "grok", keyIds: ["grok"], hint: "xAI image API" },
   { id: "midjourney", label: "Midjourney (copy-prompt)", providerKey: "midjourney", keyIds: ["midjourney"], manual: true, hint: "No public API — copy the prompt, generate in Midjourney, then import" },
   { id: "custom", label: "Auto (first configured)", providerKey: "custom", keyIds: ["fal", "stability", "replicate", "google_imagen", "openai"], hint: "First configured provider" },
 ];
