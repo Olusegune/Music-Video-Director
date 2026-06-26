@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(echo \"npm: $\\(npm --version 2>&1\\)\")",
+      "Bash(rustc --version)",
+      "Bash(echo \"rustc: $\\(rustc --version 2>&1\\)\")",
+      "Bash(cargo --version)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(cd \"C:/Users/eduni/Documents/Wheelbarrow MotionForge AI\" && mkdir -p docs && cp \"C:/Users/eduni/Desktop/Claude Docs/Motionforge/\"*.md docs/ && ls docs/)",
+      "PowerShell(winget install --id Rustlang.Rustup -e --accept-source-agreements --accept-package-agreements --disable-interactivity)",
+      "Bash(tasklist //FI \"IMAGENAME eq wheelbarrow-motionforge.exe\")",
+      "Read(//c/Users/eduni/AppData/Local/Wheelbarrow MotionForge//**)",
+      "Read(//c/Users/eduni/AppData/Local/Programs/**)",
+      "Read(//c/Users/eduni/AppData/Local/**)",
+      "Read(//c/Users/eduni/AppData/Roaming/Microsoft/Windows/Start Menu/**)",
+      "Read(//c/ProgramData/Microsoft/Windows/Start Menu/**)",
+      "Bash(\"./wheelbarrow-motionforge.exe\")",
+      "Bash(python -c ' *)",
+      "Bash(cd \"C:\\\\Users\\\\eduni\\\\Documents\\\\Wheelbarrow MotionForge AI\"; tail -6 /tmp/tauri-build2.log; echo \"=== artifacts ===\"; ls -lh src-tauri/target/release/bundle/nsis/*.exe src-tauri/target/release/bundle/msi/*.msi src-tauri/target/release/wheelbarrow-motionforge.exe 2>&1)",
+      "Bash(node -e \"console.log\\('mammoth', require\\('./node_modules/mammoth/package.json'\\).version\\); console.log\\('pdfjs-dist', require\\('./node_modules/pdfjs-dist/package.json'\\).version\\)\")",
+      "Bash(find src *)",
+      "Bash(cat src/vite-env.d.ts)"
+    ]
+  }
+}

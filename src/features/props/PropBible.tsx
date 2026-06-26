@@ -1,0 +1,439 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Package,
+  Plus,
+  ArrowLeft,
+  Trash2,
+  Lock,
+  Boxes,
+  Ruler,
+  Palette,
+  BookOpen,
+  Car,
+  Ghost,
+  LayoutGrid,
+} from "lucide-react";
+import { api, isTauri } from "@/lib/ipc";
+import type { Prop } from "@/lib/types";
+import {
+  composePropDna,
+  isPropDnaStale,
+  newProp,
+  PROP_CATEGORIES,
+} from "@/lib/propDna";
+import { STYLE_GROUPS, presetsByGroup } from "@/lib/styles";
+import { ImageStudio } from "@/features/imagestudio/ImageStudio";
+import { AssetImage } from "@/components/ui/asset-image";
+import {
+  GradientFill,
+  MediaPanel,
+  LockToggle,
+  PromptDnaBlock,
+  SavedTick,
+  Section,
+  Field,
+  DnaSelect,
+  PaletteField,
+  MoveAssetMenu,
+  useAutosave,
+} from "@/features/dna/dnaKit";
+import { type GenerateOpts } from "@/components/generation/GenerationPanel";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+
+function categoryIcon(cat: string) {
+  if (cat === "Vehicle") return <Car className="h-3 w-3" />;
+  if (cat === "Creature") return <Ghost className="h-3 w-3" />;
+  return <Package className="h-3 w-3" />;
+}
+
+export function PropBible() {
+  const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>("All");
+
+  const { data: props = [] } = useQuery({
+    queryKey: ["props"],
+    queryFn: api.listProps,
+  });
+
+  const create = useMutation({
+    mutationFn: (category: string) => {
+      const p = newProp("New " + (category === "All" ? "Prop" : category), category === "All" ? "Prop" : category);
+      return api.saveProp(p).then(() => p);
+    },
+    onSuccess: (p) => {
+      queryClient.invalidateQueries({ queryKey: ["props"] });
+      setSelectedId(p.id);
+    },
+  });
+
+  const removeProp = useMutation({
+    mutationFn: (id: string) => api.deleteProp(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["props"] }),
+  });
+
+  const sheetProp = props.find((p) => p.id === sheetId) ?? null;
+  if (sheetProp)
+    return (
+      <ImageStudio
+        key={sheetProp.id}
+        kind="prop"
+        entity={sheetProp}
+        entityName={sheetProp.name}
+        onBack={() => setSheetId(null)}
+      />
+    );
+
+  const selected = props.find((p) => p.id === selectedId) ?? null;
+  if (selected)
+    return (
+      <PropSheet
+        key={selected.id}
+        prop={selected}
+        onBack={() => setSelectedId(null)}
+        onOpenSheet={() => setSheetId(selected.id)}
+      />
+    );
+
+  const filtered = filter === "All" ? props : props.filter((p) => p.category === filter);
+  const tabs = ["All", ...PROP_CATEGORIES];
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-8 py-5">
+        <div>
+          <h1 className="text-lg font-semibold">Props &amp; Vehicles</h1>
+          <p className="text-xs text-muted">
+            Hero props, vehicles, and creatures — defined once, identical in every shot.
+          </p>
+        </div>
+        <Button onClick={() => create.mutate(filter)} disabled={create.isPending}>
+          <Plus className="h-4 w-4" /> New {filter === "All" ? "Prop" : filter}
+        </Button>
+      </header>
+
+      <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-8 py-2">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => setFilter(t)}
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs transition-colors ${
+              filter === t
+                ? "border-primary bg-primary/12 text-foreground"
+                : "border-border text-muted hover:bg-elevated/60"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-8">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-20 text-center">
+            <div className="grad-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm shadow-primary/30">
+              <Package className="h-6 w-6 text-white" />
+            </div>
+            <p className="text-sm font-medium">No {filter === "All" ? "items" : filter.toLowerCase() + "s"} yet</p>
+            <p className="mt-1 max-w-sm text-xs text-muted">
+              Create one, or import props, vehicles, and creatures from Script Studio.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {filtered.map((p) => (
+              <PropCard
+                key={p.id}
+                prop={p}
+                onClick={() => setSelectedId(p.id)}
+                onDelete={() => {
+                  if (confirm(`Delete "${p.name}" from the Prop Bible?`))
+                    removeProp.mutate(p.id);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PropCard({
+  prop,
+  onClick,
+  onDelete,
+}: {
+  prop: Prop;
+  onClick: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
+      className="group relative cursor-pointer overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-left shadow-card transition-all hover:border-primary/40 hover:shadow-md"
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-elevated">
+        <AssetImage
+          src={prop.heroUrl}
+          alt={prop.name}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          fallback={<GradientFill id={prop.id} label={prop.name} className="h-full w-full text-2xl" />}
+        />
+        <div className="absolute right-2 top-2 flex gap-1">
+          <Badge variant="primary" className="gap-1">
+            {categoryIcon(prop.category)} {prop.category}
+          </Badge>
+        </div>
+        {prop.locked && (
+          <div className="absolute left-2 top-2">
+            <Badge variant="success" className="gap-1">
+              <Lock className="h-3 w-3" /> Canon
+            </Badge>
+          </div>
+        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          title="Delete asset"
+          aria-label="Delete asset"
+          className="absolute bottom-2 left-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/90 opacity-0 transition-opacity hover:bg-danger group-hover:opacity-100"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="p-3">
+        <div className="truncate text-sm font-semibold">{prop.name}</div>
+        <div className="truncate text-xs text-muted">
+          {prop.materials || prop.usage || "Undefined"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PropSheet({
+  prop,
+  onBack,
+  onOpenSheet,
+}: {
+  prop: Prop;
+  onBack: () => void;
+  onOpenSheet: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [draft, setDraft] = useState<Prop>(prop);
+
+  const savedTick = useAutosave(draft, async (d) => {
+    await api.saveProp(d);
+    queryClient.invalidateQueries({ queryKey: ["props"] });
+  });
+
+  const set = <K extends keyof Prop>(key: K, value: Prop[K]) =>
+    setDraft((d) => ({ ...d, [key]: value }));
+
+  const stale = isPropDnaStale(draft);
+  const compose = () => {
+    const { promptDna, consistencyRules } = composePropDna(draft);
+    setDraft((d) => ({ ...d, promptDna, consistencyRules }));
+  };
+
+  const remove = useMutation({
+    mutationFn: () => api.deleteProp(draft.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["props"] });
+      onBack();
+    },
+  });
+
+  const runGenerate = async (opts: GenerateOpts): Promise<string[]> => {
+    const urls: string[] = [];
+    for (let i = 0; i < opts.variations; i++) {
+      const s = opts.seed !== undefined ? opts.seed + i : undefined;
+      urls.push(
+        await api.generateImagePro(
+          opts.provider,
+          opts.prompt,
+          opts.width,
+          opts.height,
+          opts.references,
+          s
+        )
+      );
+    }
+    setDraft((d) => ({ ...d, promptDna: opts.prompt }));
+    return urls;
+  };
+
+  const pickHero = (url: string) =>
+    setDraft((d) => ({
+      ...d,
+      heroUrl: url,
+      referenceImages: d.referenceImages.includes(url)
+        ? d.referenceImages
+        : [url, ...d.referenceImages].slice(0, 8),
+    }));
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-8 py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to props">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Input
+            value={draft.name}
+            onChange={(e) => set("name", e.target.value)}
+            aria-label="Prop name"
+            className="h-9 w-64 text-base font-semibold"
+          />
+          <Badge variant="primary" className="gap-1">
+            {categoryIcon(draft.category)} {draft.category}
+          </Badge>
+          {draft.locked ? (
+            <Badge variant="success" className="gap-1">
+              <Lock className="h-3 w-3" /> Canon
+            </Badge>
+          ) : (
+            <Badge variant="warning">Draft</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <SavedTick show={savedTick} />
+          <MoveAssetMenu
+            fromKind="Prop"
+            fromId={draft.id}
+            name={draft.name}
+            primaryImage={draft.heroUrl}
+            refs={draft.referenceImages}
+            onPropCategory={(c) => set("category", c)}
+            onCrossMoved={onBack}
+          />
+          <Button onClick={onOpenSheet}>
+            <LayoutGrid className="h-4 w-4" /> Prop Sheet
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => remove.mutate()}
+            aria-label="Delete prop"
+            className="text-muted hover:text-danger"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </header>
+
+      <div className="grid flex-1 grid-cols-1 gap-6 p-8 lg:grid-cols-[20rem_1fr]">
+        <div className="flex flex-col gap-4">
+          <MediaPanel
+            id={draft.id}
+            label={draft.name}
+            src={draft.heroUrl}
+            references={draft.referenceImages}
+            generating={false}
+            aspect="aspect-square"
+            isTauri={isTauri}
+            initialPrompt={draft.promptDna || composePropDna(draft).promptDna}
+            onGenerate={runGenerate}
+            onPick={pickHero}
+            pickLabel="Use as hero"
+            defaultAspect="1:1"
+          />
+          <LockToggle
+            locked={draft.locked}
+            onToggle={() => set("locked", !draft.locked)}
+            lockedTitle="Consistency locked"
+            lockedHint="Canonical — reuse this design across every shot."
+            unlockedHint="Lock to make this design canonical."
+          />
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <PromptDnaBlock
+            anchorLabel="Subject"
+            anchor={[draft.condition, draft.name].filter(Boolean).join(" ") || draft.name}
+            promptDna={draft.promptDna}
+            consistencyRules={draft.consistencyRules}
+            stale={stale}
+            composeLabel="Compose Prompt DNA"
+            onCompose={compose}
+            onPromptDna={(v) => set("promptDna", v)}
+            onRules={(v) => set("consistencyRules", v)}
+          />
+
+          <Section icon={<Package className="h-4 w-4 text-primary" />} title="Identity">
+            <Field label="Category">
+              <DnaSelect value={draft.category} onChange={(v) => set("category", v)}>
+                {PROP_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </DnaSelect>
+            </Field>
+            <Field label="Story significance">
+              <Input value={draft.storySignificance} onChange={(e) => set("storySignificance", e.target.value)} placeholder="heirloom; the MacGuffin" />
+            </Field>
+          </Section>
+
+          <Section icon={<Ruler className="h-4 w-4 text-primary" />} title="Physical">
+            <Field label="Materials">
+              <Input value={draft.materials} onChange={(e) => set("materials", e.target.value)} placeholder="weathered brass, oak grip" />
+            </Field>
+            <Field label="Condition">
+              <Input value={draft.condition} onChange={(e) => set("condition", e.target.value)} placeholder="battle-worn, scratched" />
+            </Field>
+            <Field label="Dimensions / scale" full>
+              <Input value={draft.dimensions} onChange={(e) => set("dimensions", e.target.value)} placeholder="hand-sized; 30cm long" />
+            </Field>
+          </Section>
+
+          <Section icon={<Boxes className="h-4 w-4 text-primary" />} title="Usage">
+            <Field label="How it's used" full>
+              <Textarea
+                value={draft.usage}
+                onChange={(e) => set("usage", e.target.value)}
+                placeholder="Carried by the hero; drawn in the duel scene…"
+                className="min-h-16"
+              />
+            </Field>
+          </Section>
+
+          <Section icon={<Palette className="h-4 w-4 text-primary" />} title="Color palette">
+            <Field label="Palette (comma-separated)" full>
+              <PaletteField value={draft.colorPalette} onChange={(v) => set("colorPalette", v)} />
+            </Field>
+          </Section>
+
+          <Section icon={<BookOpen className="h-4 w-4 text-primary" />} title="Style">
+            <Field label="Style preset" full>
+              <DnaSelect value={draft.stylePreset} onChange={(v) => set("stylePreset", v)}>
+                <option value="">No style binding</option>
+                {STYLE_GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.label}>
+                    {presetsByGroup(g.group).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </DnaSelect>
+            </Field>
+          </Section>
+        </div>
+      </div>
+    </div>
+  );
+}

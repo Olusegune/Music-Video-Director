@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+/*
+ * MotionForge design system.
+ * Colors live in plain CSS variables (--c-*) so they can switch at runtime
+ * between light (:root) and dark (.dark). `@theme inline` maps Tailwind's color
+ * utilities (bg-surface, text-muted, border-border, bg-primary/15, …) onto them,
+ * so every component re-themes automatically.
+ */
+@theme inline {
+  --color-background: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-elevated: var(--c-elevated);
+
+  --color-primary: var(--c-primary);
+  --color-primary-foreground: var(--c-primary-fg);
+  --color-accent: var(--c-accent);
+
+  --color-success: var(--c-success);
+  --color-warning: var(--c-warning);
+  --color-danger: var(--c-danger);
+
+  --color-foreground: var(--c-foreground);
+  --color-muted: var(--c-muted);
+
+  --color-border: var(--c-border);
+  --color-ring: var(--c-ring);
+
+  --font-sans: "Inter", "SF Pro Display", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+}
+
+/* Reduced bevel — flatter, more modern */
+:root {
+  --radius-input: 7px;
+  --radius-button: 7px;
+  --radius-card: 9px;
+  --radius-modal: 12px;
+
+  /* Light theme */
+  --c-bg: #f6f7f9;
+  --c-surface: #ffffff;
+  --c-elevated: #eef0f4;
+  --c-primary: #6d5dfc;
+  --c-primary-fg: #ffffff;
+  --c-accent: #0891b2;
+  --c-success: #16a34a;
+  --c-warning: #d97706;
+  --c-danger: #dc2626;
+  --c-foreground: #0e1116;
+  --c-muted: #667085;
+  --c-border: #e4e7ec;
+  --c-ring: #6d5dfc;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06),
+    0 1px 3px rgba(16, 24, 40, 0.04);
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark theme */
+  --c-bg: #0b0d10;
+  --c-surface: #14171a;
+  --c-elevated: #1c1f24;
+  --c-primary: #7d6dff;
+  --c-primary-fg: #ffffff;
+  --c-accent: #00d9ff;
+  --c-success: #4ade80;
+  --c-warning: #f59e0b;
+  --c-danger: #ef4444;
+  --c-foreground: #f5f6f8;
+  --c-muted: #9aa1ac;
+  --c-border: #262a31;
+  --c-ring: #7d6dff;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-muted) 35%, transparent);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-muted) 55%, transparent);
+    background-clip: content-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Colored button fills used by the Button variants */
+  .grad-primary {
+    background-image: linear-gradient(135deg, var(--color-primary), #9b8cff);
+  }
+  .grad-accent {
+    background-image: linear-gradient(
+      135deg,
+      var(--color-accent),
+      color-mix(in oklab, var(--color-accent) 60%, white)
+    );
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  /* The Magic Flow CTA — premium violet→gold, soft glow, sparkle, hover/press */
+  .magic-cta {
+    position: relative;
+    /* Keep the violet body dominant so white text stays readable; gold only
+       warms the trailing edge. */
+    background-image: linear-gradient(115deg, #6e56ff 0%, #7d63ff 55%, #b98bf0 78%, #ffb800 125%);
+    background-size: 180% 180%;
+    color: #fff;
+    /* Dark text-shadow guarantees contrast across both the violet and gold ends. */
+    text-shadow: 0 1px 3px rgba(20, 10, 60, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+      0 8px 30px -8px rgba(110, 86, 255, 0.6),
+      0 4px 18px -6px rgba(255, 184, 0, 0.35);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.25s ease,
+      filter 0.2s ease;
+    animation: magic-shift 7s ease-in-out infinite;
+  }
+  .magic-cta:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.06);
+    box-shadow:
+      0 14px 44px -10px rgba(110, 86, 255, 0.75),
+      0 8px 26px -8px rgba(255, 184, 0, 0.5);
+  }
+  .magic-cta:active {
+    transform: translateY(0) scale(0.98);
+    transition-duration: 0.06s;
+  }
+  /* Soft animated glow halo behind the button */
+  .magic-glow {
+    background-image: linear-gradient(120deg, #6e56ff, #ffb800);
+    filter: blur(22px);
+    opacity: 0.55;
+    animation: magic-pulse 3.4s ease-in-out infinite;
+  }
+  @keyframes magic-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes magic-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.98); }
+    50% { opacity: 0.7; transform: scale(1.04); }
+  }
+  @keyframes magic-sparkle {
+    0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+    40% { opacity: 1; transform: scale(1) rotate(20deg); }
+    70% { opacity: 0.4; transform: scale(0.9) rotate(-10deg); }
+  }
+  .magic-sparkle {
+    animation: magic-sparkle 2.8s ease-in-out infinite;
+  }
+  .magic-sparkle-2 {
+    animation: magic-sparkle 3.6s ease-in-out 0.8s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
