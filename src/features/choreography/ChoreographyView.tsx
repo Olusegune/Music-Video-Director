@@ -38,6 +38,8 @@ import { composeCharacterDna } from "@/lib/characterDna";
 import { importImageToLibrary } from "@/lib/assets";
 import { addMotionTest } from "@/lib/motionTest";
 import { GenerationPanel, type GenerateOpts } from "@/components/generation/GenerationPanel";
+import { AssetImage } from "@/components/ui/asset-image";
+import { cn } from "@/lib/utils";
 import { VIDEO_MODELS } from "@/lib/videoGen";
 import { useAudioPlayer } from "@/lib/audioPlayer";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,7 @@ const VIDEO_GEN_MODELS = VIDEO_MODELS.map((m) => ({
   id: m.id,
   label: m.label,
   providerKey: m.providerKey || "custom",
+  apiModel: m.apiModel,
 }));
 
 function perfOf(section: ChoreoSection): PerformanceBrief {
@@ -364,14 +367,14 @@ export function ChoreographyView() {
                   const urls: string[] = [];
                   for (let i = 0; i < opts.variations; i++)
                     urls.push(
-                      await api.generateMvShotVideo("choreo", crypto.randomUUID(), opts.prompt, opts.provider || undefined, refs)
+                      await api.generateMvShotVideo("choreo", crypto.randomUUID(), opts.prompt, opts.provider || undefined, refs, opts.apiModel)
                     );
                   return urls;
                 }
                 const urls: string[] = [];
                 for (let i = 0; i < opts.variations; i++) {
                   const s = opts.seed !== undefined ? opts.seed + i : undefined;
-                  urls.push(await api.generateImagePro(opts.provider, opts.prompt, opts.width, opts.height, refs, s));
+                  urls.push(await api.generateImagePro(opts.provider, opts.prompt, opts.width, opts.height, refs, s, opts.apiModel));
                 }
                 return urls;
               }}
@@ -598,17 +601,49 @@ function ChoreoCard({
         {/* Apply to a performer, then generate a pose sheet / motion test */}
         <div className="ml-auto flex items-center gap-1.5">
           <span className="text-[11px] text-muted">Apply to:</span>
-          <select
-            value={applyToId}
-            onChange={(e) => setApplyToId(e.target.value)}
-            className="h-7 rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+          <div
+            className="flex max-w-[340px] items-center gap-1 overflow-x-auto"
             aria-label={`Performer for ${section.label}`}
           >
-            <option value="">Generic dancer</option>
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            <button
+              type="button"
+              onClick={() => setApplyToId("")}
+              className={cn(
+                "flex shrink-0 items-center gap-1 rounded-full border py-0.5 pl-0.5 pr-2 transition-colors",
+                applyToId === ""
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
+              )}
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-elevated text-[11px]">
+                <Users className="h-3 w-3" />
+              </span>
+              <span className="text-[11px] font-medium">Generic</span>
+            </button>
+            {characters.map((c, ci) => (
+              <button
+                key={`${c.id}-${ci}`}
+                type="button"
+                onClick={() => setApplyToId(c.id)}
+                title={c.name}
+                className={cn(
+                  "flex shrink-0 items-center gap-1 rounded-full border py-0.5 pl-0.5 pr-2 transition-colors",
+                  applyToId === c.id
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
+                )}
+              >
+                {c.portraitUrl ? (
+                  <AssetImage src={c.portraitUrl} alt={c.name} className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-elevated text-[9px] font-semibold uppercase">
+                    {c.name.slice(0, 2)}
+                  </span>
+                )}
+                <span className="text-[11px] font-medium">{c.name}</span>
+              </button>
             ))}
-          </select>
+          </div>
           <Button size="sm" variant="secondary" onClick={() => onGenerate("pose", applyTo)}>
             <LayoutGrid className="h-3.5 w-3.5" /> Pose sheet
           </Button>

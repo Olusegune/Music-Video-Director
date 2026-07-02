@@ -14,7 +14,8 @@ use crate::providers::{
     replicate::ReplicateProvider,
     text::GeminiTextProvider,
     video::{FalVideoProvider, GoogleVeoProvider},
-    AudioProvider, ImageProvider, TextProvider, VideoProvider,
+    wavespeed::{WaveSpeedImageProvider, WaveSpeedVideoProvider},
+    AudioProvider, ClipOpts, ImageProvider, TextProvider, VideoProvider,
 };
 use crate::secrets;
 use chrono::Utc;
@@ -232,8 +233,10 @@ pub async fn generate_image_pro(
     height: u32,
     refs: Option<Vec<String>>,
     seed: Option<i64>,
+    model: Option<String>,
 ) -> Result<String, String> {
     let get = |id: &str| secrets::get_key(id).map_err(err);
+    let model = model.filter(|s| !s.is_empty());
 
     // Decode any reference images (base64, no data: prefix) once.
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -267,6 +270,7 @@ pub async fn generate_image_pro(
             let key = get("fal")?.ok_or("Add a fal.ai key in the API Key Dashboard.")?;
             FalImageProvider::new(key)
                 .with_seed(seed)
+                .with_model(model.clone())
                 .generate_image_ref(&prompt, width, height, r)
                 .await
                 .map_err(err)?
@@ -274,6 +278,15 @@ pub async fn generate_image_pro(
         "kie" => {
             let key = get("kie")?.ok_or("Add a kie.ai key in the API Key Dashboard.")?;
             KieImageProvider::new(key)
+                .with_model(model.clone())
+                .generate_image_ref(&prompt, width, height, r)
+                .await
+                .map_err(err)?
+        }
+        "wavespeed" => {
+            let key = get("wavespeed")?.ok_or("Add a WaveSpeed key in the API Key Dashboard.")?;
+            WaveSpeedImageProvider::new(key)
+                .with_model(model.clone())
                 .generate_image_ref(&prompt, width, height, r)
                 .await
                 .map_err(err)?
@@ -366,11 +379,17 @@ async fn generate_video_with(
     provider: Option<&str>,
     prompt: &str,
     refs: &[Vec<u8>],
+    model: Option<String>,
+    end_frame: Option<Vec<u8>>,
+    audio_refs: &[Vec<u8>],
+    video_refs: &[Vec<u8>],
+    opts: &ClipOpts,
 ) -> Result<Vec<u8>, String> {
+    let model = model.filter(|s| !s.is_empty());
     match provider {
         Some("fal") => {
             let key = secrets::get_key("fal").map_err(err)?.ok_or("Add a fal.ai key in the API Key Dashboard.")?;
-            FalVideoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)
+            FalVideoProvider::new(key).with_model(model).generate_video_omni(prompt, refs, end_frame.as_deref(), opts).await.map_err(err)
         }
         Some("google_veo") => {
             let key = secrets::get_key("google_veo").map_err(err)?.ok_or("Add a Google Veo key in the API Key Dashboard.")?;
@@ -382,7 +401,19 @@ async fn generate_video_with(
         }
         Some("kie") => {
             let key = secrets::get_key("kie").map_err(err)?.ok_or("Add a kie.ai key in the API Key Dashboard.")?;
-            KieVideoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)
+            // Kie supports the full omni reference set (end frame, audio, video).
+            KieVideoProvider::new(key)
+                .with_model(model)
+                .generate_video_omni(prompt, refs, end_frame.as_deref(), audio_refs, video_refs, opts)
+                .await
+                .map_err(err)
+        }
+        Some("wavespeed") => {
+            let key = secrets::get_key("wavespeed").map_err(err)?.ok_or("Add a WaveSpeed key in the API Key Dashboard.")?;
+            WaveSpeedVideoProvider::new(key).with_model(model).generate_video_omni(prompt, refs, end_frame.as_deref(), opts).await.map_err(err)
+        }
+        Some("grok") => {
+            return Err("Grok video has no public API yet. Use Seedance/Kling via Kie, Fal, or WaveSpeed.".into());
         }
         // "auto" / unknown / none → first configured video provider.
         _ => generate_video_any(prompt, refs).await.map(|(_, bytes)| bytes),
@@ -402,15 +433,39 @@ pub async fn generate_mv_shot_video(
     prompt: String,
     provider: Option<String>,
     refs: Option<Vec<String>>,
+    model: Option<String>,
+    end_frame: Option<String>,
+    audio_refs: Option<Vec<String>>,
+    video_refs: Option<Vec<String>>,
+    duration: Option<u32>,
+    resolution: Option<String>,
+    generate_audio: Option<bool>,
 ) -> Result<String, String> {
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
-    let ref_bytes: Vec<Vec<u8>> = refs
-        .unwrap_or_default()
-        .iter()
-        .filter_map(|b| B64.decode(b).ok())
-        .collect();
+    let decode_all = |v: Vec<String>| -> Vec<Vec<u8>> {
+        v.iter().filter_map(|b| B64.decode(b).ok()).collect()
+    };
+    let ref_bytes = decode_all(refs.unwrap_or_default());
+    let end_bytes = end_frame.and_then(|b| B64.decode(b).ok());
+    let audio_bytes = decode_all(audio_refs.unwrap_or_default());
+    let video_bytes = decode_all(video_refs.unwrap_or_default());
+    let opts = ClipOpts {
+        duration,
+        resolution: resolution.filter(|s| !s.is_empty()),
+        generate_audio,
+    };
     let prov = provider.filter(|s| !s.is_empty());
-    let bytes = generate_video_with(prov.as_deref(), &prompt, &ref_bytes).await?;
+    let bytes = generate_video_with(
+        prov.as_deref(),
+        &prompt,
+        &ref_bytes,
+        model,
+        end_bytes,
+        &audio_bytes,
+        &video_bytes,
+        &opts,
+    )
+    .await?;
     let dir = crate::paths::base_dir(&app)?
         .join("assets")
         .join("mv")

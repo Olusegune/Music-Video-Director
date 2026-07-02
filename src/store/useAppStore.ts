@@ -64,12 +64,17 @@ interface AppState {
   lastSavedAt: number | null;
   /** Bumped after an undo/redo restore to remount views so they re-read storage. */
   dataVersion: number;
+  /** Shot id to scroll-to + highlight when the Timeline opens (cross-view focus). */
+  focusedShotId: string | null;
 
   openSong: () => void;
   openMvDirector: () => void;
   openCast: () => void;
   openChoreography: () => void;
   openTimeline: () => void;
+  /** Jump to the Timeline and highlight a specific shot. */
+  focusShotInTimeline: (shotId: string) => void;
+  clearFocusedShot: () => void;
   openTemplates: () => void;
   openHelp: () => void;
   setWelcomeOpen: (open: boolean) => void;
@@ -123,12 +128,15 @@ export const useAppStore = create<AppState>((set) => ({
   searchOpen: false,
   lastSavedAt: null,
   dataVersion: 0,
+  focusedShotId: null,
 
   openSong: () => set({ view: "song", activeProjectId: null }),
   openMvDirector: () => set({ view: "mvdirector" }),
   openCast: () => set({ view: "cast" }),
   openChoreography: () => set({ view: "choreography" }),
   openTimeline: () => set({ view: "timeline" }),
+  focusShotInTimeline: (shotId: string) => set({ view: "timeline", focusedShotId: shotId }),
+  clearFocusedShot: () => set({ focusedShotId: null }),
   openTemplates: () => set({ view: "templates" }),
   openHelp: () => set({ view: "help" }),
   setWelcomeOpen: (welcomeOpen) => set({ welcomeOpen }),

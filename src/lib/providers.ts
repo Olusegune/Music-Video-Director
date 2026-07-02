@@ -54,9 +54,14 @@ export const PROVIDERS: ProviderInfo[] = [
   { id: "gpt_image", name: "GPT Image", capabilities: ["image"], quality: 5, speed: 3, cheap: 2, hint: "OpenAI image models", status: "wired" },
   { id: "stability", name: "Stability AI", capabilities: ["image"], quality: 4, speed: 4, cheap: 4, hint: "Stability API key (SDXL)", status: "wired" },
   { id: "midjourney", name: "Midjourney", capabilities: ["image"], quality: 5, speed: 3, cheap: 3, hint: "Prompt export + import after generation", status: "manual" },
-  { id: "grok", name: "Grok / xAI", capabilities: ["image"], quality: 4, speed: 4, cheap: 3, hint: "xAI API key — grok-2-image", status: "wired" },
+  { id: "grok", name: "Grok / xAI", capabilities: ["image", "video"], quality: 4, speed: 4, cheap: 3, hint: "xAI API key — grok-2-image (video where available)", status: "wired" },
+  { id: "wavespeed", name: "WaveSpeed AI", capabilities: ["image", "video"], quality: 4, speed: 5, cheap: 4, hint: "WaveSpeed key — Seedance · Kling · FLUX routing", status: "wired" },
+  { id: "recraft", name: "Recraft", capabilities: ["image"], quality: 4, speed: 4, cheap: 4, hint: "Recraft v3 image / vector", status: "planned" },
+  { id: "ideogram", name: "Ideogram", capabilities: ["image"], quality: 4, speed: 4, cheap: 4, hint: "Ideogram image / typography", status: "planned" },
 
   // Video
+  { id: "happyhorse", name: "Happy Horse", capabilities: ["video"], quality: 4, speed: 4, cheap: 4, hint: "Performance / dance video models", status: "planned" },
+  { id: "minimax", name: "MiniMax", capabilities: ["video"], quality: 4, speed: 4, cheap: 4, hint: "MiniMax video", status: "planned" },
   { id: "kie", name: "kie.ai", capabilities: ["image", "video"], quality: 4, speed: 4, cheap: 4, hint: "kie.ai key — unified jobs API (GPT Image/Veo/Kling)", status: "wired" },
   { id: "google_veo", name: "Google Veo", capabilities: ["video"], quality: 5, speed: 3, cheap: 3, hint: "Google API key", status: "wired" },
   { id: "runway", name: "Runway", capabilities: ["video"], quality: 5, speed: 3, cheap: 2, hint: "Direct API, or via Replicate", status: "planned" },

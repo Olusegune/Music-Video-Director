@@ -99,10 +99,35 @@ export function TimelineView() {
   // --- timeline editing --------------------------------------------------
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [snap, setSnap] = useState(true);
+  // Cross-view focus: a shot the MV Director asked us to highlight.
+  const focusedShotId = useAppStore((s) => s.focusedShotId);
+  const clearFocusedShot = useAppStore((s) => s.clearFocusedShot);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const scrollWrapRef = useRef<HTMLDivElement>(null);
   // Live drag preview for shots (id → position) and the marquee rectangle.
   const [preview, setPreview] = useState<Record<string, { start: number; end: number }>>({});
   const [marquee, setMarquee] = useState<{ x: number; w: number } | null>(null);
   const previewRef = useRef<Record<string, { start: number; end: number }>>({});
+
+  // When the MV Director asks to locate a shot, select it, scroll it into view,
+  // and flash it briefly — then clear the request.
+  useEffect(() => {
+    if (!focusedShotId || !song) return;
+    const sh = shots.find((s) => s.id === focusedShotId);
+    if (!sh) return;
+    setSelected(new Set([focusedShotId]));
+    setFlashId(focusedShotId);
+    const d = song.durationSec || 1;
+    const w = Math.max(900, Math.round(d * zoom));
+    const x = (sh.start / d) * w;
+    const el = scrollWrapRef.current;
+    if (el) el.scrollTo({ left: Math.max(0, x - el.clientWidth / 2), behavior: "smooth" });
+    const timer = setTimeout(() => {
+      setFlashId(null);
+      clearFocusedShot();
+    }, 2600);
+    return () => clearTimeout(timer);
+  }, [focusedShotId, shots, song, zoom, clearFocusedShot]);
 
   const beatDur = 60 / Math.max(1, song?.bpm ?? 120);
   const beatOff = song?.beatOffsetSec ?? 0;
@@ -577,7 +602,7 @@ export function TimelineView() {
         />
       )}
 
-      <div className="min-h-0 flex-1 overflow-auto p-6">
+      <div ref={scrollWrapRef} className="min-h-0 flex-1 overflow-auto p-6">
         <div className="inline-block min-w-full align-top" style={{ width }}>
           {/* Ruler */}
           <div className="relative mb-1 h-5" style={{ width }}>
@@ -644,7 +669,8 @@ export function TimelineView() {
                   onPointerDown={(e) => beginDrag(e, sh, "move")}
                   className={cn(
                     "group absolute top-1 bottom-1 z-10 cursor-grab touch-none select-none overflow-hidden rounded-md px-1.5 py-1 active:cursor-grabbing",
-                    isSel ? "ring-2 ring-primary" : ""
+                    isSel ? "ring-2 ring-primary" : "",
+                    flashId === sh.id ? "z-20 animate-pulse ring-4 ring-warning" : ""
                   )}
                   style={{
                     left,

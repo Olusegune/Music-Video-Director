@@ -19,6 +19,8 @@ export interface ImageModel {
   label: string;
   /** Keychain provider id used by the Rust generator. */
   providerKey: string;
+  /** The provider's own model slug, passed to aggregator adapters (Kie/WaveSpeed). */
+  apiModel?: string;
   /** Provider ids whose key (any) makes this model "Connected". */
   keyIds: string[];
   /** No public API — generate by copying the prompt into the tool. */
@@ -26,11 +28,25 @@ export interface ImageModel {
   hint: string;
 }
 
+// Priority order (top = default): the models the director asked for first,
+// routed through the prioritized providers. `apiModel` is the slug an aggregator
+// adapter sends — confirm against the provider's current catalog if it changes.
 export const IMAGE_MODELS: ImageModel[] = [
-  { id: "nano_banana_pro", label: "Nano Banana / Gemini", providerKey: "google_imagen", keyIds: ["google_imagen", "gemini"], hint: "Google Gemini image (Nano Banana) → Imagen fallback" },
-  { id: "gpt_image", label: "OpenAI (GPT Image · DALL·E 3)", providerKey: "openai", keyIds: ["openai", "gpt_image"], hint: "gpt-image-1 → dall-e-3 fallback" },
-  { id: "fal", label: "Fal.ai (FLUX)", providerKey: "fal", keyIds: ["fal"], hint: "fal.ai FLUX image" },
-  { id: "kie", label: "kie.ai (GPT Image · Nano Banana)", providerKey: "kie", keyIds: ["kie"], hint: "kie.ai unified jobs API" },
+  { id: "nano_banana_pro", label: "★ Nano Banana Pro / Gemini", providerKey: "google_imagen", keyIds: ["google_imagen", "gemini"], hint: "Google Gemini image (Nano Banana Pro) → Imagen fallback" },
+  { id: "nano_banana_2", label: "★ Nano Banana 2 (Kie)", providerKey: "kie", apiModel: "nano-banana-2", keyIds: ["kie"], hint: "Nano Banana 2 via Kie" },
+  { id: "nano_banana_kie", label: "Nano Banana (Kie)", providerKey: "kie", apiModel: "google/nano-banana", keyIds: ["kie"], hint: "Nano Banana via Kie" },
+  { id: "gpt_image", label: "★ ChatGPT Image 2 (OpenAI)", providerKey: "openai", keyIds: ["openai", "gpt_image"], hint: "gpt-image-1 → dall-e-3 fallback" },
+  // --- Fal image catalog (each routes a specific fal model slug) ---
+  { id: "fal_flux_dev", label: "Fal · FLUX.1 [dev]", providerKey: "fal", apiModel: "fal-ai/flux/dev", keyIds: ["fal"], hint: "High-quality FLUX dev" },
+  { id: "fal_flux_schnell", label: "Fal · FLUX.1 [schnell]", providerKey: "fal", apiModel: "fal-ai/flux/schnell", keyIds: ["fal"], hint: "Ultra-fast FLUX schnell" },
+  { id: "fal_flux_pro", label: "Fal · FLUX1.1 [pro]", providerKey: "fal", apiModel: "fal-ai/flux-pro/v1.1", keyIds: ["fal"], hint: "FLUX 1.1 Pro" },
+  { id: "fal_flux_ultra", label: "Fal · FLUX1.1 [pro] ultra", providerKey: "fal", apiModel: "fal-ai/flux-pro/v1.1-ultra", keyIds: ["fal"], hint: "Up to 2K, photoreal" },
+  { id: "fal_sd35_large", label: "Fal · Stable Diffusion 3.5 Large", providerKey: "fal", apiModel: "fal-ai/stable-diffusion-v35-large", keyIds: ["fal"], hint: "SD 3.5 Large" },
+  { id: "fal_sd35_medium", label: "Fal · Stable Diffusion 3.5 Medium", providerKey: "fal", apiModel: "fal-ai/stable-diffusion-v35-medium", keyIds: ["fal"], hint: "SD 3.5 Medium" },
+  { id: "fal_recraft", label: "Fal · Recraft V3", providerKey: "fal", apiModel: "fal-ai/recraft/v3/text-to-image", keyIds: ["fal"], hint: "Recraft V3 — text, vector, brand style" },
+  { id: "fal_ideogram", label: "Fal · Ideogram V3", providerKey: "fal", apiModel: "fal-ai/ideogram/v3", keyIds: ["fal"], hint: "Ideogram V3 — typography" },
+  { id: "wavespeed_image", label: "WaveSpeed · FLUX dev", providerKey: "wavespeed", apiModel: "wavespeed-ai/flux-dev", keyIds: ["wavespeed"], hint: "Image via WaveSpeed" },
+  { id: "kie", label: "kie.ai (image, auto)", providerKey: "kie", keyIds: ["kie"], hint: "kie.ai unified jobs API" },
   { id: "stability", label: "Stability (SDXL)", providerKey: "stability", keyIds: ["stability"], hint: "Stability SDXL" },
   { id: "grok", label: "Grok / xAI (grok-2-image)", providerKey: "grok", keyIds: ["grok"], hint: "xAI image API" },
   { id: "midjourney", label: "Midjourney (copy-prompt)", providerKey: "midjourney", keyIds: ["midjourney"], manual: true, hint: "No public API — copy the prompt, generate in Midjourney, then import" },

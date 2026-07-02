@@ -101,7 +101,7 @@ export function ImageStudio({
     setBusy(true);
     setNote(null);
     try {
-      const url = await api.generateImagePro(model.providerKey, prompt, size.width, size.height);
+      const url = await api.generateImagePro(model.providerKey, prompt, size.width, size.height, undefined, undefined, model.apiModel);
       const asset = addAsset({
         entityId: entity.id,
         entityKind: kind,

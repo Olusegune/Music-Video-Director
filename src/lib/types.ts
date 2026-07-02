@@ -58,7 +58,12 @@ export type ProviderId =
   | "suno"
   | "replicate"
   | "local_endpoint"
-  | "grok";
+  | "grok"
+  | "wavespeed"
+  | "happyhorse"
+  | "minimax"
+  | "recraft"
+  | "ideogram";
 
 export interface ProviderKeyStatus {
   provider: ProviderId;

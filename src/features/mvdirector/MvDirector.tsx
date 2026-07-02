@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Clapperboard,
   Wand2,
@@ -22,8 +22,11 @@ import {
   ZoomOut,
   Plus,
   X,
+  Check,
+  Upload,
   Sliders,
   SlidersHorizontal,
+  LayoutGrid,
 } from "lucide-react";
 import {
   directSong,
@@ -33,15 +36,17 @@ import {
   type MvTreatment,
   type MvSectionPlan,
   type MvShot,
+  type ChoreoAssignment,
 } from "@/lib/mvDirector";
 import { loadSongs, sectionColor, formatTime, type SongMap } from "@/lib/songBrain";
 import { loadCast, productionReferenceImages } from "@/lib/cast";
 import { getAutoProductionRefs, setAutoProductionRefs } from "@/lib/settings";
 import { buildShotImagePrompt, buildShotVideoPrompt, choreoHintForTime } from "@/lib/mvGen";
 import { getChoreo } from "@/lib/choreography";
+import { importImageToLibrary } from "@/lib/assets";
 import { detectSectionPerformer } from "@/lib/performerDetect";
 import { IMAGE_MODELS, findModel, resolveSize, SIZE_PRESETS } from "@/lib/imageGen";
-import { VIDEO_MODELS, findVideoModel } from "@/lib/videoGen";
+import { VIDEO_MODELS, findVideoModel, videoCaps } from "@/lib/videoGen";
 import { useProviderReadiness } from "@/lib/providerReady";
 import { getTemplate } from "@/lib/templates";
 import { api } from "@/lib/ipc";
@@ -54,6 +59,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AssetImage, AssetVideo, resolveAssetSrc } from "@/components/ui/asset-image";
 import { AssetPicker } from "@/features/assets/AssetPicker";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
+import { collectRefs } from "@/lib/refs";
 
 /** Pull a song section's authored brief (lead, camera, mood, …) for prompting. */
 function briefForSection(song: SongMap | null, sectionId: string) {
@@ -82,15 +88,6 @@ const SIZE_LABEL: Record<string, string> = {
   hd: "Max · 2048px",
 };
 
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
-}
-
 /** Fetch with a hard timeout so a slow/unreachable ref never stalls generation. */
 async function fetchWithTimeout(url: string, ms = 15000): Promise<Response> {
   const ctrl = new AbortController();
@@ -100,28 +97,6 @@ async function fetchWithTimeout(url: string, ms = 15000): Promise<Response> {
   } finally {
     clearTimeout(timer);
   }
-}
-
-/** Resolve ref-image srcs to raw base64 (no data: prefix) for the provider.
- *  Each ref is time-boxed and failures are skipped, so generation never hangs. */
-async function collectRefs(srcs?: string[]): Promise<string[]> {
-  if (!srcs?.length) return [];
-  const out: string[] = [];
-  for (const s of srcs) {
-    try {
-      const resolved = await resolveAssetSrc(s);
-      let dataUrl = resolved;
-      if (!resolved.startsWith("data:")) {
-        const resp = await fetchWithTimeout(resolved);
-        dataUrl = await blobToDataUrl(await resp.blob());
-      }
-      const b64 = dataUrl.split(",")[1];
-      if (b64) out.push(b64);
-    } catch {
-      /* skip an unreadable/slow ref */
-    }
-  }
-  return out;
 }
 
 /** Download a displayable asset src to disk (works for http, data:, Tauri path). */
@@ -185,6 +160,12 @@ export function MvDirector() {
   const [variations, setVariations] = useState(1);
   const [fps, setFps] = useState(24);
   const [motion, setMotion] = useState("medium");
+  // Clip generation controls (granular).
+  const [duration, setDuration] = useState(5);
+  const [resolution, setResolution] = useState("720p");
+  const [audioDialogue, setAudioDialogue] = useState(true);
+  const [audioSfx, setAudioSfx] = useState(true);
+  const [audioMusic, setAudioMusic] = useState(false);
   // Per-shot fine-tune via the unified GenerationPanel.
   const [tune, setTune] = useState<{ section: MvSectionPlan; shot: MvShot } | null>(null);
 
@@ -194,6 +175,50 @@ export function MvDirector() {
     () => productionReferenceImages(cast, characters),
     [cast, characters]
   );
+
+  // Performers available for choreography assignment: the cast + Character Bible.
+  const performers = useMemo<PerformerOption[]>(() => {
+    const out: PerformerOption[] = [];
+    const seen = new Set<string>();
+    const charById = new Map(characters.map((c) => [c.id, c]));
+    for (const p of cast) {
+      const name = p.name || p.role;
+      const key = (p.characterId ?? name).toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const linked = p.characterId ? charById.get(p.characterId) : undefined;
+      out.push({ name, characterId: p.characterId, role: p.role, image: linked?.portraitUrl });
+    }
+    for (const c of characters) {
+      if (seen.has(c.id.toLowerCase()) || seen.has(c.name.toLowerCase())) continue;
+      seen.add(c.id.toLowerCase());
+      out.push({ name: c.name, characterId: c.id, role: "Character", image: c.portraitUrl });
+    }
+    return out;
+  }, [cast, characters]);
+
+  // Pose sheets generated in Choreography (stored as Props, category "Pose sheet").
+  const { data: propList = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
+  const poseSheets = useMemo<{ label: string; src: string }[]>(
+    () =>
+      propList
+        .filter((p) => p.category === "Pose sheet" && p.heroUrl)
+        .map((p) => ({ label: p.name, src: p.heroUrl })),
+    [propList]
+  );
+
+  // Choreography moves/poses for this song, pulled from the Choreography library.
+  const choreoMoves = useMemo<string[]>(() => {
+    if (!song) return [];
+    const plan = getChoreo(song.id);
+    if (!plan) return [];
+    const moves = new Set<string>();
+    for (const s of plan.sections) {
+      s.eightCounts?.forEach((e) => e.phraseA && moves.add(e.phraseA));
+      s.keyPoses?.forEach((p) => p && moves.add(p));
+    }
+    return [...moves];
+  }, [song]);
 
   /** Explicit shot refs + (when enabled) the production cast on non-abstract
    *  shots — deduped. This is what actually guides the shot's generation. */
@@ -210,8 +235,10 @@ export function MvDirector() {
 
   const [genShotId, setGenShotId] = useState<string | null>(null);
   const [genClipId, setGenClipId] = useState<string | null>(null);
+  const [genPoseId, setGenPoseId] = useState<string | null>(null);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const direct = () => {
     if (!song) return;
@@ -258,16 +285,19 @@ export function MvDirector() {
   const genFrame = useCallback(
     async (section: MvSectionPlan, shot: MvShot): Promise<void> => {
       if (!treatment) return;
-      const prompt = buildShotImagePrompt({
-        shot,
-        section,
-        treatment,
-        cast,
-        characters,
-        aspect,
-        choreoHint: song ? choreoHintForTime(getChoreo(song.id), shot.start) : undefined,
-        brief: briefForSection(song, section.sectionId),
-      });
+      // A user-edited prompt overrides the auto-assembled one (maximum control).
+      const prompt =
+        shot.promptOverride?.trim() ||
+        buildShotImagePrompt({
+          shot,
+          section,
+          treatment,
+          cast,
+          characters,
+          aspect,
+          choreoHint: song ? choreoHintForTime(getChoreo(song.id), shot.start) : undefined,
+          brief: briefForSection(song, section.sectionId),
+        });
       const model = findModel(shot.imageProvider ?? modelId);
       const { width, height } = resolveSize(aspect, sizeId);
       const refs = await collectRefs(mergeProductionRefs(shot, section));
@@ -277,7 +307,7 @@ export function MvDirector() {
       for (let i = 0; i < n; i++) {
         const s = baseSeed !== undefined ? baseSeed + i : undefined;
         urls.push(
-          await api.generateImagePro(model.providerKey, prompt, width, height, refs, s)
+          await api.generateImagePro(model.providerKey, prompt, width, height, refs, s, model.apiModel)
         );
       }
       setShotImage(section.sectionId, shot.id, urls[0], urls.length > 1 ? urls : undefined);
@@ -292,7 +322,7 @@ export function MvDirector() {
       try {
         await genFrame(section, shot);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : "Generation failed.");
+        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed.");
       } finally {
         setGenShotId(null);
       }
@@ -311,7 +341,7 @@ export function MvDirector() {
       try {
         await genFrame(jobs[i].section, jobs[i].shot);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : "Generation failed.");
+        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed.");
       }
       setBatch({ done: i + 1, total: jobs.length });
     }
@@ -348,38 +378,109 @@ export function MvDirector() {
       setGenError(null);
       setGenClipId(shot.id);
       try {
-        const motionLine = `Camera motion: ${motion} intensity. Target ${fps} fps.`;
-        const prompt = `${buildShotVideoPrompt({
-          shot,
-          section,
-          treatment,
-          cast,
-          characters,
-          aspect,
-          choreoHint: choreoHintForTime(getChoreo(song.id), shot.start),
-          brief: briefForSection(song, section.sectionId),
-        })} ${motionLine}`;
+        const audioWanted = [
+          audioDialogue && "dialogue / vocals",
+          audioSfx && "sound effects / foley",
+          audioMusic && "background music",
+        ].filter(Boolean) as string[];
+        const generateAudio = audioWanted.length > 0;
+        const audioLine = generateAudio
+          ? `Audio: include ${audioWanted.join(", ")}.`
+          : "Audio: silent (no generated audio).";
+        const motionLine = `Camera motion: ${motion} intensity. Target ${fps} fps. ${audioLine}`;
+        const basePrompt =
+          shot.promptOverride?.trim() ||
+          buildShotVideoPrompt({
+            shot,
+            section,
+            treatment,
+            cast,
+            characters,
+            aspect,
+            choreoHint: choreoHintForTime(getChoreo(song.id), shot.start),
+            brief: briefForSection(song, section.sectionId),
+          });
+        const prompt = `${basePrompt} ${motionLine}`;
         // Image-to-video: drive the clip from the shot's own frame first, then
         // its references + the production cast — so the clip matches the board.
         const refSrcs = [shot.imageUrl, ...mergeProductionRefs(shot, section)].filter(
           (s): s is string => !!s
         );
         const refs = await collectRefs(refSrcs);
+        const vModel = findVideoModel(shot.videoProvider ?? videoModelId);
+        // Omni references (only used by models that support them, e.g. Seedance).
+        const [endFrameArr, audioRefs, videoRefs] = await Promise.all([
+          collectRefs(shot.endFrame ? [shot.endFrame] : []),
+          collectRefs(shot.refAudio),
+          collectRefs(shot.refVideo),
+        ]);
         const url = await api.generateMvShotVideo(
           song.id,
           shot.id,
           prompt,
-          findVideoModel(shot.videoProvider ?? videoModelId).providerKey,
-          refs
+          vModel.providerKey,
+          refs,
+          vModel.apiModel,
+          {
+            endFrame: endFrameArr[0],
+            audioRefs: audioRefs.length ? audioRefs : undefined,
+            videoRefs: videoRefs.length ? videoRefs : undefined,
+            duration,
+            resolution,
+            generateAudio,
+          }
         );
         setShotVideo(section.sectionId, shot.id, url);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : "Clip generation failed.");
+        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed.");
       } finally {
         setGenClipId(null);
       }
     },
-    [song, treatment, cast, characters, aspect, videoModelId, motion, fps, mergeProductionRefs, setShotVideo]
+    [song, treatment, cast, characters, aspect, videoModelId, motion, fps, duration, resolution, audioDialogue, audioSfx, audioMusic, mergeProductionRefs, setShotVideo]
+  );
+
+  // Generate a pose / model sheet for the shot's assigned performer + moves, and
+  // save it to the library — where it returns as a thumbnail in the move browser.
+  const generatePoseSheet = useCallback(
+    async (section: MvSectionPlan, shot: MvShot) => {
+      if (!song) return;
+      setGenError(null);
+      setGenPoseId(shot.id);
+      try {
+        const assign = shot.choreo?.find((a) => a.performer || a.move);
+        const who = assign?.performer || cast[0]?.name || "the lead performer";
+        const moves = (shot.choreo ?? []).map((a) => a.move).filter(Boolean);
+        const moveLine = moves.length ? moves.join("; ") : shot.idea;
+        const prompt = [
+          `Character dance pose / model sheet for ${who}.`,
+          `Poses / moves: ${moveLine}.`,
+          `Dynamic dance positions for the ${section.label} (${section.kind}).`,
+          "Show front, side, and 3/4 views of each pose, full body, clearly labeled panels, neutral studio background, consistent character across all panels, professional concept art.",
+        ].join(" ");
+        const refSrcs: string[] = [...(shot.refImages ?? [])];
+        const ch = assign?.characterId ? characters.find((c) => c.id === assign.characterId) : null;
+        if (ch?.portraitUrl) refSrcs.unshift(ch.portraitUrl);
+        const refs = await collectRefs(refSrcs);
+        const model = findModel(shot.imageProvider ?? modelId);
+        const url = await api.generateImagePro(
+          model.providerKey,
+          prompt,
+          1024,
+          1280,
+          refs.length ? refs : undefined,
+          undefined,
+          model.apiModel
+        );
+        await importImageToLibrary("Pose sheet", `${who} — ${section.label} poses`, url);
+        await qc.invalidateQueries({ queryKey: ["props"] });
+      } catch (e) {
+        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Pose sheet generation failed.");
+      } finally {
+        setGenPoseId(null);
+      }
+    },
+    [song, cast, characters, modelId, qc]
   );
 
   if (!song) {
@@ -408,6 +509,55 @@ export function MvDirector() {
   const imageReady = isReady(imageModel.keyIds);
   const videoReady = isReady(videoModel.keyIds);
   const activeTemplate = getTemplate(activeTemplateId);
+
+  // Flat, ordered shot list for cross-shot continuity analysis.
+  const flatShots = useMemo(() => {
+    const out: { section: MvSectionPlan; shot: MvShot }[] = [];
+    treatment?.sections.forEach((s) => s.shots.forEach((sh) => out.push({ section: s, shot: sh })));
+    return out;
+  }, [treatment]);
+
+  // Continuity intelligence: how this shot relates to the one before it.
+  const continuityFor = (section: MvSectionPlan, shot: MvShot): ContinuityInfo => {
+    const idx = flatShots.findIndex((x) => x.shot.id === shot.id);
+    const prev = idx > 0 ? flatShots[idx - 1] : null;
+    const prevMatches =
+      !!prev &&
+      !!(shot.movement || shot.lighting) &&
+      prev.shot.movement === shot.movement &&
+      prev.shot.lighting === shot.lighting &&
+      (prev.shot.storyIntent || "") === (shot.storyIntent || "");
+    // First appearance of a performer across the whole treatment.
+    const here = (shot.choreo ?? []).map((a) => a.characterId || a.performer).filter(Boolean);
+    let firstAppearance: string | undefined;
+    for (const who of here) {
+      const earlier = flatShots
+        .slice(0, idx)
+        .some((x) => (x.shot.choreo ?? []).some((a) => (a.characterId || a.performer) === who));
+      if (!earlier) {
+        firstAppearance = (shot.choreo ?? []).find((a) => (a.characterId || a.performer) === who)?.performer;
+        break;
+      }
+    }
+    const energyRising = !!prev && section.energy > prev.section.energy + 0.05;
+    return { prevMatches, firstAppearance, energyRising };
+  };
+
+  // Live assembled prompt for a shot — what generation will actually send
+  // (Character DNA + section + choreography + camera + lighting + story intent).
+  const buildPromptPreview = (section: MvSectionPlan, shot: MvShot): string => {
+    if (!treatment) return "";
+    return buildShotImagePrompt({
+      shot,
+      section,
+      treatment,
+      cast,
+      characters,
+      aspect,
+      choreoHint: song ? choreoHintForTime(getChoreo(song.id), shot.start) : undefined,
+      brief: briefForSection(song, section.sectionId),
+    });
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -580,6 +730,58 @@ export function MvDirector() {
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+                    aria-label="Clip duration"
+                    title="Clip length in seconds (model-dependent; Seedance up to 15s)"
+                  >
+                    {[4, 5, 6, 8, 10, 12, 15].map((d) => (
+                      <option key={d} value={d}>
+                        {d}s
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={resolution}
+                    onChange={(e) => setResolution(e.target.value)}
+                    className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+                    aria-label="Clip resolution"
+                    title="Output resolution (model-dependent)"
+                  >
+                    {["480p", "720p", "1080p"].map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <div
+                    className="flex items-center gap-1 rounded-[var(--radius-input)] border border-border bg-surface px-2"
+                    title="Which audio the model should generate (where supported)"
+                  >
+                    <span className="text-[10px] text-muted">Audio:</span>
+                    {[
+                      { k: "dlg", label: "Dialogue", on: audioDialogue, set: setAudioDialogue },
+                      { k: "sfx", label: "SFX", on: audioSfx, set: setAudioSfx },
+                      { k: "mus", label: "Music", on: audioMusic, set: setAudioMusic },
+                    ].map((a) => (
+                      <button
+                        key={a.k}
+                        type="button"
+                        onClick={() => a.set(!a.on)}
+                        className={cn(
+                          "rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
+                          a.on
+                            ? "bg-primary/85 text-white"
+                            : "bg-elevated/60 text-muted hover:text-foreground"
+                        )}
+                        aria-pressed={a.on}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
                 </>
               )}
               <Button
@@ -632,8 +834,7 @@ export function MvDirector() {
 
       {genError && (
         <div className="border-b border-danger/30 bg-danger/10 px-6 py-2 text-xs text-danger">
-          {genError} — add a key in API Keys, or this runs as a local placeholder
-          in the browser.
+          {genError}
         </div>
       )}
 
@@ -668,13 +869,21 @@ export function MvDirector() {
             onChange={patch}
             onGenerate={generateOne}
             onGenerateClip={generateClip}
+            onGeneratePoseSheet={generatePoseSheet}
             onTune={(section, shot) => setTune({ section, shot })}
             genShotId={genShotId}
             genClipId={genClipId}
+            genPoseId={genPoseId}
             isImageReady={(id) => isReady(findModel(id).keyIds)}
             defaultImageModelId={modelId}
             isVideoReady={(id) => isReady(findVideoModel(id).keyIds)}
             defaultVideoModelId={videoModelId}
+            performers={performers}
+            choreoMoves={choreoMoves}
+            poseSheets={poseSheets}
+            buildPrompt={buildPromptPreview}
+            continuityFor={continuityFor}
+            bpm={song?.bpm ?? 0}
           />
         )}
       </div>
@@ -727,7 +936,8 @@ export function MvDirector() {
                       opts.width,
                       opts.height,
                       refs,
-                      s
+                      s,
+                      opts.apiModel
                     )
                   );
                 }
@@ -750,25 +960,41 @@ function TreatmentView({
   onChange,
   onGenerate,
   onGenerateClip,
+  onGeneratePoseSheet,
   onTune,
   genShotId,
   genClipId,
+  genPoseId,
   isImageReady,
   defaultImageModelId,
   isVideoReady,
   defaultVideoModelId,
+  performers,
+  choreoMoves,
+  poseSheets,
+  buildPrompt,
+  continuityFor,
+  bpm,
 }: {
   treatment: MvTreatment;
   onChange: (t: MvTreatment) => void;
   onGenerate: (section: MvSectionPlan, shot: MvShot) => void;
   onGenerateClip: (section: MvSectionPlan, shot: MvShot) => void;
+  onGeneratePoseSheet: (section: MvSectionPlan, shot: MvShot) => void;
   onTune: (section: MvSectionPlan, shot: MvShot) => void;
   genShotId: string | null;
   genClipId: string | null;
+  genPoseId: string | null;
   isImageReady: (modelId: string) => boolean;
   defaultImageModelId: string;
   isVideoReady: (modelId: string) => boolean;
   defaultVideoModelId: string;
+  performers: PerformerOption[];
+  choreoMoves: string[];
+  poseSheets: { label: string; src: string }[];
+  buildPrompt: (section: MvSectionPlan, shot: MvShot) => string;
+  continuityFor: (section: MvSectionPlan, shot: MvShot) => ContinuityInfo;
+  bpm: number;
 }) {
   const totalShots = treatment.sections.reduce((a, s) => a + s.shots.length, 0);
   const withFrames = treatment.sections.reduce(
@@ -831,13 +1057,21 @@ function TreatmentView({
           }
           onGenerate={onGenerate}
           onGenerateClip={onGenerateClip}
+          onGeneratePoseSheet={onGeneratePoseSheet}
           onTune={onTune}
           genShotId={genShotId}
           genClipId={genClipId}
+          genPoseId={genPoseId}
           isImageReady={isImageReady}
           defaultImageModelId={defaultImageModelId}
           isVideoReady={isVideoReady}
           defaultVideoModelId={defaultVideoModelId}
+          performers={performers}
+          choreoMoves={choreoMoves}
+          poseSheets={poseSheets}
+          buildPrompt={buildPrompt}
+          continuityFor={continuityFor}
+          bpm={bpm}
         />
       ))}
     </div>
@@ -849,25 +1083,41 @@ function SectionCard({
   onChange,
   onGenerate,
   onGenerateClip,
+  onGeneratePoseSheet,
   onTune,
   genShotId,
   genClipId,
+  genPoseId,
   isImageReady,
   defaultImageModelId,
   isVideoReady,
   defaultVideoModelId,
+  performers,
+  choreoMoves,
+  poseSheets,
+  buildPrompt,
+  continuityFor,
+  bpm,
 }: {
   section: MvSectionPlan;
   onChange: (next: MvSectionPlan) => void;
   onGenerate: (section: MvSectionPlan, shot: MvShot) => void;
   onGenerateClip: (section: MvSectionPlan, shot: MvShot) => void;
+  onGeneratePoseSheet: (section: MvSectionPlan, shot: MvShot) => void;
   onTune: (section: MvSectionPlan, shot: MvShot) => void;
   genShotId: string | null;
   genClipId: string | null;
+  genPoseId: string | null;
   isImageReady: (modelId: string) => boolean;
   defaultImageModelId: string;
   isVideoReady: (modelId: string) => boolean;
   defaultVideoModelId: string;
+  performers: PerformerOption[];
+  choreoMoves: string[];
+  poseSheets: { label: string; src: string }[];
+  buildPrompt: (section: MvSectionPlan, shot: MvShot) => string;
+  continuityFor: (section: MvSectionPlan, shot: MvShot) => ContinuityInfo;
+  bpm: number;
 }) {
   const color = sectionColor(section.kind);
   const aColor = approachColor(section.approach);
@@ -929,13 +1179,25 @@ function SectionCard({
               accent={color}
               generating={genShotId === shot.id}
               clipGenerating={genClipId === shot.id}
+              poseGenerating={genPoseId === shot.id}
               isImageReady={isImageReady}
               defaultImageModelId={defaultImageModelId}
               isVideoReady={isVideoReady}
               defaultVideoModelId={defaultVideoModelId}
               onGenerate={() => onGenerate(section, shot)}
               onGenerateClip={() => onGenerateClip(section, shot)}
+              onGeneratePoseSheet={() => onGeneratePoseSheet(section, shot)}
               onTune={() => onTune(section, shot)}
+              performers={performers}
+              choreoMoves={choreoMoves}
+              poseSheets={poseSheets}
+              sectionLabel={section.label}
+              sectionKind={section.kind}
+              energy={section.energy}
+              bpm={bpm}
+              approach={section.approach}
+              continuity={continuityFor(section, shot)}
+              promptPreview={buildPrompt(section, shot)}
               onChange={(next) =>
                 onChange({
                   ...section,
@@ -950,110 +1212,965 @@ function SectionCard({
   );
 }
 
+/** A compact capability-gated reference upload chip (end frame / audio / video). */
+function OmniSlot({
+  label,
+  accept,
+  filled,
+  preview,
+  onPick,
+  onClear,
+}: {
+  label: string;
+  accept: string;
+  filled: boolean;
+  preview?: string;
+  onPick: (file: File) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="relative">
+      <label
+        className={cn(
+          "flex h-11 w-11 cursor-pointer flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border text-center text-[8px] font-medium leading-tight",
+          filled
+            ? "border-primary/60 bg-primary/10 text-primary"
+            : "border-dashed border-border text-muted hover:border-primary/50 hover:text-primary"
+        )}
+        title={`Attach ${label}`}
+      >
+        {preview ? (
+          <AssetImage src={preview} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <>
+            {filled ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3 w-3" />}
+            <span className="px-0.5">{label}</span>
+          </>
+        )}
+        <input
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onPick(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {filled && (
+        <button
+          onClick={onClear}
+          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-white"
+          title={`Remove ${label}`}
+        >
+          <X className="h-2.5 w-2.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** A performer the user can assign a choreography move to. */
+interface PerformerOption {
+  name: string;
+  characterId?: string;
+  role: string;
+  /** Portrait src for a visual performer chip, when available. */
+  image?: string;
+}
+
+/** How a shot relates to its neighbours, for continuity intelligence. */
+interface ContinuityInfo {
+  /** Same camera + lighting + intent as the previous shot. */
+  prevMatches: boolean;
+  /** A performer making their first appearance in the video, if any. */
+  firstAppearance?: string;
+  /** This section's energy is higher than the previous shot's. */
+  energyRising: boolean;
+}
+
+/** Per-shot choreography + story-intent + editable final prompt. */
+function ChoreoPanel({
+  shot,
+  performers,
+  choreoMoves,
+  poseSheets,
+  assignments,
+  onAdd,
+  onUpdate,
+  onRemove,
+  onChange,
+}: {
+  shot: MvShot;
+  performers: PerformerOption[];
+  choreoMoves: string[];
+  poseSheets: { label: string; src: string }[];
+  assignments: ChoreoAssignment[];
+  onAdd: () => void;
+  onUpdate: (i: number, patch: Partial<ChoreoAssignment>) => void;
+  onRemove: (i: number) => void;
+  onChange: (next: MvShot) => void;
+}) {
+  const inputCls =
+    "h-7 w-full rounded border border-border bg-surface px-1.5 text-[11px] focus-visible:border-primary focus-visible:outline-none";
+  return (
+    <div className="mt-1.5 space-y-2 rounded-md border border-border/60 bg-elevated/30 p-2">
+      {/* Story intent */}
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+          Story intent (emotional goal of camera + light)
+        </span>
+        <textarea
+          value={shot.storyIntent ?? ""}
+          onChange={(e) => onChange({ ...shot, storyIntent: e.target.value || undefined })}
+          rows={2}
+          className="mt-0.5 w-full rounded border border-border bg-surface px-1.5 py-1 text-[11px] focus-visible:border-primary focus-visible:outline-none"
+          placeholder="e.g. Low-angle push-in makes Neo Dude feel heroic as he celebrates the wonder of creation"
+        />
+      </label>
+
+      {/* Performer assignments */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+          Choreography assignments
+        </span>
+        <datalist id={`moves-${shot.id}`}>
+          {choreoMoves.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
+        <datalist id={`perf-${shot.id}`}>
+          {performers.map((p, i) => (
+            <option key={p.characterId ?? `${p.name}-${i}`} value={p.name} />
+          ))}
+        </datalist>
+        {assignments.length === 0 && (
+          <p className="text-[10px] text-muted/70">
+            No moves assigned — the shot uses the section's auto choreography. Add one to
+            assign a specific performer + move.
+          </p>
+        )}
+        {assignments.map((a, i) => (
+          <div key={i} className="rounded border border-border/60 bg-surface/50 p-1.5">
+            {/* Visual performer picker — portrait chips */}
+            {performers.length > 0 && (
+              <div className="mb-1 flex gap-1.5 overflow-x-auto pb-1">
+                {performers.map((p, pi) => {
+                  const on = a.performer === p.name;
+                  return (
+                    <button
+                      key={p.characterId ?? `${p.name}-${pi}`}
+                      type="button"
+                      onClick={() =>
+                        onUpdate(i, {
+                          performer: p.name,
+                          characterId: p.characterId,
+                          role: p.role === "Character" ? a.role : mapCastRole(p.role),
+                        })
+                      }
+                      className={cn(
+                        "flex shrink-0 items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 transition-colors",
+                        on
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
+                      )}
+                      title={`${p.name} — ${p.role}`}
+                    >
+                      {p.image ? (
+                        <AssetImage src={p.image} alt={p.name} className="h-7 w-7 rounded-full object-cover" />
+                      ) : (
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-elevated text-[10px] font-semibold uppercase">
+                          {p.name.slice(0, 2)}
+                        </span>
+                      )}
+                      <span className="text-[12px] font-medium">{p.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-1">
+              <input
+                list={`perf-${shot.id}`}
+                value={a.performer}
+                onChange={(e) => {
+                  const match = performers.find((p) => p.name === e.target.value);
+                  onUpdate(i, { performer: e.target.value, characterId: match?.characterId });
+                }}
+                className={inputCls}
+                placeholder="Performer (or pick above)"
+              />
+              <select
+                value={a.role}
+                onChange={(e) => onUpdate(i, { role: e.target.value })}
+                className={inputCls}
+              >
+                {CHOREO_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Pose-sheet thumbnails — generated in Choreography (visual moves) */}
+            {poseSheets.length > 0 && (
+              <div className="mt-1 flex gap-1.5 overflow-x-auto pb-1">
+                {poseSheets.map((ps, psi) => (
+                  <button
+                    key={psi}
+                    type="button"
+                    onClick={() => {
+                      onUpdate(i, { move: ps.label });
+                      const cur = shot.refImages ?? [];
+                      if (!cur.includes(ps.src)) onChange({ ...shot, refImages: [...cur, ps.src] });
+                    }}
+                    className="flex w-16 shrink-0 flex-col items-center gap-0.5"
+                    title={`Use pose: ${ps.label} (adds it as a reference image)`}
+                  >
+                    <AssetImage
+                      src={ps.src}
+                      alt={ps.label}
+                      className={cn(
+                        "h-16 w-16 rounded-md border-2 object-cover",
+                        a.move === ps.label ? "border-primary" : "border-border"
+                      )}
+                    />
+                    <span className="w-full truncate text-center text-[9px] text-muted">{ps.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Visual move browser — from the song's choreography library */}
+            {choreoMoves.length > 0 && (
+              <div className="mt-1 flex max-h-24 flex-wrap gap-1 overflow-y-auto rounded border border-border/40 bg-elevated/20 p-1">
+                {choreoMoves.map((m, mi) => (
+                  <button
+                    key={mi}
+                    type="button"
+                    onClick={() => onUpdate(i, { move: m })}
+                    className={cn(
+                      "rounded border px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
+                      a.move === m
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
+            <input
+              list={`moves-${shot.id}`}
+              value={a.move}
+              onChange={(e) => onUpdate(i, { move: e.target.value })}
+              className={cn(inputCls, "mt-1")}
+              placeholder={
+                choreoMoves.length
+                  ? "Move / pose (pick above or type)"
+                  : "Move / pose — generate choreography to browse the library, or type here"
+              }
+            />
+            <div className="mt-1 grid grid-cols-3 gap-1">
+              <select
+                value={a.energy ?? ""}
+                onChange={(e) => onUpdate(i, { energy: e.target.value || undefined })}
+                className={inputCls}
+                title="Energy"
+              >
+                {CHOREO_ENERGY.map((en) => (
+                  <option key={en} value={en}>
+                    {en || "Energy…"}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={a.expression ?? ""}
+                onChange={(e) => onUpdate(i, { expression: e.target.value || undefined })}
+                className={inputCls}
+                placeholder="Expression"
+              />
+              <input
+                value={a.formation ?? ""}
+                onChange={(e) => onUpdate(i, { formation: e.target.value || undefined })}
+                className={inputCls}
+                placeholder="Formation"
+              />
+            </div>
+            <button
+              onClick={() => onRemove(i)}
+              className="mt-1 text-[10px] text-danger hover:underline"
+            >
+              Remove assignment
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={onAdd}
+          className="flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-[10px] font-medium text-muted hover:border-primary/50 hover:text-primary"
+        >
+          <Plus className="h-3 w-3" /> Add performer + move
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
+/** Roles a choreography move can be assigned to within a shot. */
+const CHOREO_ROLES = [
+  "Lead Artist",
+  "Featured Artist",
+  "Backup Singer",
+  "Dancer",
+  "Dance Crew",
+  "Choir",
+  "Band Member",
+  "Character",
+];
+
+/** Energy levels for a choreography assignment. */
+const CHOREO_ENERGY = ["", "Low", "Medium", "Medium-high", "High", "Explosive"];
+
+/** Map a cast PerformerRole to the nearest choreography-assignment role label. */
+function mapCastRole(role: string): string {
+  switch (role) {
+    case "Lead Singer":
+      return "Lead Artist";
+    case "Backing Singer":
+      return "Backup Singer";
+    case "Featured Artist":
+      return "Featured Artist";
+    case "Dancer":
+      return "Dancer";
+    case "Band Member":
+      return "Band Member";
+    default:
+      return CHOREO_ROLES.includes(role) ? role : "Lead Artist";
+  }
+}
+
+/** Camera direction presets — label (chip) → prompt value (technical + intent). */
+const CAMERA_PRESETS: { label: string; value: string }[] = [
+  { label: "Push In", value: "Slow push-in to increase emotional intensity" },
+  { label: "Orbit", value: "Orbit around the subject to create wonder" },
+  { label: "Crane Up", value: "Crane up to reveal scale" },
+  { label: "Wide", value: "Wide establishing shot" },
+  { label: "Close Up", value: "Intimate close-up on the subject" },
+  { label: "Low Angle", value: "Low-angle hero shot — make the performer feel heroic" },
+  { label: "Handheld", value: "Handheld motion to create urgency" },
+  { label: "Dolly Back", value: "Slow dolly back to show isolation" },
+];
+
+/** Lighting direction presets — label (chip) → prompt value (look + intent). */
+const LIGHTING_PRESETS: { label: string; value: string }[] = [
+  { label: "Gold Rim", value: "Gold rim light for triumph" },
+  { label: "Blue Ambient", value: "Soft blue ambient light for reflection" },
+  { label: "Sunset Glow", value: "Warm sunset glow for hope" },
+  { label: "Top Light", value: "Harsh top light for tension" },
+  { label: "Strobe", value: "Strobe lighting for high-energy dance" },
+  { label: "Spotlights", value: "Stage spotlight pools" },
+  { label: "Concert", value: "Concert lighting — haze and beams" },
+  { label: "Heavenly", value: "Soft heavenly glow for awe and worship" },
+];
+
+/** First-class story-intent emotions, selectable as tags. */
+const STORY_EMOTIONS = [
+  "Wonder", "Triumph", "Mystery", "Discovery", "Joy",
+  "Isolation", "Celebration", "Tension", "Hope", "Awe",
+];
+
+/** A selectable directing chip-card (camera / lighting preset). */
+function DirChip({
+  label,
+  active,
+  accent,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  accent?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-md border px-3 py-1.5 text-[13px] font-medium leading-tight transition-colors",
+        active
+          ? "border-primary bg-primary/15 text-primary"
+          : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
+      )}
+      style={active && accent ? { borderColor: accent, color: accent, background: `${accent}1a` } : undefined}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** Read a picked file into a data URL for storage as a shot reference. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+/** Beat range a shot spans, from the song tempo. */
+function beatRangeLabel(start: number, end: number, bpm: number): string {
+  if (!bpm) return "";
+  const a = Math.floor((start * bpm) / 60) + 1;
+  const b = Math.max(a, Math.ceil((end * bpm) / 60));
+  return `Beat ${a}–${b}`;
+}
+
+/** Human energy band from a 0..1 section energy. */
+function energyLabel(e: number): string {
+  if (e >= 0.66) return "Peak";
+  if (e >= 0.4) return "Build";
+  return "Low";
+}
+
+/** A plain-English "Director's Intent" summary assembled from the shot's pieces. */
+function directorSummary(shot: MvShot, approach: string): string {
+  const emotions = shot.storyIntent?.trim();
+  const cam = shot.movement?.toLowerCase();
+  const light = shot.lighting?.toLowerCase();
+  const perfLine = shot.choreo?.length
+    ? shot.choreo
+        .filter((a) => a.performer || a.move)
+        .map((a) => `${a.performer || "a performer"}${a.move ? ` (${a.move})` : ""}`)
+        .join("; ")
+    : shot.performanceNote?.trim();
+  const parts = [
+    `This ${approach.toLowerCase()} shot ${emotions ? `leans into ${emotions.toLowerCase()}` : "carries the section's energy"}.`,
+    cam ? `The camera ${cam}.` : "",
+    light ? `Lighting: ${light}.` : "",
+    perfLine ? `Performance: ${perfLine}.` : "No performer in frame — the world itself becomes the subject.",
+  ];
+  return parts.filter(Boolean).join(" ");
+}
+
+/** Local "Director Brain" — context-aware tips + one-click actions for a shot. */
+function directorBrain(
+  shot: MvShot,
+  sectionKind: string,
+  energy: number,
+  approach: string
+): { tips: string[]; actions: { label: string; patch: Partial<MvShot> }[] } {
+  const tips: string[] = [];
+  const actions: { label: string; patch: Partial<MvShot> }[] = [];
+  const isChorus = /chorus|drop|hook/i.test(sectionKind);
+  const isIntro = /intro|outro/i.test(sectionKind);
+
+  if (!shot.storyIntent?.trim()) {
+    const intent = isChorus ? "Triumph, Celebration" : isIntro ? "Wonder, Mystery" : "Discovery";
+    tips.push(`No story intent yet — ${isChorus ? "choruses hit hardest with triumph/celebration" : isIntro ? "intros set wonder + mystery" : "give the shot a reason to exist"}.`);
+    actions.push({ label: `Set intent: ${intent}`, patch: { storyIntent: intent } });
+  }
+  if (isChorus && approach !== "Abstract" && !shot.choreo?.length) {
+    tips.push("Chorus = performance payoff. Assign your lead + a move in Choreography & Direction.");
+  }
+  // Camera suggestion by section.
+  const camSuggest = isChorus
+    ? CAMERA_PRESETS.find((c) => c.label === "Low Angle")!
+    : isIntro
+      ? CAMERA_PRESETS.find((c) => c.label === "Push In")!
+      : CAMERA_PRESETS.find((c) => c.label === "Close Up")!;
+  if (shot.movement !== camSuggest.value) {
+    actions.push({ label: `Camera: ${camSuggest.label}`, patch: { movement: camSuggest.value } });
+  }
+  // Lighting suggestion by energy.
+  const lightSuggest = energy >= 0.66
+    ? LIGHTING_PRESETS.find((l) => l.label === "Concert")!
+    : energy >= 0.4
+      ? LIGHTING_PRESETS.find((l) => l.label === "Gold Rim")!
+      : LIGHTING_PRESETS.find((l) => l.label === "Blue Ambient")!;
+  if (shot.lighting !== lightSuggest.value) {
+    actions.push({ label: `Lighting: ${lightSuggest.label}`, patch: { lighting: lightSuggest.value } });
+  }
+  return { tips, actions };
+}
+
+/** Compact a model label for an on-preview badge: drop the ★ and the trailing
+ *  provider parenthetical, and truncate. "★ Seedance 2.0 (Fal · audio)" → "Seedance 2.0". */
+function badgeLabel(label: string): string {
+  const cleaned = label.replace(/^★\s*/, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+  return cleaned.length > 22 ? `${cleaned.slice(0, 21)}…` : cleaned;
+}
+
 function ShotRow({
   shot,
   index,
   accent,
   generating,
   clipGenerating,
+  poseGenerating,
   isImageReady,
   defaultImageModelId,
   isVideoReady,
   defaultVideoModelId,
   onGenerate,
   onGenerateClip,
+  onGeneratePoseSheet,
   onTune,
   onChange,
+  performers,
+  choreoMoves,
+  poseSheets,
+  sectionLabel,
+  sectionKind,
+  energy,
+  bpm,
+  approach,
+  continuity,
+  promptPreview,
 }: {
   shot: MvShot;
   index: number;
   accent: string;
   generating: boolean;
   clipGenerating: boolean;
+  poseGenerating: boolean;
   isImageReady: (modelId: string) => boolean;
   defaultImageModelId: string;
   isVideoReady: (modelId: string) => boolean;
   defaultVideoModelId: string;
   onGenerate: () => void;
   onGenerateClip: () => void;
+  onGeneratePoseSheet: () => void;
   onTune: () => void;
   onChange: (next: MvShot) => void;
+  performers: PerformerOption[];
+  choreoMoves: string[];
+  poseSheets: { label: string; src: string }[];
+  sectionLabel: string;
+  sectionKind: string;
+  energy: number;
+  bpm: number;
+  approach: string;
+  continuity: ContinuityInfo;
+  promptPreview: string;
 }) {
+  const focusShotInTimeline = useAppStore((s) => s.focusShotInTimeline);
   const effectiveImageModel = shot.imageProvider ?? defaultImageModelId;
   const imageReady = isImageReady(effectiveImageModel);
   const effectiveVideoModel = shot.videoProvider ?? defaultVideoModelId;
   const videoReady = isVideoReady(effectiveVideoModel);
+  const imgModelLabel =
+    GEN_MODELS.find((m) => m.id === effectiveImageModel)?.label ?? "Frame";
+  const vidModelLabel = VIDEO_MODELS.find((m) => m.id === effectiveVideoModel)?.label;
+  const caps = videoCaps(effectiveVideoModel);
+  const omniAudio = shot.refAudio ?? [];
+  const omniVideo = shot.refVideo ?? [];
   const [preview, setPreview] = useState<null | "image" | "video">(null);
   const [assetPicker, setAssetPicker] = useState(false);
+  const [showChoreo, setShowChoreo] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const refs = shot.refImages ?? [];
+  const assignments = shot.choreo ?? [];
 
   const removeRef = (i: number) =>
     onChange({ ...shot, refImages: refs.filter((_, idx) => idx !== i) });
 
+  // --- choreography assignment helpers -------------------------------------
+  const updateAssignment = (i: number, patch: Partial<ChoreoAssignment>) =>
+    onChange({
+      ...shot,
+      choreo: assignments.map((a, idx) => (idx === i ? { ...a, ...patch } : a)),
+    });
+  const addAssignment = () =>
+    onChange({
+      ...shot,
+      choreo: [...assignments, { performer: "", role: "Lead Artist", move: "" }],
+    });
+  const removeAssignment = (i: number) =>
+    onChange({ ...shot, choreo: assignments.filter((_, idx) => idx !== i) });
+
+  const toggleEmotion = (emotion: string) => {
+    const cur = shot.storyIntent ?? "";
+    const re = new RegExp(`\\b${emotion}\\b`, "i");
+    const next = re.test(cur)
+      ? cur.replace(new RegExp(`\\s*,?\\s*\\b${emotion}\\b\\s*,?`, "i"), " ").replace(/\s{2,}/g, " ").replace(/^[,\s]+|[,\s]+$/g, "")
+      : cur
+        ? `${cur}, ${emotion}`
+        : emotion;
+    onChange({ ...shot, storyIntent: next || undefined });
+  };
+
   return (
-    <div className="flex gap-3 rounded-[var(--radius-button)] border border-border bg-surface p-3">
-      <div className="flex flex-col items-center gap-1 pt-0.5">
+    <div
+      className="overflow-hidden rounded-lg border border-border bg-surface"
+      style={{ borderLeft: `3px solid ${accent}` }}
+    >
+      {/* Directing-card header */}
+      <div className="flex items-center gap-2 border-b border-border/60 bg-elevated/30 px-3 py-2">
         <span
-          className="flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-semibold text-white"
+          className="flex h-6 min-w-[1.5rem] items-center justify-center rounded-md px-1.5 text-[11px] font-bold text-white"
           style={{ backgroundColor: accent }}
         >
           {index + 1}
         </span>
-        <span className="text-[10px] tabular-nums text-muted">
-          {formatTime(shot.start)}
+        <span
+          className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
+          style={{ background: `${accent}22`, color: accent }}
+        >
+          {sectionLabel}
+        </span>
+        <span className="rounded bg-elevated px-1.5 py-0.5 text-[10px] font-medium text-muted">
+          {approach}
+        </span>
+        {/* Music sync */}
+        <span className="ml-auto flex items-center gap-2 text-[10px] tabular-nums text-muted">
+          <span>{formatTime(shot.start)}–{formatTime(shot.end)}</span>
+          {bpm > 0 && <span className="hidden sm:inline">{beatRangeLabel(shot.start, shot.end, bpm)}</span>}
+          <span
+            className="rounded px-1.5 py-0.5 font-medium not-italic"
+            style={{ background: `${accent}1f`, color: accent }}
+            title="Section energy"
+          >
+            {energyLabel(energy)}
+          </span>
+          <button
+            type="button"
+            onClick={() => focusShotInTimeline(shot.id)}
+            className="rounded p-0.5 text-muted hover:bg-primary/10 hover:text-primary"
+            title="Show this shot's position on the Timeline"
+            aria-label={`Locate shot ${index + 1} on the Timeline`}
+          >
+            <MapPin className="h-3.5 w-3.5" />
+          </button>
         </span>
       </div>
-      <div className="min-w-0 flex-1 space-y-1.5">
-        {shot.lyric && (
-          <div className="flex items-start gap-1.5 text-xs text-accent">
-            <Quote className="mt-0.5 h-3 w-3 shrink-0" />
-            <span className="italic">{shot.lyric}</span>
+
+      <div className="flex gap-3 p-3">
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {shot.lyric ? (
+            <div className="flex items-start gap-1.5 text-xs text-accent">
+              <Quote className="mt-0.5 h-3 w-3 shrink-0" />
+              <span className="italic">{shot.lyric}</span>
+            </div>
+          ) : (
+            <p className="text-[10px] italic text-muted/60">No lyric in this window — instrumental / atmosphere.</p>
+          )}
+          <MentionTextarea
+            value={shot.idea}
+            onChange={(idea) => onChange({ ...shot, idea })}
+            onMention={(idea, src) =>
+              onChange({
+                ...shot,
+                idea,
+                refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
+              })
+            }
+            className="text-sm font-semibold"
+            ariaLabel={`Shot ${index + 1} idea`}
+            placeholder="Describe the shot… type @ to reference a character, set, or prop"
+          />
+
+          {/* Director's Intent — auto summary */}
+          <div className="rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-accent/80">🎬 Director's intent</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">{directorSummary(shot, approach)}</p>
+          </div>
+
+          {/* Director Brain — context-aware suggestions */}
+          {(() => {
+            const brain = directorBrain(shot, sectionKind, energy, approach);
+            if (brain.tips.length === 0 && brain.actions.length === 0) return null;
+            return (
+              <div className="rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">🧠 Director Brain</p>
+                {brain.tips.map((t, ti) => (
+                  <p key={ti} className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                    {t}
+                  </p>
+                ))}
+                {brain.actions.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {brain.actions.map((act, ai) => (
+                      <button
+                        key={ai}
+                        type="button"
+                        onClick={() => onChange({ ...shot, ...act.patch })}
+                        className="rounded-md border border-primary/40 bg-surface px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+                      >
+                        + {act.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Continuity intelligence — how this shot relates to its neighbours */}
+          {(continuity.prevMatches || continuity.firstAppearance || continuity.energyRising) && (
+            <div className="rounded-md border border-warning/30 bg-warning/5 px-2 py-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-warning/80">🔗 Continuity</p>
+              {continuity.firstAppearance && (
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                  First appearance of <span className="font-medium text-foreground">{continuity.firstAppearance}</span> — establish importance.
+                </p>
+              )}
+              {continuity.prevMatches && (
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                  Same look as the previous shot — continue the language, or push the energy.
+                </p>
+              )}
+              {continuity.energyRising && !continuity.prevMatches && (
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                  Energy rises into this section — a bolder camera + brighter light sells the lift.
+                </p>
+              )}
+              <div className="mt-1 flex flex-wrap gap-1">
+                {continuity.firstAppearance && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onChange({
+                        ...shot,
+                        movement: CAMERA_PRESETS.find((c) => c.label === "Low Angle")!.value,
+                        lighting: LIGHTING_PRESETS.find((l) => l.label === "Gold Rim")!.value,
+                        storyIntent: /\bwonder\b/i.test(shot.storyIntent ?? "")
+                          ? shot.storyIntent
+                          : shot.storyIntent
+                            ? `${shot.storyIntent}, Wonder`
+                            : "Wonder",
+                      })
+                    }
+                    className="rounded-md border border-warning/50 bg-surface px-2 py-1 text-[11px] font-medium text-warning hover:bg-warning/10"
+                  >
+                    ✨ Apply hero look
+                  </button>
+                )}
+                {(continuity.prevMatches || continuity.energyRising) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onChange({
+                        ...shot,
+                        movement: CAMERA_PRESETS.find((c) => c.label === "Push In")!.value,
+                        lighting: LIGHTING_PRESETS.find((l) => l.label === "Concert")!.value,
+                      })
+                    }
+                    className="rounded-md border border-warning/50 bg-surface px-2 py-1 text-[11px] font-medium text-warning hover:bg-warning/10"
+                  >
+                    📈 Intensify
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Story intent — first-class */}
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+              🎯 Why this shot exists
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {STORY_EMOTIONS.map((e) => (
+                <DirChip
+                  key={e}
+                  label={e}
+                  active={new RegExp(`\\b${e}\\b`, "i").test(shot.storyIntent ?? "")}
+                  accent={accent}
+                  onClick={() => toggleEmotion(e)}
+                />
+              ))}
+            </div>
+            <input
+              value={shot.storyIntent ?? ""}
+              onChange={(e) => onChange({ ...shot, storyIntent: e.target.value || undefined })}
+              className="w-full rounded border border-border bg-surface px-1.5 py-1 text-[11px] focus-visible:border-primary focus-visible:outline-none"
+              placeholder="Refine the story intent… (e.g. Neo Dude celebrates the wonder of creation)"
+            />
+          </div>
+
+          {/* Camera direction */}
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+              🎬 Camera <span className="font-normal normal-case text-muted/60">— {shot.movement}</span>
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {CAMERA_PRESETS.map((c) => (
+                <DirChip
+                  key={c.label}
+                  label={c.label}
+                  active={shot.movement === c.value}
+                  onClick={() => onChange({ ...shot, movement: c.value })}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Lighting direction */}
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+              💡 Lighting <span className="font-normal normal-case text-muted/60">— {shot.lighting}</span>
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {LIGHTING_PRESETS.map((l) => (
+                <DirChip
+                  key={l.label}
+                  label={l.label}
+                  active={shot.lighting === l.value}
+                  onClick={() => onChange({ ...shot, lighting: l.value })}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Shot type + cut (compact) */}
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted">
+            <MetaEdit label="Shot" value={shot.shotType} onChange={(v) => onChange({ ...shot, shotType: v })} />
+            <MetaEdit label="Cut" value={shot.transition} onChange={(v) => onChange({ ...shot, transition: v })} />
+          </div>
+
+          {/* Performance */}
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+              🎭 Performance
+            </p>
+            <MentionTextarea
+              value={shot.performanceNote}
+              onChange={(v) => onChange({ ...shot, performanceNote: v })}
+              onMention={(v, src) =>
+                onChange({
+                  ...shot,
+                  performanceNote: v,
+                  refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
+                })
+              }
+              rows={1}
+              className="text-[11px] italic text-muted/90"
+              ariaLabel={`Shot ${index + 1} performance note`}
+              placeholder="Performance note… type @ to reference a performer"
+            />
+          </div>
+
+        {/* Choreography & story-intent toggle */}
+        <button
+          type="button"
+          onClick={() => setShowChoreo((v) => !v)}
+          className={cn(
+            "flex w-full items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+            assignments.length || shot.storyIntent || shot.promptOverride
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-border bg-surface text-muted hover:text-foreground"
+          )}
+        >
+          <Sparkles className="h-3 w-3" />
+          Choreography & Direction
+          {assignments.length > 0 && (
+            <span className="ml-0.5 rounded bg-primary/20 px-1 text-[9px]">
+              {assignments.length}
+            </span>
+          )}
+          {shot.promptOverride && (
+            <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">custom prompt</span>
+          )}
+          <span className="ml-auto text-[9px]">{showChoreo ? "▲" : "▼"}</span>
+        </button>
+
+        {showChoreo && (
+          <ChoreoPanel
+            shot={shot}
+            performers={performers}
+            choreoMoves={choreoMoves}
+            poseSheets={poseSheets}
+            assignments={assignments}
+            onAdd={addAssignment}
+            onUpdate={updateAssignment}
+            onRemove={removeAssignment}
+            onChange={onChange}
+          />
+        )}
+
+        {/* View Final Prompt — the assembled prompt generation will send */}
+        <button
+          type="button"
+          onClick={() => setShowPrompt((v) => !v)}
+          className={cn(
+            "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors",
+            shot.promptOverride
+              ? "border-accent/60 bg-accent/10 text-accent"
+              : "border-border bg-surface text-foreground hover:border-primary/40"
+          )}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          View Final Prompt
+          {shot.promptOverride && (
+            <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">edited</span>
+          )}
+          <span className="ml-auto text-[9px]">{showPrompt ? "▲" : "▼"}</span>
+        </button>
+        {showPrompt && (
+          <div className="space-y-1.5 rounded-md border border-border/60 bg-elevated/30 p-2">
+            <p className="text-[10px] leading-relaxed text-muted/70">
+              Character Bible + Story Intent + Camera + Lighting + Performance + Choreography + Style → final prompt.
+            </p>
+            {shot.promptOverride ? (
+              <>
+                <textarea
+                  value={shot.promptOverride}
+                  onChange={(e) => onChange({ ...shot, promptOverride: e.target.value || undefined })}
+                  rows={6}
+                  className="w-full rounded border border-accent/50 bg-surface px-2 py-1.5 text-[11px] leading-relaxed focus-visible:border-primary focus-visible:outline-none"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-accent">✎ Manual prompt — sent verbatim.</span>
+                  <button
+                    onClick={() => onChange({ ...shot, promptOverride: undefined })}
+                    className="text-[10px] text-danger hover:underline"
+                  >
+                    Reset to auto
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-border/60 bg-surface px-2 py-1.5 text-[11px] leading-relaxed text-muted">
+                  {promptPreview || "Add direction above to assemble the prompt…"}
+                </p>
+                <button
+                  onClick={() => onChange({ ...shot, promptOverride: promptPreview })}
+                  className="rounded-md border border-primary/40 bg-surface px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+                >
+                  ✎ Edit prompt manually
+                </button>
+              </>
+            )}
           </div>
         )}
-        <MentionTextarea
-          value={shot.idea}
-          onChange={(idea) => onChange({ ...shot, idea })}
-          onMention={(idea, src) =>
-            onChange({
-              ...shot,
-              idea,
-              refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
-            })
-          }
-          className="font-medium"
-          ariaLabel={`Shot ${index + 1} idea`}
-          placeholder="Describe the shot… type @ to reference a character, set, or prop"
-        />
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted">
-          <MetaEdit label="Shot" value={shot.shotType} onChange={(v) => onChange({ ...shot, shotType: v })} />
-          <MetaEdit label="Move" value={shot.movement} onChange={(v) => onChange({ ...shot, movement: v })} />
-          <MetaEdit label="Light" value={shot.lighting} onChange={(v) => onChange({ ...shot, lighting: v })} />
-          <MetaEdit label="Cut" value={shot.transition} onChange={(v) => onChange({ ...shot, transition: v })} />
-        </div>
-        <MentionTextarea
-          value={shot.performanceNote}
-          onChange={(v) => onChange({ ...shot, performanceNote: v })}
-          onMention={(v, src) =>
-            onChange({
-              ...shot,
-              performanceNote: v,
-              refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
-            })
-          }
-          rows={1}
-          className="text-[11px] italic text-muted/90"
-          ariaLabel={`Shot ${index + 1} performance note`}
-          placeholder="Performance note… type @ to reference a performer"
-        />
       </div>
 
-      {/* Frame thumbnail / generate */}
-      <div className="w-52 shrink-0">
+      {/* Frame / clip preview monitor */}
+      <div className="w-80 shrink-0 lg:w-96">
         <div
-          className="group relative aspect-video overflow-hidden rounded-md border border-border bg-elevated/50"
-          style={{ borderColor: `${accent}40` }}
+          className="group relative aspect-video min-h-[200px] overflow-hidden rounded-lg border-2 bg-elevated/50 shadow-sm"
+          style={{ borderColor: `${accent}55` }}
         >
-          {shot.imageUrl ? (
+          {/* Prefer the rendered clip when present, else the frame. */}
+          {shot.videoUrl ? (
+            <button
+              type="button"
+              className="h-full w-full cursor-zoom-in"
+              onClick={() => setPreview("video")}
+              title="Click to play full size"
+            >
+              <AssetVideo
+                src={shot.videoUrl}
+                poster={shot.imageUrl}
+                controls={false}
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ) : shot.imageUrl ? (
             <button
               type="button"
               className="h-full w-full cursor-zoom-in"
@@ -1067,15 +2184,36 @@ function ShotRow({
               />
             </button>
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <ImageIcon className="h-5 w-5 text-muted/50" />
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted/50">
+              <ImageIcon className="h-8 w-8" />
+              <span className="text-[10px]">No frame yet</span>
             </div>
           )}
-          {generating && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          {(generating || clipGenerating) && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/75">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+              <span className="text-[10px] font-medium text-muted">
+                {clipGenerating ? "Rendering clip…" : "Rendering frame…"}
+              </span>
             </div>
           )}
+          {/* Provider / model / aspect badges */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-1 bg-gradient-to-t from-black/75 to-transparent p-1.5">
+            {shot.videoUrl && vidModelLabel ? (
+              <span className="rounded bg-success/90 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                ▶ {badgeLabel(vidModelLabel)}
+              </span>
+            ) : shot.imageUrl ? (
+              <span className="rounded bg-primary/85 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                {badgeLabel(imgModelLabel)}
+              </span>
+            ) : null}
+            {(shot.imageUrl || shot.videoUrl) && (
+              <span className="rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white/90">
+                16:9
+              </span>
+            )}
+          </div>
           {/* hover actions */}
           {(shot.imageUrl || shot.videoUrl) && (
             <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -1128,6 +2266,32 @@ function ShotRow({
             ))}
           </div>
         )}
+        {(shot.imageUrl || shot.videoUrl) && (
+          <div className="mt-1.5 flex gap-1.5">
+            {shot.videoUrl && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1 px-2"
+                onClick={() => downloadAsset(shot.videoUrl!, `shot-${index + 1}.mp4`)}
+                title="Download the rendered clip"
+              >
+                <Download className="h-3.5 w-3.5" /> Clip
+              </Button>
+            )}
+            {shot.imageUrl && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1 px-2"
+                onClick={() => downloadAsset(shot.imageUrl!, `shot-${index + 1}.png`)}
+                title="Download the frame image"
+              >
+                <Download className="h-3.5 w-3.5" /> Frame
+              </Button>
+            )}
+          </div>
+        )}
         <div className="mt-1.5 flex gap-1.5">
           <Button
             variant="secondary"
@@ -1178,6 +2342,25 @@ function ShotRow({
             <SlidersHorizontal className="h-3.5 w-3.5" />
           </Button>
         </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-1.5 w-full px-2"
+          onClick={onGeneratePoseSheet}
+          disabled={poseGenerating || !imageReady}
+          title={
+            imageReady
+              ? "Generate a pose / model sheet for this shot's performer + moves — saved to the library and shown in the move browser"
+              : "No image provider key — add one in API Keys"
+          }
+        >
+          {poseGenerating ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <LayoutGrid className="h-3.5 w-3.5" />
+          )}
+          Pose sheet
+        </Button>
         <select
           value={shot.imageProvider ?? ""}
           onChange={(e) =>
@@ -1233,17 +2416,121 @@ function ShotRow({
             <button
               onClick={() => setAssetPicker(true)}
               className="flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border border-dashed border-border text-muted hover:border-primary/50 hover:text-primary"
-              title="Add character / environment / prop references"
+              title="Add character / environment / prop references from your Bibles"
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="text-[8px] font-medium">Assets</span>
             </button>
+            <label
+              className="flex h-11 w-11 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border border-dashed border-border text-muted hover:border-primary/50 hover:text-primary"
+              title="Upload an image file directly as a reference (no library step)"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              <span className="text-[8px] font-medium">Upload</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  const urls = await Promise.all(files.map(fileToDataUrl));
+                  if (urls.length) onChange({ ...shot, refImages: [...refs, ...urls] });
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
           {refs.length > 0 && (
             <p className="mt-1 text-[9px] text-muted">
               {refs.length} reference{refs.length === 1 ? "" : "s"} guide this shot
             </p>
           )}
+        </div>
+
+        {/* Omni references — capability-gated by the chosen video model */}
+        {(caps.endFrame || caps.audioRef || caps.videoRef) && (
+          <div className="mt-2 space-y-1 rounded-md border border-border/60 bg-elevated/30 p-1.5">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-muted/80">
+              Omni reference
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {caps.endFrame && (
+                <OmniSlot
+                  label="End frame"
+                  accept="image/*"
+                  filled={!!shot.endFrame}
+                  preview={shot.endFrame}
+                  onPick={async (f) =>
+                    onChange({ ...shot, endFrame: await fileToDataUrl(f) })
+                  }
+                  onClear={() => onChange({ ...shot, endFrame: undefined })}
+                />
+              )}
+              {caps.audioRef &&
+                omniAudio.map((_, i) => (
+                  <OmniSlot
+                    key={`a${i}`}
+                    label={`Audio ${i + 1}`}
+                    accept="audio/*"
+                    filled
+                    onPick={() => {}}
+                    onClear={() =>
+                      onChange({
+                        ...shot,
+                        refAudio: omniAudio.filter((_, idx) => idx !== i),
+                      })
+                    }
+                  />
+                ))}
+              {caps.audioRef && omniAudio.length < 3 && (
+                <OmniSlot
+                  label="Audio ref"
+                  accept="audio/*"
+                  filled={false}
+                  onPick={async (f) =>
+                    onChange({ ...shot, refAudio: [...omniAudio, await fileToDataUrl(f)] })
+                  }
+                  onClear={() => {}}
+                />
+              )}
+              {caps.videoRef &&
+                omniVideo.map((_, i) => (
+                  <OmniSlot
+                    key={`v${i}`}
+                    label={`Video ${i + 1}`}
+                    accept="video/*"
+                    filled
+                    onPick={() => {}}
+                    onClear={() =>
+                      onChange({
+                        ...shot,
+                        refVideo: omniVideo.filter((_, idx) => idx !== i),
+                      })
+                    }
+                  />
+                ))}
+              {caps.videoRef && omniVideo.length < 3 && (
+                <OmniSlot
+                  label="Video ref"
+                  accept="video/*"
+                  filled={false}
+                  onPick={async (f) =>
+                    onChange({ ...shot, refVideo: [...omniVideo, await fileToDataUrl(f)] })
+                  }
+                  onClear={() => {}}
+                />
+              )}
+            </div>
+            <p className="text-[9px] text-muted/70">
+              {caps.audioRef
+                ? "Up to 9 image, 3 audio & 3 video references guide this clip."
+                : caps.endFrame
+                  ? "End frame sets the clip's final image."
+                  : ""}
+            </p>
+          </div>
+        )}
         </div>
       </div>
 

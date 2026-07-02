@@ -46,8 +46,8 @@ export function AssetPicker({
   const [kind, setKind] = useState<AssetKind | "All">("All");
   const [selected, setSelected] = useState<Record<string, string>>({}); // id -> src
   const fileRef = useRef<HTMLInputElement>(null);
-  // Pending uploads awaiting a category choice before they're saved to a Bible.
-  const [pending, setPending] = useState<{ name: string; dataUrl: string }[]>([]);
+  // Uploads — usable as references immediately; saving to a Bible is optional.
+  const [pending, setPending] = useState<{ id: string; name: string; dataUrl: string }[]>([]);
   const [uploadCat, setUploadCat] = useState<string>("Character");
   const [saving, setSaving] = useState(false);
 
@@ -67,7 +67,7 @@ export function AssetPicker({
 
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    const read: { name: string; dataUrl: string }[] = [];
+    const read: { id: string; name: string; dataUrl: string }[] = [];
     for (const f of files) {
       const dataUrl = await new Promise<string>((res, rej) => {
         const r = new FileReader();
@@ -75,9 +75,16 @@ export function AssetPicker({
         r.onerror = rej;
         r.readAsDataURL(f);
       });
-      read.push({ name: f.name.replace(/\.[^.]+$/, ""), dataUrl });
+      read.push({ id: crypto.randomUUID(), name: f.name.replace(/\.[^.]+$/, ""), dataUrl });
     }
     setPending((p) => [...p, ...read]);
+    // Auto-select so the upload is immediately usable as a reference (no
+    // "Add to library" step required).
+    setSelected((s) => {
+      const next = { ...s };
+      read.forEach((u) => (next[u.id] = u.dataUrl));
+      return next;
+    });
     e.target.value = "";
   };
 
@@ -168,7 +175,7 @@ export function AssetPicker({
               ))}
             </div>
             <span className="text-xs text-muted">
-              {pending.length} image{pending.length === 1 ? "" : "s"} — save to:
+              {pending.length} upload{pending.length === 1 ? "" : "s"} ready to use ✓ — optionally also save to:
             </span>
             <select
               value={uploadCat}
@@ -182,19 +189,31 @@ export function AssetPicker({
                 </option>
               ))}
             </select>
-            <Button size="sm" onClick={confirmUpload} disabled={saving}>
+            <Button size="sm" variant="secondary" onClick={confirmUpload} disabled={saving}>
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Add to library
+              Save to library
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setPending([])} disabled={saving}>
-              Cancel
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setSelected((s) => {
+                  const next = { ...s };
+                  pending.forEach((u) => delete next[u.id]);
+                  return next;
+                });
+                setPending([]);
+              }}
+              disabled={saving}
+            >
+              Clear uploads
             </Button>
           </div>
         )}
 
         {/* Grid */}
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && pending.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted">
               <Layers className="h-8 w-8 opacity-40" />
               <p>
@@ -205,6 +224,43 @@ export function AssetPicker({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {/* Uploaded (unsaved) images — selectable immediately */}
+              {pending.map((u) => {
+                const on = !!selected[u.id];
+                return (
+                  <button
+                    key={u.id}
+                    onClick={() =>
+                      setSelected((s) => {
+                        const next = { ...s };
+                        if (next[u.id]) delete next[u.id];
+                        else next[u.id] = u.dataUrl;
+                        return next;
+                      })
+                    }
+                    className={cn(
+                      "group relative overflow-hidden rounded-[var(--radius-card)] border bg-elevated/40 text-left transition-all",
+                      on ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"
+                    )}
+                  >
+                    <div className="aspect-square w-full overflow-hidden bg-elevated">
+                      <img src={u.dataUrl} alt={u.name} className="h-full w-full object-cover" />
+                    </div>
+                    {on && (
+                      <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                        <Check className="h-3 w-3" />
+                      </span>
+                    )}
+                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground">
+                      <Upload className="h-3 w-3" /> Upload
+                    </span>
+                    <div className="p-2">
+                      <div className="truncate text-xs font-medium">{u.name}</div>
+                      <div className="truncate text-[10px] text-muted">unsaved — usable now</div>
+                    </div>
+                  </button>
+                );
+              })}
               {filtered.map((a) => {
                 const on = !!selected[a.id];
                 return (

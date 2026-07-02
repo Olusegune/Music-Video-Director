@@ -76,6 +76,26 @@ export interface GenContext {
   brief?: SectionBrief;
 }
 
+/** Turn per-shot choreography assignments into a prompt sentence. Each becomes
+ *  "<Performer> (<role>) performs <move>, <energy> energy, <expression>, in <formation>." */
+function choreoAssignmentFragment(shot: MvShot): string {
+  const list = shot.choreo ?? [];
+  if (list.length === 0) return "";
+  const parts = list
+    .filter((a) => a.performer || a.move)
+    .map((a) => {
+      const who = a.role ? `${a.performer || "Performer"} (${a.role.toLowerCase()})` : a.performer || "Performer";
+      const bits = [
+        a.move ? `performs ${a.move}` : "moves",
+        a.energy ? `${a.energy.toLowerCase()} energy` : "",
+        a.expression ? a.expression : "",
+        a.formation ? `in ${a.formation}` : "",
+      ].filter(Boolean);
+      return `${who} ${bits.join(", ")}`;
+    });
+  return parts.length ? `Choreography — ${parts.join("; ")}.` : "";
+}
+
 /** Turn the section brief into prompt fragments (skips empty fields). */
 function briefFragments(brief?: SectionBrief): string[] {
   if (!brief) return [];
@@ -104,7 +124,13 @@ export function buildShotImagePrompt(ctx: GenContext): string {
   return [
     `${shot.idea}.`,
     `Shot: ${shot.shotType}. Camera: ${shot.movement}. Lighting: ${shot.lighting}.`,
-    choreoHint ? `Choreography: ${choreoHint}.` : "",
+    // Explicit per-shot assignments take precedence over the auto time-based hint.
+    shot.choreo?.length
+      ? choreoAssignmentFragment(shot)
+      : choreoHint
+        ? `Choreography: ${choreoHint}.`
+        : "",
+    shot.storyIntent ? `Story intent: ${shot.storyIntent}.` : "",
     ...briefFragments(brief),
     `Visual world: ${treatment.visualWorld}`,
     featuring,
@@ -130,7 +156,12 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
     `${shot.idea}.`,
     `Camera move: ${shot.movement}. Lighting: ${shot.lighting}.`,
     `Performance: ${shot.performanceNote}`,
-    choreoHint ? `Choreography: ${choreoHint}.` : "",
+    shot.choreo?.length
+      ? choreoAssignmentFragment(shot)
+      : choreoHint
+        ? `Choreography: ${choreoHint}.`
+        : "",
+    shot.storyIntent ? `Story intent: ${shot.storyIntent}.` : "",
     ...briefFragments(brief),
     featuring,
     `Visual world: ${treatment.visualWorld}`,

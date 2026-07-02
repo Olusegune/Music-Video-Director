@@ -77,11 +77,35 @@ pub async fn test(provider: &str, key: &str) -> ConnectionResult {
     let c = client();
 
     let result = match provider {
-        "gemini" | "google_imagen" | "google_veo" => {
+        "gemini" | "google_imagen" | "google_veo" | "nano_banana" | "nano_banana_pro" => {
+            // Nano Banana (Pro) are Google Gemini image models — validate the
+            // Google key against the model-list endpoint.
             let url = format!(
                 "https://generativelanguage.googleapis.com/v1beta/models?key={key}"
             );
             c.get(url).send().await
+        }
+        "wavespeed" => {
+            // WaveSpeed has no documented free probe; a bearer GET to the account
+            // endpoint validates auth (401/403 = bad key) without spending credits.
+            let resp = c
+                .get("https://api.wavespeed.ai/api/v3/balance")
+                .header("Authorization", format!("Bearer {key}"))
+                .send()
+                .await;
+            return match resp {
+                Ok(r) => {
+                    let code = r.status().as_u16();
+                    if code == 401 || code == 403 {
+                        ConnectionResult::invalid(
+                            "Key rejected (auth failed) — check your WaveSpeed key.".into(),
+                        )
+                    } else {
+                        ConnectionResult::ok("WaveSpeed key accepted.")
+                    }
+                }
+                Err(e) => ConnectionResult::offline(format!("Could not reach WaveSpeed: {e}")),
+            };
         }
         "openai" | "gpt_image" => {
             c.get("https://api.openai.com/v1/models")

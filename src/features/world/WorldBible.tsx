@@ -261,7 +261,8 @@ function EnvironmentSheet({
           opts.width,
           opts.height,
           opts.references,
-          s
+          s,
+          opts.apiModel
         )
       );
     }

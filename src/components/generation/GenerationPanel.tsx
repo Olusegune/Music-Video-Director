@@ -11,6 +11,7 @@
 // identically.
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
   Loader2,
@@ -23,6 +24,9 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/ipc";
+import type { ProviderId } from "@/lib/types";
+import { getMeta } from "@/lib/providerMeta";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AssetImage, AssetVideo } from "@/components/ui/asset-image";
@@ -35,13 +39,41 @@ import {
 } from "@/lib/imageGen";
 import { controlsForProviderKey } from "@/lib/modelRegistry";
 
+/** Readiness of a model given which of its keyIds are configured/tested. */
+type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
+
+const READY_META: Record<Readiness, { label: string; dot: string; text: string }> = {
+  ready: { label: "Ready", dot: "bg-success", text: "text-success" },
+  configured: { label: "Configured", dot: "bg-accent", text: "text-accent" },
+  invalid: { label: "Key invalid", dot: "bg-danger", text: "text-danger" },
+  "no-key": { label: "No key", dot: "bg-muted", text: "text-muted" },
+  manual: { label: "Copy-prompt", dot: "bg-primary", text: "text-primary" },
+};
+
+/** A model is "ready" if any of its keyIds is configured; its status reflects
+ *  the best outcome among those keys' last Test Connection results. */
+function modelReadiness(model: GenModel, configured: Set<string>): Readiness {
+  if (model.manual) return "manual";
+  const ids = model.keyIds?.length ? model.keyIds : [model.providerKey];
+  const matched = ids.filter((id) => configured.has(id));
+  if (matched.length === 0) return "no-key";
+  const statuses = matched.map((id) => getMeta(id as ProviderId).lastStatus);
+  if (statuses.some((s) => s === "connected")) return "ready";
+  if (statuses.every((s) => s === "invalid")) return "invalid";
+  return "configured"; // key present, not yet tested (or mixed) — optimistic
+}
+
 /** Minimal model shape shared by image + video model lists. */
 export interface GenModel {
   id: string;
   label: string;
   providerKey: string;
+  /** The provider's model slug, routed to aggregator adapters (Kie/WaveSpeed). */
+  apiModel?: string;
   /** No public API (e.g. Midjourney) — generate by copying the prompt out. */
   manual?: boolean;
+  /** Provider ids whose key (any) makes this model ready. Falls back to providerKey. */
+  keyIds?: string[];
 }
 
 export type GenMode = "image" | "video";
@@ -65,6 +97,8 @@ export interface GenerateOpts {
   negativePrompt?: string;
   provider: string;
   modelId: string;
+  /** Provider model slug for aggregators (Kie/WaveSpeed); undefined = adapter default. */
+  apiModel?: string;
   width: number;
   height: number;
   seed?: number;
@@ -87,6 +121,10 @@ function diagnose(modelLabel: string, e: unknown): string {
   if (/401|403|unauthor|invalid.*key|api key|rejected/.test(low)) {
     reason = "The provider rejected the API key.";
     action = "Add or fix the key in API Keys, then run Test Connection.";
+  } else if (/needs (a|an) (image|reference|start frame)/.test(low)) {
+    reason = "This model needs a reference image, but none was provided (or none could be resolved).";
+    action =
+      'Select a Character/Environment/Prop with a locked image, add one via "Add reference," or turn on Auto-fallback above so a model that doesn\'t need one can pick up automatically.';
   } else if (/429|quota|rate limit|exceeded|insufficient|billing/.test(low)) {
     reason = "Rate-limited or out of quota/credits.";
     action = "Wait and retry, or switch to another provider above.";
@@ -111,7 +149,9 @@ const GEN_MODELS: GenModel[] = IMAGE_MODELS.map((m) => ({
   id: m.id,
   label: m.label,
   providerKey: m.providerKey,
+  apiModel: m.apiModel,
   manual: m.manual,
+  keyIds: m.keyIds,
 }));
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -178,6 +218,9 @@ export function GenerationPanel({
   const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoFallback, setAutoFallback] = useState(true);
+  const [attemptNote, setAttemptNote] = useState<string | null>(null);
+  const [usedModel, setUsedModel] = useState<GenModel | null>(null);
   // References added from the Production Library (any saved asset).
   const [libRefs, setLibRefs] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -190,6 +233,20 @@ export function GenerationPanel({
   const isBusy = busy || externalBusy;
   const activeModel = modelList.find((m) => m.id === modelId) ?? modelList[0];
   const isManual = !!activeModel?.manual;
+
+  // Provider health — same key-status data the API Key Dashboard uses, so a
+  // model that's unconfigured or failed its last Test Connection is visible
+  // right where the user picks it, not just after Generate fails.
+  const { data: keyStatuses = [] } = useQuery({
+    queryKey: ["providerKeys"],
+    queryFn: api.getProviderKeyStatuses,
+  });
+  const configuredProviders = useMemo(
+    () => new Set(keyStatuses.filter((s) => s.configured).map((s) => s.provider as string)),
+    [keyStatuses]
+  );
+  const readinessFor = (m: GenModel) => modelReadiness(m, configuredProviders);
+  const activeReadiness = activeModel ? readinessFor(activeModel) : "no-key";
   // Capability-driven UI: only show controls the selected model actually supports.
   const caps = useMemo(
     () => new Set(controlsForProviderKey(activeModel?.providerKey ?? "custom", isVideo ? "video" : "image")),
@@ -211,6 +268,21 @@ export function GenerationPanel({
     }
   };
 
+  /** Up to 3 ready/configured alternates for the current model, best-first —
+   *  the "Fallback 1/2/3" chain. Manual (copy-prompt) and unusable (no key /
+   *  invalid key) models are never auto-tried. */
+  const fallbackChainFor = (primary: GenModel): GenModel[] => {
+    const rank = (m: GenModel) => (readinessFor(m) === "ready" ? 0 : 1); // "configured" ties after "ready"
+    const alternates = modelList
+      .filter((m) => m.id !== primary.id && !m.manual)
+      .filter((m) => {
+        const r = readinessFor(m);
+        return r === "ready" || r === "configured";
+      })
+      .sort((a, b) => rank(a) - rank(b));
+    return [primary, ...alternates.slice(0, 3)];
+  };
+
   const run = async () => {
     if (!prompt.trim() || isBusy) return;
     if (isManual) {
@@ -219,31 +291,56 @@ export function GenerationPanel({
     }
     setBusy(true);
     setError(null);
+    setAttemptNote(null);
+    setUsedModel(null);
     try {
       const { width, height } = resolveSize(aspect, sizeId);
-      const model = modelList.find((m) => m.id === modelId) ?? modelList[0];
-      const urls = await onGenerate({
-        mode,
-        prompt: prompt.trim(),
-        negativePrompt: negativePrompt.trim() || undefined,
-        provider: model?.providerKey ?? "custom",
-        modelId,
-        width,
-        height,
-        seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
-        variations: Math.max(1, Math.min(4, variations)),
-        references: allRefs,
-        ...(caps.has("referenceStrength") ? { referenceStrength: refStrength } : {}),
-        ...(isVideo ? { duration, fps, motion, camera } : {}),
-      });
-      setResults(urls);
-      // Auto-adopt the first result so single-shot generation "just works".
-      if (urls[0] && onPick) {
-        onPick(urls[0]);
-        setPicked(urls[0]);
+      const primary = modelList.find((m) => m.id === modelId) ?? modelList[0];
+      const chain = autoFallback ? fallbackChainFor(primary) : [primary];
+
+      const failures: { label: string; reason: string }[] = [];
+      for (let i = 0; i < chain.length; i++) {
+        const model = chain[i];
+        if (i > 0) setAttemptNote(`${chain[i - 1].label} failed — trying ${model.label}…`);
+        try {
+          const urls = await onGenerate({
+            mode,
+            prompt: prompt.trim(),
+            negativePrompt: negativePrompt.trim() || undefined,
+            provider: model.providerKey ?? "custom",
+            modelId: model.id,
+            apiModel: model.apiModel,
+            width,
+            height,
+            seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
+            variations: Math.max(1, Math.min(4, variations)),
+            references: allRefs,
+            ...(caps.has("referenceStrength") ? { referenceStrength: refStrength } : {}),
+            ...(isVideo ? { duration, fps, motion, camera } : {}),
+          });
+          setResults(urls);
+          setUsedModel(i > 0 ? model : null);
+          setAttemptNote(null);
+          // Auto-adopt the first result so single-shot generation "just works".
+          if (urls[0] && onPick) {
+            onPick(urls[0]);
+            setPicked(urls[0]);
+          }
+          return;
+        } catch (e) {
+          failures.push({ label: model.label, reason: e instanceof Error ? e.message : String(e) });
+        }
       }
-    } catch (e) {
-      setError(diagnose(activeModel?.label ?? modelId, e));
+      // Every model in the chain failed — show what was tried, not just the last error.
+      setAttemptNote(null);
+      if (failures.length === 1) {
+        setError(diagnose(failures[0].label, new Error(failures[0].reason)));
+      } else {
+        const tried = failures.map((f) => `• ${f.label}: ${f.reason}`).join("\n");
+        setError(
+          `All ${failures.length} providers failed (${failures.map((f) => f.label).join(" → ")}).\n${tried}\n\nFix: Add/verify a key for one of these in API Keys, or switch to a different model above.`
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -298,14 +395,45 @@ export function GenerationPanel({
           className={selectCls}
           aria-label={isVideo ? "Video model" : "Image model"}
         >
-          {modelList.map((m) => (
-            <option key={m.id} value={m.id}>{m.label}</option>
-          ))}
+          {modelList.map((m) => {
+            const r = readinessFor(m);
+            const marker = r === "ready" || r === "configured" ? "●" : r === "invalid" ? "✕" : r === "manual" ? "✎" : "○";
+            return (
+              <option key={m.id} value={m.id}>
+                {marker} {m.label}
+              </option>
+            );
+          })}
         </select>
+        <p className="mt-1 flex items-center gap-1.5 text-[10px]">
+          <span className={cn("h-1.5 w-1.5 rounded-full", READY_META[activeReadiness].dot)} />
+          <span className={READY_META[activeReadiness].text}>
+            {READY_META[activeReadiness].label}
+          </span>
+          {(activeReadiness === "no-key" || activeReadiness === "invalid") && (
+            <span className="text-muted">{" "}— add/fix the key in API Keys</span>
+          )}
+        </p>
         {!isManual && caps.size > 0 && (
           <p className="mt-1 text-[10px] text-muted">
             Supports: {[...caps].join(" · ")}
           </p>
+        )}
+        {!isManual && activeModel && (
+          <label className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
+            <input
+              type="checkbox"
+              checked={autoFallback}
+              onChange={(e) => setAutoFallback(e.target.checked)}
+              className="accent-[var(--color-primary)]"
+            />
+            {(() => {
+              const n = fallbackChainFor(activeModel).length - 1;
+              return n > 0
+                ? `Auto-fallback to ${n} other ready model${n === 1 ? "" : "s"} if this one fails`
+                : "Auto-fallback (no other ready models configured yet)";
+            })()}
+          </label>
         )}
       </label>
 
@@ -514,7 +642,7 @@ export function GenerationPanel({
         {isManual
           ? "Copy prompt for Midjourney"
           : isBusy
-            ? "Generating…"
+            ? attemptNote ?? "Generating…"
             : results.length > 0
               ? "Regenerate"
               : "Generate"}
@@ -551,6 +679,13 @@ export function GenerationPanel({
       )}
 
       {/* Results */}
+      {usedModel && results.length > 0 && (
+        <p className="flex items-center gap-1.5 rounded-md bg-accent/10 px-2 py-1.5 text-[11px] text-accent">
+          <RefreshCw className="h-3 w-3 shrink-0" />
+          Generated with {usedModel.label} after the primary model failed — nothing was lost
+          (prompt, references, and settings carried over).
+        </p>
+      )}
       {results.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {results.map((url, i) => (

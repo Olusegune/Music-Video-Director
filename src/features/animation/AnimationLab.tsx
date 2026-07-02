@@ -10,7 +10,8 @@ import {
   deleteMotionTest,
   type MotionTest,
 } from "@/lib/motionTest";
-import { VIDEO_MODELS } from "@/lib/videoGen";
+import { VIDEO_MODELS, findVideoModel } from "@/lib/videoGen";
+import { collectRefs } from "@/lib/refs";
 import {
   GenerationPanel,
   type GenerateOpts,
@@ -26,6 +27,8 @@ const VIDEO_GEN_MODELS: GenModel[] = VIDEO_MODELS.map((m) => ({
   id: m.id,
   label: m.label,
   providerKey: m.providerKey || "custom",
+  apiModel: m.apiModel,
+  keyIds: m.keyIds,
 }));
 
 function Select({
@@ -88,7 +91,27 @@ export function AnimationLab() {
   const runGenerate = async (opts: GenerateOpts): Promise<string[]> => {
     const motionLine = `${opts.camera ?? "Static"} camera, motion strength ${opts.motion ?? 50}%, about ${opts.duration ?? 5}s at ${opts.fps ?? 24} fps.`;
     const fullPrompt = `${opts.prompt} ${motionLine}`;
-    const allRefs = opts.references.length ? opts.references : refs;
+    const displayRefs = opts.references.length ? opts.references : refs;
+
+    // The reference strip only holds display srcs (asset://, blob:, http) — these
+    // are UI thumbnails, not provider-ready bytes. Resolve them to base64 before
+    // the API call; a raw display URL sent as "image_url" is what caused fal /
+    // WaveSpeed / Kie to all reject the request as missing the image field.
+    const allRefs = await collectRefs(displayRefs);
+
+    // Workflow validation: an image-to-video-only model can't run without at
+    // least one resolved reference. Fail fast with an actionable message instead
+    // of letting the provider bounce back a cryptic "field required" error.
+    const model = findVideoModel(opts.modelId);
+    const requiresImage = (model.apiModel ?? "").includes("image-to-video");
+    if (requiresImage && allRefs.length === 0) {
+      throw new Error(
+        displayRefs.length > 0
+          ? `${model.label} needs an image reference, but none of the selected references could be loaded. Pick a character/environment/prop with a generated portrait, or choose a text-to-video model.`
+          : `${model.label} needs an image reference. Select a Character, Environment, or Prop with a locked image, or add one via "Add reference", or choose a text-to-video model.`
+      );
+    }
+
     const urls: string[] = [];
     for (let i = 0; i < opts.variations; i++) {
       const url = await api.generateMvShotVideo(
@@ -96,7 +119,8 @@ export function AnimationLab() {
         crypto.randomUUID(),
         fullPrompt,
         opts.provider || undefined,
-        allRefs.length ? allRefs : undefined
+        allRefs.length ? allRefs : undefined,
+        opts.apiModel
       );
       urls.push(url);
     }

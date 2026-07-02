@@ -6,16 +6,26 @@
 //! NOTE: model ids are constant defaults; verify with each vendor and later expose
 //! them in Settings. Image-to-video (using a shot's generated frame) is a follow-up.
 
-use super::VideoProvider;
+use super::{ClipOpts, VideoProvider};
 use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::time::sleep;
 
-const FAL_MODEL: &str = "fal-ai/ltx-video";
-const FAL_I2V_MODEL: &str = "fal-ai/ltx-video/image-to-video"; // image-to-video variant
-const VEO_MODEL: &str = "veo-3.0-generate-preview";
+// Default fal video models — Seedance 2.0 (cinematic + synchronized audio),
+// not the old/cheap LTX. Overridable per-shot via `with_model`.
+// ByteDance models on fal live under the `bytedance/` owner (no `fal-ai/` prefix).
+const FAL_MODEL: &str = "bytedance/seedance-2.0/text-to-video";
+const FAL_I2V_MODEL: &str = "bytedance/seedance-2.0/image-to-video";
+/// Veo model ids tried in order (GA first, then preview, then older) — the one
+/// available on the user's key wins. The long-running poll is model-agnostic.
+const VEO_MODELS: [&str; 4] = [
+    "veo-3.1-generate-preview",
+    "veo-3.0-generate-001",
+    "veo-3.0-generate-preview",
+    "veo-2.0-generate-001",
+];
 const POLL_INTERVAL: Duration = Duration::from_secs(5);
 const MAX_POLLS: u32 = 120; // ~10 minutes
 
@@ -26,11 +36,18 @@ fn data_uri(bytes: &[u8]) -> String {
 /// fal.ai queue API: submit → poll status → fetch result → download.
 pub struct FalVideoProvider {
     api_key: String,
+    /** fal model path (e.g. "fal-ai/kling-video/v1.6/pro/image-to-video"). */
+    model: Option<String>,
 }
 
 impl FalVideoProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key }
+        Self { api_key, model: None }
+    }
+    /// Route a specific fal model path (Seedance / Kling …) instead of the default.
+    pub fn with_model(mut self, model: Option<String>) -> Self {
+        self.model = model.filter(|s| !s.is_empty());
+        self
     }
     fn auth(&self) -> String {
         format!("Key {}", self.api_key)
@@ -113,22 +130,52 @@ impl FalVideoProvider {
             .context("reading fal.ai video bytes")?;
         Ok(bytes.to_vec())
     }
+
+    /// Image-to-video with an optional end/last frame (Seedance 2.0 supports
+    /// start→end interpolation via `end_image_url`).
+    pub async fn generate_video_omni(
+        &self,
+        prompt: &str,
+        refs: &[Vec<u8>],
+        end_frame: Option<&[u8]>,
+        opts: &ClipOpts,
+    ) -> Result<Vec<u8>> {
+        match refs.first() {
+            Some(img) => {
+                let model = self.model.as_deref().unwrap_or(FAL_I2V_MODEL);
+                let mut body = json!({
+                    "prompt": prompt,
+                    "image_url": data_uri(img),
+                    "duration": opts.duration_or(5),
+                    "resolution": opts.resolution_or("720p"),
+                });
+                if let Some(end) = end_frame {
+                    body["end_image_url"] = json!(data_uri(end));
+                }
+                self.run(model, body).await
+            }
+            // An "image-to-video" model slug requires image_url — calling it with
+            // no reference just gets a 422 from fal ("image_url: Field required").
+            // Fail fast locally with an actionable message instead.
+            None if self.model.as_deref().unwrap_or("").contains("image-to-video") => {
+                Err(anyhow!(
+                    "{} needs a reference image, but none was provided. Add a reference or pick a text-to-video model.",
+                    self.model.as_deref().unwrap_or(FAL_I2V_MODEL)
+                ))
+            }
+            None => self.generate_video(prompt).await,
+        }
+    }
 }
 
 impl VideoProvider for FalVideoProvider {
     async fn generate_video(&self, prompt: &str) -> Result<Vec<u8>> {
-        self.run(FAL_MODEL, json!({ "prompt": prompt })).await
+        let model = self.model.as_deref().unwrap_or(FAL_MODEL);
+        self.run(model, json!({ "prompt": prompt })).await
     }
 
     async fn generate_video_ref(&self, prompt: &str, refs: &[Vec<u8>]) -> Result<Vec<u8>> {
-        match refs.first() {
-            // Drive the clip from the shot's frame (image-to-video).
-            Some(img) => {
-                self.run(FAL_I2V_MODEL, json!({ "prompt": prompt, "image_url": data_uri(img) }))
-                    .await
-            }
-            None => self.generate_video(prompt).await,
-        }
+        self.generate_video_omni(prompt, refs, None, &ClipOpts::default()).await
     }
 }
 
@@ -148,24 +195,35 @@ impl GoogleVeoProvider {
         let client = reqwest::Client::new();
         let base = "https://generativelanguage.googleapis.com/v1beta";
 
-        // 1) Submit a long-running operation
-        let op: serde_json::Value = client
-            .post(format!(
-                "{base}/models/{VEO_MODEL}:predictLongRunning?key={}",
-                self.api_key
-            ))
-            .json(&json!({ "instances": [instance] }))
-            .send()
-            .await
-            .context("submitting Veo job")?
-            .json()
-            .await
-            .context("parsing Veo submit response")?;
-
-        let name = op["name"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Veo submit missing operation name: {op}"))?
-            .to_string();
+        // 1) Submit a long-running operation — try each Veo model id until one
+        // is accepted on this key (returns an operation name).
+        let mut name = String::new();
+        let mut last: serde_json::Value = serde_json::Value::Null;
+        for model in VEO_MODELS {
+            let op: serde_json::Value = client
+                .post(format!(
+                    "{base}/models/{model}:predictLongRunning?key={}",
+                    self.api_key
+                ))
+                .json(&json!({ "instances": [instance] }))
+                .send()
+                .await
+                .context("submitting Veo job")?
+                .json()
+                .await
+                .context("parsing Veo submit response")?;
+            if let Some(n) = op["name"].as_str() {
+                name = n.to_string();
+                break;
+            }
+            last = op;
+        }
+        if name.is_empty() {
+            return Err(anyhow!(
+                "Veo submit failed for all model ids ({}): {last}",
+                VEO_MODELS.join(", ")
+            ));
+        }
 
         // 2) Poll the operation
         let mut result = serde_json::Value::Null;

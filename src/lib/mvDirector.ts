@@ -18,6 +18,25 @@ import type { MvTemplate } from "@/lib/templates";
 
 export type ShotApproach = "Performance" | "Narrative" | "Abstract" | "Hybrid";
 
+/** A choreography move assigned to a specific performer within a shot.
+ *  This is the structured production data that feeds prompt assembly. */
+export interface ChoreoAssignment {
+  /** Display name of the performer (from cast, a Character, or free text). */
+  performer: string;
+  /** Optional link to a Character Bible entry for visual DNA / consistency. */
+  characterId?: string;
+  /** Performer role label (Lead Artist, Dancer, Backup, Choir, Band, …). */
+  role: string;
+  /** The choreography move / pose text (from the library or free text). */
+  move: string;
+  /** Energy level (e.g. High, Medium). */
+  energy?: string;
+  /** Facial / emotional expression (e.g. "joyful confidence"). */
+  expression?: string;
+  /** Group formation (e.g. "V-formation behind the lead"). */
+  formation?: string;
+}
+
 export interface MvShot {
   id: string;
   start: number;
@@ -42,6 +61,18 @@ export interface MvShot {
   videoProvider?: string;
   /** Reference image srcs (character/prop/style) fed to generation as guidance. */
   refImages?: string[];
+  /** Optional end/last frame src for models that support start→end interpolation. */
+  endFrame?: string;
+  /** Audio reference srcs (music/voice) for audio-driven video models. */
+  refAudio?: string[];
+  /** Video reference srcs (motion/dance/style) for video-to-video models. */
+  refVideo?: string[];
+  /** Emotional / story intent for this shot (beyond technical camera/lighting). */
+  storyIntent?: string;
+  /** Choreography moves assigned to performers in this shot (structured data). */
+  choreo?: ChoreoAssignment[];
+  /** User-edited final prompt; when set, generation uses it verbatim. */
+  promptOverride?: string;
 }
 
 export interface MvSectionPlan {

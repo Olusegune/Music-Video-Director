@@ -7,9 +7,33 @@ pub mod kie;
 pub mod replicate;
 pub mod text;
 pub mod video;
+pub mod wavespeed;
 
 use crate::models::PromptPack;
 use anyhow::Result;
+
+/// Granular per-clip generation options, applied where the model supports them.
+#[derive(Default, Clone)]
+pub struct ClipOpts {
+    /// Target clip length in seconds (Seedance 4–15; Kling 5/10).
+    pub duration: Option<u32>,
+    /// Output resolution token ("480p" | "720p" | "1080p").
+    pub resolution: Option<String>,
+    /// Whether the model should generate audio (dialogue/SFX/music) at all.
+    pub generate_audio: Option<bool>,
+}
+
+impl ClipOpts {
+    pub fn duration_or(&self, d: u32) -> u32 {
+        self.duration.unwrap_or(d)
+    }
+    pub fn resolution_or<'a>(&'a self, r: &'a str) -> &'a str {
+        self.resolution.as_deref().unwrap_or(r)
+    }
+    pub fn audio_or(&self, a: bool) -> bool {
+        self.generate_audio.unwrap_or(a)
+    }
+}
 
 /// Generates a structured MotionForge Prompt Pack from freeform input.
 #[allow(async_fn_in_trait)]

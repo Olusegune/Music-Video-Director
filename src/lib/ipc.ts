@@ -551,7 +551,8 @@ export const api = {
     width: number,
     height: number,
     refs?: string[],
-    seed?: number
+    seed?: number,
+    model?: string
   ): Promise<string> =>
     isTauri
       ? toAssetSrc(
@@ -562,6 +563,7 @@ export const api = {
             height,
             refs,
             seed,
+            model,
           })
         )
       : mock.generateImagePro(provider, width, height),
@@ -580,7 +582,16 @@ export const api = {
     shotId: string,
     prompt: string,
     provider?: string,
-    refs?: string[]
+    refs?: string[],
+    model?: string,
+    extras?: {
+      endFrame?: string;
+      audioRefs?: string[];
+      videoRefs?: string[];
+      duration?: number;
+      resolution?: string;
+      generateAudio?: boolean;
+    }
   ): Promise<string> =>
     isTauri
       ? toAssetSrc(
@@ -590,6 +601,13 @@ export const api = {
             prompt,
             provider,
             refs,
+            model,
+            endFrame: extras?.endFrame,
+            audioRefs: extras?.audioRefs,
+            videoRefs: extras?.videoRefs,
+            duration: extras?.duration,
+            resolution: extras?.resolution,
+            generateAudio: extras?.generateAudio,
           })
         )
       : mock.generateShotVideo(),

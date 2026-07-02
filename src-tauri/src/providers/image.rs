@@ -12,8 +12,8 @@ use serde_json::json;
 const FAL_MODEL: &str = "fal-ai/flux/schnell";
 const IMAGEN_MODEL: &str = "imagen-3.0-generate-002";
 /// Gemini "Nano Banana" image generation via generateContent (supports
-/// reference images). Verify the current id with Google AI Studio.
-const GEMINI_IMAGE_MODEL: &str = "gemini-2.5-flash-image-preview";
+/// reference images). GA id first, with the older preview id as a fallback.
+const GEMINI_IMAGE_MODELS: [&str; 2] = ["gemini-2.5-flash-image", "gemini-2.5-flash-image-preview"];
 const OPENAI_IMAGE_MODEL: &str = "gpt-image-1";
 const STABILITY_ENGINE: &str = "stable-diffusion-xl-1024-v1-0";
 
@@ -83,18 +83,65 @@ fn sdxl_size(width: u32, height: u32) -> (u32, u32) {
         .unwrap()
 }
 
+/// Map a requested w/h to the nearest fal "image_size" preset enum used by
+/// models like Recraft / Ideogram that take a preset string, not a {w,h} object.
+fn fal_size_preset(width: u32, height: u32) -> &'static str {
+    if height == 0 || width == height {
+        return "square_hd";
+    }
+    let r = width as f32 / height as f32;
+    if r >= 1.55 {
+        "landscape_16_9"
+    } else if r >= 1.15 {
+        "landscape_4_3"
+    } else if r <= 0.64 {
+        "portrait_16_9"
+    } else {
+        "portrait_4_3"
+    }
+}
+
+/// Map a requested w/h to a fal `aspect_ratio` token (Flux Pro Ultra etc.).
+fn fal_aspect(width: u32, height: u32) -> &'static str {
+    if width == 0 || height == 0 {
+        return "1:1";
+    }
+    let r = width as f32 / height as f32;
+    let table = [
+        (21.0 / 9.0, "21:9"),
+        (16.0 / 9.0, "16:9"),
+        (4.0 / 3.0, "4:3"),
+        (1.0, "1:1"),
+        (3.0 / 4.0, "3:4"),
+        (9.0 / 16.0, "9:16"),
+    ];
+    table
+        .iter()
+        .min_by(|a, b| (a.0 - r).abs().partial_cmp(&(b.0 - r).abs()).unwrap())
+        .map(|t| t.1)
+        .unwrap_or("1:1")
+}
+
 /// fal.ai — synchronous run endpoint. Returns a hosted image URL we then fetch.
+/// Model-agnostic: the slug picks which fal image model runs, and the request
+/// body is shaped to that model family's expected size parameter.
 pub struct FalImageProvider {
     api_key: String,
     seed: Option<i64>,
+    model: Option<String>,
 }
 
 impl FalImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, seed: None }
+        Self { api_key, seed: None, model: None }
     }
     pub fn with_seed(mut self, seed: Option<i64>) -> Self {
         self.seed = seed;
+        self
+    }
+    /// Route a specific fal image model (e.g. "fal-ai/flux-pro/v1.1-ultra").
+    pub fn with_model(mut self, model: Option<String>) -> Self {
+        self.model = model.filter(|s| !s.is_empty());
         self
     }
 }
@@ -105,19 +152,28 @@ impl ImageProvider for FalImageProvider {
     }
 
     async fn generate_image_sized(&self, prompt: &str, width: u32, height: u32) -> Result<Vec<u8>> {
+        let model = self.model.as_deref().unwrap_or(FAL_MODEL);
         let w = width.clamp(256, 1536);
         let h = height.clamp(256, 1536);
         let client = reqwest::Client::new();
-        let mut body = json!({
-            "prompt": prompt,
-            "image_size": { "width": w, "height": h },
-            "num_images": 1
-        });
+
+        // Shape the size parameter to the model family:
+        //  - Ultra / Kontext families take an `aspect_ratio` string.
+        //  - Recraft / Ideogram take an `image_size` preset enum string.
+        //  - Flux dev/schnell/pro + Stable Diffusion take an {width,height} object.
+        let mut body = json!({ "prompt": prompt, "num_images": 1 });
+        if model.contains("ultra") || model.contains("kontext") {
+            body["aspect_ratio"] = json!(fal_aspect(width, height));
+        } else if model.contains("recraft") || model.contains("ideogram") {
+            body["image_size"] = json!(fal_size_preset(width, height));
+        } else {
+            body["image_size"] = json!({ "width": w, "height": h });
+        }
         if let Some(s) = self.seed {
             body["seed"] = json!(s);
         }
         let resp = client
-            .post(format!("https://fal.run/{FAL_MODEL}"))
+            .post(format!("https://fal.run/{model}"))
             .header("Authorization", format!("Key {}", self.api_key))
             .json(&body)
             .send()
@@ -131,8 +187,10 @@ impl ImageProvider for FalImageProvider {
         }
 
         let v: serde_json::Value = resp.json().await.context("parsing fal.ai response")?;
+        // fal returns images under `images` (most models) or `image` (a few).
         let url = v["images"][0]["url"]
             .as_str()
+            .or_else(|| v["image"]["url"].as_str())
             .ok_or_else(|| anyhow!("unexpected fal.ai response: {v}"))?;
 
         let bytes = client
@@ -195,8 +253,28 @@ impl GoogleImagenProvider {
         height: u32,
         refs: &[Vec<u8>],
     ) -> Result<Vec<u8>> {
+        let mut last_err = anyhow!("no Gemini image model attempted");
+        // Try the GA id first, then the legacy preview id — the preview suffix
+        // is being retired, so older keys/endpoints differ.
+        for model in GEMINI_IMAGE_MODELS {
+            match self.nano_banana_with(model, prompt, width, height, refs).await {
+                Ok(bytes) => return Ok(bytes),
+                Err(e) => last_err = e,
+            }
+        }
+        Err(last_err)
+    }
+
+    async fn nano_banana_with(
+        &self,
+        model: &str,
+        prompt: &str,
+        width: u32,
+        height: u32,
+        refs: &[Vec<u8>],
+    ) -> Result<Vec<u8>> {
         let url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_IMAGE_MODEL}:generateContent?key={}",
+            "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={}",
             self.api_key
         );
         let mut parts: Vec<serde_json::Value> = refs
@@ -211,7 +289,7 @@ impl GoogleImagenProvider {
             .post(&url)
             .json(&json!({
                 "contents": [{ "parts": parts }],
-                "generationConfig": { "responseModalities": ["IMAGE"] }
+                "generationConfig": { "responseModalities": ["TEXT", "IMAGE"] }
             }))
             .send()
             .await
@@ -219,7 +297,7 @@ impl GoogleImagenProvider {
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Gemini image error {status}: {text}"));
+            return Err(anyhow!("Gemini image error {status} ({model}): {text}"));
         }
         let v: serde_json::Value = resp.json().await.context("parsing Gemini image response")?;
         let parts = v["candidates"][0]["content"]["parts"]
