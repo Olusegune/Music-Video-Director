@@ -629,7 +629,12 @@ export function GenerationPanel({
         />
       )}
 
-      <Button onClick={run} disabled={isBusy || !prompt.trim()} className="w-full">
+      <Button
+        variant="gold"
+        onClick={run}
+        disabled={isBusy || !prompt.trim()}
+        className="w-full"
+      >
         {isManual ? (
           <Copy className="h-4 w-4" />
         ) : isBusy ? (
@@ -697,9 +702,9 @@ export function GenerationPanel({
               )}
             >
               {isVideo ? (
-                <AssetVideo src={url} className="aspect-video w-full bg-black object-cover" />
+                <AssetVideo src={url} className="aspect-video w-full bg-black object-cover" label="Result" />
               ) : (
-                <AssetImage src={url} alt={`Result ${i + 1}`} className="aspect-square w-full object-cover" />
+                <AssetImage src={url} alt={`Result ${i + 1}`} className="aspect-square w-full object-cover" label="Result" />
               )}
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/55 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100">
                 {onPick && (

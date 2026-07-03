@@ -31,6 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MagicFlowButton } from "@/components/magic/MagicFlowButton";
+import splashArt from "@/assets/splash.png";
 
 const PROJECT_TYPES: ProjectType[] = [
   "SaaS Product",
@@ -51,9 +52,16 @@ export function Dashboard() {
   const openSong = useAppStore((s) => s.openSong);
   const openTemplates = useAppStore((s) => s.openTemplates);
   const setActiveSong = useAppStore((s) => s.setActiveSong);
+  const setActiveTemplate = useAppStore((s) => s.setActiveTemplate);
   const setWizardOpen = useAppStore((s) => s.setWizardOpen);
   const setMagicSongId = useAppStore((s) => s.setMagicSongId);
   const openDemoProject = useAppStore((s) => s.openDemoProject);
+
+  const openDirectorMode = () => {
+    setActiveTemplate(null);
+    setActiveSong(null);
+    openSong();
+  };
 
   const [songs] = useState(() => loadSongs());
   const [showLegacy, setShowLegacy] = useState(false);
@@ -109,12 +117,30 @@ export function Dashboard() {
       </header>
 
       <div className="space-y-8 p-8">
-        {/* Magic Flow hero — the headline action */}
-        <section className="flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-primary/20 bg-primary/[0.04] py-8 text-center">
-          <MagicFlowButton variant="hero" />
-          <p className="text-xs text-muted">
-            One click — the Director reads your song and builds the whole video.
-          </p>
+        {/* Magic Mode hero — the main dashboard action, impossible to miss. */}
+        <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-gold)]/30">
+          <img
+            src={splashArt}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover opacity-25"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-[var(--color-gold)]/10" />
+          <div className="relative flex flex-col items-center gap-4 px-8 py-12 text-center">
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Create a Music Video in Minutes
+            </h2>
+            <p className="max-w-md text-sm text-muted">
+              Upload a song, add an artist, choose a style, and let the Director
+              build the video.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <MagicFlowButton variant="hero" />
+              <Button variant="secondary" size="lg" onClick={openDirectorMode}>
+                Open Director Mode
+              </Button>
+            </div>
+          </div>
         </section>
 
         {/* Quick start */}

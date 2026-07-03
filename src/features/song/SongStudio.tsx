@@ -54,6 +54,9 @@ import {
   Square,
   Repeat,
   Volume2,
+  ChevronDown,
+  ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   analyzeAudioFile,
@@ -483,7 +486,10 @@ function SongView({
 
   return (
     <div className="space-y-5 p-6">
-      {/* Title + stats */}
+      {/* Your Song — the beginner-friendly summary + main CTA */}
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        Your Song
+      </div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <Input
@@ -662,7 +668,7 @@ function SongView({
               </Button>
             </div>
             <CardDescription>
-              Select a section to write its lyrics & brief.
+              Pick a section to add lyrics, performer, mood, and camera direction.
               {needsPerformer > 0 && (
                 <span className="ml-1 text-warning">
                   {needsPerformer} section{needsPerformer === 1 ? "" : "s"} need a performer.
@@ -1041,6 +1047,7 @@ function SectionEditor({
   onPatch: (patch: Partial<SongSection>) => void;
   onSeek: () => void;
 }) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const color = sectionColor(section.kind);
   const Field = ({
     label,
@@ -1130,39 +1137,56 @@ function SectionEditor({
           );
         })()}
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Field label="Lead vocalist(s)" value={section.lead ?? ""} onChange={(v) => onPatch({ lead: v })} placeholder="e.g. Neo Dude" />
-          <Field label="Backup / dancers" value={section.backup ?? ""} onChange={(v) => onPatch({ backup: v })} placeholder="e.g. 8 dancers" />
-          <Field label="Mood / emotion" value={section.mood ?? ""} onChange={(v) => onPatch({ mood: v })} placeholder="e.g. Curious" />
-          <Field label="Visual style" value={section.visualStyle ?? ""} onChange={(v) => onPatch({ visualStyle: v })} placeholder="e.g. neon, hazy" />
-          <Field label="Camera" value={section.cameraNote ?? ""} onChange={(v) => onPatch({ cameraNote: v })} placeholder="e.g. slow push-in" />
-          <Field label="Choreography" value={section.choreoNote ?? ""} onChange={(v) => onPatch({ choreoNote: v })} placeholder="e.g. full routine" />
-        </div>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">Story / performance notes</span>
-          <Textarea
-            value={section.storyNote ?? ""}
-            onChange={(e) => onPatch({ storyNote: e.target.value })}
-            placeholder="What happens in this section…"
-            className="min-h-16"
-          />
-        </label>
+        <button
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-muted hover:text-foreground"
+        >
+          {showAdvanced ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+          <SlidersHorizontal className="h-3 w-3" />
+          Advanced — mood, visual style, choreography, energy
+        </button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted">Energy</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={Math.round((section.energy ?? 0.5) * 100)}
-            onChange={(e) => onPatch({ energy: Number(e.target.value) / 100 })}
-            className="flex-1 accent-[var(--color-primary)]"
-            aria-label="Energy level"
-          />
-          <span className="w-8 text-right text-[11px] tabular-nums text-muted">
-            {Math.round((section.energy ?? 0.5) * 100)}
-          </span>
-        </div>
+        {showAdvanced && (
+          <>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Field label="Lead vocalist(s)" value={section.lead ?? ""} onChange={(v) => onPatch({ lead: v })} placeholder="e.g. Neo Dude" />
+              <Field label="Backup / dancers" value={section.backup ?? ""} onChange={(v) => onPatch({ backup: v })} placeholder="e.g. 8 dancers" />
+              <Field label="Mood / emotion" value={section.mood ?? ""} onChange={(v) => onPatch({ mood: v })} placeholder="e.g. Curious" />
+              <Field label="Visual style" value={section.visualStyle ?? ""} onChange={(v) => onPatch({ visualStyle: v })} placeholder="e.g. neon, hazy" />
+              <Field label="Camera" value={section.cameraNote ?? ""} onChange={(v) => onPatch({ cameraNote: v })} placeholder="e.g. slow push-in" />
+              <Field label="Choreography" value={section.choreoNote ?? ""} onChange={(v) => onPatch({ choreoNote: v })} placeholder="e.g. full routine" />
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-muted">Story / performance notes</span>
+              <Textarea
+                value={section.storyNote ?? ""}
+                onChange={(e) => onPatch({ storyNote: e.target.value })}
+                placeholder="What happens in this section…"
+                className="min-h-16"
+              />
+            </label>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted">Energy</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round((section.energy ?? 0.5) * 100)}
+                onChange={(e) => onPatch({ energy: Number(e.target.value) / 100 })}
+                className="flex-1 accent-[var(--color-primary)]"
+                aria-label="Energy level"
+              />
+              <span className="w-8 text-right text-[11px] tabular-nums text-muted">
+                {Math.round((section.energy ?? 0.5) * 100)}
+              </span>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -263,6 +263,7 @@ export function MediaPanel({
             alt={label}
             className="h-full w-full object-cover"
             fallback={<GradientFill id={id} label={label} className="h-full w-full text-4xl" />}
+            label={label}
           />
           {generating && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">

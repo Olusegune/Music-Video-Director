@@ -186,6 +186,7 @@ function EnvCard({
           alt={env.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           fallback={<GradientFill id={env.id} label={env.name} className="h-full w-full text-2xl" />}
+          label="Establishing shot"
         />
         <div className="absolute right-2 top-2">
           {env.locked ? (

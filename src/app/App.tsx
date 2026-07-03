@@ -16,6 +16,7 @@ import { ApiKeyDashboard } from "@/features/apikeys/ApiKeyDashboard";
 import { ModelRegistryView } from "@/features/models/ModelRegistryView";
 import { SongStudio } from "@/features/song/SongStudio";
 import { MvDirector } from "@/features/mvdirector/MvDirector";
+import { MagicOutputScreen } from "@/features/mvdirector/MagicOutputScreen";
 import { CastView } from "@/features/cast/CastView";
 import { ChoreographyView } from "@/features/choreography/ChoreographyView";
 import { TimelineView } from "@/features/timeline/TimelineView";
@@ -55,7 +56,8 @@ export default function App() {
     !magicSongId &&
     !directorOpen &&
     view !== "dashboard" &&
-    view !== "song";
+    view !== "song" &&
+    view !== "magicoutput";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -67,6 +69,7 @@ export default function App() {
       <main key={dataVersion} className="flex min-w-0 flex-1 flex-col">
         {view === "song" && <SongStudio />}
         {view === "mvdirector" && <MvDirector />}
+        {view === "magicoutput" && <MagicOutputScreen />}
         {view === "cast" && <CastView />}
         {view === "choreography" && <ChoreographyView />}
         {view === "timeline" && <TimelineView />}

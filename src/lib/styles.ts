@@ -1,4 +1,4 @@
-// Project-wide visual style presets — the full Wheelbarrow Studios Mo-Graph AI
+// Project-wide visual style presets — the full Wheelbarrow AI Director
 // catalog. The chosen style becomes the "visual DNA" injected into pack
 // generation and every image/video prompt. Each preset carries hint fragments
 // the local creative engine uses to bias camera, lighting, and motion.

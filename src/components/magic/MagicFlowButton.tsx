@@ -1,7 +1,7 @@
-// The Magic Flow call-to-action — the visual focal point of the whole app.
+// The Magic Mode call-to-action — the visual focal point of the whole app.
 //
-// One click opens the Director Wizard, which guides the user from an empty
-// canvas (import a song) to a fully planned music video. Premium violet→gold
+// One click opens Magic Mode, which guides the user from an empty canvas
+// (import a song) to a fully planned music video. Premium violet→gold
 // gradient, soft animated glow, sparkles, and hover/press motion.
 
 import { Clapperboard, Sparkle } from "lucide-react";
@@ -32,12 +32,12 @@ export function MagicFlowButton({
         <span className="magic-glow absolute -inset-1 rounded-full" aria-hidden />
         <button
           onClick={open}
-          title="Direct My Music Video"
-          aria-label="Direct My Music Video"
+          title="Magic Mode — direct a full music video in one click"
+          aria-label="Magic Mode — direct a full music video in one click"
           className="magic-cta relative inline-flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold"
         >
           <Clapperboard className="h-5 w-5" />
-          Direct My Music Video
+          Magic Mode
           <Sparkles />
         </button>
       </div>
@@ -52,7 +52,7 @@ export function MagicFlowButton({
         className="magic-cta relative flex w-full items-center justify-center gap-3 rounded-[1.5rem] px-8 py-6 text-xl font-extrabold tracking-tight"
       >
         <Clapperboard className="h-7 w-7 shrink-0" />
-        Direct My Music Video
+        Start Magic Mode
         <Sparkles />
       </button>
     </div>

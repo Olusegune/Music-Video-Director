@@ -128,6 +128,24 @@ export interface SongMap {
   audioTracks?: AudioTrack[];
   /** The template this production is directed with (per-song memory). */
   templateId?: string;
+  /** Magic Mode's "Video Type" pick (Performance/Narrative/Dance/…), per-song. */
+  videoType?: string;
+  /** Magic Mode's Story Mode — the chosen story feeling, per-song. */
+  storyFeeling?: string;
+  /** User-written custom story idea (only meaningful when storyFeeling === "custom"). */
+  storyIdea?: string;
+  /** The six generated story beats — opening/verse/chorus/bridge/finalChorus/ending. */
+  storyBeats?: {
+    opening: string;
+    verse: string;
+    chorus: string;
+    bridge: string;
+    finalChorus: string;
+    ending: string;
+  };
+  /** Result of running the parsing engine (scriptParser.ts) over uploaded
+   *  lyrics/script text — title/genre/mood/themes/characters/etc. */
+  parsedScript?: import("./scriptParser").ParsedScript;
   createdAt: string;
   updatedAt: string;
 }

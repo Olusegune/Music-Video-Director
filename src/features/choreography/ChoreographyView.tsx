@@ -12,7 +12,9 @@ import {
   Lightbulb,
   Image as ImageIcon,
   Video,
+  ChevronDown,
 } from "lucide-react";
+import { DANCE_STYLE_META } from "@/lib/danceStyleMeta";
 import {
   choreographSong,
   getChoreo,
@@ -52,6 +54,63 @@ const VIDEO_GEN_MODELS = VIDEO_MODELS.map((m) => ({
   providerKey: m.providerKey || "custom",
   apiModel: m.apiModel,
 }));
+
+/** Compact trigger + popover grid — replaces a plain <select> with the same
+ *  visual-card language as Magic Mode's Video Type step. */
+function StylePicker({ value, onChange }: { value: string; onChange: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const meta = DANCE_STYLE_META[value];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-9 items-center gap-2 rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm text-foreground hover:border-primary/40"
+        aria-label="Dance style"
+        aria-expanded={open}
+      >
+        {meta?.icon}
+        {value || "Choose a style"}
+        <ChevronDown className="h-3.5 w-3.5 text-muted" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute left-0 top-full z-20 mt-1.5 grid w-[36rem] max-w-[90vw] grid-cols-2 gap-2 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-card sm:grid-cols-2">
+            {CHOREO_STYLES.map((s) => {
+              const m = DANCE_STYLE_META[s];
+              const active = s === value;
+              return (
+                <button
+                  key={s}
+                  onClick={() => {
+                    onChange(s);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex flex-col items-start gap-1.5 rounded-[var(--radius-card)] border p-2.5 text-left transition-colors",
+                    active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-lg",
+                      active ? "bg-primary/20 text-primary" : "bg-elevated text-muted"
+                    )}
+                  >
+                    {m?.icon}
+                  </span>
+                  <span className="text-xs font-semibold leading-tight">{s}</span>
+                  <span className="text-[10px] leading-snug text-muted">{m?.tagline}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function perfOf(section: ChoreoSection): PerformanceBrief {
   return section.performance ?? defaultPerformance(section.kind, section.energy);
@@ -181,6 +240,14 @@ export function ChoreographyView() {
     setStyle(p.style);
   };
 
+  // "Create Signature Move" — jump straight to a motion test on the highest-
+  // energy choreographed section, the natural hero moment for the video.
+  const createSignatureMove = () => {
+    if (!plan || plan.sections.length === 0) return;
+    const hero = [...plan.sections].sort((a, b) => b.energy - a.energy)[0];
+    setGen({ section: hero, mode: "motion", character: null });
+  };
+
   if (!song) {
     return (
       <div className="flex h-full items-center justify-center p-10">
@@ -218,24 +285,51 @@ export function ChoreographyView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
-            aria-label="Dance style"
-          >
-            {CHOREO_STYLES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <StylePicker value={style} onChange={setStyle} />
           <Button variant="primary" onClick={generate}>
             {plan ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
             {plan ? "Re-choreograph" : "Choreograph"}
           </Button>
         </div>
       </header>
+
+      {/* AI Choreographer — the panel that frames this as a choreographer's
+          workflow, not a spreadsheet. Per-shot Pose sheet / Formation / Motion
+          test live on each moment card below; this is the whole-song shortcut. */}
+      {plan && plan.sections.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-elevated/30 px-6 py-3">
+          <span className="mr-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Choreographer
+          </span>
+          <Button size="sm" variant="secondary" onClick={generate}>
+            <RefreshCw className="h-3.5 w-3.5" /> Generate Choreography
+          </Button>
+          <Button size="sm" variant="secondary" onClick={createSignatureMove}>
+            <Sparkles className="h-3.5 w-3.5" /> Create Signature Move
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setGen({ section: plan.sections[0], mode: "formation", character: null })}
+          >
+            <Users className="h-3.5 w-3.5" /> Generate Formations
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setGen({ section: plan.sections[0], mode: "pose", character: null })}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" /> Generate Pose Sheet
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setGen({ section: plan.sections[0], mode: "motion", character: null })}
+          >
+            <Video className="h-3.5 w-3.5" /> Motion Test
+          </Button>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!plan ? (

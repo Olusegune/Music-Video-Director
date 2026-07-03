@@ -196,9 +196,9 @@ export function AssetLibrary() {
                 <button onClick={item.open} className="block w-full" title={`Open in ${item.kind} library`}>
                   <div className="relative aspect-square bg-elevated">
                     {item.isVideo ? (
-                      <AssetVideo src={item.src} controls={false} className="h-full w-full object-cover" />
+                      <AssetVideo src={item.src} controls={false} className="h-full w-full object-cover" label="Clip" />
                     ) : (
-                      <AssetImage src={item.src} alt={item.label} className="h-full w-full object-cover" />
+                      <AssetImage src={item.src} alt={item.label} className="h-full w-full object-cover" label="Asset" />
                     )}
                     <span className="absolute left-1.5 top-1.5">
                       <Badge variant="primary" className="gap-1">

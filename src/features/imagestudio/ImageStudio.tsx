@@ -305,7 +305,7 @@ export function ImageStudio({
                     onClick={() => setPreview(a)}
                     className="relative block aspect-[4/3] w-full overflow-hidden bg-elevated"
                   >
-                    <AssetImage src={a.url} alt={a.sheetType} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <AssetImage src={a.url} alt={a.sheetType} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" label="Sheet" />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-xs font-medium text-white opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
                       Open preview
                     </span>

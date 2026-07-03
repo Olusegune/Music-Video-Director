@@ -255,7 +255,7 @@ export function AnimationLab() {
               {tests.map((t) => (
                 <div key={t.id} className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card">
                   <div className="relative aspect-video w-full bg-black">
-                    <AssetVideo src={t.url} className="h-full w-full object-cover" />
+                    <AssetVideo src={t.url} className="h-full w-full object-cover" label="Motion test" />
                   </div>
                   <div className="flex items-start justify-between gap-2 p-3">
                     <div className="min-w-0">

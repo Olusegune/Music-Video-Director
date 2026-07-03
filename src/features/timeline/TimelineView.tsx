@@ -4,8 +4,6 @@ import {
   LayoutList,
   Music,
   Clapperboard,
-  ZoomIn,
-  ZoomOut,
   Download,
   Film,
   Footprints,
@@ -18,17 +16,39 @@ import {
   Copy,
   Trash2,
   Clapperboard as ClapperboardIcon,
+  Sparkles,
+  Users,
+  Camera,
+  CheckCircle2,
+  Circle,
+  ImageIcon,
 } from "lucide-react";
 import { loadSongs, sectionColor, formatTime, type SongMap } from "@/lib/songBrain";
-import { getTreatment, saveTreatment, type MvTreatment, type MvShot } from "@/lib/mvDirector";
+import {
+  getTreatment,
+  saveTreatment,
+  type MvTreatment,
+  type MvShot,
+} from "@/lib/mvDirector";
 import { getChoreo, saveChoreo, type ChoreoPlan } from "@/lib/choreography";
+import { loadCast, type Performer } from "@/lib/cast";
+import { buildShotImagePrompt } from "@/lib/mvGen";
+import type { Character } from "@/lib/types";
 import { useAppStore } from "@/store/useAppStore";
 import { api } from "@/lib/ipc";
 import { Button } from "@/components/ui/button";
 import { AssetImage, AssetVideo } from "@/components/ui/asset-image";
 import { cn } from "@/lib/utils";
 
-const ZOOMS = [8, 12, 18, 26, 38];
+/** Four named zoom levels (spec: Overview / Scene / Shot / Frame), each a
+ *  pixels-per-second value driving the exact same xFor()/width layout math
+ *  the timeline already used with its old continuous zoom stepper. */
+const ZOOM_LEVELS = [
+  { key: "overview", label: "Overview", px: 5 },
+  { key: "scene", label: "Scene", px: 12 },
+  { key: "shot", label: "Shot", px: 26 },
+  { key: "frame", label: "Frame", px: 60 },
+] as const;
 
 interface FlatShot {
   id: string;
@@ -67,6 +87,14 @@ export function TimelineView() {
   const [renderUrl, setRenderUrl] = useState<string | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  // Click-to-open shot detail (Preview / Prompt / Characters / Story beat /
+  // Camera / Render status) — a click, not a drag, opens it (see beginDrag).
+  const [detail, setDetail] = useState<{ sectionId: string; shotId: string } | null>(null);
+  const [cast] = useState<Performer[]>(() => loadCast());
+  const { data: characters = [] } = useQuery<Character[]>({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
 
   useEffect(() => {
     if (!song) return;
@@ -292,12 +320,18 @@ export function TimelineView() {
         previewRef.current = p;
         setPreview(p);
       };
-      const onUp = () => {
+      const onUp = (ev: PointerEvent) => {
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         const p = previewRef.current;
         previewRef.current = {};
         setPreview({});
+        // A click, not a drag — open the shot's detail panel instead of
+        // committing a (zero-distance) move.
+        if (Math.abs(ev.clientX - startX) < 4) {
+          setDetail({ sectionId: sh.sectionId, shotId: sh.id });
+          return;
+        }
         const moves = Object.entries(p)
           .filter(([id, v]) => {
             const orig = items.find((it) => it.id === id);
@@ -480,7 +514,6 @@ export function TimelineView() {
   const ticks: number[] = [];
   for (let t = 0; t <= dur; t += tickStep) ticks.push(t);
 
-  const zoomIndex = ZOOMS.indexOf(zoom);
 
   return (
     <div className="relative flex h-full min-h-0 flex-col">
@@ -499,24 +532,26 @@ export function TimelineView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setZoom(ZOOMS[Math.max(0, zoomIndex - 1)])}
-            disabled={zoomIndex <= 0}
-            aria-label="Zoom out"
+          <div
+            role="tablist"
+            aria-label="Zoom level"
+            className="flex h-9 items-center gap-0.5 rounded-[var(--radius-input)] border border-border bg-surface p-0.5"
           >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setZoom(ZOOMS[Math.min(ZOOMS.length - 1, zoomIndex + 1)])}
-            disabled={zoomIndex >= ZOOMS.length - 1}
-            aria-label="Zoom in"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
+            {ZOOM_LEVELS.map((z) => (
+              <button
+                key={z.key}
+                role="tab"
+                aria-selected={zoom === z.px}
+                onClick={() => setZoom(z.px)}
+                className={cn(
+                  "rounded-[calc(var(--radius-input)-2px)] px-2 py-1 text-xs font-medium transition-colors",
+                  zoom === z.px ? "bg-primary/15 text-primary" : "text-muted hover:text-foreground"
+                )}
+              >
+                {z.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant={snap ? "primary" : "ghost"}
             size="icon"
@@ -602,6 +637,17 @@ export function TimelineView() {
         />
       )}
 
+      {detail && treatment && (
+        <ShotDetailPanel
+          treatment={treatment}
+          sectionId={detail.sectionId}
+          shotId={detail.shotId}
+          cast={cast}
+          characters={characters}
+          onClose={() => setDetail(null)}
+        />
+      )}
+
       <div ref={scrollWrapRef} className="min-h-0 flex-1 overflow-auto p-6">
         <div className="inline-block min-w-full align-top" style={{ width }}>
           {/* Ruler */}
@@ -647,7 +693,7 @@ export function TimelineView() {
           <Lane
             label="Shots"
             icon={<Film className="h-3.5 w-3.5" />}
-            tall
+            height={88}
             onBgPointerDown={beginMarquee}
             overlay={
               marquee && (
@@ -668,7 +714,7 @@ export function TimelineView() {
                   key={sh.id}
                   onPointerDown={(e) => beginDrag(e, sh, "move")}
                   className={cn(
-                    "group absolute top-1 bottom-1 z-10 cursor-grab touch-none select-none overflow-hidden rounded-md px-1.5 py-1 active:cursor-grabbing",
+                    "group absolute top-1 bottom-1 z-10 cursor-grab touch-none select-none overflow-hidden rounded-md active:cursor-grabbing",
                     isSel ? "ring-2 ring-primary" : "",
                     flashId === sh.id ? "z-20 animate-pulse ring-4 ring-warning" : ""
                   )}
@@ -678,29 +724,82 @@ export function TimelineView() {
                     backgroundColor: `${sh.color}1f`,
                     borderLeft: `3px solid ${sh.color}`,
                   }}
-                  title={`${formatTime(live.start)}–${formatTime(live.end)} · ${sh.shotType} · ${sh.movement}${sh.lyric ? `\n“${sh.lyric}”` : ""}\nDrag to move · drag right edge to resize`}
+                  title={`${formatTime(live.start)}–${formatTime(live.end)} · ${sh.shotType} · ${sh.movement}${sh.lyric ? `\n“${sh.lyric}”` : ""}\nClick for details · drag to move · drag right edge to resize`}
                 >
-                  {sh.imageUrl && (
+                  {sh.videoUrl ? (
+                    <AssetVideo
+                      src={sh.videoUrl}
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                      controls={false}
+                      muted
+                      loop
+                      autoPlay
+                    />
+                  ) : sh.imageUrl ? (
                     <AssetImage
                       src={sh.imageUrl}
                       alt=""
-                      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                      label="Frame"
                     />
-                  )}
-                  <div className="pointer-events-none relative truncate text-[10px] font-medium leading-tight text-foreground">
-                    {sh.label}
-                  </div>
-                  {w > 60 && (
-                    <div className="pointer-events-none relative truncate text-[9px] leading-tight text-muted">
-                      {formatTime(Math.max(0.1, live.end - live.start))} · {sh.movement}
+                  ) : (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-muted/50">
+                      <ImageIcon className="h-5 w-5" />
                     </div>
                   )}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 pb-1 pt-3">
+                    <div className="truncate text-[10px] font-medium leading-tight text-white">
+                      {sh.label}
+                    </div>
+                    {w > 60 && (
+                      <div className="truncate text-[9px] leading-tight text-white/70">
+                        {formatTime(Math.max(0.1, live.end - live.start))} · {sh.movement}
+                      </div>
+                    )}
+                  </div>
                   {/* resize handle (right edge) */}
                   <div
                     onPointerDown={(e) => beginDrag(e, sh, "resize")}
                     className="absolute inset-y-0 right-0 w-2 cursor-ew-resize bg-foreground/0 hover:bg-foreground/20"
                     title="Drag to change duration"
                   />
+                </div>
+              );
+            })}
+          </Lane>
+
+          <Lane label="Render" icon={<CheckCircle2 className="h-3.5 w-3.5" />}>
+            {shots.map((sh) => {
+              const live = preview[sh.id] ?? sh;
+              const left = xFor(live.start);
+              const w = xFor(live.end) - left;
+              const status = sh.videoUrl ? "clip" : sh.imageUrl ? "frame" : "none";
+              const color = status === "clip" ? "#16a34a" : status === "frame" ? "#d97706" : undefined;
+              return (
+                <div
+                  key={sh.id}
+                  className="pointer-events-none absolute top-1 bottom-1 flex items-center justify-center overflow-hidden rounded-md"
+                  style={{
+                    left,
+                    width: Math.max(3, w - 2),
+                    backgroundColor: color ? `${color}22` : "transparent",
+                    border: `1px solid ${color ?? "var(--color-border)"}`,
+                  }}
+                  title={
+                    status === "clip"
+                      ? "Clip rendered"
+                      : status === "frame"
+                        ? "Frame only — no clip yet"
+                        : "Nothing generated yet"
+                  }
+                >
+                  {status === "clip" ? (
+                    <CheckCircle2 className="h-3 w-3" style={{ color }} />
+                  ) : status === "frame" ? (
+                    <Circle className="h-3 w-3 fill-current" style={{ color }} />
+                  ) : (
+                    <Circle className="h-3 w-3 text-muted/40" />
+                  )}
                 </div>
               );
             })}
@@ -768,6 +867,7 @@ function Lane({
   label,
   icon,
   tall,
+  height,
   children,
   onBgPointerDown,
   overlay,
@@ -775,6 +875,8 @@ function Lane({
   label: string;
   icon: React.ReactNode;
   tall?: boolean;
+  /** Explicit pixel height — takes priority over `tall` when set. */
+  height?: number;
   children: React.ReactNode;
   onBgPointerDown?: (e: React.PointerEvent) => void;
   overlay?: React.ReactNode;
@@ -787,12 +889,130 @@ function Lane({
       </div>
       <div
         className="relative flex-1 rounded-[var(--radius-input)] border border-border bg-surface/50"
-        style={{ height: tall ? 56 : 32 }}
+        style={{ height: height ?? (tall ? 56 : 32) }}
         onPointerDown={onBgPointerDown}
       >
         {children}
         {overlay}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shot detail panel — click a thumbnail to see Preview / Prompt / Characters /
+// Story beat / Camera / Render status, per the Timeline upgrade spec.
+// ---------------------------------------------------------------------------
+
+function ShotDetailPanel({
+  treatment,
+  sectionId,
+  shotId,
+  cast,
+  characters,
+  onClose,
+}: {
+  treatment: MvTreatment;
+  sectionId: string;
+  shotId: string;
+  cast: Performer[];
+  characters: Character[];
+  onClose: () => void;
+}) {
+  const section = treatment.sections.find((s) => s.sectionId === sectionId);
+  const shot = section?.shots.find((s) => s.id === shotId);
+  if (!section || !shot) return null;
+
+  const prompt = buildShotImagePrompt({
+    shot,
+    section,
+    treatment,
+    cast,
+    characters,
+    aspect: "16:9",
+  });
+  const who = (shot.choreo ?? []).map((a) => a.performer).filter(Boolean);
+  const status: { label: string; icon: React.ReactNode; color: string } = shot.videoUrl
+    ? { label: "Clip rendered", icon: <CheckCircle2 className="h-3.5 w-3.5" />, color: "#16a34a" }
+    : shot.imageUrl
+      ? { label: "Frame only — no clip yet", icon: <Circle className="h-3.5 w-3.5 fill-current" />, color: "#d97706" }
+      : { label: "Nothing generated yet", icon: <Circle className="h-3.5 w-3.5" />, color: "var(--color-muted)" };
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-[var(--radius-modal)] border border-border bg-surface shadow-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold">
+            {section.label} · {formatTime(shot.start)}–{formatTime(shot.end)}
+          </h2>
+          <button onClick={onClose} aria-label="Close">
+            <X className="h-4 w-4 text-muted hover:text-foreground" />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <div className="aspect-video w-full overflow-hidden rounded-lg bg-elevated">
+            {shot.videoUrl ? (
+              <AssetVideo src={shot.videoUrl} className="h-full w-full object-cover" controls />
+            ) : shot.imageUrl ? (
+              <AssetImage src={shot.imageUrl} alt="" className="h-full w-full object-cover" label="Frame" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted">
+                <ImageIcon className="h-6 w-6" />
+              </div>
+            )}
+          </div>
+
+          <DetailField icon={<Sparkles className="h-3.5 w-3.5" />} label="Story beat">
+            {section.concept || shot.idea}
+          </DetailField>
+
+          <DetailField icon={<Users className="h-3.5 w-3.5" />} label="Characters">
+            {who.length > 0 ? who.join(", ") : "No one assigned yet"}
+          </DetailField>
+
+          <DetailField icon={<Camera className="h-3.5 w-3.5" />} label="Camera">
+            {[shot.shotType, shot.movement, shot.lighting].filter(Boolean).join(" · ") || "—"}
+          </DetailField>
+
+          <DetailField
+            icon={<span style={{ color: status.color }}>{status.icon}</span>}
+            label="Render status"
+          >
+            <span style={{ color: status.color }}>{status.label}</span>
+          </DetailField>
+
+          <DetailField icon={<Film className="h-3.5 w-3.5" />} label="Prompt">
+            <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted">{prompt}</p>
+          </DetailField>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailField({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+        {icon}
+        {label}
+      </div>
+      <div className="text-sm text-foreground">{children}</div>
     </div>
   );
 }
@@ -1065,6 +1285,7 @@ function Animatic({
               src={current.imageUrl}
               alt=""
               className="h-full w-full object-cover"
+              label="Frame"
             />
           ) : (
             <div

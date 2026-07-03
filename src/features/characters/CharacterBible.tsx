@@ -237,6 +237,7 @@ function CastCard({
           alt={character.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           fallback={<PortraitFallback character={character} className="h-full w-full text-3xl" />}
+          label="Portrait"
         />
         <div className="absolute right-2 top-2">
           {character.locked ? (
@@ -419,6 +420,7 @@ function CharacterSheet({
                 alt={draft.name}
                 className="h-full w-full object-cover"
                 fallback={<PortraitFallback character={draft} className="h-full w-full text-5xl" />}
+                label="Portrait"
               />
             </div>
           </div>
@@ -483,6 +485,7 @@ function CharacterSheet({
                     src={src}
                     alt={`Reference ${i + 1}`}
                     className="aspect-square w-full rounded-md border border-border object-cover"
+                    label="Reference"
                   />
                 ))}
               </div>

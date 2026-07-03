@@ -23,6 +23,32 @@ export function setShowWelcome(show: boolean): void {
   }
 }
 
+export type MvViewMode = "simple" | "director" | "expert";
+const LS_MV_VIEW_MODE = "mf.mvViewMode";
+
+/**
+ * MV Director's display tier. Defaults to "simple" — big storyboard cards,
+ * plain-language summaries, one primary action per scene — for new users.
+ * "director" is today's full creative-control view; "expert" additionally
+ * defaults every shot's prompt/model/provider panels open.
+ */
+export function getMvViewMode(): MvViewMode {
+  try {
+    const v = localStorage.getItem(LS_MV_VIEW_MODE);
+    return v === "director" || v === "expert" ? v : "simple";
+  } catch {
+    return "simple";
+  }
+}
+
+export function setMvViewMode(mode: MvViewMode): void {
+  try {
+    localStorage.setItem(LS_MV_VIEW_MODE, mode);
+  } catch {
+    /* ignore */
+  }
+}
+
 const LS_AUTO_REFS = "mf.autoProductionRefs";
 
 /**

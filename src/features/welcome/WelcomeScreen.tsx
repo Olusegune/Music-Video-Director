@@ -48,7 +48,7 @@ export function WelcomeScreen() {
     {
       icon: <Music className="h-5 w-5" />,
       title: "Import a song",
-      desc: "Start in Song Studio — map tempo, sections, and lyrics. No key needed.",
+      desc: "Director Mode — start in Song Studio and map tempo, sections, and lyrics yourself. No key needed.",
       go: () => close(openSong),
       primary: true,
     },
@@ -115,7 +115,8 @@ export function WelcomeScreen() {
         <div className="flex flex-col items-center gap-1.5 px-6 pt-6 text-center">
           <MagicFlowButton variant="hero" />
           <p className="text-[11px] text-muted">
-            Create a complete music video from your song — one click.
+            Create a complete music video from your song — one click. Prefer full
+            manual control? Import a song below to work in Director Mode instead.
           </p>
         </div>
 

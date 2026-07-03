@@ -16,6 +16,7 @@ function templateForSong(songId: string | null): string | null {
 export type View =
   | "song"
   | "mvdirector"
+  | "magicoutput"
   | "cast"
   | "choreography"
   | "timeline"
@@ -69,6 +70,9 @@ interface AppState {
 
   openSong: () => void;
   openMvDirector: () => void;
+  /** Land here after Magic Mode finishes — the friendly result screen, not the
+   *  full Director UI. Director Mode is reached only via its own button. */
+  openMagicOutput: () => void;
   openCast: () => void;
   openChoreography: () => void;
   openTimeline: () => void;
@@ -132,6 +136,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   openSong: () => set({ view: "song", activeProjectId: null }),
   openMvDirector: () => set({ view: "mvdirector" }),
+  openMagicOutput: () => set({ view: "magicoutput" }),
   openCast: () => set({ view: "cast" }),
   openChoreography: () => set({ view: "choreography" }),
   openTimeline: () => set({ view: "timeline" }),

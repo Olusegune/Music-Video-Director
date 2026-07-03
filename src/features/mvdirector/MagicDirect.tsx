@@ -1,10 +1,11 @@
-// "Direct This Music Video" — the one-click magic flow.
+// Magic Mode's final step — the staged, one-click generation flow.
 //
 // From an imported song it runs the whole local directing pipeline in sequence,
 // with staged progress so it feels deliberate: read the song → assign
 // performers → plan the shot list → choreograph the chorus → assemble the
-// treatment. Everything is local (no API/keys); on completion it drops the user
-// straight into the MV Director with a finished, editable treatment.
+// treatment. Everything is local (no API/keys); on completion it lands the user
+// on the Magic Output Screen — a plain-language result page — NOT the full
+// Director UI. Director Mode is reached only via that screen's own button.
 
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Check, Loader2 } from "lucide-react";
@@ -14,6 +15,7 @@ import { directSong, saveTreatment } from "@/lib/mvDirector";
 import { getTemplate } from "@/lib/templates";
 import { loadCast, savePerformer, autoCastFromSong } from "@/lib/cast";
 import { choreographSong, saveChoreo, getChoreo } from "@/lib/choreography";
+import { applyVideoTypeBias } from "@/lib/videoTypes";
 
 interface Step {
   label: string;
@@ -24,7 +26,7 @@ export function MagicDirect() {
   const magicSongId = useAppStore((s) => s.magicSongId);
   const setMagicSongId = useAppStore((s) => s.setMagicSongId);
   const setActiveSong = useAppStore((s) => s.setActiveSong);
-  const openMvDirector = useAppStore((s) => s.openMvDirector);
+  const openMagicOutput = useAppStore((s) => s.openMagicOutput);
   const activeTemplateId = useAppStore((s) => s.activeTemplateId);
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -43,7 +45,10 @@ export function MagicDirect() {
     setDone(false);
     setStepIndex(0);
 
-    const template = getTemplate(song.templateId ?? activeTemplateId);
+    const template = applyVideoTypeBias(
+      getTemplate(song.templateId ?? activeTemplateId),
+      song.videoType
+    );
     steps.current = [
       {
         label: "Reading the song — tempo, sections & lyrics",
@@ -77,10 +82,10 @@ export function MagicDirect() {
     const tick = () => {
       if (i >= steps.current.length) {
         setDone(true);
-        // Land in the MV Director with the finished treatment.
+        // Land on the friendly Magic Output Screen — never the full Director UI.
         setTimeout(() => {
           setActiveSong(song.id);
-          openMvDirector();
+          openMagicOutput();
           setMagicSongId(null);
           running.current = false;
           setDone(false);
@@ -98,7 +103,7 @@ export function MagicDirect() {
       setTimeout(tick, 620);
     };
     setTimeout(tick, 350);
-  }, [magicSongId, activeTemplateId, openMvDirector, setActiveSong, setMagicSongId]);
+  }, [magicSongId, activeTemplateId, openMagicOutput, setActiveSong, setMagicSongId]);
 
   if (!magicSongId) return null;
   const all = steps.current;

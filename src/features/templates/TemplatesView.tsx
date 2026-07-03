@@ -51,6 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { TemplateHeroImage } from "@/components/templates/TemplateCard";
 
 /** Pick an elegant genre/style icon for a template by matching its name/tags. */
 function templateIcon(t: MvTemplate): React.ReactNode {
@@ -299,38 +300,53 @@ function TemplateCard({
   onExport: () => void;
   onDelete: () => void;
 }) {
+  const moodTags = t.mood.split(",").map((m) => m.trim()).filter(Boolean).slice(0, 3);
+
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-surface shadow-card transition-colors",
-        selected ? "border-primary" : "border-border hover:border-primary/40"
+        "group flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-surface shadow-card transition-colors",
+        selected ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40"
       )}
     >
-      <div className="h-1.5 w-full" style={{ backgroundColor: t.accent }} />
+      <button onClick={onDetails} className="text-left">
+        <TemplateHeroImage
+          template={t}
+          overlay={
+            <>
+              <span
+                className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-background/80 backdrop-blur"
+                style={{ color: t.accent }}
+              >
+                {templateIcon(t)}
+              </span>
+              {custom && (
+                <span className="absolute bottom-1.5 left-1.5">
+                  <Badge variant="accent" className="normal-case">Custom</Badge>
+                </span>
+              )}
+            </>
+          }
+        />
+      </button>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <button onClick={onDetails} className="flex items-start gap-3 text-left">
-            <span
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-              style={{ backgroundColor: `${t.accent}26`, color: t.accent }}
-            >
-              {templateIcon(t)}
-            </span>
-            <span>
-              <h3 className="text-sm font-semibold leading-tight hover:underline">
-                {t.name}
-              </h3>
-              <p className="text-[11px] text-muted">{t.mood}</p>
-            </span>
-          </button>
-          <div className="flex shrink-0 items-center gap-1">
-            {custom && <Badge variant="accent" className="normal-case">Custom</Badge>}
-            <Badge className="normal-case" style={{ backgroundColor: `${t.accent}1f`, color: t.accent }}>
-              {t.category}
-            </Badge>
+        <button onClick={onDetails} className="text-left">
+          <h3 className="text-sm font-semibold leading-tight hover:underline">{t.name}</h3>
+          <p className="line-clamp-2 text-xs text-muted">{t.tagline}</p>
+        </button>
+        {moodTags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {moodTags.map((m) => (
+              <span
+                key={m}
+                className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{ backgroundColor: `${t.accent}1f`, color: t.accent }}
+              >
+                {m}
+              </span>
+            ))}
           </div>
-        </div>
-        <p className="text-xs text-muted">{t.tagline}</p>
+        )}
         <Swatches palette={t.palette} />
         <div className="mt-1 space-y-1 text-[11px] text-muted">
           <Attr icon={<Scissors className="h-3 w-3" />} value={t.editingRhythm} />
@@ -339,7 +355,7 @@ function TemplateCard({
           )}
         </div>
         <div className="mt-auto flex items-center gap-2 pt-2">
-          <Button size="sm" className="flex-1" onClick={onUse}>
+          <Button variant="gold" size="sm" className="flex-1" onClick={onUse}>
             {selected ? <Check className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
             {selected ? "Selected · Use" : "Use template"}
           </Button>
@@ -463,7 +479,7 @@ function TemplateDetail({
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          <Button onClick={onUse}>
+          <Button variant="gold" onClick={onUse}>
             {selected ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
             Use this template
             <ArrowRight className="h-4 w-4" />

@@ -451,11 +451,11 @@ function Analysis({
           {analysis.characters.length === 0 && (
             <Empty>No character cues detected. Screenplay/Fountain format works best.</Empty>
           )}
-          {analysis.characters.map((c) => {
+          {analysis.characters.map((c, i) => {
             const inBible = existingNames.has(c.name.toLowerCase());
             return (
               <div
-                key={c.name}
+                key={`${c.name}-${i}`}
                 className="flex items-start justify-between gap-3 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-card"
               >
                 <div className="min-w-0">
@@ -614,11 +614,11 @@ function EntityList({
         )}
       </SectionHead>
       <div className="flex flex-wrap gap-1.5">
-        {items.map((e) => {
+        {items.map((e, i) => {
           const added = existing.has(e.name.toLowerCase());
           return (
             <span
-              key={e.name}
+              key={`${e.name}-${i}`}
               title={e.context || undefined}
               className={cn(
                 "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs",

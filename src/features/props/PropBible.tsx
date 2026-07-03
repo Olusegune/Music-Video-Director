@@ -187,6 +187,7 @@ function PropCard({
           alt={prop.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           fallback={<GradientFill id={prop.id} label={prop.name} className="h-full w-full text-2xl" />}
+          label="Hero image"
         />
         <div className="absolute right-2 top-2 flex gap-1">
           <Badge variant="primary" className="gap-1">

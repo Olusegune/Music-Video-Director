@@ -57,6 +57,7 @@ export function Sidebar() {
     openModels,
     openProject,
     setWizardOpen,
+    openDirectorWizard,
     setSearchOpen,
     lastSavedAt,
   } = useAppStore();
@@ -86,9 +87,16 @@ export function Sidebar() {
       <div className="space-y-1.5 px-3 pb-2">
         <button
           onClick={() => setWizardOpen(true)}
-          className="grad-primary flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:brightness-110"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-border px-3 py-2 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:bg-elevated/60"
         >
           <Plus className="h-4 w-4" /> New production
+        </button>
+        <button
+          onClick={openDirectorWizard}
+          title="Magic Mode — direct a full music video in one click"
+          className="grad-gold flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] px-3 py-2 text-sm font-semibold text-[var(--color-gold-foreground)] shadow-sm shadow-[var(--color-gold)]/25 transition hover:brightness-105"
+        >
+          <Clapperboard className="h-4 w-4" /> Magic Mode
         </button>
         <button
           onClick={() => setSearchOpen(true)}
@@ -101,7 +109,7 @@ export function Sidebar() {
 
       {/* Grouped nav — reads as a director's production flow, top to bottom. */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
-        <NavGroup label="Production">
+        <NavGroup label="Director Mode / Advanced">
           <NavItem icon={<LayoutTemplate className="h-4 w-4" />} label="Templates" active={view === "templates"} onClick={openTemplates} />
           <NavItem icon={<Music className="h-4 w-4" />} label="Song Studio" active={view === "song"} onClick={openSong} />
           <NavItem icon={<Video className="h-4 w-4" />} label="MV Director" active={view === "mvdirector"} onClick={openMvDirector} />

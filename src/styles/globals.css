@@ -16,6 +16,9 @@
   --color-primary-foreground: var(--c-primary-fg);
   --color-accent: var(--c-accent);
 
+  --color-gold: var(--c-gold);
+  --color-gold-foreground: var(--c-gold-fg);
+
   --color-success: var(--c-success);
   --color-warning: var(--c-warning);
   --color-danger: var(--c-danger);
@@ -44,6 +47,8 @@
   --c-primary: #6d5dfc;
   --c-primary-fg: #ffffff;
   --c-accent: #0891b2;
+  --c-gold: #d4af37;
+  --c-gold-fg: #2a1e00;
   --c-success: #16a34a;
   --c-warning: #d97706;
   --c-danger: #dc2626;
@@ -65,6 +70,8 @@
   --c-primary: #7d6dff;
   --c-primary-fg: #ffffff;
   --c-accent: #00d9ff;
+  --c-gold: #f0c05a;
+  --c-gold-fg: #2a1e00;
   --c-success: #4ade80;
   --c-warning: #f59e0b;
   --c-danger: #ef4444;
@@ -133,24 +140,30 @@
       color-mix(in oklab, var(--color-accent) 60%, white)
     );
   }
+  .grad-gold {
+    background-image: linear-gradient(
+      135deg,
+      var(--color-gold),
+      color-mix(in oklab, var(--color-gold) 65%, white)
+    );
+  }
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
 
-  /* The Magic Flow CTA — premium violet→gold, soft glow, sparkle, hover/press */
+  /* The Magic Mode CTA — premium gold→violet, soft glow, sparkle, hover/press.
+     Gold is the dominant, beginner-facing color; violet only warms the
+     trailing edge, echoing the "magic" identity while keeping purple reserved
+     for Director Mode / advanced tools elsewhere in the app. */
   .magic-cta {
     position: relative;
-    /* Keep the violet body dominant so white text stays readable; gold only
-       warms the trailing edge. */
-    background-image: linear-gradient(115deg, #6e56ff 0%, #7d63ff 55%, #b98bf0 78%, #ffb800 125%);
+    background-image: linear-gradient(115deg, var(--color-gold) 0%, #ffcf66 45%, #f0c05a 70%, #9b8cff 130%);
     background-size: 180% 180%;
-    color: #fff;
-    /* Dark text-shadow guarantees contrast across both the violet and gold ends. */
-    text-shadow: 0 1px 3px rgba(20, 10, 60, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--color-gold-foreground);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow:
-      0 8px 30px -8px rgba(110, 86, 255, 0.6),
-      0 4px 18px -6px rgba(255, 184, 0, 0.35);
+      0 8px 30px -8px rgba(212, 175, 55, 0.55),
+      0 4px 18px -6px rgba(110, 86, 255, 0.3);
     transition:
       transform 0.18s ease,
       box-shadow 0.25s ease,
@@ -161,8 +174,8 @@
     transform: translateY(-2px) scale(1.02);
     filter: brightness(1.06);
     box-shadow:
-      0 14px 44px -10px rgba(110, 86, 255, 0.75),
-      0 8px 26px -8px rgba(255, 184, 0, 0.5);
+      0 14px 44px -10px rgba(212, 175, 55, 0.7),
+      0 8px 26px -8px rgba(110, 86, 255, 0.45);
   }
   .magic-cta:active {
     transform: translateY(0) scale(0.98);
@@ -170,7 +183,7 @@
   }
   /* Soft animated glow halo behind the button */
   .magic-glow {
-    background-image: linear-gradient(120deg, #6e56ff, #ffb800);
+    background-image: linear-gradient(120deg, var(--color-gold), #6e56ff);
     filter: blur(22px);
     opacity: 0.55;
     animation: magic-pulse 3.4s ease-in-out infinite;

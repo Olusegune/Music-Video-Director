@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
   Plus,
@@ -8,6 +8,10 @@ import {
   MicOff,
   Link2,
   UserPlus,
+  Camera,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   loadCast,
@@ -21,6 +25,7 @@ import {
   type Performer,
   type PerformerRole,
 } from "@/lib/cast";
+import { newCharacter } from "@/lib/characterDna";
 import { api } from "@/lib/ipc";
 import type { Character } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,13 +34,28 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { CardPicker } from "@/components/ui/card-picker";
+import { ROLE_META } from "@/lib/roleMeta";
+import { DANCE_STYLE_META } from "@/lib/danceStyleMeta";
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
 
 export function CastView() {
+  const queryClient = useQueryClient();
   const [cast, setCast] = useState<Performer[]>(() => loadCast());
   const { data: characters = [] } = useQuery({
     queryKey: ["characters"],
     queryFn: api.listCharacters,
   });
+  const refreshCharacters = () =>
+    queryClient.invalidateQueries({ queryKey: ["characters"] });
 
   const refresh = () => setCast(loadCast());
 
@@ -118,6 +138,7 @@ export function CastView() {
                 characters={characters}
                 onChange={patch}
                 onDelete={() => remove(p.id)}
+                onCharacterAdded={refreshCharacters}
               />
             ))}
           </div>
@@ -159,18 +180,49 @@ function PerformerCard({
   characters,
   onChange,
   onDelete,
+  onCharacterAdded,
 }: {
   performer: Performer;
   characters: Character[];
   onChange: (next: Performer) => void;
   onDelete: () => void;
+  onCharacterAdded: () => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const color = roleColor(performer.role);
   const linked = characters.find((c) => c.id === performer.characterId);
+  // Reset the broken-portrait flag whenever the portrait itself changes
+  // (new upload/generation) — the React-recommended "adjust state while
+  // rendering" pattern, so this doesn't need a useEffect.
+  const [portraitCheck, setPortraitCheck] = useState({ url: linked?.portraitUrl, broken: false });
+  if (portraitCheck.url !== linked?.portraitUrl) {
+    setPortraitCheck({ url: linked?.portraitUrl, broken: false });
+  }
+  const portraitBroken = portraitCheck.broken;
   const isDancerish =
     performer.role === "Dancer" ||
     performer.role === "Lead Singer" ||
     performer.role === "Featured Artist";
+  const summary = performer.performanceNotes.trim() || "No performance notes yet.";
+
+  const addPortrait = async (file: File) => {
+    setUploading(true);
+    try {
+      const dataUrl = await readAsDataUrl(file);
+      const character = {
+        ...newCharacter(performer.name || "New Character"),
+        portraitUrl: dataUrl,
+        referenceImages: [dataUrl],
+        locked: true,
+      };
+      await api.saveCharacter(character);
+      onCharacterAdded();
+      onChange({ ...performer, characterId: character.id });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -185,11 +237,15 @@ function PerformerCard({
         <Badge className="normal-case" style={{ backgroundColor: `${color}1f`, color }}>
           {performer.role}
         </Badge>
-        {performer.lipSync ? (
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted">
-            <Mic className="h-3 w-3" /> on-camera vocal
-          </span>
-        ) : null}
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 text-[11px]",
+            performer.lipSync ? "text-foreground" : "text-muted"
+          )}
+        >
+          {performer.lipSync ? <Mic className="h-3 w-3" /> : <MicOff className="h-3 w-3" />}
+          {performer.lipSync ? "on-camera vocal" : "no vocal"}
+        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -202,21 +258,60 @@ function PerformerCard({
       </div>
 
       <CardContent className="space-y-3 p-4">
+        {/* Headline: large portrait + name + always-visible primary actions */}
         <div className="flex items-start gap-3">
-          {linked?.portraitUrl ? (
-            <img
-              src={linked.portraitUrl}
-              alt={linked.name}
-              className="h-14 w-14 shrink-0 rounded-lg object-cover"
+          <label
+            className={cn(
+              "group relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl text-2xl font-semibold text-white",
+              (!linked?.portraitUrl || portraitBroken) && "cursor-pointer border-2 border-dashed"
+            )}
+            style={{
+              backgroundColor: linked?.portraitUrl && !portraitBroken ? undefined : `${color}22`,
+              borderColor: linked?.portraitUrl && !portraitBroken ? undefined : `${color}55`,
+              color: linked?.portraitUrl && !portraitBroken ? undefined : color,
+            }}
+            title={
+              portraitBroken
+                ? "Portrait unavailable — click to replace"
+                : linked?.portraitUrl
+                  ? linked.name
+                  : "Add a portrait"
+            }
+          >
+            {linked?.portraitUrl && !portraitBroken ? (
+              <>
+                <img
+                  src={linked.portraitUrl}
+                  alt={linked.name}
+                  className="h-full w-full object-cover"
+                  onError={() => setPortraitCheck({ url: linked.portraitUrl, broken: true })}
+                />
+                <span className="absolute inset-0 hidden items-center justify-center bg-black/50 group-hover:flex">
+                  <Camera className="h-5 w-5 text-white" />
+                </span>
+              </>
+            ) : uploading ? (
+              <span className="text-xs">…</span>
+            ) : (
+              <span className="flex flex-col items-center gap-1 text-center">
+                <Camera className="h-5 w-5" />
+                <span className="text-[10px] font-medium">
+                  {portraitBroken ? "Portrait unavailable — replace" : "Add Portrait"}
+                </span>
+              </span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void addPortrait(f);
+              }}
             />
-          ) : (
-            <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-lg font-semibold text-white"
-              style={{ backgroundColor: color }}
-            >
-              {(performer.name || "?").slice(0, 1).toUpperCase()}
-            </div>
-          )}
+          </label>
+
           <div className="min-w-0 flex-1 space-y-2">
             <Input
               value={performer.name}
@@ -226,25 +321,26 @@ function PerformerCard({
               aria-label="Performer name"
             />
             <div className="flex gap-2">
-              <select
-                value={performer.role}
-                onChange={(e) => {
-                  const role = e.target.value as PerformerRole;
-                  onChange({
-                    ...performer,
-                    role,
-                    lipSync: VOCAL_ROLES.includes(role),
-                  });
-                }}
-                className="h-9 flex-1 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
-                aria-label="Role"
-              >
-                {PERFORMER_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
+              <div className="flex-1">
+                <CardPicker
+                  value={performer.role}
+                  ariaLabel="Role"
+                  options={PERFORMER_ROLES.map((r) => ({
+                    key: r,
+                    label: r,
+                    icon: ROLE_META[r].icon,
+                    tagline: ROLE_META[r].tagline,
+                  }))}
+                  onChange={(key) => {
+                    const role = key as PerformerRole;
+                    onChange({
+                      ...performer,
+                      role,
+                      lipSync: VOCAL_ROLES.includes(role),
+                    });
+                  }}
+                />
+              </div>
               <button
                 onClick={() => onChange({ ...performer, lipSync: !performer.lipSync })}
                 className={cn(
@@ -263,9 +359,16 @@ function PerformerCard({
                 Lip-sync
               </button>
             </div>
+            {linked && (
+              <p className="text-[11px] text-muted">
+                Linked to <span className="text-foreground">{linked.name}</span> —
+                visual DNA{linked.locked ? " (locked)" : ""} carries into generation.
+              </p>
+            )}
           </div>
         </div>
 
+        {/* Always-visible primary actions: dance style + Character DNA link */}
         <div className="grid gap-2 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1 flex items-center gap-1 text-[11px] font-medium text-muted">
@@ -296,57 +399,67 @@ function PerformerCard({
               <span className="mb-1 block text-[11px] font-medium text-muted">
                 Dance style
               </span>
-              <select
+              <CardPicker
                 value={performer.danceStyle}
-                onChange={(e) =>
-                  onChange({ ...performer, danceStyle: e.target.value })
-                }
-                className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
-                aria-label="Dance style"
-              >
-                <option value="">— none —</option>
-                {DANCE_STYLES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+                ariaLabel="Dance style"
+                placeholder="— none —"
+                options={DANCE_STYLES.map((s) => ({
+                  key: s,
+                  label: s,
+                  icon: DANCE_STYLE_META[s]?.icon,
+                  tagline: DANCE_STYLE_META[s]?.tagline,
+                }))}
+                onChange={(key) => onChange({ ...performer, danceStyle: key })}
+              />
             </label>
           )}
         </div>
 
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">
-            Wardrobe
+        {/* Short performance summary — expand for wardrobe + full notes */}
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex w-full items-start gap-1.5 text-left text-[11px] text-muted hover:text-foreground"
+        >
+          {expanded ? (
+            <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          )}
+          <span className="flex items-center gap-1">
+            <Pencil className="h-3 w-3 shrink-0" />
+            <span className={cn(!expanded && "line-clamp-1")}>{summary}</span>
           </span>
-          <Input
-            value={performer.wardrobe}
-            onChange={(e) => onChange({ ...performer, wardrobe: e.target.value })}
-            placeholder="e.g. all-white minimal, statement jewelry"
-            aria-label="Wardrobe"
-          />
-        </label>
+        </button>
 
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-medium text-muted">
-            Performance notes
-          </span>
-          <Textarea
-            value={performer.performanceNotes}
-            onChange={(e) =>
-              onChange({ ...performer, performanceNotes: e.target.value })
-            }
-            placeholder="Energy, attitude, signature moves, how they carry the camera…"
-            className="min-h-16"
-            aria-label="Performance notes"
-          />
-        </label>
+        {expanded && (
+          <div className="space-y-3 border-t border-border pt-3">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-muted">
+                Wardrobe
+              </span>
+              <Input
+                value={performer.wardrobe}
+                onChange={(e) => onChange({ ...performer, wardrobe: e.target.value })}
+                placeholder="e.g. all-white minimal, statement jewelry"
+                aria-label="Wardrobe"
+              />
+            </label>
 
-        {linked && (
-          <p className="text-[11px] text-muted">
-            Linked to <span className="text-foreground">{linked.name}</span> —
-            visual DNA{linked.locked ? " (locked)" : ""} carries into generation.
-          </p>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-medium text-muted">
+                Performance notes
+              </span>
+              <Textarea
+                value={performer.performanceNotes}
+                onChange={(e) =>
+                  onChange({ ...performer, performanceNotes: e.target.value })
+                }
+                placeholder="Energy, attitude, signature moves, how they carry the camera…"
+                className="min-h-16"
+                aria-label="Performance notes"
+              />
+            </label>
+          </div>
         )}
       </CardContent>
     </Card>

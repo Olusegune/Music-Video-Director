@@ -277,6 +277,7 @@ export function AssetPicker({
                         src={a.src}
                         alt={a.label}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        label="Asset"
                       />
                     </div>
                     {on && (
