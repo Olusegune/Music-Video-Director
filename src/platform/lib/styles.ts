@@ -1,4 +1,4 @@
-// Project-wide visual style presets — the full Wheelbarrow AI Director
+// Project-wide visual style presets — the full Director Studio
 // catalog. The chosen style becomes the "visual DNA" injected into pack
 // generation and every image/video prompt. Each preset carries hint fragments
 // the local creative engine uses to bias camera, lighting, and motion.

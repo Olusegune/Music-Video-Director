@@ -349,7 +349,7 @@ function AboutCard() {
             <Film className="h-5 w-5 text-white" />
           </span>
           <div>
-            <div className="text-sm font-semibold">Wheelbarrow AI Director</div>
+            <div className="text-sm font-semibold">Director Studio</div>
             <div className="text-xs text-muted">
               Version {APP_VERSION} · {isTauri ? "Desktop (Tauri)" : "Browser preview"}
             </div>

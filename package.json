@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Wheelbarrow MotionForge — local-first AI motion-graphics pre-production studio",
+  "description": "Director Studio — local-first AI creative-production studio",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

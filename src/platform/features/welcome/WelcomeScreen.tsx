@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Boxes,
   Music,
   Rocket,
   LifeBuoy,
@@ -14,7 +15,7 @@ import { cn } from "@/platform/lib/utils";
 import { getShowWelcome, setShowWelcome } from "@/platform/lib/settings";
 import { Button } from "@/platform/components/ui/button";
 import { MagicFlowButton } from "@/apps/music-video/components/magic/MagicFlowButton";
-import splashArt from "@/assets/splash.jpg";
+import splashArt from "@/assets/director-studio-splash.png";
 
 /**
  * Welcome overlay. Visibility is driven by the store (`welcomeOpen`), which is
@@ -29,6 +30,7 @@ export function WelcomeScreen() {
   const [splashLoaded, setSplashLoaded] = useState(false);
 
   const openSong = useAppStore((s) => s.openSong);
+  const openMotionStudio = useAppStore((s) => s.openMotionStudio);
   const openHelp = useAppStore((s) => s.openHelp);
   const openApiKeys = useAppStore((s) => s.openApiKeys);
   const openTemplates = useAppStore((s) => s.openTemplates);
@@ -49,15 +51,21 @@ export function WelcomeScreen() {
   const actions = [
     {
       icon: <Music className="h-5 w-5" />,
-      title: "Import a song",
-      desc: "Director Mode — start in Song Studio and map tempo, sections, and lyrics yourself. No key needed.",
+      title: "Music Video Director",
+      desc: "Import a song, map tempo and lyrics, then direct the video.",
       go: () => close(openSong),
       primary: true,
     },
     {
+      icon: <Boxes className="h-5 w-5" />,
+      title: "Motion Studio",
+      desc: "Plan a commercial, explainer, UI animation, or product reveal.",
+      go: () => close(openMotionStudio),
+    },
+    {
       icon: <LayoutTemplate className="h-5 w-5" />,
       title: "Start from a template",
-      desc: "Pick a genre/style blueprint — the Director adapts it to your song.",
+      desc: "Pick a style blueprint and adapt it to the production.",
       go: () => close(openTemplates),
     },
     {
@@ -69,13 +77,13 @@ export function WelcomeScreen() {
     {
       icon: <Rocket className="h-5 w-5" />,
       title: "Getting started",
-      desc: "A 4-step walkthrough from song to finished video.",
+      desc: "A walkthrough from idea to directed production.",
       go: () => close(openHelp),
     },
     {
       icon: <KeyRound className="h-5 w-5" />,
       title: "Connect AI keys",
-      desc: "Add provider keys to generate frames, clips, and voices.",
+      desc: "Add provider keys to generate frames, clips, voices, and assets.",
       go: () => close(openApiKeys),
     },
     {
@@ -94,7 +102,7 @@ export function WelcomeScreen() {
         <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
           <img
             src={splashArt}
-            alt="Wheelbarrow Studios — Music Video Director"
+            alt="Director Studio"
             onLoad={() => setSplashLoaded(true)}
             className={cn(
               "h-full w-full object-cover transition-opacity duration-700 ease-out",
@@ -113,8 +121,7 @@ export function WelcomeScreen() {
         </div>
         <div className="shrink-0 border-b border-border px-7 py-3 text-center">
           <p className="text-sm text-muted">
-            Turn a song into a directed music video — plan locally for free,
-            generate when you're ready.
+            Plan locally, generate when ready, and keep each production connected.
           </p>
         </div>
 
@@ -124,8 +131,8 @@ export function WelcomeScreen() {
         <div className="flex flex-col items-center gap-1.5 px-6 pt-6 text-center">
           <MagicFlowButton variant="hero" />
           <p className="text-[11px] text-muted">
-            Create a complete music video from your song — one click. Prefer full
-            manual control? Import a song below to work in Director Mode instead.
+            Music Video Director is one Director Studio module. Use the app switcher
+            below to start there or open Motion Studio.
           </p>
         </div>
 
@@ -175,7 +182,7 @@ export function WelcomeScreen() {
               <LifeBuoy className="h-3.5 w-3.5" /> Open Help Center
             </button>
             <Button size="sm" onClick={() => close(openSong)}>
-              Start creating
+              Start in Music Video
             </Button>
           </div>
         </div>

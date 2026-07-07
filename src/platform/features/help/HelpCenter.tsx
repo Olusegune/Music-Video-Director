@@ -67,7 +67,7 @@ const ARTICLES: Article[] = [
     keywords: "begin first intro onboarding new",
     action: { label: "Open Song Studio", go: (s) => s.openSong() },
     blocks: [
-      { p: "Wheelbarrow AI Director turns a song into a complete music-video production. Everything you plan is saved automatically — there is nothing to set up to begin." },
+      { p: "Director Studio turns ideas into connected creative productions. Music Video Director is the song-first module; everything you plan is saved automatically, and there is nothing to set up to begin." },
       { h: "Your first video in 4 steps" },
       { steps: [
         "Song Studio → Import a track (MP3/WAV). The Song Brain detects tempo, lays out the sections, and you can paste lyrics to align them.",

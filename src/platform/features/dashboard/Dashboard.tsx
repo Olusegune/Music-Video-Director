@@ -31,7 +31,7 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { MagicFlowButton } from "@/apps/music-video/components/magic/MagicFlowButton";
-import splashArt from "@/assets/splash.jpg";
+import splashArt from "@/assets/director-studio-splash.png";
 
 const PROJECT_TYPES: ProjectType[] = [
   "SaaS Product",
@@ -107,8 +107,7 @@ export function Dashboard() {
         <div>
           <h1 className="text-lg font-semibold">Director's Home</h1>
           <p className="text-xs text-muted">
-            Start a music video from a song or a template — then direct, cast, and
-            render.
+            Start a creative production, then direct, generate, refine, and export.
           </p>
         </div>
         <Button onClick={() => setWizardOpen(true)}>
@@ -117,7 +116,7 @@ export function Dashboard() {
       </header>
 
       <div className="space-y-8 p-8">
-        {/* Magic Mode hero — the main dashboard action, impossible to miss. */}
+        {/* Director Studio hero - broad app identity, with Music Video as one module. */}
         <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-gold)]/30">
           <img
             src={splashArt}
@@ -128,11 +127,10 @@ export function Dashboard() {
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-[var(--color-gold)]/10" />
           <div className="relative flex flex-col items-center gap-4 px-8 py-12 text-center">
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Create a Music Video in Minutes
+              Director Studio
             </h2>
             <p className="max-w-md text-sm text-muted">
-              Upload a song, add an artist, choose a style, and let the Director
-              build the video.
+              Every idea. Every style. One vision.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <MagicFlowButton variant="hero" />

@@ -82,8 +82,8 @@ export function Sidebar() {
           <Film className="h-4 w-4 text-white" />
         </div>
         <div className="leading-tight">
-          <div className="text-sm font-semibold">AI Director</div>
-          <div className="text-[10px] text-muted">Wheelbarrow MotionForge</div>
+          <div className="text-sm font-semibold">Director Studio</div>
+          <div className="text-[10px] text-muted">Wheelbarrow</div>
         </div>
       </div>
 

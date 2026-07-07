@@ -62,6 +62,7 @@ The physical split is now in place: reusable systems live under
 | Script intelligence | `lib/scriptParser.ts`, `lib/scriptAnalysis.ts`, `lib/docParse.ts`, `features/scripts/` |
 | Image Studio (sheet composer) | `features/imagestudio/`, `lib/characterSheet.ts`, `lib/assetSheet.ts` |
 | Help system | `features/help/`, `components/ui/help-hint.tsx` |
+| Branding assets | `src/assets/director-studio-splash.png`, `src/assets/director-studio-icon.png`, `src-tauri/icons/*`, `components/layout/StartupSplash.tsx` |
 
 ### Music Video Director (app-specific)
 

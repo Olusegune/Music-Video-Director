@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Sidebar } from "@/platform/components/layout/Sidebar";
 import { Inspector } from "@/platform/components/layout/Inspector";
+import { StartupSplash } from "@/platform/components/layout/StartupSplash";
 import { Dashboard } from "@/platform/features/dashboard/Dashboard";
 import { ProjectWorkspace } from "@/platform/features/projects/ProjectWorkspace";
 import { SettingsView } from "@/platform/features/settings/SettingsView";
@@ -109,6 +110,7 @@ export default function App() {
       <GlobalSearch />
       <Toast />
       {showFab && <MagicFlowButton variant="fab" />}
+      <StartupSplash />
     </div>
   );
 }
