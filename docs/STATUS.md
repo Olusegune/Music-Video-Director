@@ -7,6 +7,8 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Motion Studio integration pass**: converted the thin Phase 4 shell into a functional second app/module under `src/apps/motion-studio/` using the existing Director Studio platform. Reused and adapted MotionStudio source domain concepts for production types, visual styles, creative direction, local project storage, storyboard generation, scene critique/improve, and version checkpoints. Discarded the standalone Electron shell, duplicate settings/store/provider stack, and duplicate UI kit. Motion Studio now supports New Motion Project, requested project type selection, business/product input, marketing brief, script, visual style selection, generated storyboard, motion style/scene plan, voice/audio plan, timeline/export placeholder, and StudioMode-gated Director/Studio/Creator controls.
+
 - **Director Studio Phase 4**: platform proof completed with a thin `src/apps/motion-studio/MotionStudio.tsx` shell. It renders New Motion Project, Choose Project Type, Style / Creative Direction, Storyboard placeholder, and Export placeholder screens while consuming shared StudioMode, provider router, style system, project list, theme, and UI components. Music Video Director still renders through the existing Song Studio / MV Director flow. Boundary fixes included `platform/lib/appBindings` for app-owned production callbacks, `platform/lib/promptTools` for generic prompt-doctor utilities, and `platform/lib/songSections` for shared section vocabulary.
 - **Director Studio Phase 3**: mechanical folder migration completed. Reusable
   systems now live under `src/platform/`; Music Video Director-specific systems
@@ -52,9 +54,16 @@ Latest verified Phase 4 artifacts:
 - MSI: `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_0.1.0_x64_en-US.msi`
 - NSIS installer: `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_0.1.0_x64-setup.exe`
 
+Latest Motion Studio integration verification:
+- Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-phase-motionstudio-20260707-182249`
+- Typecheck/build: `npm run build` passed.
+- Browser QA: Music Video Director rendered after reload; Motion Studio opened from the sidebar; a sample SaaS Explainer project generated a storyboard, scene plan, timeline/export placeholder, loop engine, Creator controls, and Improve/Approve updates.
+- Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed.
+
 ## Known issues / gray areas
 
-- Remaining platform-to-Music-Video imports are legacy extension points, mostly dashboard/search/assets/validation/demo helpers. They do not block the thin Motion Studio shell, but should move behind app registries before Motion Studio becomes a real product surface.
+- Remaining platform-to-Music-Video imports are legacy extension points, mostly dashboard/search/assets/validation/demo helpers. They do not block Motion Studio, but should move behind app registries before more apps depend on those surfaces.
+- Motion Studio uses a local deterministic storyboard/loop engine and project memory. Real image/video/voice generation is intentionally routed through existing platform settings/provider concepts next, rather than importing the source app's standalone provider code.
 - `platform/features/projects/` (motion-graphics workspace) predates the music-video
   spine; overlaps with newer surfaces. Candidate for consolidation or archive.
 - `platform/lib/localEngine.ts` tone heuristics are B2B-flavored; unused by the
@@ -67,5 +76,5 @@ Latest verified Phase 4 artifacts:
 
 ## Roadmap
 
-- **Next** - continue platform proof hardening: move dashboard/search/assets app-specific data reads behind registries, then decide whether the old `platform/features/projects/` workspace becomes the real Motion Studio base or an archived legacy workspace.
+- **Next** - connect Motion Studio storyboard beats to the shared GenerationPanel/provider execution path and asset library saves, then move dashboard/search/assets app-specific data reads behind registries.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

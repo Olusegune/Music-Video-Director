@@ -27,7 +27,7 @@ Core philosophy, in priority order:
 
 ## Runtime shape
 
-- `src/app/App.tsx` - flat view router over `useAppStore` (Zustand), now composing Music Video Director and the thin Motion Studio skeleton.
+- `src/app/App.tsx` - flat view router over `useAppStore` (Zustand), now composing Music Video Director and Motion Studio.
 - `src/platform/lib/ipc.ts` — the single `api` facade (~78 methods). In Tauri it calls
   the Rust core (SQLite + OS keychain for keys); in browser dev it transparently
   falls back to localStorage (`mf.*` keys). Every feature talks to `api`, never
@@ -76,19 +76,24 @@ The physical split is now in place: reusable systems live under
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 
-### Motion Studio (thin Phase 4 skeleton)
+### Motion Studio (app-specific)
 
 | System | Modules |
 |---|---|
-| App shell proof | `apps/motion-studio/MotionStudio.tsx` |
-| Shared systems consumed | `platform/store/useAppStore`, `platform/lib/ipc`, `platform/lib/providers`, `platform/lib/settings`, `platform/lib/styles`, `platform/components/ui/*` |
+| App workflow | `apps/motion-studio/MotionStudio.tsx` |
+| Domain types/storage | `apps/motion-studio/lib/types.ts`, `apps/motion-studio/lib/storage.ts`, `apps/motion-studio/lib/projects.ts` |
+| Creative direction/storyboard | `apps/motion-studio/lib/direction.ts`, `apps/motion-studio/lib/brain.ts` |
+| Motion-specific style data | `apps/motion-studio/lib/templates.ts`, `apps/motion-studio/lib/styleLibrary.ts` |
+| Shared systems consumed | `platform/store/useAppStore`, `platform/lib/ipc`, `platform/lib/providers`, `platform/lib/settings`, `platform/lib/styles`, `platform/components/ui/*`, `features/assets`, `features/templates`, `features/settings` |
+
+Motion Studio is a Director Studio module, not a separate product. It may own app-specific production types, storyboard heuristics, and local motion-project memory, but it must use platform-owned settings, theme, StudioMode, provider router configuration, shared UI, asset library navigation, and Creative DNA/style systems. The source `C:\Users\eduni\Documents\MotionStudio` standalone Electron shell, store, settings screen, UI kit, and provider code are intentionally not imported.
 
 Gray areas retained on the platform side for now: `platform/lib/localEngine.ts`
 (B2B-flavored copy heuristics), `platform/lib/textlock.ts`,
 `platform/lib/moodboard.ts`, `platform/features/projects/` (the older
 motion-graphics project workspace — predates the music-video spine).
 
-Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now talks to app-level production helpers through `platform/lib/appBindings.ts` instead of importing Music Video modules directly. Remaining legacy couplings are concentrated in dashboard/search/assets/validation/demo helpers and should move behind similar platform extension points before a full second app ships.
+Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now talks to app-level production helpers through `platform/lib/appBindings.ts` instead of importing Music Video modules directly. Remaining legacy couplings are concentrated in dashboard/search/assets/validation/demo helpers and should move behind similar platform extension points before more app modules depend on them.
 
 ## Verification discipline
 

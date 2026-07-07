@@ -3,6 +3,12 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D6 - 2026-07-07 - Motion Studio source is integrated as a module, not an app fork
+
+**What:** Ported the useful MotionStudio source concepts into `src/apps/motion-studio/`: production types, visual style selection, creative direction, local motion-project storage, storyboard generation, scene critique/improve, scene approval, loop log, and version checkpoints. The standalone Electron entrypoint, source Zustand store, duplicate settings/provider router, duplicate UI kit, and package/build files were intentionally left behind.
+
+**Why better:** Motion Studio now proves platform reuse with real workflow behavior, not only placeholder screens, while Director Studio still owns the shell, theme, StudioMode, settings, provider-router preferences, shared UI, assets, and project/platform navigation. Risk: Motion Studio generation is still deterministic/local and export is still a placeholder; real render/provider execution should be added through platform generation and asset APIs next, not by reviving the source app's separate provider layer.
+
 ## D5 - 2026-07-07 - Motion Studio proves the platform can host a second app
 
 **What:** Added a thin `src/apps/motion-studio/MotionStudio.tsx` shell and a sidebar app switch. The skeleton consumes platform routing state, StudioMode, provider router state, project listing, style system, theme, and shared UI components without importing Music Video Director modules.
