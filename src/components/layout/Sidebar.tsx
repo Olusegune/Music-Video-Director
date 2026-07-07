@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { api, isTauri } from "@/lib/ipc";
 import { loadRouterConfig, ROUTER_MODES } from "@/lib/providers";
+import { STUDIO_MODES } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -60,6 +61,8 @@ export function Sidebar() {
     openDirectorWizard,
     setSearchOpen,
     lastSavedAt,
+    studioMode,
+    setStudioMode,
   } = useAppStore();
 
   const { data: projects = [] } = useQuery({
@@ -105,6 +108,31 @@ export function Sidebar() {
           <SearchIcon className="h-3.5 w-3.5" /> Search
           <kbd className="ml-auto rounded bg-elevated px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
         </button>
+        {/* Platform-wide disclosure tier — every surface follows this switch.
+            Presentation-only: switching modes never loses work. */}
+        <div
+          role="tablist"
+          aria-label="Studio mode"
+          className="flex items-center gap-0.5 rounded-[var(--radius-button)] border border-border bg-background/40 p-0.5"
+        >
+          {STUDIO_MODES.map((m) => (
+            <button
+              key={m.id}
+              role="tab"
+              aria-selected={studioMode === m.id}
+              onClick={() => setStudioMode(m.id)}
+              title={m.hint}
+              className={cn(
+                "flex-1 rounded-[calc(var(--radius-button)-2px)] px-1.5 py-1 text-[11px] font-medium transition-colors",
+                studioMode === m.id
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted hover:text-foreground"
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Grouped nav — reads as a director's production flow, top to bottom. */}

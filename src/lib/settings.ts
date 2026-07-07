@@ -23,52 +23,58 @@ export function setShowWelcome(show: boolean): void {
   }
 }
 
-export type MvViewMode = "simple" | "director" | "expert";
-const LS_MV_VIEW_MODE = "mf.mvViewMode";
+// ---------------------------------------------------------------------------
+// StudioMode — the one platform-wide progressive-disclosure tier.
+// (Decision D1, docs/DECISIONS.md.) Replaces the old per-surface flags
+// (mf.mvViewMode, mf.choreoViewMode), which are migrated on first read.
+// Mode is presentation-only: switching can never lose work.
+// ---------------------------------------------------------------------------
 
-/**
- * MV Director's display tier. Defaults to "simple" — big storyboard cards,
- * plain-language summaries, one primary action per scene — for new users.
- * "director" is today's full creative-control view; "expert" additionally
- * defaults every shot's prompt/model/provider panels open.
- */
-export function getMvViewMode(): MvViewMode {
-  try {
-    const v = localStorage.getItem(LS_MV_VIEW_MODE);
-    return v === "director" || v === "expert" ? v : "simple";
-  } catch {
-    return "simple";
-  }
-}
+export type StudioMode = "director" | "studio" | "creator";
+const LS_STUDIO_MODE = "mf.studioMode";
+const LS_LEGACY_MV_MODE = "mf.mvViewMode";
+const LS_LEGACY_CHOREO_MODE = "mf.choreoViewMode";
 
-export function setMvViewMode(mode: MvViewMode): void {
+export const STUDIO_MODES: { id: StudioMode; label: string; hint: string }[] = [
+  { id: "director", label: "Director", hint: "Guided and visual — direct the production, no AI jargon" },
+  { id: "studio", label: "Studio", hint: "Full professional creative controls on every surface" },
+  { id: "creator", label: "Creator", hint: "The complete engine — prompts, models, providers, debugging" },
+];
+
+/** One-time migration from the pre-Director-Studio per-surface flags. */
+function migrateLegacyModes(): StudioMode {
   try {
-    localStorage.setItem(LS_MV_VIEW_MODE, mode);
+    const mv = localStorage.getItem(LS_LEGACY_MV_MODE);
+    const choreo = localStorage.getItem(LS_LEGACY_CHOREO_MODE);
+    if (mv === "expert") return "creator";
+    if (mv === "director" || choreo === "professional") return "studio";
   } catch {
     /* ignore */
   }
+  return "director";
 }
 
-export type ChoreoViewMode = "guided" | "professional";
-const LS_CHOREO_VIEW_MODE = "mf.choreoViewMode";
-
 /**
- * Choreography's display tier. Defaults to "guided" — Formation Stage and a
- * "what should this feel like?" prompt up front, pose sheets/counts/
- * performance-sheet collapsed behind one tap. "professional" expands
- * everything by default — nothing is ever removed, just tucked away.
+ * The app-wide display tier. Defaults to "director" — guided, visual, no AI
+ * terminology — for new users. "studio" opens the full professional controls;
+ * "creator" additionally defaults prompt/model/provider panels open. Surfaces
+ * map this to their own disclosure; nothing is ever removed, only tucked away.
  */
-export function getChoreoViewMode(): ChoreoViewMode {
+export function getStudioMode(): StudioMode {
   try {
-    return localStorage.getItem(LS_CHOREO_VIEW_MODE) === "professional" ? "professional" : "guided";
+    const v = localStorage.getItem(LS_STUDIO_MODE);
+    if (v === "director" || v === "studio" || v === "creator") return v;
+    const migrated = migrateLegacyModes();
+    localStorage.setItem(LS_STUDIO_MODE, migrated);
+    return migrated;
   } catch {
-    return "guided";
+    return "director";
   }
 }
 
-export function setChoreoViewMode(mode: ChoreoViewMode): void {
+export function setStudioMode(mode: StudioMode): void {
   try {
-    localStorage.setItem(LS_CHOREO_VIEW_MODE, mode);
+    localStorage.setItem(LS_STUDIO_MODE, mode);
   } catch {
     /* ignore */
   }

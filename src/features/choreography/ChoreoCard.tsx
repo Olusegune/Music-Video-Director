@@ -11,7 +11,6 @@ import {
   type ChoreoSection,
   type PerformanceBrief,
 } from "@/lib/choreography";
-import type { ChoreoViewMode } from "@/lib/settings";
 import { sectionColor, formatTime } from "@/lib/songBrain";
 import type { Character } from "@/lib/types";
 import { AssetImage } from "@/components/ui/asset-image";
@@ -49,7 +48,9 @@ export function ChoreoCard({
   nextFormation?: string;
   /** "guided" collapses pose sheet / performance sheet / counts behind one
    *  tap and shows the feeling-prompt chips; "professional" expands everything. */
-  viewMode?: ChoreoViewMode;
+  /** Disclosure tier, derived from the platform StudioMode by the parent:
+   *  "guided" (Director mode) or "professional" (Studio / Creator). */
+  viewMode?: "guided" | "professional";
   onGenerate: (
     mode: "pose" | "motion" | "formation",
     character: Character | null,

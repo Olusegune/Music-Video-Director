@@ -40,13 +40,7 @@ import {
 } from "@/lib/mvDirector";
 import { loadSongs, sectionColor, formatTime, type SongMap } from "@/lib/songBrain";
 import { loadCast, productionReferenceImages } from "@/lib/cast";
-import {
-  getAutoProductionRefs,
-  setAutoProductionRefs,
-  getMvViewMode,
-  setMvViewMode,
-  type MvViewMode,
-} from "@/lib/settings";
+import { getAutoProductionRefs, setAutoProductionRefs } from "@/lib/settings";
 import { buildShotImagePrompt, buildShotVideoPrompt, choreoHintForTime } from "@/lib/mvGen";
 import { getChoreo } from "@/lib/choreography";
 import { importImageToLibrary } from "@/lib/assets";
@@ -161,16 +155,14 @@ export function MvDirector() {
   const [aspect, setAspect] = useState("16:9");
   const [sizeId, setSizeId] = useState("large");
   const [autoRefs, setAutoRefs] = useState(() => getAutoProductionRefs());
-  // Display tier — Simple (big cards, one action per scene) / Director
-  // (today's full creative controls) / Expert (+ prompt/model panels open).
-  const [viewMode, setViewModeState] = useState<MvViewMode>(() => getMvViewMode());
-  const changeViewMode = (mode: MvViewMode) => {
-    setViewModeState(mode);
-    setMvViewMode(mode);
-    setAdvanced(mode === "expert");
-  };
-  // Advanced generation controls (progressive disclosure).
-  const [advanced, setAdvanced] = useState(() => getMvViewMode() === "expert");
+  // Display tier — derived from the platform-wide StudioMode (Sidebar switch):
+  // Director → big cards, one action per scene; Studio → full creative
+  // controls; Creator → + prompt/model panels open by default.
+  const studioMode = useAppStore((s) => s.studioMode);
+  const viewMode = studioMode === "director" ? "simple" : studioMode === "studio" ? "director" : "expert";
+  // Advanced generation controls (seed/variations/fps/…) are exactly the
+  // Creator-mode surface — visible there, tucked away otherwise.
+  const advanced = studioMode === "creator";
   const [seed, setSeed] = useState("");
   const [variations, setVariations] = useState(1);
   const [fps, setFps] = useState(24);
@@ -681,34 +673,8 @@ export function MvDirector() {
                   </option>
                 ))}
               </select>
-              <div
-                role="tablist"
-                aria-label="Display tier"
-                className="flex h-9 items-center gap-0.5 rounded-[var(--radius-input)] border border-border bg-surface p-0.5"
-              >
-                {(
-                  [
-                    { key: "simple", label: "Simple" },
-                    { key: "director", label: "Director" },
-                    { key: "expert", label: "Expert" },
-                  ] as const
-                ).map((m) => (
-                  <button
-                    key={m.key}
-                    role="tab"
-                    aria-selected={viewMode === m.key}
-                    onClick={() => changeViewMode(m.key)}
-                    className={cn(
-                      "rounded-[calc(var(--radius-input)-2px)] px-2.5 py-1 text-xs font-medium transition-colors",
-                      viewMode === m.key
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted hover:text-foreground"
-                    )}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+              {/* Display tier follows the platform-wide Director / Studio /
+                  Creator switch in the Sidebar (StudioMode, decision D1). */}
               {advanced && (
                 <>
                   <select

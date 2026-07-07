@@ -41,7 +41,6 @@ import { useAudioPlayer } from "@/lib/audioPlayer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { getChoreoViewMode, setChoreoViewMode, type ChoreoViewMode } from "@/lib/settings";
 import { ChoreoCard } from "./ChoreoCard";
 import { PerformerCard, GenericPerformerCard } from "./PerformerCard";
 import { EnergyMap } from "./EnergyMap";
@@ -214,11 +213,10 @@ export function ChoreographyView() {
 
   const [plan, setPlan] = useState<ChoreoPlan | null>(null);
   const [style, setStyle] = useState<string>("");
-  const [viewMode, setViewMode] = useState<ChoreoViewMode>(() => getChoreoViewMode());
-  const changeViewMode = (mode: ChoreoViewMode) => {
-    setViewMode(mode);
-    setChoreoViewMode(mode);
-  };
+  // Display tier follows the platform-wide StudioMode (Sidebar switch):
+  // Director mode → guided view; Studio and Creator → professional view.
+  const studioMode = useAppStore((s) => s.studioMode);
+  const viewMode = studioMode === "director" ? "guided" : "professional";
   const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
   const [cast] = useState<Performer[]>(() => loadCast());
   // Clicking a PerformerCard focuses that performer across every section
@@ -313,33 +311,8 @@ export function ChoreographyView() {
               <span className="text-foreground">{song.name}</span> · {song.bpm} BPM
             </p>
           </div>
-          <div
-            role="tablist"
-            aria-label="Choreography view"
-            className="flex h-9 items-center gap-0.5 rounded-[var(--radius-input)] border border-border bg-surface p-0.5"
-          >
-            {(
-              [
-                { key: "guided", label: "✨ Guided" },
-                { key: "professional", label: "🎬 Professional" },
-              ] as const
-            ).map((m) => (
-              <button
-                key={m.key}
-                role="tab"
-                aria-selected={viewMode === m.key}
-                onClick={() => changeViewMode(m.key)}
-                className={cn(
-                  "rounded-[calc(var(--radius-input)-2px)] px-2.5 py-1 text-xs font-medium transition-colors",
-                  viewMode === m.key
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted hover:text-foreground"
-                )}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          {/* Display tier follows the platform-wide Director / Studio /
+              Creator switch in the Sidebar (StudioMode, decision D1). */}
         </div>
         <div className="flex items-center gap-2">
           <StylePicker value={style} onChange={setStyle} />

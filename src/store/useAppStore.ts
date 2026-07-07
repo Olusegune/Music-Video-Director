@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import { getShowWelcome, getActiveSongId, setActiveSongId } from "@/lib/settings";
+import {
+  getShowWelcome,
+  getActiveSongId,
+  setActiveSongId,
+  getStudioMode,
+  setStudioMode as persistStudioMode,
+  type StudioMode,
+} from "@/lib/settings";
 import { loadActiveTemplateId, saveActiveTemplateId } from "@/lib/templates";
 import { loadSongs, saveSong } from "@/lib/songBrain";
 import { loadDemoProject } from "@/lib/demoProject";
@@ -71,6 +78,10 @@ interface AppState {
    *  Magic Mode "Render Video" button's entry point, so clicking it never
    *  drops the user onto the bare scene lanes unannounced. */
   timelineAutoRender: boolean;
+  /** Platform-wide progressive-disclosure tier (Director / Studio / Creator).
+   *  Presentation-only — switching never loses work. Persisted via settings. */
+  studioMode: StudioMode;
+  setStudioMode: (mode: StudioMode) => void;
 
   openSong: () => void;
   openMvDirector: () => void;
@@ -141,6 +152,11 @@ export const useAppStore = create<AppState>((set) => ({
   dataVersion: 0,
   focusedShotId: null,
   timelineAutoRender: false,
+  studioMode: getStudioMode(),
+  setStudioMode: (mode: StudioMode) => {
+    persistStudioMode(mode);
+    set({ studioMode: mode });
+  },
 
   openSong: () => set({ view: "song", activeProjectId: null }),
   openMvDirector: () => set({ view: "mvdirector" }),
