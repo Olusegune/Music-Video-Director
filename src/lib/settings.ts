@@ -49,6 +49,31 @@ export function setMvViewMode(mode: MvViewMode): void {
   }
 }
 
+export type ChoreoViewMode = "guided" | "professional";
+const LS_CHOREO_VIEW_MODE = "mf.choreoViewMode";
+
+/**
+ * Choreography's display tier. Defaults to "guided" — Formation Stage and a
+ * "what should this feel like?" prompt up front, pose sheets/counts/
+ * performance-sheet collapsed behind one tap. "professional" expands
+ * everything by default — nothing is ever removed, just tucked away.
+ */
+export function getChoreoViewMode(): ChoreoViewMode {
+  try {
+    return localStorage.getItem(LS_CHOREO_VIEW_MODE) === "professional" ? "professional" : "guided";
+  } catch {
+    return "guided";
+  }
+}
+
+export function setChoreoViewMode(mode: ChoreoViewMode): void {
+  try {
+    localStorage.setItem(LS_CHOREO_VIEW_MODE, mode);
+  } catch {
+    /* ignore */
+  }
+}
+
 const LS_AUTO_REFS = "mf.autoProductionRefs";
 
 /**

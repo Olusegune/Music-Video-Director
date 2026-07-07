@@ -7,12 +7,9 @@ import {
   Users,
   LayoutGrid,
   Sparkles,
-  Camera,
-  Drama,
-  Lightbulb,
-  Image as ImageIcon,
-  Video,
   ChevronDown,
+  Video,
+  Drama,
 } from "lucide-react";
 import { DANCE_STYLE_META } from "@/lib/danceStyleMeta";
 import {
@@ -22,8 +19,6 @@ import {
   inferStyle,
   defaultPerformance,
   CHOREO_STYLES,
-  CHOREO_CAMERA_MOVES,
-  CHOREO_LIGHTING,
   type ChoreoPlan,
   type ChoreoSection,
   type PerformanceBrief,
@@ -31,7 +26,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { loadSongs, sectionColor, formatTime, type SongMap } from "@/lib/songBrain";
-import { loadCast } from "@/lib/cast";
+import { loadCast, type Performer } from "@/lib/cast";
 import { getTemplate } from "@/lib/templates";
 import { useAppStore } from "@/store/useAppStore";
 import { api } from "@/lib/ipc";
@@ -40,13 +35,18 @@ import { composeCharacterDna } from "@/lib/characterDna";
 import { importImageToLibrary } from "@/lib/assets";
 import { addMotionTest } from "@/lib/motionTest";
 import { GenerationPanel, type GenerateOpts } from "@/components/generation/GenerationPanel";
-import { AssetImage } from "@/components/ui/asset-image";
 import { cn } from "@/lib/utils";
 import { VIDEO_MODELS } from "@/lib/videoGen";
 import { useAudioPlayer } from "@/lib/audioPlayer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { getChoreoViewMode, setChoreoViewMode, type ChoreoViewMode } from "@/lib/settings";
+import { ChoreoCard } from "./ChoreoCard";
+import { PerformerCard, GenericPerformerCard } from "./PerformerCard";
+import { EnergyMap } from "./EnergyMap";
+import { ChoreographyPreviewStrip } from "./ChoreographyPreviewStrip";
+import { HelpHint } from "@/components/ui/help-hint";
 
 const VIDEO_GEN_MODELS = VIDEO_MODELS.map((m) => ({
   id: m.id,
@@ -214,7 +214,28 @@ export function ChoreographyView() {
 
   const [plan, setPlan] = useState<ChoreoPlan | null>(null);
   const [style, setStyle] = useState<string>("");
+  const [viewMode, setViewMode] = useState<ChoreoViewMode>(() => getChoreoViewMode());
+  const changeViewMode = (mode: ChoreoViewMode) => {
+    setViewMode(mode);
+    setChoreoViewMode(mode);
+  };
   const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
+  const [cast] = useState<Performer[]>(() => loadCast());
+  // Clicking a PerformerCard focuses that performer across every section
+  // below at once, instead of re-picking them per section. Keyed by
+  // performer id (not characterId) so an unlinked performer and "Generic"
+  // are never conflated as the same selection.
+  const [focusedPerformerId, setFocusedPerformerId] = useState<string | undefined>(undefined);
+  const focusCharacterId = cast.find((p) => p.id === focusedPerformerId)?.characterId;
+  // Clicking the Energy Map or the Preview Strip jumps to and briefly
+  // highlights the matching section card below.
+  const [flashSectionId, setFlashSectionId] = useState<string | null>(null);
+  const jumpToSection = (sectionId: string) => {
+    const el = document.getElementById(`choreo-section-${sectionId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlashSectionId(sectionId);
+    window.setTimeout(() => setFlashSectionId((id) => (id === sectionId ? null : id)), 1600);
+  };
   // Per-shot fine generation: pose sheet (image) or motion test (video).
   const [gen, setGen] = useState<{
     section: ChoreoSection;
@@ -232,12 +253,21 @@ export function ChoreographyView() {
     setStyle(existing?.style ?? castDefaultStyle ?? inferStyle(song));
   }, [song, activeSongId, setActiveSong, castDefaultStyle]);
 
-  const generate = () => {
+  // `styleOverride` lets the empty state's four starting points each nudge
+  // toward a different flavor without a separate engine — same
+  // choreographSong() call, just a different style vocabulary. `openSignature`
+  // chains straight into the motion-test generator on the freshly-built plan
+  // (not stale `plan` state, since the generate above hasn't re-rendered yet).
+  const generate = (styleOverride?: string, openSignature?: boolean) => {
     if (!song) return;
-    const p = choreographSong(song, style);
+    const p = choreographSong(song, styleOverride ?? style);
     saveChoreo(p);
     setPlan(p);
     setStyle(p.style);
+    if (openSignature && p.sections.length > 0) {
+      const hero = [...p.sections].sort((a, b) => b.energy - a.energy)[0];
+      setGen({ section: hero, mode: "motion", character: null });
+    }
   };
 
   // "Create Signature Move" — jump straight to a motion test on the highest-
@@ -283,10 +313,37 @@ export function ChoreographyView() {
               <span className="text-foreground">{song.name}</span> · {song.bpm} BPM
             </p>
           </div>
+          <div
+            role="tablist"
+            aria-label="Choreography view"
+            className="flex h-9 items-center gap-0.5 rounded-[var(--radius-input)] border border-border bg-surface p-0.5"
+          >
+            {(
+              [
+                { key: "guided", label: "✨ Guided" },
+                { key: "professional", label: "🎬 Professional" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.key}
+                role="tab"
+                aria-selected={viewMode === m.key}
+                onClick={() => changeViewMode(m.key)}
+                className={cn(
+                  "rounded-[calc(var(--radius-input)-2px)] px-2.5 py-1 text-xs font-medium transition-colors",
+                  viewMode === m.key
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <StylePicker value={style} onChange={setStyle} />
-          <Button variant="primary" onClick={generate}>
+          <Button variant="primary" onClick={() => generate()}>
             {plan ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
             {plan ? "Re-choreograph" : "Choreograph"}
           </Button>
@@ -301,7 +358,7 @@ export function ChoreographyView() {
           <span className="mr-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
             <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Choreographer
           </span>
-          <Button size="sm" variant="secondary" onClick={generate}>
+          <Button size="sm" variant="secondary" onClick={() => generate()}>
             <RefreshCw className="h-3.5 w-3.5" /> Generate Choreography
           </Button>
           <Button size="sm" variant="secondary" onClick={createSignatureMove}>
@@ -334,27 +391,65 @@ export function ChoreographyView() {
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!plan ? (
           <div className="flex h-full items-center justify-center p-10">
-            <button
-              onClick={generate}
-              className="flex max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border bg-surface/60 px-10 py-14 text-center transition-colors hover:border-primary/50 hover:bg-elevated/40"
-            >
-              <div className="grad-primary flex h-14 w-14 items-center justify-center rounded-2xl">
+            <div className="max-w-2xl text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl grad-primary">
                 <Footprints className="h-7 w-7 text-white" />
               </div>
-              <div>
-                <div className="text-base font-semibold">
-                  Choreograph “{song.name}”
-                </div>
-                <p className="mt-1 text-sm text-muted">
-                  The engine lays {style || "a"} routine onto each performance
-                  section — 8-counts mapped to the bars, formations, and a key-pose
-                  sheet. Verses and intros stay free for natural movement.
-                </p>
+              <div className="text-base font-semibold">
+                Choreograph “{song.name}”
               </div>
-              <span className="text-xs font-medium text-primary">
-                Generate the routine
-              </span>
-            </button>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted">
+                Pick what this song should feel like — the engine lays a routine onto
+                each performance section. Verses and intros stay free for natural
+                movement.
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      key: "performance",
+                      label: "Performance",
+                      desc: "Polished, camera-ready choreography — the default.",
+                      icon: <Sparkles className="h-5 w-5" />,
+                      action: () => generate(),
+                    },
+                    {
+                      key: "dance-break",
+                      label: "Dance Break",
+                      desc: "High-energy, crew-forward — Street/Krump vocabulary.",
+                      icon: <Video className="h-5 w-5" />,
+                      action: () => generate("Street / Krump"),
+                    },
+                    {
+                      key: "story",
+                      label: "Story Sequence",
+                      desc: "Grounded, narrative movement — Contemporary vocabulary.",
+                      icon: <Drama className="h-5 w-5" />,
+                      action: () => generate("Contemporary"),
+                    },
+                    {
+                      key: "signature",
+                      label: "Signature Move",
+                      desc: "Generate, then jump straight to a motion test on the hero moment.",
+                      icon: <Wand2 className="h-5 w-5" />,
+                      action: () => generate(undefined, true),
+                    },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={opt.action}
+                    className="flex flex-col items-start gap-2 rounded-[var(--radius-card)] border border-dashed border-border bg-surface/60 p-4 text-left transition-colors hover:border-primary/50 hover:bg-elevated/40"
+                  >
+                    <span className="grad-primary flex h-9 w-9 items-center justify-center rounded-lg text-white">
+                      {opt.icon}
+                    </span>
+                    <span className="text-sm font-semibold">{opt.label}</span>
+                    <span className="text-xs text-muted">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-5 p-6">
@@ -374,6 +469,56 @@ export function ChoreographyView() {
               )}
             </div>
 
+            <EnergyMap song={song} plan={plan} onSelectSection={jumpToSection} />
+
+            {cast.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <Users className="h-3.5 w-3.5" /> Performers
+                  <HelpHint
+                    title="Performers"
+                    body="Your cast, from the Cast page. Click a performer to choreograph for them across every section at once — pose sheets and motion tests then generate with their look. 'Generic' means no specific cast member."
+                    example="Click 'Sade' and every section's pose-sheet generation uses Sade's portrait as the reference."
+                  />
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  <GenericPerformerCard
+                    active={focusedPerformerId === undefined}
+                    onClick={() => setFocusedPerformerId(undefined)}
+                  />
+                  {cast.map((p) => {
+                    const char = characters.find((c) => c.id === p.characterId) ?? null;
+                    return (
+                      <PerformerCard
+                        key={p.id}
+                        performer={p}
+                        character={char}
+                        active={focusedPerformerId === p.id}
+                        onClick={() => setFocusedPerformerId(p.id)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {plan.sections.length > 0 && (
+              <ChoreographyPreviewStrip
+                plan={plan}
+                onSelectSection={jumpToSection}
+                onReorderPoses={(sectionId, poses) => {
+                  const updated: ChoreoPlan = {
+                    ...plan,
+                    sections: plan.sections.map((s) =>
+                      s.sectionId === sectionId ? { ...s, keyPoses: poses } : s
+                    ),
+                  };
+                  saveChoreo(updated);
+                  setPlan(updated);
+                }}
+              />
+            )}
+
             {plan.sections.length > 0 && (
               <ChoreoTimeline plan={plan} durationSec={song.durationSec} songId={song.id} />
             )}
@@ -387,11 +532,16 @@ export function ChoreographyView() {
                 </CardContent>
               </Card>
             ) : (
-              plan.sections.map((section) => (
+              plan.sections.map((section, si) => (
                 <ChoreoCard
                   key={section.sectionId}
                   section={section}
                   characters={characters}
+                  focusCharacterId={focusCharacterId}
+                  highlighted={flashSectionId === section.sectionId}
+                  performerCount={cast.length || 3}
+                  nextFormation={plan.sections[si + 1]?.formation}
+                  viewMode={viewMode}
                   onGenerate={(mode, character, pose) => setGen({ section, mode, character, pose })}
                   onChange={(next) => {
                     const updated: ChoreoPlan = {
@@ -625,270 +775,6 @@ function ChoreoTimeline({
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChoreoCard({
-  section,
-  characters,
-  onGenerate,
-  onChange,
-}: {
-  section: ChoreoSection;
-  characters: Character[];
-  onGenerate: (
-    mode: "pose" | "motion" | "formation",
-    character: Character | null,
-    pose?: { index: number; text: string }
-  ) => void;
-  onChange: (next: ChoreoSection) => void;
-}) {
-  const color = sectionColor(section.kind);
-  const [applyToId, setApplyToId] = useState<string>("");
-  const applyTo = characters.find((c) => c.id === applyToId) ?? null;
-  const perf = section.performance ?? defaultPerformance(section.kind, section.energy);
-  const setPerf = (key: keyof PerformanceBrief, v: string) =>
-    onChange({ ...section, performance: { ...perf, [key]: v } });
-  const cameraMoves =
-    section.cameraMoves ?? section.keyPoses.map((_, i) => CHOREO_CAMERA_MOVES[i % CHOREO_CAMERA_MOVES.length]);
-  const setCamera = (i: number, v: string) =>
-    onChange({
-      ...section,
-      cameraMoves: section.keyPoses.map((_, j) => (j === i ? v : cameraMoves[j] ?? "")),
-    });
-  const lightingMoves =
-    section.lightingMoves ?? section.keyPoses.map((_, i) => CHOREO_LIGHTING[i % CHOREO_LIGHTING.length]);
-  const setLighting = (i: number, v: string) =>
-    onChange({
-      ...section,
-      lightingMoves: section.keyPoses.map((_, j) => (j === i ? v : lightingMoves[j] ?? "")),
-    });
-  const setCount = (i: number, key: "phraseA" | "phraseB", v: string) =>
-    onChange({
-      ...section,
-      eightCounts: section.eightCounts.map((ec, j) => (j === i ? { ...ec, [key]: v } : ec)),
-    });
-  const setPose = (i: number, v: string) =>
-    onChange({ ...section, keyPoses: section.keyPoses.map((p, j) => (j === i ? v : p)) });
-  return (
-    <Card className="overflow-hidden">
-      <div
-        className="flex flex-wrap items-center gap-3 px-5 py-3"
-        style={{ backgroundColor: `${color}14`, borderBottom: `1px solid ${color}33` }}
-      >
-        <span
-          className="flex h-6 items-center rounded-md px-2 text-xs font-semibold text-white"
-          style={{ backgroundColor: color }}
-        >
-          {section.label}
-        </span>
-        <span className="text-xs tabular-nums text-muted">
-          {formatTime(section.start)} – {formatTime(section.end)}
-        </span>
-        <span className="text-xs text-muted">{section.intensity}</span>
-        <span className="inline-flex items-center gap-1.5 text-xs text-muted">
-          <Users className="h-3.5 w-3.5" />
-          {section.formation}
-        </span>
-        {/* Apply to a performer, then generate a pose sheet / motion test */}
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className="text-[11px] text-muted">Apply to:</span>
-          <div
-            className="flex max-w-[340px] items-center gap-1 overflow-x-auto"
-            aria-label={`Performer for ${section.label}`}
-          >
-            <button
-              type="button"
-              onClick={() => setApplyToId("")}
-              className={cn(
-                "flex shrink-0 items-center gap-1 rounded-full border py-0.5 pl-0.5 pr-2 transition-colors",
-                applyToId === ""
-                  ? "border-primary bg-primary/15 text-primary"
-                  : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
-              )}
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-elevated text-[11px]">
-                <Users className="h-3 w-3" />
-              </span>
-              <span className="text-[11px] font-medium">Generic</span>
-            </button>
-            {characters.map((c, ci) => (
-              <button
-                key={`${c.id}-${ci}`}
-                type="button"
-                onClick={() => setApplyToId(c.id)}
-                title={c.name}
-                className={cn(
-                  "flex shrink-0 items-center gap-1 rounded-full border py-0.5 pl-0.5 pr-2 transition-colors",
-                  applyToId === c.id
-                    ? "border-primary bg-primary/15 text-primary"
-                    : "border-border bg-surface text-muted hover:border-primary/40 hover:text-foreground"
-                )}
-              >
-                {c.portraitUrl ? (
-                  <AssetImage src={c.portraitUrl} alt={c.name} className="h-6 w-6 rounded-full object-cover" />
-                ) : (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-elevated text-[9px] font-semibold uppercase">
-                    {c.name.slice(0, 2)}
-                  </span>
-                )}
-                <span className="text-[11px] font-medium">{c.name}</span>
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="secondary" onClick={() => onGenerate("pose", applyTo)}>
-            <LayoutGrid className="h-3.5 w-3.5" /> Pose sheet
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => onGenerate("formation", applyTo)}>
-            <Users className="h-3.5 w-3.5" /> Formation
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => onGenerate("motion", applyTo)}>
-            <Sparkles className="h-3.5 w-3.5" /> Motion test
-          </Button>
-        </div>
-      </div>
-
-      <CardContent className="space-y-4 p-5">
-        {/* 8-counts */}
-        <div className="space-y-1.5">
-          {section.eightCounts.map((ec, i) => (
-            <div
-              key={i}
-              className="flex items-stretch gap-3 rounded-[var(--radius-button)] border border-border bg-surface p-2.5"
-            >
-              <div className="flex w-16 shrink-0 flex-col items-center justify-center border-r border-border pr-2">
-                <span className="text-[10px] uppercase tracking-wide text-muted">
-                  Bar {ec.bar}
-                </span>
-                <span className="text-[10px] tabular-nums text-muted">
-                  {formatTime(ec.startSec)}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1 space-y-1 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-accent">1-4</span>
-                  <input
-                    defaultValue={ec.phraseA}
-                    onChange={(e) => setCount(i, "phraseA", e.target.value)}
-                    aria-label={`Bar ${ec.bar} counts 1-4`}
-                    className="flex-1 rounded border border-transparent bg-transparent px-1 hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-accent">5-8</span>
-                  <input
-                    defaultValue={ec.phraseB}
-                    onChange={(e) => setCount(i, "phraseB", e.target.value)}
-                    aria-label={`Bar ${ec.bar} counts 5-8`}
-                    className="flex-1 rounded border border-transparent bg-transparent px-1 hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Key poses */}
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            <LayoutGrid className="h-3.5 w-3.5" /> Key pose sheet
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {section.keyPoses.map((pose, i) => (
-              <div
-                key={i}
-                className="rounded-[var(--radius-button)] border border-dashed border-border bg-elevated/40 px-3 py-2 text-xs text-muted"
-              >
-                <span className="font-semibold text-foreground/70">Pose {i + 1}.</span>{" "}
-                <input
-                  defaultValue={pose}
-                  onChange={(e) => setPose(i, e.target.value)}
-                  aria-label={`Key pose ${i + 1}`}
-                  className="w-full rounded border border-transparent bg-transparent hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                />
-                <div className="mt-1.5 flex items-center gap-1">
-                  <Camera className="h-3 w-3 shrink-0 text-muted" />
-                  <select
-                    value={cameraMoves[i] ?? ""}
-                    onChange={(e) => setCamera(i, e.target.value)}
-                    aria-label={`Camera for pose ${i + 1}`}
-                    className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  >
-                    {CHOREO_CAMERA_MOVES.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mt-1 flex items-center gap-1">
-                  <Lightbulb className="h-3 w-3 shrink-0 text-muted" />
-                  <select
-                    value={lightingMoves[i] ?? ""}
-                    onChange={(e) => setLighting(i, e.target.value)}
-                    aria-label={`Lighting for pose ${i + 1}`}
-                    className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  >
-                    {CHOREO_LIGHTING.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                {/* Per-pose generation */}
-                <div className="mt-1.5 flex gap-1">
-                  <button
-                    onClick={() => onGenerate("pose", applyTo, { index: i, text: pose })}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
-                    title="Generate an image of this pose"
-                  >
-                    <ImageIcon className="h-3 w-3" /> Image
-                  </button>
-                  <button
-                    onClick={() => onGenerate("motion", applyTo, { index: i, text: pose })}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
-                    title="Generate a motion clip into this pose"
-                  >
-                    <Video className="h-3 w-3" /> Clip
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Performance / acting brief */}
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            <Drama className="h-3.5 w-3.5" /> Performance sheet
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {([
-              ["emotion", "Emotion"],
-              ["facialExpression", "Facial expression"],
-              ["intent", "Intent"],
-              ["subtext", "Subtext"],
-              ["energy", "Energy"],
-            ] as [keyof PerformanceBrief, string][]).map(([key, label]) => (
-              <label key={key} className="block">
-                <span className="mb-0.5 block text-[10px] uppercase tracking-wide text-muted">{label}</span>
-                <input
-                  value={perf[key]}
-                  onChange={(e) => setPerf(key, e.target.value)}
-                  aria-label={`${label} for ${section.label}`}
-                  className="h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <textarea
-          defaultValue={section.continuity}
-          onChange={(e) => onChange({ ...section, continuity: e.target.value })}
-          aria-label="Continuity note"
-          rows={2}
-          className="w-full resize-y rounded-[var(--radius-input)] border border-transparent bg-transparent text-[11px] italic text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-        />
       </CardContent>
     </Card>
   );
