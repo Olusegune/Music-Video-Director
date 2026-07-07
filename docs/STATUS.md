@@ -7,7 +7,14 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
-- **Director Studio Phase 0+1** (this change): docs consolidated into living
+- **Director Studio Phase 2**: the three view monoliths extracted into
+  focused modules, pure refactor — MvDirector.tsx 3,101→1,014 (+ shotHelpers,
+  ChoreoPanel, ShotRow, SimpleTreatment, TreatmentView), SongStudio.tsx
+  1,354→319 (+ SongView, VoiceLab, SectionEditor, SongMapCanvas),
+  TimelineView.tsx 1,426→925 (+ ShotDetailPanel, RenderPanel, Animatic).
+  Each split verified live (all three StudioMode tiers, song surface, render
+  dialog, animatic, shot detail).
+- **Director Studio Phase 0+1**: docs consolidated into living
   set (`ARCHITECTURE.md` / `DECISIONS.md` / `STATUS.md`, relics archived);
   unified **StudioMode** (Director/Studio/Creator) replacing MvViewMode +
   ChoreoViewMode, global switch in the Sidebar, old keys migrated.
@@ -45,8 +52,6 @@ is expected and documented in Help).
 
 ## Roadmap
 
-- **Phase 2** — extract MvDirector.tsx (3.1k lines), SongStudio, TimelineView
-  into focused components (proven pattern from the choreography redesign).
 - **Phase 3** — mechanical folder migration per the ARCHITECTURE.md boundary
   map (`src/platform/` + `src/apps/music-video/`), one commit, no logic edits.
 - **Phase 4** — platform proof: second thin app shell (e.g. Motion Studio
