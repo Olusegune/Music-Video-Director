@@ -31,7 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MagicFlowButton } from "@/components/magic/MagicFlowButton";
-import splashArt from "@/assets/splash.png";
+import splashArt from "@/assets/splash.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
   "SaaS Product",

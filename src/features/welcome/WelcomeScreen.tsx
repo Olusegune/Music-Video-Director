@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { getShowWelcome, setShowWelcome } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { MagicFlowButton } from "@/components/magic/MagicFlowButton";
-import splashArt from "@/assets/splash.png";
+import splashArt from "@/assets/splash.jpg";
 
 /**
  * Welcome overlay. Visibility is driven by the store (`welcomeOpen`), which is

@@ -28,10 +28,11 @@ function categoryIcon(category?: string) {
   return CATEGORY_ICON[category ?? ""] ?? Drama;
 }
 
-// png first — every shipped card image is a .png in public/style-art, so the
-// first request hits and there's no 404 noise; the other extensions remain as
-// fallbacks for any art dropped in later in a different format.
-const EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
+// jpg first — every shipped card image is a downscaled .jpg in public/style-art
+// (full-res art would bloat the bundle/exe by ~130MB), so the first request
+// hits and there's no 404 noise; the other extensions remain as fallbacks for
+// any art dropped in later in a different format.
+const EXTENSIONS = ["jpg", "png", "jpeg", "webp"];
 
 /**
  * The canonical hero image for a template/style: full-bleed real art at
