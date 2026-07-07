@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, ImageOff, Users, Globe, Package, Film, Download, Trash2 } from "lucide-react";
+import { Search, ImageOff, Users, Globe, Package, Film, Footprints, Download, Trash2 } from "lucide-react";
 import { api } from "@/lib/ipc";
-import { buildAssetRefs, type AssetKind } from "@/lib/assets";
+import { buildAssetRefs, isChoreographyCategory, type AssetKind, type AssetOrigin } from "@/lib/assets";
 import { loadMotionTests, deleteMotionTest } from "@/lib/motionTest";
 import { useAppStore } from "@/store/useAppStore";
 import { Badge } from "@/components/ui/badge";
@@ -11,13 +11,19 @@ import { AssetImage, AssetVideo } from "@/components/ui/asset-image";
 import { cn } from "@/lib/utils";
 import { SafeDeleteDialog } from "@/features/assets/SafeDeleteDialog";
 
-type LibKind = AssetKind | "Motion test";
+// A library "kind" is the tab/grouping a user sees — an origin, not a storage
+// bucket. Choreography assets live in the Prop bible but group on their own.
+type LibKind = "Character" | "Environment" | "Prop" | "Choreography" | "Motion test";
 
 interface LibItem {
   id: string;
   entityId: string; // bible entity id (for delete/usage); "" for motion tests
   motionId?: string; // motion-test id, when applicable
   kind: LibKind;
+  /** The persistent Bible this asset is stored in (for safe-delete). */
+  storageKind: AssetKind;
+  /** Where it came from / which system made it — shown on every card. */
+  origin: AssetOrigin;
   category: string; // sub-type (Pose sheet, Wardrobe, …) or motion label
   label: string;
   src: string;
@@ -29,16 +35,27 @@ const KIND_ICON: Record<LibKind, React.ReactNode> = {
   Character: <Users className="h-3 w-3" />,
   Environment: <Globe className="h-3 w-3" />,
   Prop: <Package className="h-3 w-3" />,
+  Choreography: <Footprints className="h-3 w-3" />,
   "Motion test": <Film className="h-3 w-3" />,
 };
 
-const TABS: ("All" | LibKind)[] = ["All", "Character", "Environment", "Prop", "Motion test"];
+/** The system each library kind belongs to — shown as the card's origin badge. */
+const KIND_ORIGIN: Record<LibKind, AssetOrigin> = {
+  Character: "Character Bible",
+  Environment: "World Bible",
+  Prop: "Props & Vehicles",
+  Choreography: "Choreography",
+  "Motion test": "Animation Lab",
+};
+
+const TABS: ("All" | LibKind)[] = ["All", "Character", "Environment", "Prop", "Choreography", "Motion test"];
 
 export function AssetLibrary() {
   const openCharacters = useAppStore((s) => s.openCharacters);
   const openWorld = useAppStore((s) => s.openWorld);
   const openProps = useAppStore((s) => s.openProps);
   const openAnimation = useAppStore((s) => s.openAnimation);
+  const openChoreography = useAppStore((s) => s.openChoreography);
 
   const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
   const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
@@ -58,16 +75,29 @@ export function AssetLibrary() {
       const entityId = a.id.split(":")[1] ?? a.id;
       if (seen.has(entityId)) continue;
       seen.add(entityId);
+      const category = a.sub.replace(/ · ref \d+$/, "");
+      // A Prop-bible asset whose category is choreography output (pose sheet,
+      // formation, …) is re-presented as a Choreography asset — its own tab,
+      // never mixed in with real props.
+      const choreo = a.kind === "Prop" && isChoreographyCategory(category);
+      const kind: LibKind = choreo ? "Choreography" : (a.kind as LibKind);
       refs.push({
         id: a.id,
         entityId,
-        kind: a.kind as LibKind,
-        category: a.sub.replace(/ · ref \d+$/, ""),
+        kind,
+        storageKind: a.kind,
+        origin: KIND_ORIGIN[kind],
+        category,
         label: a.label,
         src: a.src,
         isVideo: false,
-        open:
-          a.kind === "Character" ? openCharacters : a.kind === "Environment" ? openWorld : openProps,
+        open: choreo
+          ? openChoreography
+          : a.kind === "Character"
+            ? openCharacters
+            : a.kind === "Environment"
+              ? openWorld
+              : openProps,
       });
     }
     const motion: LibItem[] = loadMotionTests().map((t) => ({
@@ -75,6 +105,8 @@ export function AssetLibrary() {
       entityId: "",
       motionId: t.id,
       kind: "Motion test",
+      storageKind: "Prop",
+      origin: KIND_ORIGIN["Motion test"],
       category: t.motionLabel || "motion test",
       label: t.label,
       src: t.url,
@@ -83,7 +115,7 @@ export function AssetLibrary() {
     }));
     return [...refs, ...motion];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [characters, environments, props, openCharacters, openWorld, openProps, openAnimation, tick]);
+  }, [characters, environments, props, openCharacters, openWorld, openProps, openAnimation, openChoreography, tick]);
 
   const refreshAll = () => {
     qc.invalidateQueries({ queryKey: ["characters"] });
@@ -193,21 +225,23 @@ export function AssetLibrary() {
                 key={item.id}
                 className="group relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-left shadow-card transition-colors hover:border-primary/50"
               >
-                <button onClick={item.open} className="block w-full" title={`Open in ${item.kind} library`}>
+                <button onClick={item.open} className="block w-full" title={`${item.label} — ${item.category || item.kind} · from ${item.origin}`}>
                   <div className="relative aspect-square bg-elevated">
                     {item.isVideo ? (
                       <AssetVideo src={item.src} controls={false} className="h-full w-full object-cover" label="Clip" />
                     ) : (
                       <AssetImage src={item.src} alt={item.label} className="h-full w-full object-cover" label="Asset" />
                     )}
+                    {/* Origin badge — which system this asset came from. */}
                     <span className="absolute left-1.5 top-1.5">
                       <Badge variant="primary" className="gap-1">
-                        {KIND_ICON[item.kind]} {item.kind}
+                        {KIND_ICON[item.kind]} {item.origin}
                       </Badge>
                     </span>
                   </div>
                   <div className="p-2.5">
                     <div className="truncate text-xs font-medium">{item.label}</div>
+                    {/* What this asset is (its sub-type). */}
                     <div className="truncate text-[11px] text-muted">{item.category || item.kind}</div>
                   </div>
                 </button>
@@ -237,7 +271,7 @@ export function AssetLibrary() {
 
       {del && (
         <SafeDeleteDialog
-          kind={del.kind as AssetKind}
+          kind={del.storageKind}
           entityId={del.entityId}
           name={del.label}
           srcs={[del.src]}

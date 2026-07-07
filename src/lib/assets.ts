@@ -45,6 +45,42 @@ export function categoryBible(categoryId: string): AssetKind {
   return (UPLOAD_CATEGORIES.find((c) => c.id === categoryId) ?? UPLOAD_CATEGORIES[2]).bible;
 }
 
+// ---------------------------------------------------------------------------
+// Asset origin / information architecture
+// ---------------------------------------------------------------------------
+//
+// The three Bibles are storage buckets, but the user-facing information
+// architecture is by *origin* — which system an asset belongs to. Choreography
+// output (pose sheets, formations, dance/motion references) is persisted in the
+// Prop bible for convenience but is NOT a prop: it must never appear on the
+// Props & Vehicles page, and instead reads as a Choreography asset everywhere.
+
+/** Where an asset belongs in the UI, independent of which Bible stores it. */
+export type AssetOrigin =
+  | "Character Bible"
+  | "World Bible"
+  | "Props & Vehicles"
+  | "Choreography"
+  | "Animation Lab";
+
+/**
+ * True when a Prop's `category` is really choreography output. Matches the
+ * excluded set — pose / pose_sheet / dance_pose / formation / motion_reference
+ * / character_pose — tolerant of spacing, casing, and `_`/`-` separators.
+ */
+export function isChoreographyCategory(categoryId?: string | null): boolean {
+  if (!categoryId) return false;
+  const c = categoryId.toLowerCase().replace(/[_-]+/g, " ").trim();
+  return /\bpose\b|pose sheet|dance pose|\bformation\b|motion reference|character pose/.test(c);
+}
+
+/** The origin an asset should be filed under, from its bible kind + category. */
+export function assetOrigin(kind: AssetKind, categoryId?: string | null): AssetOrigin {
+  if (kind === "Character") return "Character Bible";
+  if (kind === "Environment") return "World Bible";
+  return isChoreographyCategory(categoryId) ? "Choreography" : "Props & Vehicles";
+}
+
 /** Persist an uploaded image into the chosen production library. */
 export async function importImageToLibrary(
   categoryId: string,

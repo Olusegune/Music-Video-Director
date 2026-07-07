@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Package,
@@ -39,6 +39,7 @@ import {
   useAutosave,
 } from "@/features/dna/dnaKit";
 import { type GenerateOpts } from "@/components/generation/GenerationPanel";
+import { isChoreographyCategory } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,10 +57,17 @@ export function PropBible() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
 
-  const { data: props = [] } = useQuery({
+  const { data: allProps = [] } = useQuery({
     queryKey: ["props"],
     queryFn: api.listProps,
   });
+  // Choreography output (pose sheets, formations) is stored in the Prop bible
+  // for convenience but is NOT a prop — it belongs to Choreography and must
+  // never surface on the Props & Vehicles page. Filtered out here at the source.
+  const props = useMemo(
+    () => allProps.filter((p) => !isChoreographyCategory(p.category)),
+    [allProps]
+  );
 
   const create = useMutation({
     mutationFn: (category: string) => {
