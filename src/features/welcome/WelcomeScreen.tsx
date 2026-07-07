@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { cn } from "@/lib/utils";
 import { getShowWelcome, setShowWelcome } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import { MagicFlowButton } from "@/components/magic/MagicFlowButton";
@@ -25,6 +26,7 @@ export function WelcomeScreen() {
   const setWelcomeOpen = useAppStore((s) => s.setWelcomeOpen);
   // The checkbox reflects (and writes) the persistent startup preference.
   const [showOnStartup, setShowOnStartup] = useState(() => getShowWelcome());
+  const [splashLoaded, setSplashLoaded] = useState(false);
 
   const openSong = useAppStore((s) => s.openSong);
   const openHelp = useAppStore((s) => s.openHelp);
@@ -87,13 +89,20 @@ export function WelcomeScreen() {
   return (
     <div className="absolute inset-0 z-[60] flex items-center justify-center bg-background/85 p-6 backdrop-blur">
       <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card">
-        {/* Hero splash art */}
-        <div className="relative shrink-0 bg-black">
+        {/* Hero splash art — full-bleed 16:9, matching the artwork's own ratio
+            so it fills edge-to-edge with no letterbox bars and no cropping. */}
+        <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-black">
           <img
             src={splashArt}
             alt="Wheelbarrow Studios — Music Video Director"
-            className="h-auto max-h-72 w-full object-contain"
+            onLoad={() => setSplashLoaded(true)}
+            className={cn(
+              "h-full w-full object-cover transition-opacity duration-700 ease-out",
+              splashLoaded ? "opacity-100" : "opacity-0"
+            )}
           />
+          {/* Gentle bottom scrim to seat the art against the panel below. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-surface/80 to-transparent" />
           <button
             onClick={() => close()}
             className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-md bg-black/40 text-white/90 hover:bg-black/70 hover:text-white"
