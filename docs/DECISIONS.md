@@ -3,6 +3,22 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D4 - 2026-07-07 - Phase 3 folder split completed mechanically
+
+**What:** The documented boundary is now physical: shared systems moved under
+`src/platform/`, and Music Video Director systems moved under
+`src/apps/music-video/`. Imports were rewritten mechanically through the `@/`
+alias. The gray-area legacy project workspace stayed on the platform side until
+a later consolidation decision.
+
+**Why better:** Future Director Studio apps now have a concrete reusable
+platform to consume, while the music-video app code is easier to isolate. Risk:
+some platform modules still legitimately know about music-video types where the
+old product spine crosses the reusable layer; this is acceptable for Phase 3
+because behavior was preserved and Phase 4 will expose the remaining coupling.
+Verification: frontend build, Rust tests, browser smoke, release executable
+launch, NSIS install, and installed-app launch all passed.
+
 ## D3 — 2026-07-07 · Docs become living, not archival
 
 **What:** Nine root/spec-era markdown files and the June 17 handoff set moved to

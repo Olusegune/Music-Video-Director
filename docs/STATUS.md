@@ -7,6 +7,13 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Director Studio Phase 3**: mechanical folder migration completed. Reusable
+  systems now live under `src/platform/`; Music Video Director-specific systems
+  now live under `src/apps/music-video/`. Imports compile through the `@/`
+  alias with no behavior redesign. Verified with `npm run build`, `cargo test`,
+  browser smoke of Song Studio / MV Director / Choreography / Timeline, Tauri
+  MSI+NSIS packaging, release executable launch, NSIS install, and installed-app
+  launch.
 - **Director Studio Phase 2**: the three view monoliths extracted into
   focused modules, pure refactor — MvDirector.tsx 3,101→1,014 (+ shotHelpers,
   ChoreoPanel, ShotRow, SimpleTreatment, TreatmentView), SongStudio.tsx
@@ -39,12 +46,18 @@ Last updated: 2026-07-07
 msi,nsis` after any release-worthy change. Not code-signed (SmartScreen warning
 is expected and documented in Help).
 
+Latest verified Phase 3 artifacts:
+- Release exe: `src-tauri/target/release/wheelbarrow-motionforge.exe`
+- MSI: `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_0.1.0_x64_en-US.msi`
+- NSIS installer: `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_0.1.0_x64-setup.exe`
+
 ## Known issues / gray areas
 
-- `features/projects/` (motion-graphics workspace) predates the music-video
+- `platform/features/projects/` (motion-graphics workspace) predates the music-video
   spine; overlaps with newer surfaces. Candidate for consolidation or archive.
-- `lib/localEngine.ts` tone heuristics are B2B-flavored; unused by the music
-  spine. Decide fate during Phase 3 extraction.
+- `platform/lib/localEngine.ts` tone heuristics are B2B-flavored; unused by the
+  music spine. Decide fate during Phase 4 platform proof or a legacy workspace
+  consolidation pass.
 - Naming: package "wheelbarrow-motionforge", sidebar "AI Director", splash
   "Music Video Director". Branding pass pending a product-name decision.
 - Preview screenshots of the Choreography page time out (continuous rAF in
@@ -52,8 +65,6 @@ is expected and documented in Help).
 
 ## Roadmap
 
-- **Phase 3** — mechanical folder migration per the ARCHITECTURE.md boundary
-  map (`src/platform/` + `src/apps/music-video/`), one commit, no logic edits.
 - **Phase 4** — platform proof: second thin app shell (e.g. Motion Studio
   skeleton) consuming only platform modules; fix whatever coupling appears.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

@@ -41,8 +41,9 @@ Core philosophy, in priority order:
 
 ## Platform ↔ app boundary map
 
-The eventual folder split (`src/platform/` vs `src/apps/music-video/`) is
-Phase 3. Until then this table **is** the boundary; new code must respect it.
+The physical split is now in place: reusable systems live under
+`src/platform/`, while Music Video Director systems live under
+`src/apps/music-video/`. New code must respect this boundary.
 
 ### Platform (reusable by every Director Studio app)
 
@@ -75,9 +76,10 @@ Phase 3. Until then this table **is** the boundary; new code must respect it.
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 
-Gray areas (decide when extracted): `lib/localEngine.ts` (B2B-flavored copy
-heuristics), `lib/textlock.ts`, `lib/moodboard.ts`, `features/projects/` (the
-older motion-graphics project workspace — predates the music-video spine).
+Gray areas retained on the platform side for now: `platform/lib/localEngine.ts`
+(B2B-flavored copy heuristics), `platform/lib/textlock.ts`,
+`platform/lib/moodboard.ts`, `platform/features/projects/` (the older
+motion-graphics project workspace — predates the music-video spine).
 
 ## Verification discipline
 
