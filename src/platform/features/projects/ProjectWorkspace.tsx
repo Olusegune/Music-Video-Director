@@ -47,7 +47,7 @@ import {
   fixBadAIText,
   splashScreenMode,
   directorMode,
-} from "@/apps/music-video/lib/magic";
+} from "@/platform/lib/promptTools";
 import { extractTextFromFile, ACCEPT_ATTR } from "@/platform/lib/docParse";
 import {
   loadStyleDnas,

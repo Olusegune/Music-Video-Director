@@ -7,17 +7,17 @@ import {
   setStudioMode as persistStudioMode,
   type StudioMode,
 } from "@/platform/lib/settings";
-import { loadActiveTemplateId, saveActiveTemplateId } from "@/platform/lib/templates";
-import { loadSongs, saveSong } from "@/apps/music-video/lib/songBrain";
-import { loadDemoProject } from "@/platform/lib/demoProject";
+import { saveActiveTemplateId } from "@/platform/lib/templates";
+import {
+  loadBoundDemoProduction,
+  loadBoundProductions,
+  saveBoundProductionTemplate,
+  templateForBoundProduction,
+} from "@/platform/lib/appBindings";
 
 /** Resolve the template to show for a song: the song's own memory, else global. */
 function templateForSong(songId: string | null): string | null {
-  if (songId) {
-    const s = loadSongs().find((x) => x.id === songId);
-    if (s) return s.templateId ?? null;
-  }
-  return loadActiveTemplateId();
+  return templateForBoundProduction(songId);
 }
 
 export type View =
@@ -41,7 +41,8 @@ export type View =
   | "animation"
   | "export"
   | "apikeys"
-  | "models";
+  | "models"
+  | "motionstudio";
 export type WorkspaceMode =
   | "storyboard"
   | "camera"
@@ -128,6 +129,7 @@ interface AppState {
   openExport: () => void;
   openApiKeys: () => void;
   openModels: () => void;
+  openMotionStudio: () => void;
   openProject: (id: string) => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
@@ -176,7 +178,7 @@ export const useAppStore = create<AppState>((set) => ({
   setPendingMagic: (pendingMagic) => set({ pendingMagic }),
   startMagicFlow: () =>
     set((s) => {
-      const songs = loadSongs();
+      const songs = loadBoundProductions();
       const target =
         (s.activeSongId && songs.find((x) => x.id === s.activeSongId)?.id) ||
         songs[0]?.id ||
@@ -199,7 +201,7 @@ export const useAppStore = create<AppState>((set) => ({
   setDirectorOpen: (directorOpen) => set({ directorOpen }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   openDemoProject: () => {
-    void loadDemoProject().then((songId) => {
+    void loadBoundDemoProduction().then((songId) => {
       setActiveSongId(songId);
       set((s) => ({
         welcomeOpen: false,
@@ -231,11 +233,7 @@ export const useAppStore = create<AppState>((set) => ({
     saveActiveTemplateId(id);
     // Remember the template on the active song so each production keeps its own.
     set((s) => {
-      if (s.activeSongId) {
-        const songs = loadSongs();
-        const song = songs.find((x) => x.id === s.activeSongId);
-        if (song) saveSong({ ...song, templateId: id ?? undefined });
-      }
+      if (s.activeSongId) saveBoundProductionTemplate(s.activeSongId, id);
       return { activeTemplateId: id };
     });
   },
@@ -251,6 +249,7 @@ export const useAppStore = create<AppState>((set) => ({
   openExport: () => set({ view: "export" }),
   openApiKeys: () => set({ view: "apikeys" }),
   openModels: () => set({ view: "models" }),
+  openMotionStudio: () => set({ view: "motionstudio", activeProjectId: null }),
   openProject: (id) =>
     set({ view: "project", activeProjectId: id, workspaceMode: "storyboard" }),
   setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),

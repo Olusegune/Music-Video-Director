@@ -13,26 +13,8 @@
 // Domain types
 // ---------------------------------------------------------------------------
 
-export type SectionKind =
-  | "Intro"
-  | "Verse"
-  | "Pre-Chorus"
-  | "Chorus"
-  | "Bridge"
-  | "Instrumental"
-  | "Drop"
-  | "Outro";
-
-export const SECTION_KINDS: SectionKind[] = [
-  "Intro",
-  "Verse",
-  "Pre-Chorus",
-  "Chorus",
-  "Bridge",
-  "Instrumental",
-  "Drop",
-  "Outro",
-];
+import type { SectionKind } from "@/platform/lib/songSections";
+export { SECTION_KINDS, type SectionKind } from "@/platform/lib/songSections";
 
 export interface SongSection {
   id: string;

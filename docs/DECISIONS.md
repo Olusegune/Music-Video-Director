@@ -3,6 +3,12 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D5 - 2026-07-07 - Motion Studio proves the platform can host a second app
+
+**What:** Added a thin `src/apps/motion-studio/MotionStudio.tsx` shell and a sidebar app switch. The skeleton consumes platform routing state, StudioMode, provider router state, project listing, style system, theme, and shared UI components without importing Music Video Director modules.
+
+**Why better:** Director Studio now has a concrete second app surface, so platform reuse is no longer theoretical. The proof exposed real residual coupling: several platform dashboards/search/assets/validation helpers still read Music Video data directly. Phase 4 fixed the store-level coupling with `platform/lib/appBindings`, moved generic prompt tools into `platform/lib/promptTools`, and extracted shared section labels into `platform/lib/songSections`. Future impact: remaining app-specific reads should move behind registries before Motion Studio grows beyond a skeleton.
+
 ## D4 - 2026-07-07 - Phase 3 folder split completed mechanically
 
 **What:** The documented boundary is now physical: shared systems moved under

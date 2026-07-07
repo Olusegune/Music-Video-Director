@@ -17,7 +17,7 @@ export function NewProjectWizard() {
   const setOpen = useAppStore((s) => s.setWizardOpen);
   const openTemplates = useAppStore((s) => s.openTemplates);
   const openSong = useAppStore((s) => s.openSong);
-  const openDashboard = useAppStore((s) => s.openDashboard);
+  const openMotionStudio = useAppStore((s) => s.openMotionStudio);
   const openDirectorWizard = useAppStore((s) => s.openDirectorWizard);
   const setActiveTemplate = useAppStore((s) => s.setActiveTemplate);
   const setActiveSong = useAppStore((s) => s.setActiveSong);
@@ -52,7 +52,7 @@ export function NewProjectWizard() {
       icon: <FolderOpen className="h-6 w-6" />,
       title: "Blank Project",
       desc: "Start a non-music-video motion-graphics project — ads, explainers, and other one-off pieces.",
-      go: () => close(openDashboard),
+      go: () => close(openMotionStudio),
     },
     {
       icon: <LayoutTemplate className="h-6 w-6" />,

@@ -27,15 +27,15 @@ Core philosophy, in priority order:
 
 ## Runtime shape
 
-- `src/app/App.tsx` — flat view router over `useAppStore` (Zustand). 21 views.
-- `src/lib/ipc.ts` — the single `api` facade (~78 methods). In Tauri it calls
+- `src/app/App.tsx` - flat view router over `useAppStore` (Zustand), now composing Music Video Director and the thin Motion Studio skeleton.
+- `src/platform/lib/ipc.ts` — the single `api` facade (~78 methods). In Tauri it calls
   the Rust core (SQLite + OS keychain for keys); in browser dev it transparently
   falls back to localStorage (`mf.*` keys). Every feature talks to `api`, never
   to storage directly.
 - `src-tauri/` — Rust core: DB, provider HTTP adapters, FFmpeg render pipeline,
   asset file storage (resolved to data: URLs via `assetDataUrl`).
 - Modes: a single platform-level **StudioMode** (`director` / `studio` /
-  `creator`) lives in `src/lib/settings.ts` + `useAppStore`, switched globally
+  `creator`) lives in `src/platform/lib/settings.ts` + `useAppStore`, switched globally
   in the Sidebar. Surfaces map it to their own disclosure tiers. Mode changes
   are presentation-only — they can never lose work.
 
@@ -76,10 +76,19 @@ The physical split is now in place: reusable systems live under
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 
+### Motion Studio (thin Phase 4 skeleton)
+
+| System | Modules |
+|---|---|
+| App shell proof | `apps/motion-studio/MotionStudio.tsx` |
+| Shared systems consumed | `platform/store/useAppStore`, `platform/lib/ipc`, `platform/lib/providers`, `platform/lib/settings`, `platform/lib/styles`, `platform/components/ui/*` |
+
 Gray areas retained on the platform side for now: `platform/lib/localEngine.ts`
 (B2B-flavored copy heuristics), `platform/lib/textlock.ts`,
 `platform/lib/moodboard.ts`, `platform/features/projects/` (the older
 motion-graphics project workspace — predates the music-video spine).
+
+Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now talks to app-level production helpers through `platform/lib/appBindings.ts` instead of importing Music Video modules directly. Remaining legacy couplings are concentrated in dashboard/search/assets/validation/demo helpers and should move behind similar platform extension points before a full second app ships.
 
 ## Verification discipline
 

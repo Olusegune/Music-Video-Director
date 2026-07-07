@@ -7,6 +7,7 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Director Studio Phase 4**: platform proof completed with a thin `src/apps/motion-studio/MotionStudio.tsx` shell. It renders New Motion Project, Choose Project Type, Style / Creative Direction, Storyboard placeholder, and Export placeholder screens while consuming shared StudioMode, provider router, style system, project list, theme, and UI components. Music Video Director still renders through the existing Song Studio / MV Director flow. Boundary fixes included `platform/lib/appBindings` for app-owned production callbacks, `platform/lib/promptTools` for generic prompt-doctor utilities, and `platform/lib/songSections` for shared section vocabulary.
 - **Director Studio Phase 3**: mechanical folder migration completed. Reusable
   systems now live under `src/platform/`; Music Video Director-specific systems
   now live under `src/apps/music-video/`. Imports compile through the `@/`
@@ -46,13 +47,14 @@ Last updated: 2026-07-07
 msi,nsis` after any release-worthy change. Not code-signed (SmartScreen warning
 is expected and documented in Help).
 
-Latest verified Phase 3 artifacts:
+Latest verified Phase 4 artifacts:
 - Release exe: `src-tauri/target/release/wheelbarrow-motionforge.exe`
 - MSI: `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_0.1.0_x64_en-US.msi`
 - NSIS installer: `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_0.1.0_x64-setup.exe`
 
 ## Known issues / gray areas
 
+- Remaining platform-to-Music-Video imports are legacy extension points, mostly dashboard/search/assets/validation/demo helpers. They do not block the thin Motion Studio shell, but should move behind app registries before Motion Studio becomes a real product surface.
 - `platform/features/projects/` (motion-graphics workspace) predates the music-video
   spine; overlaps with newer surfaces. Candidate for consolidation or archive.
 - `platform/lib/localEngine.ts` tone heuristics are B2B-flavored; unused by the
@@ -65,6 +67,5 @@ Latest verified Phase 3 artifacts:
 
 ## Roadmap
 
-- **Phase 4** — platform proof: second thin app shell (e.g. Motion Studio
-  skeleton) consuming only platform modules; fix whatever coupling appears.
+- **Next** - continue platform proof hardening: move dashboard/search/assets app-specific data reads behind registries, then decide whether the old `platform/features/projects/` workspace becomes the real Motion Studio base or an archived legacy workspace.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

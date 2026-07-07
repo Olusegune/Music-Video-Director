@@ -20,6 +20,7 @@ import { MagicOutputScreen } from "@/apps/music-video/features/mvdirector/MagicO
 import { CastView } from "@/apps/music-video/features/cast/CastView";
 import { ChoreographyView } from "@/apps/music-video/features/choreography/ChoreographyView";
 import { TimelineView } from "@/apps/music-video/features/timeline/TimelineView";
+import { MotionStudio } from "@/apps/motion-studio/MotionStudio";
 import { TemplatesView } from "@/platform/features/templates/TemplatesView";
 import { HelpCenter } from "@/platform/features/help/HelpCenter";
 import { WelcomeScreen } from "@/platform/features/welcome/WelcomeScreen";
@@ -34,6 +35,9 @@ import { GlobalSearch } from "@/platform/features/search/GlobalSearch";
 import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
 import { installUndo } from "@/platform/lib/undo";
 import { useAppStore } from "@/platform/store/useAppStore";
+import { installMusicVideoBindings } from "@/apps/music-video/musicVideoBindings";
+
+installMusicVideoBindings();
 
 export default function App() {
   const view = useAppStore((s) => s.view);
@@ -57,7 +61,8 @@ export default function App() {
     !directorOpen &&
     view !== "dashboard" &&
     view !== "song" &&
-    view !== "magicoutput";
+    view !== "magicoutput" &&
+    view !== "motionstudio";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -73,6 +78,7 @@ export default function App() {
         {view === "cast" && <CastView />}
         {view === "choreography" && <ChoreographyView />}
         {view === "timeline" && <TimelineView />}
+        {view === "motionstudio" && <MotionStudio />}
         {view === "templates" && <TemplatesView />}
         {view === "help" && <HelpCenter />}
         {view === "dashboard" && <Dashboard />}

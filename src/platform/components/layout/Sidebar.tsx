@@ -56,6 +56,7 @@ export function Sidebar() {
     openExport,
     openApiKeys,
     openModels,
+    openMotionStudio,
     openProject,
     setWizardOpen,
     openDirectorWizard,
@@ -137,6 +138,11 @@ export function Sidebar() {
 
       {/* Grouped nav — reads as a director's production flow, top to bottom. */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
+        <NavGroup label="Director Studio apps">
+          <NavItem icon={<Music className="h-4 w-4" />} label="Music Video Director" active={view === "song" || view === "mvdirector"} onClick={openSong} />
+          <NavItem icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
+        </NavGroup>
+
         <NavGroup label="Director Mode / Advanced">
           <NavItem icon={<LayoutTemplate className="h-4 w-4" />} label="Templates" active={view === "templates"} onClick={openTemplates} />
           <NavItem icon={<Music className="h-4 w-4" />} label="Song Studio" active={view === "song"} onClick={openSong} />

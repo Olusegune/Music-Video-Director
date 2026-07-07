@@ -11,7 +11,7 @@
 // input is ALWAYS preserved verbatim in `sourceNotes`, so nothing is ever lost
 // to a missed pattern.
 
-import type { SectionKind } from "@/apps/music-video/lib/songBrain";
+import type { SectionKind } from "@/platform/lib/songSections";
 
 // Reuses Song Brain's own SectionKind so a parsed [Verse]/[Chorus]/[Hook]
 // marker maps directly onto the same section vocabulary the rest of the app
