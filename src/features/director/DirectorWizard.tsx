@@ -326,7 +326,12 @@ export function DirectorWizard() {
 
   return (
     <div className="fixed inset-0 z-[85] flex items-center justify-center bg-background/85 p-6 backdrop-blur">
-      <div className="flex max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card">
+      <div
+        className={cn(
+          "flex max-h-[90vh] w-full overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card transition-[max-width]",
+          step === 2 ? "max-w-5xl" : "max-w-3xl"
+        )}
+      >
         {/* Step rail */}
         <div className="hidden w-52 shrink-0 flex-col gap-1 border-r border-border bg-elevated/30 p-4 sm:flex">
           <div className="mb-3 flex items-center gap-2">
@@ -481,25 +486,31 @@ export function DirectorWizard() {
 
             {step === 2 && (
               <StepShell icon={<Users className="h-5 w-5" />} title="Who's performing?" desc="The Director detected these performers from your song. Upload or generate a photo, choose a role, and add a short vibe — no long forms.">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {cast.map((p, i) => (
-                    <div key={p.id} className="rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3">
-                      <div className="flex items-start gap-3">
+                    <div key={p.id} className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated/30">
+                      {/* Portrait — the card's primary focus, casting-sheet sized. */}
+                      <div className="relative aspect-[4/5] w-full bg-elevated">
                         <label
                           className={cn(
-                            "relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border",
-                            portraits[p.id] ? "border-border" : "border-dashed border-border hover:border-primary/50"
+                            "group flex h-full w-full cursor-pointer items-center justify-center overflow-hidden",
+                            !portraits[p.id] && "border-b border-dashed border-border hover:border-primary/50"
                           )}
                           title="Upload a photo — becomes this performer's generation reference"
                         >
                           {uploadingId === p.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted" />
+                            <Loader2 className="h-6 w-6 animate-spin text-muted" />
                           ) : portraits[p.id] ? (
-                            <img src={portraits[p.id]} alt="" className="h-full w-full object-cover" />
+                            <>
+                              <img src={portraits[p.id]} alt="" className="h-full w-full object-cover" />
+                              <span className="absolute inset-0 hidden items-center justify-center bg-black/50 group-hover:flex">
+                                <Camera className="h-6 w-6 text-white" />
+                              </span>
+                            </>
                           ) : (
-                            <span className="flex flex-col items-center gap-0.5 text-muted">
-                              <Camera className="h-4 w-4" />
-                              <span className="text-[9px]">Upload</span>
+                            <span className="flex flex-col items-center gap-1.5 text-muted">
+                              <Camera className="h-7 w-7" />
+                              <span className="text-xs font-medium">Upload a photo</span>
                             </span>
                           )}
                           <input
@@ -514,69 +525,76 @@ export function DirectorWizard() {
                           />
                         </label>
 
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <Input
-                              value={p.name}
-                              onChange={(e) =>
-                                setCast((c) => c.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
-                              }
-                              className="h-8 flex-1 text-sm font-medium"
-                              aria-label={`Performer ${i + 1} name`}
-                            />
-                            <button
-                              onClick={() => setGenForId(p.id)}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] border border-border text-muted hover:border-primary/40 hover:text-primary"
-                              title="Generate a portrait with AI"
-                              aria-label="Generate portrait"
-                            >
-                              <WandIcon className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setCast((c) => c.filter((_, j) => j !== i))}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-muted hover:text-danger"
-                              aria-label="Remove performer"
-                              title="Remove performer"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-
-                          <CardPicker
-                            value={p.role}
-                            ariaLabel={`Role for ${p.name || "performer"}`}
-                            options={PERFORMER_ROLES.map((r) => ({
-                              key: r,
-                              label: r,
-                              icon: ROLE_META[r].icon,
-                              tagline: ROLE_META[r].tagline,
-                            }))}
-                            onChange={(key) => {
-                              const role = key as PerformerRole;
-                              setCast((c) =>
-                                c.map((x, j) =>
-                                  j === i ? { ...x, role, lipSync: VOCAL_ROLES.includes(role) } : x
-                                )
-                              );
-                            }}
-                          />
-
-                          <Input
-                            value={p.performanceNotes}
-                            onChange={(e) =>
-                              setCast((c) =>
-                                c.map((x, j) => (j === i ? { ...x, performanceNotes: e.target.value } : x))
-                              )
-                            }
-                            placeholder="Short vibe — e.g. confident, playful, intense"
-                            className="h-8 text-xs"
-                            aria-label={`Vibe for ${p.name || "performer"}`}
-                          />
+                        <div className="absolute right-2 top-2 flex gap-1.5">
+                          <button
+                            onClick={() => setGenForId(genForId === p.id ? null : p.id)}
+                            className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-full backdrop-blur",
+                              genForId === p.id
+                                ? "bg-primary text-white"
+                                : "bg-black/55 text-white hover:bg-black/75"
+                            )}
+                            title="Generate a portrait with AI"
+                            aria-label="Generate portrait"
+                          >
+                            <WandIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setCast((c) => c.filter((_, j) => j !== i))}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur hover:bg-danger/80"
+                            aria-label="Remove performer"
+                            title="Remove performer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
 
+                      {/* Identity — name, role, vibe. */}
+                      <div className="space-y-2 p-3">
+                        <Input
+                          value={p.name}
+                          onChange={(e) =>
+                            setCast((c) => c.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+                          }
+                          className="h-9 text-base font-semibold"
+                          aria-label={`Performer ${i + 1} name`}
+                        />
+
+                        <CardPicker
+                          value={p.role}
+                          ariaLabel={`Role for ${p.name || "performer"}`}
+                          options={PERFORMER_ROLES.map((r) => ({
+                            key: r,
+                            label: r,
+                            icon: ROLE_META[r].icon,
+                            tagline: ROLE_META[r].tagline,
+                          }))}
+                          onChange={(key) => {
+                            const role = key as PerformerRole;
+                            setCast((c) =>
+                              c.map((x, j) =>
+                                j === i ? { ...x, role, lipSync: VOCAL_ROLES.includes(role) } : x
+                              )
+                            );
+                          }}
+                        />
+
+                        <Input
+                          value={p.performanceNotes}
+                          onChange={(e) =>
+                            setCast((c) =>
+                              c.map((x, j) => (j === i ? { ...x, performanceNotes: e.target.value } : x))
+                            )
+                          }
+                          placeholder="Short vibe — e.g. confident, playful, intense"
+                          className="h-8 text-xs"
+                          aria-label={`Vibe for ${p.name || "performer"}`}
+                        />
+                      </div>
+
                       {genForId === p.id && (
-                        <div className="mt-3 border-t border-border pt-3">
+                        <div className="border-t border-border p-3">
                           <GenerationPanel
                             title="Generate portrait"
                             initialPrompt={`${p.name || "A performer"}, ${p.role.toLowerCase()}, ${p.performanceNotes || "confident"}, portrait`}
@@ -586,6 +604,7 @@ export function DirectorWizard() {
                               void linkPortrait(p.id, url);
                             }}
                             pickLabel="Use as portrait"
+                            compact
                           />
                         </div>
                       )}
@@ -593,7 +612,7 @@ export function DirectorWizard() {
                   ))}
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   <Button variant="secondary" size="sm" onClick={addPerformer}>
                     <Plus className="h-3.5 w-3.5" /> Add Performer
                   </Button>

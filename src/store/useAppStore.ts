@@ -67,6 +67,10 @@ interface AppState {
   dataVersion: number;
   /** Shot id to scroll-to + highlight when the Timeline opens (cross-view focus). */
   focusedShotId: string | null;
+  /** When true, the Timeline opens straight into the Render dialog — the
+   *  Magic Mode "Render Video" button's entry point, so clicking it never
+   *  drops the user onto the bare scene lanes unannounced. */
+  timelineAutoRender: boolean;
 
   openSong: () => void;
   openMvDirector: () => void;
@@ -76,6 +80,9 @@ interface AppState {
   openCast: () => void;
   openChoreography: () => void;
   openTimeline: () => void;
+  /** Jump straight to the Timeline's Render dialog (Magic Mode's Render Video). */
+  openTimelineToRender: () => void;
+  clearTimelineAutoRender: () => void;
   /** Jump to the Timeline and highlight a specific shot. */
   focusShotInTimeline: (shotId: string) => void;
   clearFocusedShot: () => void;
@@ -133,6 +140,7 @@ export const useAppStore = create<AppState>((set) => ({
   lastSavedAt: null,
   dataVersion: 0,
   focusedShotId: null,
+  timelineAutoRender: false,
 
   openSong: () => set({ view: "song", activeProjectId: null }),
   openMvDirector: () => set({ view: "mvdirector" }),
@@ -140,6 +148,8 @@ export const useAppStore = create<AppState>((set) => ({
   openCast: () => set({ view: "cast" }),
   openChoreography: () => set({ view: "choreography" }),
   openTimeline: () => set({ view: "timeline" }),
+  openTimelineToRender: () => set({ view: "timeline", timelineAutoRender: true }),
+  clearTimelineAutoRender: () => set({ timelineAutoRender: false }),
   focusShotInTimeline: (shotId: string) => set({ view: "timeline", focusedShotId: shotId }),
   clearFocusedShot: () => set({ focusedShotId: null }),
   openTemplates: () => set({ view: "templates" }),

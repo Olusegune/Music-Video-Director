@@ -387,6 +387,24 @@ export function MvDirector() {
     []
   );
 
+  // Patch arbitrary fields on one shot (e.g. a per-shot model override) —
+  // used by the Tune modal's video-model select.
+  const patchShot = useCallback((sectionId: string, shotId: string, fields: Partial<MvShot>) => {
+    setTreatment((prev) => {
+      if (!prev) return prev;
+      const next: MvTreatment = {
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.sectionId === sectionId
+            ? { ...s, shots: s.shots.map((sh) => (sh.id === shotId ? { ...sh, ...fields } : sh)) }
+            : s
+        ),
+      };
+      saveTreatment(next);
+      return next;
+    });
+  }, []);
+
   const generateClip = useCallback(
     async (section: MvSectionPlan, shot: MvShot) => {
       if (!song || !treatment) return;
@@ -939,69 +957,158 @@ export function MvDirector() {
         )}
       </div>
 
-      {/* Per-shot fine-tune via the unified generation panel */}
-      {tune && treatment && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
-          onClick={() => setTune(null)}
-        >
-          <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">
-                Tune frame — {tune.section.label}
-              </h2>
-              <button onClick={() => setTune(null)} aria-label="Close tune">
-                <X className="h-4 w-4 text-muted hover:text-foreground" />
-              </button>
+      {/* Per-shot fine-tune — the full shot interface: preview, versions,
+          frame prompt/model, and clip/video model, all in one roomy modal
+          instead of a cramped popup. */}
+      {tune && treatment && (() => {
+        // Re-read the shot from live treatment state so the preview/version
+        // strip never goes stale after a generation inside this same modal.
+        const liveSection = treatment.sections.find((s) => s.sectionId === tune.section.sectionId) ?? tune.section;
+        const liveShot = liveSection.shots.find((sh) => sh.id === tune.shot.id) ?? tune.shot;
+        return (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
+            onClick={() => setTune(null)}
+          >
+            <div
+              className="flex max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Left — live preview, version compare, clip controls */}
+              <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border bg-elevated/20 p-4">
+                <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
+                  {liveShot.videoUrl ? (
+                    <AssetVideo src={liveShot.videoUrl} controls className="h-full w-full object-cover" label="Clip" />
+                  ) : liveShot.imageUrl ? (
+                    <AssetImage src={liveShot.imageUrl} alt="" className="h-full w-full object-cover" label="Frame" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted">
+                      <ImageIcon className="h-6 w-6" />
+                    </div>
+                  )}
+                </div>
+
+                {(liveShot.imageCandidates?.length ?? 0) > 1 && (
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+                      Versions
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {liveShot.imageCandidates!.map((c, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setShotImage(liveSection.sectionId, liveShot.id, c, liveShot.imageCandidates)}
+                          className={cn(
+                            "aspect-square overflow-hidden rounded border",
+                            c === liveShot.imageUrl ? "border-primary ring-1 ring-primary" : "border-border"
+                          )}
+                          title={`Use version ${i + 1}`}
+                        >
+                          <AssetImage src={c} alt={`Version ${i + 1}`} className="h-full w-full object-cover" label="Version" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 border-t border-border pt-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                    Video / clip
+                  </p>
+                  <select
+                    value={liveShot.videoProvider ?? ""}
+                    onChange={(e) =>
+                      patchShot(liveSection.sectionId, liveShot.id, { videoProvider: e.target.value || undefined })
+                    }
+                    className="h-8 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+                    aria-label="Clip model"
+                    title="Override the video provider for this shot"
+                  >
+                    <option value="">Clip model: inherit</option>
+                    {VIDEO_MODELS.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    disabled={genClipId === liveShot.id || !liveShot.imageUrl}
+                    onClick={() => generateClip(liveSection, liveShot)}
+                    title={liveShot.imageUrl ? undefined : "Generate a frame first — clips are driven from the shot's frame"}
+                  >
+                    {genClipId === liveShot.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Video className="h-3.5 w-3.5" />
+                    )}
+                    {liveShot.videoUrl ? "Regenerate clip" : "Generate clip"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right — frame prompt/model, full GenerationPanel power */}
+              <div className="min-w-0 flex-1 overflow-y-auto p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">
+                    Tune shot — {liveSection.label}
+                  </h2>
+                  <button onClick={() => setTune(null)} aria-label="Close tune">
+                    <X className="h-4 w-4 text-muted hover:text-foreground" />
+                  </button>
+                </div>
+                <GenerationPanel
+                  title="Tune frame"
+                  initialPrompt={buildShotImagePrompt({
+                    shot: liveShot,
+                    section: liveSection,
+                    treatment,
+                    cast,
+                    characters,
+                    aspect,
+                    choreoHint: song
+                      ? choreoHintForTime(getChoreo(song.id), liveShot.start)
+                      : undefined,
+                    brief: briefForSection(song, liveSection.sectionId),
+                  })}
+                  defaultAspect="16:9"
+                  references={mergeProductionRefs(liveShot, liveSection)}
+                  onGenerate={async (opts: GenerateOpts) => {
+                    // opts.references = shot/production refs + any pulled from the library.
+                    const refs = await collectRefs(
+                      opts.references.length
+                        ? opts.references
+                        : mergeProductionRefs(liveShot, liveSection)
+                    );
+                    const urls: string[] = [];
+                    for (let i = 0; i < opts.variations; i++) {
+                      const s = opts.seed !== undefined ? opts.seed + i : undefined;
+                      urls.push(
+                        await api.generateImagePro(
+                          opts.provider,
+                          opts.prompt,
+                          opts.width,
+                          opts.height,
+                          refs,
+                          s,
+                          opts.apiModel
+                        )
+                      );
+                    }
+                    return urls;
+                  }}
+                  onPick={(url) =>
+                    setShotImage(liveSection.sectionId, liveShot.id, url)
+                  }
+                  pickLabel="Use as frame"
+                />
+              </div>
             </div>
-            <GenerationPanel
-              title="Tune frame"
-              initialPrompt={buildShotImagePrompt({
-                shot: tune.shot,
-                section: tune.section,
-                treatment,
-                cast,
-                characters,
-                aspect,
-                choreoHint: song
-                  ? choreoHintForTime(getChoreo(song.id), tune.shot.start)
-                  : undefined,
-                brief: briefForSection(song, tune.section.sectionId),
-              })}
-              defaultAspect="16:9"
-              references={mergeProductionRefs(tune.shot, tune.section)}
-              onGenerate={async (opts: GenerateOpts) => {
-                // opts.references = shot/production refs + any pulled from the library.
-                const refs = await collectRefs(
-                  opts.references.length
-                    ? opts.references
-                    : mergeProductionRefs(tune.shot, tune.section)
-                );
-                const urls: string[] = [];
-                for (let i = 0; i < opts.variations; i++) {
-                  const s = opts.seed !== undefined ? opts.seed + i : undefined;
-                  urls.push(
-                    await api.generateImagePro(
-                      opts.provider,
-                      opts.prompt,
-                      opts.width,
-                      opts.height,
-                      refs,
-                      s,
-                      opts.apiModel
-                    )
-                  );
-                }
-                return urls;
-              }}
-              onPick={(url) =>
-                setShotImage(tune.section.sectionId, tune.shot.id, url)
-              }
-              pickLabel="Use as frame"
-            />
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

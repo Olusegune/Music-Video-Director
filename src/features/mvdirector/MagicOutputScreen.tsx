@@ -33,6 +33,7 @@ import {
   type StoryFeelingKey,
 } from "@/lib/storyMode";
 import { AssetImage } from "@/components/ui/asset-image";
+import { formatTime } from "@/lib/songBrain";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +47,7 @@ export function MagicOutputScreen() {
   const openTemplates = useAppStore((s) => s.openTemplates);
   const openSong = useAppStore((s) => s.openSong);
   const openCast = useAppStore((s) => s.openCast);
-  const openTimeline = useAppStore((s) => s.openTimeline);
+  const openTimelineToRender = useAppStore((s) => s.openTimelineToRender);
   const [regenerating, setRegenerating] = useState(false);
   const [changingStory, setChangingStory] = useState(false);
   // Bumped after any local mutation (regenerate, change story) so the memos
@@ -231,9 +232,9 @@ export function MagicOutputScreen() {
             {keyMoments.length === 0 ? (
               <p className="text-xs text-muted">No shots yet.</p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {keyMoments.map((shot) => (
-                  <ShotThumb key={shot.id} shot={shot} />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {keyMoments.map((shot, i) => (
+                  <ShotThumb key={shot.id} shot={shot} index={i} />
                 ))}
               </div>
             )}
@@ -265,7 +266,7 @@ export function MagicOutputScreen() {
 
         {/* Simple actions — everything a beginner needs, nothing more. */}
         <div className="flex flex-wrap justify-center gap-2 pt-2">
-          <Button variant="gold" onClick={openTimeline}>
+          <Button variant="gold" onClick={openTimelineToRender}>
             <Clapperboard className="h-4 w-4" /> Render Video
           </Button>
           <Button variant="secondary" onClick={regenerate} disabled={regenerating}>
@@ -380,17 +381,43 @@ function StoryBeat({ label, text }: { label: string; text: string }) {
   );
 }
 
-function ShotThumb({ shot }: { shot: { imageUrl?: string; idea: string; start: number } }) {
+// A small rotating accent set so "no frame yet" placeholders read as
+// intentional storyboard art, not an empty/broken state — same idea as the
+// Template card's premium fallback treatment.
+const THUMB_ACCENTS = ["#7c5cff", "#c2557f", "#2557c2", "#c28a25", "#25a3c2"];
+
+function ShotThumb({
+  shot,
+  index,
+}: {
+  shot: { imageUrl?: string; idea: string; start: number; shotType?: string; movement?: string };
+  index: number;
+}) {
+  const accent = THUMB_ACCENTS[index % THUMB_ACCENTS.length];
+  const cameraLine = [shot.shotType, shot.movement].filter(Boolean).join(" · ");
   return (
     <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated/40">
-      {shot.imageUrl ? (
-        <AssetImage src={shot.imageUrl} alt={shot.idea} className="aspect-video w-full object-cover" label="Frame" />
-      ) : (
-        <div className="flex aspect-video w-full items-center justify-center bg-elevated text-muted">
-          <LayoutGrid className="h-5 w-5" />
-        </div>
-      )}
-      <p className="line-clamp-2 p-2 text-[11px] text-muted">{shot.idea}</p>
+      <div className="relative aspect-video w-full">
+        {shot.imageUrl ? (
+          <AssetImage src={shot.imageUrl} alt={shot.idea} className="h-full w-full object-cover" label="Frame" />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{
+              backgroundImage: `radial-gradient(130% 110% at 15% -10%, ${accent}50, transparent 60%), linear-gradient(160deg, ${accent}30, #0a0b10 88%)`,
+            }}
+          >
+            <Clapperboard className="h-8 w-8" style={{ color: accent, opacity: 0.55 }} strokeWidth={1.25} />
+          </div>
+        )}
+        <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
+          {formatTime(shot.start)}
+        </span>
+      </div>
+      <div className="space-y-0.5 p-3">
+        <p className="line-clamp-2 text-sm leading-snug text-foreground">{shot.idea}</p>
+        {cameraLine && <p className="text-[11px] text-muted">{cameraLine}</p>}
+      </div>
     </div>
   );
 }

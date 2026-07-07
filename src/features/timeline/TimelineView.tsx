@@ -157,6 +157,16 @@ export function TimelineView() {
     return () => clearTimeout(timer);
   }, [focusedShotId, shots, song, zoom, clearFocusedShot]);
 
+  // Magic Mode's "Render Video" jumps straight here with the Render dialog
+  // already open, instead of dropping the user onto the bare scene lanes.
+  const timelineAutoRender = useAppStore((s) => s.timelineAutoRender);
+  const clearTimelineAutoRender = useAppStore((s) => s.clearTimelineAutoRender);
+  useEffect(() => {
+    if (!timelineAutoRender) return;
+    setShowSettings(true);
+    clearTimelineAutoRender();
+  }, [timelineAutoRender, clearTimelineAutoRender]);
+
   const beatDur = 60 / Math.max(1, song?.bpm ?? 120);
   const beatOff = song?.beatOffsetSec ?? 0;
   const snapT = useCallback(

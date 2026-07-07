@@ -179,6 +179,7 @@ export function GenerationPanel({
   onPick,
   pickLabel = "Use this",
   busy: externalBusy,
+  compact = false,
 }: {
   title?: string;
   mode?: GenMode;
@@ -197,6 +198,10 @@ export function GenerationPanel({
   onPick?: (url: string) => void;
   pickLabel?: string;
   busy?: boolean;
+  /** Casting-card / Magic Mode surface: default view is just prompt + preview +
+   *  generate — model/aspect/quality controls fold under "Advanced" too,
+   *  instead of always showing. Same power, one tap away. */
+  compact?: boolean;
 }) {
   const modelList = models ?? GEN_MODELS;
   const isVideo = mode === "video";
@@ -387,57 +392,59 @@ export function GenerationPanel({
         />
       </label>
 
-      <label className="block">
-        <Label>Model / provider</Label>
-        <select
-          value={modelId}
-          onChange={(e) => setModelId(e.target.value)}
-          className={selectCls}
-          aria-label={isVideo ? "Video model" : "Image model"}
-        >
-          {modelList.map((m) => {
-            const r = readinessFor(m);
-            const marker = r === "ready" || r === "configured" ? "●" : r === "invalid" ? "✕" : r === "manual" ? "✎" : "○";
-            return (
-              <option key={m.id} value={m.id}>
-                {marker} {m.label}
-              </option>
-            );
-          })}
-        </select>
-        <p className="mt-1 flex items-center gap-1.5 text-[10px]">
-          <span className={cn("h-1.5 w-1.5 rounded-full", READY_META[activeReadiness].dot)} />
-          <span className={READY_META[activeReadiness].text}>
-            {READY_META[activeReadiness].label}
-          </span>
-          {(activeReadiness === "no-key" || activeReadiness === "invalid") && (
-            <span className="text-muted">{" "}— add/fix the key in API Keys</span>
-          )}
-        </p>
-        {!isManual && caps.size > 0 && (
-          <p className="mt-1 text-[10px] text-muted">
-            Supports: {[...caps].join(" · ")}
+      {(!compact || advanced) && (
+        <label className="block">
+          <Label>Model / provider</Label>
+          <select
+            value={modelId}
+            onChange={(e) => setModelId(e.target.value)}
+            className={selectCls}
+            aria-label={isVideo ? "Video model" : "Image model"}
+          >
+            {modelList.map((m) => {
+              const r = readinessFor(m);
+              const marker = r === "ready" || r === "configured" ? "●" : r === "invalid" ? "✕" : r === "manual" ? "✎" : "○";
+              return (
+                <option key={m.id} value={m.id}>
+                  {marker} {m.label}
+                </option>
+              );
+            })}
+          </select>
+          <p className="mt-1 flex items-center gap-1.5 text-[10px]">
+            <span className={cn("h-1.5 w-1.5 rounded-full", READY_META[activeReadiness].dot)} />
+            <span className={READY_META[activeReadiness].text}>
+              {READY_META[activeReadiness].label}
+            </span>
+            {(activeReadiness === "no-key" || activeReadiness === "invalid") && (
+              <span className="text-muted">{" "}— add/fix the key in API Keys</span>
+            )}
           </p>
-        )}
-        {!isManual && activeModel && (
-          <label className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
-            <input
-              type="checkbox"
-              checked={autoFallback}
-              onChange={(e) => setAutoFallback(e.target.checked)}
-              className="accent-[var(--color-primary)]"
-            />
-            {(() => {
-              const n = fallbackChainFor(activeModel).length - 1;
-              return n > 0
-                ? `Auto-fallback to ${n} other ready model${n === 1 ? "" : "s"} if this one fails`
-                : "Auto-fallback (no other ready models configured yet)";
-            })()}
-          </label>
-        )}
-      </label>
+          {!isManual && caps.size > 0 && (
+            <p className="mt-1 text-[10px] text-muted">
+              Supports: {[...caps].join(" · ")}
+            </p>
+          )}
+          {!isManual && activeModel && (
+            <label className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
+              <input
+                type="checkbox"
+                checked={autoFallback}
+                onChange={(e) => setAutoFallback(e.target.checked)}
+                className="accent-[var(--color-primary)]"
+              />
+              {(() => {
+                const n = fallbackChainFor(activeModel).length - 1;
+                return n > 0
+                  ? `Auto-fallback to ${n} other ready model${n === 1 ? "" : "s"} if this one fails`
+                  : "Auto-fallback (no other ready models configured yet)";
+              })()}
+            </label>
+          )}
+        </label>
+      )}
 
-      {(can("aspect") || can("resolution")) && (
+      {(!compact || advanced) && (can("aspect") || can("resolution")) && (
         <div className="grid grid-cols-2 gap-2">
           {can("aspect") && (
             <label className="block">
