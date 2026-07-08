@@ -130,3 +130,12 @@ Latest Motion Studio integration verification:
 - **Next** - deepen provider-backed product-film rendering, visual page-route management, and calendar drag/reschedule interactions after this packaged V1 foundation.
 - Then build Web Studio on the same Brand DNA, deliverables, and Guided Flow platform primitives.
 - Continuous: branding pass once named; QA + installer rebuild per phase.
+
+# P0/P1 Commercial Hardening — 2026-07-08
+
+## Initial bundle measurement
+
+- Before route-level lazy loading (`8d69267` baseline): `2,149.36 kB` minified / `606.90 kB` gzip in the initial `index` JavaScript chunk.
+- After lazy-loading Motion, Glam, Web, Campaign, and heavy platform workspaces: `792.89 kB` minified / `233.25 kB` gzip in the initial `index` JavaScript chunk.
+- Initial JavaScript reduction: `1,356.47 kB` minified (`63.1%`) and `373.65 kB` gzip (`61.6%`).
+- Music Video Director views remain eager to preserve flagship behavior.
