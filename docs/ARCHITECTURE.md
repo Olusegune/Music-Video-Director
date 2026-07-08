@@ -149,6 +149,8 @@ Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now tal
 
 ## Verification discipline
 
+The release-level frontend check is `npm run test:release`. `scripts/app-shell-smoke.mjs` verifies each first-class studio remains reachable through the router, sidebar, Director's Home, and global search before the existing Web/Campaign artifact checks and production build run.
+
 Every change: `npx tsc --noEmit`, then live verification in the browser preview
 (synthetic WAV fixtures for audio flows), then commit with a scoped message.
 Backups to `C:\Users\eduni\Documents\Backups\<Name>_Pre_<date>` before

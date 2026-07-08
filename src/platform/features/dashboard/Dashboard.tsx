@@ -13,6 +13,10 @@ import {
   ChevronDown,
   ChevronRight,
   Sparkles,
+  Boxes,
+  Globe,
+  Megaphone,
+  WandSparkles,
 } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import type { NewProject, ProjectType } from "@/platform/lib/types";
@@ -56,6 +60,10 @@ export function Dashboard() {
   const setWizardOpen = useAppStore((s) => s.setWizardOpen);
   const setMagicSongId = useAppStore((s) => s.setMagicSongId);
   const openDemoProject = useAppStore((s) => s.openDemoProject);
+  const openMotionStudio = useAppStore((s) => s.openMotionStudio);
+  const openGlamStudio = useAppStore((s) => s.openGlamStudio);
+  const openWebStudio = useAppStore((s) => s.openWebStudio);
+  const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
 
   const openDirectorMode = () => {
     setActiveTemplate(null);
@@ -138,6 +146,19 @@ export function Dashboard() {
                 Open Director Mode
               </Button>
             </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted">Creative studios</h2>
+            <p className="mt-1 text-sm text-muted">Choose a focused workflow or orchestrate the whole launch.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StudioCard icon={<Boxes className="h-5 w-5" />} title="Motion Studio" desc="Build motion concepts, shots, and production-ready prompts." onClick={openMotionStudio} />
+            <StudioCard icon={<WandSparkles className="h-5 w-5" />} title="Glam Studio" desc="Create luxury campaign looks and exact-format hero assets." onClick={openGlamStudio} />
+            <StudioCard icon={<Globe className="h-5 w-5" />} title="Web Studio" desc="Plan, edit, audit, and export a responsive campaign site." onClick={openWebStudio} />
+            <StudioCard icon={<Megaphone className="h-5 w-5" />} title="Campaign Studio" desc="Orchestrate every channel from strategy through launch kit." onClick={openCampaignStudio} featured />
           </div>
         </section>
 
@@ -329,6 +350,17 @@ export function Dashboard() {
         </section>
       </div>
     </div>
+  );
+}
+
+function StudioCard({ icon, title, desc, onClick, featured = false }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void; featured?: boolean }) {
+  return (
+    <button onClick={onClick} className={`group rounded-[var(--radius-card)] border p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-card ${featured ? "border-[var(--color-gold)]/35 bg-[var(--color-gold)]/5" : "border-border bg-surface"}`}>
+      <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary transition group-hover:bg-primary/18">{icon}</span>
+      <span className="block text-sm font-semibold">{title}</span>
+      <span className="mt-1 block text-xs leading-relaxed text-muted">{desc}</span>
+      <span className="mt-4 block text-xs font-semibold text-primary">Open studio →</span>
+    </button>
   );
 }
 

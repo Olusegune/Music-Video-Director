@@ -118,6 +118,7 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
-- **Next** - run final cross-module UI QA and decide whether to begin V1 passes (Glam product film, Web multi-page/SEO, Campaign calendar/ICS) or product-wide release polish.
+- **Current release polish** - Director's Home now exposes Motion, Glam, Web, and Campaign as first-class studio cards; Ctrl+K indexes the same studio destinations. `npm run test:release` guards app routing/sidebar/dashboard/search discovery plus Web and Campaign export fixtures and the production build.
+- **Next** - complete cross-module UI QA, then begin the selected V1 pass (Glam product film, Web multi-page/SEO, or Campaign calendar/ICS).
 - Then build Web Studio on the same Brand DNA, deliverables, and Guided Flow platform primitives.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

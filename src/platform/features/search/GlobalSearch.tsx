@@ -17,6 +17,9 @@ import {
   Clapperboard,
   LayoutTemplate,
   CornerDownLeft,
+  Boxes,
+  Sparkles,
+  Megaphone,
 } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -46,6 +49,10 @@ export function GlobalSearch() {
   const openProps = useAppStore((s) => s.openProps);
   const openAnimation = useAppStore((s) => s.openAnimation);
   const openTemplates = useAppStore((s) => s.openTemplates);
+  const openMotionStudio = useAppStore((s) => s.openMotionStudio);
+  const openGlamStudio = useAppStore((s) => s.openGlamStudio);
+  const openWebStudio = useAppStore((s) => s.openWebStudio);
+  const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
 
   const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters, enabled: open });
   const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments, enabled: open });
@@ -72,6 +79,13 @@ export function GlobalSearch() {
   const index = useMemo<Hit[]>(() => {
     if (!open) return [];
     const hits: Hit[] = [];
+    hits.push(
+      { type: "Studio", icon: <Music className="h-4 w-4" />, label: "Music Video Director", sub: "Direct a complete music video", go: openSong },
+      { type: "Studio", icon: <Boxes className="h-4 w-4" />, label: "Motion Studio", sub: "Motion concepts and production prompts", go: openMotionStudio },
+      { type: "Studio", icon: <Sparkles className="h-4 w-4" />, label: "Glam Studio", sub: "Luxury campaign looks and hero assets", go: openGlamStudio },
+      { type: "Studio", icon: <Globe className="h-4 w-4" />, label: "Web Studio", sub: "Responsive campaign sites", go: openWebStudio },
+      { type: "Studio", icon: <Megaphone className="h-4 w-4" />, label: "Campaign Studio", sub: "Cross-channel launch orchestration", go: openCampaignStudio },
+    );
     const songs = loadSongs();
     const goSong = (id: string, mv = false) => () => {
       setActiveSong(id);
@@ -100,7 +114,7 @@ export function GlobalSearch() {
     for (const t of allTemplates())
       hits.push({ type: "Template", icon: <LayoutTemplate className="h-4 w-4" />, label: t.name, sub: t.tagline || t.category, go: openTemplates });
     return hits;
-  }, [open, characters, environments, props, setActiveSong, openSong, openMvDirector, openCharacters, openWorld, openProps, openAnimation, openTemplates]);
+  }, [open, characters, environments, props, setActiveSong, openSong, openMvDirector, openCharacters, openWorld, openProps, openAnimation, openTemplates, openMotionStudio, openGlamStudio, openWebStudio, openCampaignStudio]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
