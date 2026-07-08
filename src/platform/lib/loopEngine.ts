@@ -1,3 +1,5 @@
+import { createVersionedStorage } from "@/platform/lib/storage";
+
 export type LoopStage = "generate" | "critique" | "score" | "improve" | "save-version" | "approve";
 
 export interface LoopEvent {
@@ -18,8 +20,30 @@ export interface LoopRun<T> {
   approved: boolean;
 }
 
+const loopRunStorage = createVersionedStorage<LoopRun<unknown>[]>({
+  namespace: "platform",
+  key: "loop-runs",
+  version: 1,
+  fallback: () => [],
+  legacyKeys: ["mf.loopRuns"],
+  migrate: (data) => (Array.isArray(data) ? (data as LoopRun<unknown>[]) : []),
+});
+
+export function listLoopRuns<T = unknown>(): LoopRun<T>[] {
+  return loopRunStorage.read() as LoopRun<T>[];
+}
+
+export function saveLoopRun<T>(run: LoopRun<T>): LoopRun<T> {
+  const runs = listLoopRuns<T>();
+  const index = runs.findIndex((item) => item.id === run.id);
+  if (index >= 0) runs[index] = run;
+  else runs.unshift(run);
+  loopRunStorage.write(runs as LoopRun<unknown>[]);
+  return run;
+}
+
 export function createLoopRun<T>(target: string, value: T, score = 78): LoopRun<T> {
-  return {
+  return saveLoopRun({
     id: crypto.randomUUID(),
     target,
     value,
@@ -34,7 +58,7 @@ export function createLoopRun<T>(target: string, value: T, score = 78): LoopRun<
         score
       ),
     ],
-  };
+  });
 }
 
 export function createLoopEvent(
@@ -59,7 +83,7 @@ export function improveLoopRun<T>(
   summary = `Improved ${run.target} from critique.`
 ): LoopRun<T> {
   const score = Math.min(98, run.score + 7);
-  return {
+  return saveLoopRun({
     ...run,
     value,
     score,
@@ -68,16 +92,16 @@ export function improveLoopRun<T>(
       createLoopEvent("improve", run.target, summary, score),
       createLoopEvent("save-version", run.target, `Saved a new ${run.target} version.`, score),
     ],
-  };
+  });
 }
 
 export function approveLoopRun<T>(run: LoopRun<T>): LoopRun<T> {
-  return {
+  return saveLoopRun({
     ...run,
     approved: true,
     events: [
       ...run.events,
       createLoopEvent("approve", run.target, `Approved ${run.target}.`, run.score),
     ],
-  };
+  });
 }

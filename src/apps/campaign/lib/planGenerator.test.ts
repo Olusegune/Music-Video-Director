@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { generatePlan, planBlueprint, produceNativeCopy } from "@/apps/campaign/lib/planGenerator";
 import type { CampaignStrategy } from "@/apps/campaign/lib/types";
+import { listDeliverables } from "@/platform/lib/deliverables";
 
 const strategy: CampaignStrategy = {
   positioning: "The connected creative studio",
@@ -37,7 +38,7 @@ describe("Campaign plan generator", () => {
     expect(plan).toHaveLength(8);
     expect(plan.every((item) => item.deliverableId)).toBe(true);
     expect(plan.every((item) => item.brief.includes(strategy.keyMessage))).toBe(true);
-    expect(JSON.parse(localStorage.getItem("mf.deliverables") ?? "[]")).toHaveLength(8);
+    expect(listDeliverables({ projectId: "campaign-1" })).toHaveLength(8);
   });
 
   it("produces channel-appropriate native copy", () => {

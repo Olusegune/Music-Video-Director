@@ -1,3 +1,5 @@
+import { createVersionedStorage } from "@/platform/lib/storage";
+
 export type DeliverableStatus = "planned" | "generating" | "draft" | "approved";
 
 export interface Deliverable {
@@ -13,23 +15,21 @@ export interface Deliverable {
   updatedAt: string;
 }
 
-const LS_DELIVERABLES = "mf.deliverables";
+const deliverableStorage = createVersionedStorage<Deliverable[]>({
+  namespace: "platform",
+  key: "deliverables",
+  version: 1,
+  fallback: () => [],
+  legacyKeys: ["mf.deliverables"],
+  migrate: (data) => (Array.isArray(data) ? (data as Deliverable[]) : []),
+});
 
 function readDeliverables(): Deliverable[] {
-  try {
-    const raw = localStorage.getItem(LS_DELIVERABLES);
-    return raw ? (JSON.parse(raw) as Deliverable[]) : [];
-  } catch {
-    return [];
-  }
+  return deliverableStorage.read();
 }
 
 function writeDeliverables(deliverables: Deliverable[]) {
-  try {
-    localStorage.setItem(LS_DELIVERABLES, JSON.stringify(deliverables));
-  } catch {
-    /* ignore */
-  }
+  deliverableStorage.write(deliverables);
 }
 
 export function listDeliverables(

@@ -4,6 +4,7 @@
 
 import type { Character, Environment, Prop } from "@/platform/lib/types";
 import { api } from "@/platform/lib/ipc";
+import { createVersionedStorage, notifyStorage } from "@/platform/lib/storage";
 
 export type BibleKind = "character" | "prop" | "world" | "costume" | "style";
 
@@ -28,7 +29,15 @@ export interface GeneratedAsset {
   savedTo: BibleKind[];
 }
 
-const LS = "mf.genassets";
+const MAX_GENERATED_ASSETS = 200;
+const generatedAssetStorage = createVersionedStorage<GeneratedAsset[]>({
+  namespace: "platform",
+  key: "generated-assets",
+  version: 1,
+  fallback: () => [],
+  legacyKeys: ["mf.genassets"],
+  migrate: (data) => (Array.isArray(data) ? (data as GeneratedAsset[]) : []),
+});
 
 function newId(): string {
   try {
@@ -39,16 +48,17 @@ function newId(): string {
 }
 
 export function loadAssets(): GeneratedAsset[] {
-  try {
-    const raw = localStorage.getItem(LS);
-    return raw ? (JSON.parse(raw) as GeneratedAsset[]) : [];
-  } catch {
-    return [];
-  }
+  return generatedAssetStorage.read();
 }
 
 function persist(list: GeneratedAsset[]) {
-  localStorage.setItem(LS, JSON.stringify(list.slice(0, 200)));
+  if (list.length > MAX_GENERATED_ASSETS) {
+    const trimCount = list.length - MAX_GENERATED_ASSETS;
+    notifyStorage(
+      `Generated asset history is limited to ${MAX_GENERATED_ASSETS} items. The oldest ${trimCount} metadata record${trimCount === 1 ? "" : "s"} will be trimmed; source files remain on disk.`
+    );
+  }
+  generatedAssetStorage.write(list.slice(0, MAX_GENERATED_ASSETS));
 }
 
 export function loadAssetsFor(entityId: string): GeneratedAsset[] {
