@@ -6,10 +6,6 @@ import {
   Trash2,
   Music,
   LayoutTemplate,
-  Video,
-  Gauge,
-  Clock,
-  Radio,
   ChevronDown,
   ChevronRight,
   Sparkles,
@@ -26,7 +22,6 @@ import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Label } from "@/platform/components/ui/label";
-import { Badge } from "@/platform/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -34,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/platform/components/ui/card";
+import { ProjectCard } from "@/platform/components/visual";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -57,7 +53,6 @@ export function Dashboard() {
   const setActiveSong = useAppStore((s) => s.setActiveSong);
   const setActiveTemplate = useAppStore((s) => s.setActiveTemplate);
   const setWizardOpen = useAppStore((s) => s.setWizardOpen);
-  const setMagicSongId = useAppStore((s) => s.setMagicSongId);
   const openDemoProject = useAppStore((s) => s.openDemoProject);
   const openMotionStudio = useAppStore((s) => s.openMotionStudio);
   const openGlamStudio = useAppStore((s) => s.openGlamStudio);
@@ -99,10 +94,6 @@ export function Dashboard() {
 
   const canCreate = form.name.trim().length > 0;
 
-  const directSong = (id: string) => {
-    setActiveSong(id);
-    setMagicSongId(id);
-  };
   const openSongStudio = (id: string) => {
     setActiveSong(id);
     openSong();
@@ -248,40 +239,16 @@ export function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {songs.map((s) => (
-                <Card key={s.id} className="flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 truncate">
-                      <span className="grad-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-md">
-                        <Music className="h-3.5 w-3.5 text-white" />
-                      </span>
-                      <span className="truncate">{s.name}</span>
-                    </CardTitle>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <Stat icon={<Gauge className="h-3 w-3" />} label={`${s.bpm} BPM`} />
-                      <Stat
-                        icon={<Clock className="h-3 w-3" />}
-                        label={formatTime(s.durationSec)}
-                      />
-                      <Stat
-                        icon={<Radio className="h-3 w-3" />}
-                        label={`${s.sections.length} sections`}
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="mt-auto flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => openSongStudio(s.id)}
-                    >
-                      <Music className="h-3.5 w-3.5" /> Song
-                    </Button>
-                    <Button size="sm" className="flex-1" onClick={() => directSong(s.id)}>
-                      <Video className="h-3.5 w-3.5" /> Direct
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ProjectCard
+                  key={s.id}
+                  module="music-video"
+                  title={s.name}
+                  subtitle={`${s.bpm} BPM · ${formatTime(s.durationSec)} · ${s.sections.length} sections`}
+                  progress={Math.min(100, Math.round((s.sections.length / 8) * 100))}
+                  status="Song"
+                  icon={<Music className="h-6 w-6" />}
+                  onResume={() => openSongStudio(s.id)}
+                />
               ))}
             </div>
           )}
@@ -368,36 +335,28 @@ export function Dashboard() {
                 ) : (
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {projects.map((p) => (
-                      <Card
-                        key={p.id}
-                        className="group cursor-pointer transition-colors hover:border-primary/50"
-                        onClick={() => openProject(p.id)}
-                      >
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <CardTitle className="truncate">{p.name}</CardTitle>
-                            <button
-                              className="text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteMutation.mutate(p.id);
-                              }}
-                              title="Delete project"
-                              aria-label="Delete project"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <CardDescription className="line-clamp-2">
-                            {p.description || "No description"}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex items-center gap-2">
-                          <Badge variant="primary">{p.type}</Badge>
-                          <Badge>{p.aspectRatio}</Badge>
-                          <Badge>{p.duration}</Badge>
-                        </CardContent>
-                      </Card>
+                      <div key={p.id} className="group relative">
+                        <ProjectCard
+                          module="platform"
+                          title={p.name}
+                          subtitle={p.description || "No description"}
+                          progress={35}
+                          status={p.type}
+                          icon={<Clapperboard className="h-6 w-6" />}
+                          onResume={() => openProject(p.id)}
+                        />
+                        <button
+                          className="absolute right-3 top-3 rounded-full border border-white/10 bg-black/40 p-2 text-white/65 opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteMutation.mutate(p.id);
+                          }}
+                          title="Delete project"
+                          aria-label="Delete project"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -493,14 +452,5 @@ function QuickStart({
         <span className="mt-0.5 block text-xs text-muted">{desc}</span>
       </span>
     </button>
-  );
-}
-
-function Stat({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded bg-elevated px-1.5 py-0.5 text-[10px] text-muted">
-      {icon}
-      {label}
-    </span>
   );
 }
