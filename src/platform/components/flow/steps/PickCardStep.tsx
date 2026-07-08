@@ -9,6 +9,9 @@ export interface PickCardOption {
   description?: string;
   badge?: string;
   icon?: ReactNode;
+  imageUrl?: string;
+  imageAlt?: string;
+  visual?: ReactNode;
 }
 
 interface PickCardStepProps {
@@ -40,8 +43,17 @@ export function PickCardStep({ options, value, onChange, columns = 3 }: PickCard
               selected && "border-primary bg-primary/10"
             )}
           >
-            <span className="creative-preview flex h-16 items-center justify-between border-b border-border px-4">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/15 text-[var(--module-accent)]">
+            <span className="creative-preview relative flex h-24 items-center justify-between border-b border-border px-4">
+              {option.imageUrl ? (
+                <img
+                  src={option.imageUrl}
+                  alt={option.imageAlt ?? ""}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : option.visual ? (
+                <span className="absolute inset-0">{option.visual}</span>
+              ) : null}
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/25 text-[var(--module-accent)] backdrop-blur">
                 {option.icon ?? (
                   <span className="text-sm font-bold">
                     {option.title.slice(0, 2).toUpperCase()}
@@ -49,7 +61,9 @@ export function PickCardStep({ options, value, onChange, columns = 3 }: PickCard
                 )}
               </span>
               {option.badge ? (
-                <Badge variant={selected ? "primary" : "default"}>{option.badge}</Badge>
+                <Badge className="relative" variant={selected ? "primary" : "default"}>
+                  {option.badge}
+                </Badge>
               ) : null}
             </span>
             <span className="flex items-start justify-between gap-3 p-4">

@@ -10,6 +10,7 @@ export interface Deliverable {
   format: string;
   status: DeliverableStatus;
   title: string;
+  thumbUrl?: string;
   assetRefs: string[];
   createdAt: string;
   updatedAt: string;
@@ -18,11 +19,29 @@ export interface Deliverable {
 const deliverableStorage = createVersionedStorage<Deliverable[]>({
   namespace: "platform",
   key: "deliverables",
-  version: 1,
+  version: 2,
   fallback: () => [],
   legacyKeys: ["mf.deliverables"],
-  migrate: (data) => (Array.isArray(data) ? (data as Deliverable[]) : []),
+  migrate: (data) => {
+    if (!Array.isArray(data)) return [];
+    return (data as Deliverable[]).map((item) => ({
+      ...item,
+      thumbUrl:
+        item.thumbUrl ??
+        item.assetRefs.find(
+          (ref) =>
+            ref.startsWith("data:image/") ||
+            ref.startsWith("http") ||
+            ref.startsWith("asset:") ||
+            ref.startsWith("file:")
+        ),
+    }));
+  },
 });
+
+export function deliverableThumbnail(deliverables: Deliverable[], projectId: string) {
+  return deliverables.find((item) => item.projectId === projectId && item.thumbUrl)?.thumbUrl;
+}
 
 function readDeliverables(): Deliverable[] {
   return deliverableStorage.read();

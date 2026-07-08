@@ -7,9 +7,7 @@ import {
   FileArchive,
   Image,
   Loader2,
-  Layers3,
   PackageCheck,
-  Palette,
   RefreshCw,
   Shirt,
   Sparkles,
@@ -32,6 +30,7 @@ import { createBrandDna, getBrandDna, type BrandDna } from "@/platform/lib/brand
 import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
 import {
   createDeliverable,
+  deliverableThumbnail,
   listDeliverables,
   saveDeliverable,
   type Deliverable,
@@ -65,6 +64,7 @@ import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
+import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
 import {
   buildProductFilmPlan,
   productFilmMarkdown,
@@ -557,6 +557,9 @@ function CategoryStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowSta
         id: category.id,
         title: category.title,
         description: category.description,
+        visual: (
+          <span className="block h-full w-full bg-[radial-gradient(circle_at_70%_35%,rgba(255,255,255,.25),transparent_24%),linear-gradient(135deg,rgba(243,201,105,.28),rgba(139,92,246,.18),rgba(0,0,0,.18))]" />
+        ),
       }))}
     />
   );
@@ -679,6 +682,17 @@ function FormatsStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowStat
         title: format.title,
         description: format.description,
         badge: state.formats.includes(format.id) ? "Included" : "Add",
+        visual: (
+          <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-300/25 via-black/10 to-fuchsia-400/20">
+            <span
+              className="rounded border border-white/35 bg-white/10"
+              style={{
+                width: `${Math.max(34, Math.min(74, format.width / 24))}px`,
+                height: `${Math.max(28, Math.min(74, format.height / 24))}px`,
+              }}
+            />
+          </span>
+        ),
       }))}
     />
   );
@@ -1175,7 +1189,7 @@ function ProjectPreview({
 }
 
 export function GlamStudio() {
-  const { studioMode, setStudioMode, openAssets, openBrandKits, openSettings } = useAppStore();
+  const { studioMode, setStudioMode, openSettings } = useAppStore();
   const [routerConfig] = useState(() => loadRouterConfig());
   const [projects, setProjects] = useState<GlamProject[]>(() => readProjects());
   const [activeProjectId, setActiveProjectId] = useState(() => readProjects()[0]?.id ?? "");
@@ -1192,6 +1206,7 @@ export function GlamStudio() {
   const deliverables = activeProject
     ? listDeliverables({ moduleId: "glam-studio", projectId: activeProject.id })
     : [];
+  const allGlamDeliverables = listDeliverables({ moduleId: "glam-studio" });
   const routerMode = ROUTER_MODES.find((mode) => mode.id === routerConfig.mode)?.label ?? "Auto";
 
   const definition = useMemo<GuidedFlowDefinition<GlamFlowState>>(
@@ -1538,41 +1553,17 @@ export function GlamStudio() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <header className="border-b border-border px-8 py-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="grad-primary flex h-9 w-9 items-center justify-center rounded-xl text-white">
-                <Crown className="h-5 w-5" />
-              </span>
-              <div>
-                <h1 className="text-lg font-semibold">Glam Studio</h1>
-                <p className="text-xs text-muted">
-                  Luxury product campaign packs powered by platform Guided Flow.
-                </p>
-                {campaignSeed ? (
-                  <p className="mt-1 text-xs text-primary">Part of {campaignSeed.campaignName}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary">
-              {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}
-            </Badge>
-            <Badge>{routerMode}</Badge>
-            <Button variant="secondary" onClick={openBrandKits}>
-              <Palette /> Brand Kits
-            </Button>
-            <Button variant="secondary" onClick={openAssets}>
-              <Layers3 /> Assets
-            </Button>
-            <Button variant="gold" onClick={() => setFlowOpen(true)}>
-              <Wand2 /> New Glam Project
-            </Button>
-          </div>
-        </div>
-      </header>
+      <ModuleHeader
+        module="glam-studio"
+        icon={<Crown className="h-5 w-5" />}
+        title="Glam Studio"
+        subtitle={`Luxury product campaign packs · ${routerMode}${campaignSeed ? ` · ${campaignSeed.campaignName}` : ""}`}
+        mode={studioMode}
+        onModeChange={setStudioMode}
+        primaryLabel="New Glam Project"
+        primaryIcon={<Wand2 />}
+        onPrimary={() => setFlowOpen(true)}
+      />
 
       <div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="space-y-3">
@@ -1586,19 +1577,23 @@ export function GlamStudio() {
                 <p className="text-sm text-muted">Create a campaign to begin.</p>
               ) : (
                 projects.map((project) => (
-                  <button
+                  <ProjectCard
                     key={project.id}
-                    onClick={() => setActiveProjectId(project.id)}
-                    className={cn(
-                      "w-full rounded-md border px-3 py-2 text-left text-sm transition",
-                      activeProject?.id === project.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:bg-elevated"
-                    )}
-                  >
-                    <span className="block font-medium">{project.name}</span>
-                    <span className="block text-xs text-muted">{project.look.name}</span>
-                  </button>
+                    module="glam-studio"
+                    title={project.name}
+                    subtitle={`${project.look.name} · ${project.formats.length} formats`}
+                    thumbUrl={
+                      project.heroAssets?.find((asset) => asset.id === project.selectedHeroAssetId)
+                        ?.url ??
+                      project.heroAssets?.[0]?.url ??
+                      deliverableThumbnail(allGlamDeliverables, project.id)
+                    }
+                    progress={project.heroLoop.approved ? 100 : 68}
+                    status={project.heroLoop.approved ? "Approved" : "Campaign"}
+                    active={activeProject?.id === project.id}
+                    icon={<Crown className="h-6 w-6" />}
+                    onResume={() => setActiveProjectId(project.id)}
+                  />
                 ))
               )}
             </CardContent>
@@ -1657,8 +1652,7 @@ export function GlamStudio() {
             <CreativeEmptyState
               icon={<Shirt />}
               title="Build a luxury product campaign"
-              description="Art-direct a complete visual world from product truth and Brand DNA—then carry it into heroes, social formats, and film."
-              ideas={["Noir editorial", "Sculptural light", "Beauty macro", "15s product film"]}
+              description="Art-direct a complete visual world from product truth and Brand DNA, then carry it into hero imagery, social formats, and a product film."
               action="Create campaign"
               onAction={() => setFlowOpen(true)}
             />

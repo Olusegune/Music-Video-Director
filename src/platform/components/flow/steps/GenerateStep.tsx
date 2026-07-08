@@ -1,6 +1,7 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/platform/components/ui/button";
 import { Badge } from "@/platform/components/ui/badge";
+import { RevealStage } from "@/platform/components/visual";
 
 interface GenerateStepProps {
   title: string;
@@ -40,16 +41,18 @@ export function GenerateStep({
         ) : null}
       </div>
       {versions.length ? (
-        <div className="grid gap-2">
-          {versions.map((version) => (
-            <div
-              key={version}
-              className="rounded-md border border-border bg-surface px-3 py-2 text-sm"
-            >
-              {version}
-            </div>
-          ))}
-        </div>
+        <RevealStage revealed={status === "complete"} title="Generated options ready">
+          <div className="grid gap-2">
+            {versions.map((version) => (
+              <div
+                key={version}
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm"
+              >
+                {version}
+              </div>
+            ))}
+          </div>
+        </RevealStage>
       ) : null}
     </div>
   );

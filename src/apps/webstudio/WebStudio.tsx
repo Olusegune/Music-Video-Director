@@ -9,7 +9,6 @@ import {
   Laptop,
   Loader2,
   Monitor,
-  Palette,
   Plus,
   Smartphone,
   Sparkles,
@@ -26,14 +25,17 @@ import {
 } from "@/platform/components/ui/card";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
+import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
+import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna, getBrandDna } from "@/platform/lib/brandDna";
 import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
 import {
   createDeliverable,
   deleteDeliverables,
+  deliverableThumbnail,
   listDeliverables,
   saveDeliverable,
 } from "@/platform/lib/deliverables";
@@ -290,6 +292,17 @@ function PagesStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>)
         title: pattern.name,
         description: pattern.description,
         badge: state.patternIds.includes(pattern.id) ? "Included" : pattern.family,
+        visual: (
+          <span className="flex h-full w-full flex-col gap-2 bg-gradient-to-br from-emerald-400/20 via-cyan-400/10 to-black/20 p-4">
+            <span className="h-2 w-1/2 rounded-full bg-white/35" />
+            <span className="h-8 rounded-lg border border-white/15 bg-white/10" />
+            <span className="grid flex-1 grid-cols-3 gap-2">
+              <i className="rounded bg-white/10" />
+              <i className="rounded bg-white/15" />
+              <i className="rounded bg-white/10" />
+            </span>
+          </span>
+        ),
       }))}
     />
   );
@@ -534,13 +547,11 @@ function WebWorkbench({
       title: `Page ${number}`,
       slug: `page-${number}`,
       description: project.positioning.promise,
-      sections: project.sections
-        .slice(0, 3)
-        .map((section) => ({
-          ...section,
-          id: crypto.randomUUID(),
-          copy: { ...section.copy, items: [...section.copy.items] },
-        })),
+      sections: project.sections.slice(0, 3).map((section) => ({
+        ...section,
+        id: crypto.randomUUID(),
+        copy: { ...section.copy, items: [...section.copy.items] },
+      })),
     };
     persist({ ...project, pages: [...pages, page] });
     setActivePageId(page.id);
@@ -923,7 +934,7 @@ function WebWorkbench({
 }
 
 export function WebStudio() {
-  const { studioMode, setStudioMode, openBrandKits } = useAppStore();
+  const { studioMode, setStudioMode } = useAppStore();
   const [router] = useState(() => loadRouterConfig());
   const [projects, setProjects] = useState(() => listWebProjects());
   const [activeId, setActiveId] = useState(() => listWebProjects()[0]?.id ?? "");
@@ -1020,6 +1031,7 @@ export function WebStudio() {
     setProjects(listWebProjects());
     setActiveId(project.id);
   };
+  const allDeliverables = listDeliverables({ moduleId: "webstudio" });
   const removeActiveProject = () => {
     if (
       !active ||
@@ -1037,31 +1049,17 @@ export function WebStudio() {
   };
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <header className="border-b border-border px-8 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="grad-primary flex h-10 w-10 items-center justify-center rounded-xl text-white">
-              <Globe2 />
-            </span>
-            <div>
-              <h1 className="text-lg font-semibold">Web Studio</h1>
-              <p className="text-xs text-muted">Positioning-first responsive websites you own.</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Badge variant="primary">
-              {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}
-            </Badge>
-            <Badge>{routerLabel}</Badge>
-            <Button variant="secondary" onClick={openBrandKits}>
-              <Palette /> Brand Kits
-            </Button>
-            <Button onClick={() => setFlowOpen(true)}>
-              <Plus /> New Website
-            </Button>
-          </div>
-        </div>
-      </header>
+      <ModuleHeader
+        module="webstudio"
+        icon={<Globe2 className="h-5 w-5" />}
+        title="Web Studio"
+        subtitle={`Positioning-first responsive websites you own · ${routerLabel}`}
+        mode={studioMode}
+        onModeChange={setStudioMode}
+        primaryLabel="New Website"
+        primaryIcon={<Plus />}
+        onPrimary={() => setFlowOpen(true)}
+      />
       <div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="space-y-3">
           <Card>
@@ -1071,22 +1069,22 @@ export function WebStudio() {
             </CardHeader>
             <CardContent className="space-y-2">
               {projects.map((project) => (
-                <button
+                <ProjectCard
                   key={project.id}
-                  onClick={() => {
+                  module="webstudio"
+                  title={project.name}
+                  subtitle={`${project.sections.length} sections · ${project.positioning.offer}`}
+                  thumbUrl={deliverableThumbnail(allDeliverables, project.id)}
+                  progress={
+                    project.sections.length >= 5 ? 100 : Math.round(project.sections.length * 18)
+                  }
+                  status="Site"
+                  active={active?.id === project.id}
+                  onResume={() => {
                     setActiveId(project.id);
                     setFlowOpen(false);
                   }}
-                  className={cn(
-                    "w-full rounded-md border p-3 text-left",
-                    active?.id === project.id ? "border-primary bg-primary/10" : "border-border"
-                  )}
-                >
-                  <span className="block text-sm font-medium">{project.name}</span>
-                  <span className="block text-xs text-muted">
-                    {project.sections.length} sections
-                  </span>
-                </button>
+                />
               ))}
             </CardContent>
           </Card>
@@ -1134,19 +1132,13 @@ export function WebStudio() {
           ) : active ? (
             <WebWorkbench project={active} onChange={saveActive} />
           ) : (
-            <Card>
-              <CardContent className="flex min-h-96 flex-col items-center justify-center gap-3 text-center">
-                <Code2 className="h-10 w-10 text-primary" />
-                <h2 className="text-lg font-semibold">Build a positioned website</h2>
-                <p className="max-w-md text-sm text-muted">
-                  Strategy, copy, curated patterns, responsive preview, and static export in one
-                  guided flow.
-                </p>
-                <Button onClick={() => setFlowOpen(true)}>
-                  <Sparkles /> Start Web Studio
-                </Button>
-              </CardContent>
-            </Card>
+            <CreativeEmptyState
+              icon={<Code2 />}
+              title="Build a positioned website"
+              description="Start with offer clarity, then compose pages, copy, responsive preview, SEO, and static export from one guided flow."
+              action="Start Web Studio"
+              onAction={() => setFlowOpen(true)}
+            />
           )}
         </main>
       </div>

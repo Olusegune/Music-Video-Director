@@ -26,8 +26,10 @@ import {
 } from "@/platform/components/ui/card";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Input } from "@/platform/components/ui/input";
+import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
+import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna } from "@/platform/lib/brandDna";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
@@ -35,6 +37,7 @@ import {
   createDeliverable,
   deleteDeliverable,
   deleteDeliverables,
+  deliverableThumbnail,
   listDeliverables,
   saveDeliverable,
 } from "@/platform/lib/deliverables";
@@ -271,18 +274,42 @@ function AssetsStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlowS
           title: "Focused Launch",
           description: "8 essential deliverables across five channels.",
           badge: "S",
+          visual: (
+            <span className="grid h-full w-full grid-cols-3 gap-2 bg-gradient-to-br from-fuchsia-400/20 to-black/20 p-4">
+              <i className="rounded bg-white/20" />
+              <i className="rounded bg-white/10" />
+              <i className="rounded bg-white/10" />
+            </span>
+          ),
         },
         {
           id: "medium",
           title: "Full Launch",
           description: "11 deliverables with proof and follow-up coverage.",
           badge: "M",
+          visual: (
+            <span className="grid h-full w-full grid-cols-4 gap-2 bg-gradient-to-br from-rose-400/20 to-black/20 p-4">
+              <i className="rounded bg-white/20" />
+              <i className="rounded bg-white/15" />
+              <i className="rounded bg-white/10" />
+              <i className="rounded bg-white/15" />
+            </span>
+          ),
         },
         {
           id: "large",
           title: "Launch + Sustain",
           description: "14 deliverables extending beyond launch week.",
           badge: "L",
+          visual: (
+            <span className="grid h-full w-full grid-cols-5 gap-2 bg-gradient-to-br from-pink-400/20 to-black/20 p-4">
+              <i className="rounded bg-white/20" />
+              <i className="rounded bg-white/15" />
+              <i className="rounded bg-white/10" />
+              <i className="rounded bg-white/15" />
+              <i className="rounded bg-white/20" />
+            </span>
+          ),
         },
       ]}
     />
@@ -809,6 +836,7 @@ export function CampaignStudio() {
     setProjects(listCampaigns());
     setActiveId(project.id);
   };
+  const allDeliverables = listDeliverables();
   const removeActive = () => {
     if (!active || !confirm(`Delete campaign “${active.name}” and its deliverable plan?`)) return;
     deleteCampaign(active.id);
@@ -820,29 +848,17 @@ export function CampaignStudio() {
   };
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <header className="border-b border-border px-8 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="grad-gold flex h-10 w-10 items-center justify-center rounded-xl">
-              <Megaphone />
-            </span>
-            <div>
-              <h1 className="text-lg font-semibold">Campaign Studio</h1>
-              <p className="text-xs text-muted">
-                One brief. One campaign DNA. Every specialist studio aligned.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Badge variant="primary">
-              {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}
-            </Badge>
-            <Button onClick={() => setFlowOpen(true)}>
-              <Plus /> New Campaign
-            </Button>
-          </div>
-        </div>
-      </header>
+      <ModuleHeader
+        module="campaignstudio"
+        icon={<Megaphone className="h-5 w-5" />}
+        title="Campaign Studio"
+        subtitle="One brief. One campaign DNA. Every specialist studio aligned."
+        mode={studioMode}
+        onModeChange={setStudioMode}
+        primaryLabel="New Campaign"
+        primaryIcon={<Plus />}
+        onPrimary={() => setFlowOpen(true)}
+      />
       <div className="grid gap-5 p-8 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="space-y-3">
           <Card>
@@ -852,22 +868,24 @@ export function CampaignStudio() {
             </CardHeader>
             <CardContent className="space-y-2">
               {projects.map((project) => (
-                <button
+                <ProjectCard
                   key={project.id}
-                  onClick={() => {
+                  module="campaignstudio"
+                  title={project.name}
+                  subtitle={`${project.plan.length} deliverables · ${project.launchDate}`}
+                  thumbUrl={deliverableThumbnail(allDeliverables, project.id)}
+                  progress={Math.round(
+                    (project.plan.filter((item) => item.content).length /
+                      Math.max(project.plan.length, 1)) *
+                      100
+                  )}
+                  status="Launch"
+                  active={active?.id === project.id}
+                  onResume={() => {
                     setActiveId(project.id);
                     setFlowOpen(false);
                   }}
-                  className={cn(
-                    "w-full rounded-md border p-3 text-left",
-                    active?.id === project.id ? "border-primary bg-primary/10" : "border-border"
-                  )}
-                >
-                  <span className="block text-sm font-medium">{project.name}</span>
-                  <span className="block text-xs text-muted">
-                    {project.plan.length} deliverables · {project.launchDate}
-                  </span>
-                </button>
+                />
               ))}
             </CardContent>
           </Card>
@@ -904,19 +922,13 @@ export function CampaignStudio() {
           ) : active ? (
             <CampaignWorkbench project={active} onChange={saveActive} />
           ) : (
-            <Card>
-              <CardContent className="flex min-h-96 flex-col items-center justify-center gap-3 text-center">
-                <Megaphone className="h-10 w-10 text-primary" />
-                <h2 className="text-lg font-semibold">Launch with one coherent campaign</h2>
-                <p className="max-w-md text-sm text-muted">
-                  Strategy, concept, cross-studio deliverables, social and email production,
-                  timeline, and package export.
-                </p>
-                <Button onClick={() => setFlowOpen(true)}>
-                  <Sparkles /> Start Campaign Studio
-                </Button>
-              </CardContent>
-            </Card>
+            <CreativeEmptyState
+              icon={<Megaphone />}
+              title="Launch with one coherent campaign"
+              description="Shape strategy, campaign idea, cross-studio deliverables, launch sequence, social and email copy, and the final export package."
+              action="Start Campaign Studio"
+              onAction={() => setFlowOpen(true)}
+            />
           )}
         </main>
       </div>
