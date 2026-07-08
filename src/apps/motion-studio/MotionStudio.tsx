@@ -55,6 +55,7 @@ import {
   VISUAL_STYLES,
   directionSummary,
   productionType,
+  type ProductionType,
   visualStyle,
 } from "./lib/templates";
 import type { MotionProject, MotionProjectDraft, MotionScene } from "./lib/types";
@@ -117,6 +118,73 @@ function ScenePreview({
       )}
       <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/45 px-2 py-1 text-[11px] font-semibold text-white">
         {scene.role} / {scene.start}-{scene.end}s
+      </div>
+    </button>
+  );
+}
+
+function MotionTemplateCard({
+  template,
+  active,
+  onSelect,
+}: {
+  template: ProductionType;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "group relative min-h-[330px] overflow-hidden rounded-2xl border bg-[#0b0f1c]/80 p-2 text-left shadow-card transition-all duration-200 ease-out",
+        "hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_24px_70px_rgba(124,58,237,0.22)]",
+        active
+          ? "border-primary/70 shadow-[0_0_0_1px_rgba(139,92,246,0.35),0_24px_80px_rgba(124,58,237,0.2)]"
+          : "border-white/10"
+      )}
+      style={{
+        background: `linear-gradient(145deg, rgba(15,23,42,0.92), rgba(9,12,22,0.92)), radial-gradient(circle at 22% 10%, ${template.accent}33, transparent 34%)`,
+      }}
+      aria-pressed={active}
+    >
+      <div
+        className="pointer-events-none absolute -inset-16 opacity-0 blur-3xl transition-opacity duration-200 group-hover:opacity-70"
+        style={{
+          background: `radial-gradient(circle at 50% 8%, ${template.accent}55, transparent 48%)`,
+        }}
+      />
+      <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30">
+        <div className="flex min-h-[230px] flex-[3] items-center justify-center overflow-hidden bg-black/35 p-2">
+          <img
+            src={template.imageUrl}
+            alt={`${template.name} template artwork`}
+            className="h-full max-h-[250px] w-full object-contain transition-transform duration-200 ease-out group-hover:scale-[1.025]"
+            draggable={false}
+          />
+        </div>
+        <div className="relative flex flex-1 flex-col gap-2 border-t border-white/10 bg-slate-950/78 p-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted">
+              {template.eyebrow}
+            </span>
+            <span
+              className={cn(
+                "h-2.5 w-2.5 rounded-full shadow-[0_0_18px_currentColor]",
+                active ? "opacity-100" : "opacity-60"
+              )}
+              style={{ color: template.accent, background: template.accent }}
+            />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold leading-tight text-foreground">{template.name}</h3>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{template.description}</p>
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-3 text-[11px] text-muted">
+            <span>{template.defaultDuration}s</span>
+            <span>{template.sceneRoles.length} scenes</span>
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -278,11 +346,14 @@ export function MotionStudio() {
   };
 
   const timeline = useMemo(() => activeProject?.scenes ?? [], [activeProject]);
+  const selectedTemplate = productionType(draft.typeId);
 
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto p-6">
-      <section className="module-hero flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-card">
-        <div className="max-w-3xl">
+    <div className="relative flex h-full flex-col gap-6 overflow-y-auto p-6">
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-96 rounded-full bg-[radial-gradient(circle_at_35%_0%,rgba(124,58,237,0.18),transparent_42%),radial-gradient(circle_at_75%_8%,rgba(14,165,233,0.13),transparent_38%)] blur-2xl" />
+      <section className="module-hero relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.32)]">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(124,58,237,0.16),transparent_38%),radial-gradient(circle_at_82%_16%,rgba(6,182,212,0.16),transparent_30%)]" />
+        <div className="relative max-w-3xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="accent">Director Studio module</Badge>
             <Badge variant="primary">Motion Studio</Badge>
@@ -290,13 +361,15 @@ export function MotionStudio() {
               {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label ?? "Director Mode"}
             </Badge>
           </div>
-          <h1 className="text-3xl font-bold tracking-normal text-foreground">Motion Studio</h1>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Create commercial motion projects with shared Director Studio systems for mode depth,
-            styling, assets, settings, provider routing, and project memory.
+          <h1 className="text-4xl font-black tracking-[-0.04em] text-foreground md:text-5xl">
+            Motion Studio
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted md:text-base">
+            Design animation systems, storyboards, product films, and social motion with a more
+            visual template-first workspace.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="relative flex flex-wrap gap-2">
           <Button variant="secondary" onClick={openTemplates}>
             <Palette /> Shared templates
           </Button>
@@ -369,7 +442,43 @@ export function MotionStudio() {
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <Card className="relative overflow-hidden border-white/10 bg-slate-950/70 shadow-[0_24px_80px_rgba(0,0,0,0.25)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(124,58,237,0.18),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(14,165,233,0.12),transparent_32%)]" />
+        <CardHeader className="relative">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl tracking-[-0.03em]">
+                Choose a motion template
+              </CardTitle>
+              <CardDescription>
+                Big visual cards replace the old text list. Artwork is shown uncropped so embedded
+                typography and composition stay intact.
+              </CardDescription>
+            </div>
+            <Badge variant="accent">{selectedTemplate.name}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="relative">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {PRODUCTION_TYPES.map((type) => (
+              <MotionTemplateCard
+                key={type.id}
+                template={type}
+                active={draft.typeId === type.id}
+                onSelect={() =>
+                  setDraft((current) => ({
+                    ...current,
+                    typeId: type.id,
+                    durationSec: type.defaultDuration,
+                  }))
+                }
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="flex flex-col gap-5">
           <Card>
             <CardHeader>
@@ -386,27 +495,19 @@ export function MotionStudio() {
                 onChange={(event) => updateDraft("name", event.target.value)}
                 placeholder="Project name"
               />
-              <div className="grid grid-cols-1 gap-2">
-                {PRODUCTION_TYPES.map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        typeId: type.id,
-                        durationSec: type.defaultDuration,
-                      }))
-                    }
-                    className={cn(
-                      "rounded-lg border border-border bg-elevated p-3 text-left transition hover:border-primary/50",
-                      draft.typeId === type.id && "border-primary bg-primary/10"
-                    )}
-                  >
-                    <div className="text-sm font-semibold">{type.name}</div>
-                    <div className="mt-1 text-xs leading-5 text-muted">{type.description}</div>
-                  </button>
-                ))}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
+                  Selected template
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold">{selectedTemplate.name}</div>
+                    <div className="mt-1 text-xs leading-5 text-muted">
+                      {selectedTemplate.description}
+                    </div>
+                  </div>
+                  <Badge>{selectedTemplate.defaultDuration}s</Badge>
+                </div>
               </div>
               <Textarea
                 value={draft.businessInput}

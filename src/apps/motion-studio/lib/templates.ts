@@ -1,4 +1,13 @@
 import type { CreativeDirection, Typography } from "./types";
+import aeExplainerImage from "@/assets/motion-templates/ae-explainer.png";
+import c4dCommercialImage from "@/assets/motion-templates/c4d-commercial.png";
+import kineticTypographyImage from "@/assets/motion-templates/kinetic-typography.png";
+import mixedMediaAnimationImage from "@/assets/motion-templates/mixed-media-animation.png";
+import productLaunchImage from "@/assets/motion-templates/product-launch.png";
+import productRevealImage from "@/assets/motion-templates/product-reveal.png";
+import saasExplainerImage from "@/assets/motion-templates/saas-explainer.png";
+import socialAdImage from "@/assets/motion-templates/social-ad.png";
+import uiAnimationImage from "@/assets/motion-templates/ui-animation.png";
 
 export interface ProductionType {
   id: string;
@@ -6,6 +15,9 @@ export interface ProductionType {
   description: string;
   defaultDuration: number;
   sceneRoles: string[];
+  imageUrl: string;
+  accent: string;
+  eyebrow: string;
 }
 
 export interface VisualStyle {
@@ -25,6 +37,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Problem, product promise, workflow, proof, and CTA.",
     defaultDuration: 45,
     sceneRoles: ["Hook", "Pain", "Product", "Workflow", "Proof", "CTA"],
+    imageUrl: saasExplainerImage,
+    accent: "#7C3AED",
+    eyebrow: "Startup systems",
   },
   {
     id: "product-launch",
@@ -32,6 +47,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Announcement film with market context and launch energy.",
     defaultDuration: 60,
     sceneRoles: ["Tease", "Reveal", "Benefits", "Use Cases", "Launch CTA"],
+    imageUrl: productLaunchImage,
+    accent: "#F59E0B",
+    eyebrow: "Launch stage",
   },
   {
     id: "product-reveal",
@@ -39,6 +57,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Cinematic object-led reveal with premium pacing.",
     defaultDuration: 30,
     sceneRoles: ["Dark Intro", "Silhouette", "Feature Sweep", "Hero Spin", "End Card"],
+    imageUrl: productRevealImage,
+    accent: "#D8B45D",
+    eyebrow: "Luxury reveal",
   },
   {
     id: "c4d-commercial",
@@ -46,6 +67,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Glossy 3D product motion, macro camera moves, and tactile lighting.",
     defaultDuration: 45,
     sceneRoles: ["Macro Detail", "World Build", "Orbit", "Feature Burst", "Packshot"],
+    imageUrl: c4dCommercialImage,
+    accent: "#06B6D4",
+    eyebrow: "3D product film",
   },
   {
     id: "ae-explainer",
@@ -53,6 +77,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Layered shape motion, transitions, callouts, and polished kinetic beats.",
     defaultDuration: 50,
     sceneRoles: ["Setup", "Diagram", "Steps", "Callouts", "Outcome", "CTA"],
+    imageUrl: aeExplainerImage,
+    accent: "#8B5CF6",
+    eyebrow: "Layered explainer",
   },
   {
     id: "ui-animation",
@@ -60,6 +87,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Interface walkthrough with cursor, panels, states, and product clarity.",
     defaultDuration: 40,
     sceneRoles: ["Dashboard", "Action", "Automation", "Insight", "Result"],
+    imageUrl: uiAnimationImage,
+    accent: "#60A5FA",
+    eyebrow: "Interface motion",
   },
   {
     id: "social-ad",
@@ -67,6 +97,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Fast hook, quick proof, benefit stack, and platform-native CTA.",
     defaultDuration: 20,
     sceneRoles: ["Thumbstopper", "Problem", "Benefit", "Proof", "CTA"],
+    imageUrl: socialAdImage,
+    accent: "#EC4899",
+    eyebrow: "Performance creative",
   },
   {
     id: "kinetic-typography",
@@ -74,6 +107,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Text-led motion, rhythmic emphasis, and bold word choreography.",
     defaultDuration: 30,
     sceneRoles: ["Phrase Hook", "Build", "Contrast", "Payoff", "Tag"],
+    imageUrl: kineticTypographyImage,
+    accent: "#EF4444",
+    eyebrow: "Type choreography",
   },
   {
     id: "mixed-media-animation",
@@ -81,6 +117,9 @@ export const PRODUCTION_TYPES: ProductionType[] = [
     description: "Collage, footage, cutout, 2D, 3D, and editorial transitions.",
     defaultDuration: 45,
     sceneRoles: ["Texture Hook", "Collage", "Product Insert", "Human Moment", "Final Lockup"],
+    imageUrl: mixedMediaAnimationImage,
+    accent: "#22D3EE",
+    eyebrow: "Editorial collage",
   },
 ];
 
