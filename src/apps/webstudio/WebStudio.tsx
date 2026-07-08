@@ -13,6 +13,9 @@ import { createDeliverable, listDeliverables, saveDeliverable } from "@/platform
 import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
+import { routeProvider } from "@/platform/lib/providers";
+import { api } from "@/platform/lib/ipc";
+import type { ProviderId } from "@/platform/lib/types";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -20,8 +23,11 @@ import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
 import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioning";
 import { compileCss, compileSite } from "@/apps/webstudio/lib/siteCompiler";
 import { TOKEN_PRESETS, tokensFromBrand } from "@/apps/webstudio/lib/tokens";
-import type { SectionInstance, WebProject } from "@/apps/webstudio/lib/types";
+import type { Positioning, SectionInstance, WebProject } from "@/apps/webstudio/lib/types";
 import { listWebProjects, saveWebProject } from "@/apps/webstudio/lib/webStore";
+import { COPY_SCHEMA, parseCopyDrafts, parsePositioning, POSITIONING_SCHEMA } from "@/apps/webstudio/lib/webAi";
+import type { SectionCopy } from "@/apps/webstudio/lib/types";
+import { auditSite } from "@/apps/webstudio/lib/siteAudit";
 
 interface WebFlowState {
   projectName: string;
@@ -34,6 +40,8 @@ interface WebFlowState {
   brandTone: string;
   presetId: string;
   patternIds: string[];
+  positioning?: Positioning;
+  copyDrafts?: Record<string, SectionCopy>;
 }
 
 const DEFAULT_PATTERNS = ["hero-split", "features-grid", "stats-band", "testimonials-grid", "faq-stack", "cta-banner"];
@@ -42,7 +50,17 @@ const split = (value: string) => value.split(/[,;\n]/).map((item) => item.trim()
 const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "website";
 
 function positioningFor(state: WebFlowState) {
-  return derivePositioning({ businessName: state.businessName || "Your business", businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal });
+  return state.positioning ?? derivePositioning({ businessName: state.businessName || "Your business", businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal });
+}
+
+async function generateStructured(prompt: string, schema: string): Promise<string | null> {
+  const config = loadRouterConfig();
+  if (config.mode === "local") return null;
+  const statuses = await api.getProviderKeyStatuses();
+  const configured = new Set<ProviderId>(statuses.filter((status) => status.configured).map((status) => status.provider));
+  const provider = routeProvider("text", config, configured);
+  if (provider !== "gemini") return null;
+  return api.generateStructuredText(provider, prompt, schema);
 }
 
 function BusinessStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>) {
@@ -53,9 +71,20 @@ function BusinessStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowStat
   ]} />;
 }
 
-function OfferStep({ state }: GuidedFlowStepComponentProps<WebFlowState>) {
+function OfferStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>) {
   const positioning = positioningFor(state);
-  return <div className="grid gap-3 md:grid-cols-2"><Card><CardHeader><CardTitle>Offer</CardTitle></CardHeader><CardContent className="text-sm text-muted">{positioning.offer}</CardContent></Card><Card><CardHeader><CardTitle>Core promise</CardTitle></CardHeader><CardContent className="text-sm text-muted">{positioning.promise}</CardContent></Card><Card className="md:col-span-2"><CardHeader><CardTitle>Message hierarchy</CardTitle></CardHeader><CardContent className="grid gap-2 md:grid-cols-3">{positioning.valueProps.map((value) => <div key={value} className="rounded-md bg-elevated p-3 text-sm">{value}</div>)}</CardContent></Card></div>;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const draft = async () => {
+    setBusy(true); setNote("");
+    try {
+      const raw = await generateStructured(`Act as a senior positioning strategist. Business: ${state.businessName}. Description: ${state.businessDescription}. Audience: ${state.audience || "infer the most valuable primary audience"}. Proof: ${state.proofPoints || "not supplied"}. Desired action: ${state.ctaGoal}. Produce specific, credible positioning with no hype or generic filler.`, POSITIONING_SCHEMA);
+      if (!raw) { patch({ positioning: derivePositioning({ businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal }) }); setNote("Local strategy draft ready."); }
+      else { patch({ positioning: parsePositioning(raw) }); setNote("Studio strategy draft ready for approval."); }
+    } catch (error) { setNote(error instanceof Error ? `${error.message} Using the local draft.` : "Using the local strategy draft."); }
+    finally { setBusy(false); }
+  };
+  return <div className="space-y-3"><div className="flex justify-end"><Button variant="secondary" onClick={draft} disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />} Draft positioning</Button></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-3 md:grid-cols-2"><Card><CardHeader><CardTitle>Offer</CardTitle></CardHeader><CardContent className="text-sm text-muted">{positioning.offer}</CardContent></Card><Card><CardHeader><CardTitle>Core promise</CardTitle></CardHeader><CardContent className="text-sm text-muted">{positioning.promise}</CardContent></Card><Card className="md:col-span-2"><CardHeader><CardTitle>Message hierarchy</CardTitle></CardHeader><CardContent className="grid gap-2 md:grid-cols-3">{positioning.valueProps.map((value) => <div key={value} className="rounded-md bg-elevated p-3 text-sm">{value}</div>)}</CardContent></Card></div></div>;
 }
 
 function AudienceStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>) {
@@ -76,9 +105,20 @@ function StyleStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>)
   return <PickCardStep value={state.presetId} onChange={(presetId) => patch({ presetId })} options={TOKEN_PRESETS.map((preset) => ({ id: preset.id, title: preset.name, description: `${preset.tokens.fontDisplay} · ${preset.tokens.primary} · radius ${preset.tokens.radius}px` }))} />;
 }
 
-function CopyStep({ state }: GuidedFlowStepComponentProps<WebFlowState>) {
+function CopyStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>) {
   const positioning = positioningFor(state);
-  return <SummaryStep title="Your site copy is structured" items={[{ label: "Headline", value: positioning.promise }, { label: "Value pillars", value: `${positioning.valueProps.length} written` }, { label: "Proof", value: `${positioning.proof.length} signals` }, { label: "Objections", value: `${positioning.objections.length} answered` }, { label: "CTA", value: positioning.cta }]} />;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const draft = async () => {
+    setBusy(true); setNote("");
+    try {
+      const raw = await generateStructured(`Write concise conversion copy for ${state.businessName}. Positioning: ${JSON.stringify(positioning)}. Brand voice: ${state.brandTone}. Return exactly one section for each pattern id: ${state.patternIds.join(", ")}. Keep headings concrete, bodies under 45 words, and never invent statistics or customer quotes.`, COPY_SCHEMA);
+      if (!raw) { setNote("Local structured copy is ready."); return; }
+      patch({ copyDrafts: parseCopyDrafts(raw, state.patternIds) }); setNote("Studio copy draft passed schema validation.");
+    } catch (error) { setNote(error instanceof Error ? `${error.message} Keeping the local copy.` : "Keeping the local copy."); }
+    finally { setBusy(false); }
+  };
+  return <div className="space-y-3"><div className="flex justify-end"><Button variant="secondary" onClick={draft} disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />} Draft site copy</Button></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<SummaryStep title="Your site copy is structured" items={[{ label: "Headline", value: positioning.promise }, { label: "Value pillars", value: `${positioning.valueProps.length} written` }, { label: "Proof", value: `${positioning.proof.length} signals` }, { label: "Objections", value: `${positioning.objections.length} answered` }, { label: "CTA", value: positioning.cta }]} /></div>;
 }
 
 function BuildStep({ state }: GuidedFlowStepComponentProps<WebFlowState>) {
@@ -89,7 +129,8 @@ function createProject(state: WebFlowState): WebProject {
   const positioning = positioningFor(state);
   const brand = createBrandDna({ name: state.brandName || state.businessName, tone: state.brandTone, productLine: state.businessName, tagline: positioning.promise, palette: TOKEN_PRESETS.find((preset) => preset.id === state.presetId)?.tokens ? [TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.primary, TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.accent] : [] });
   const now = new Date().toISOString();
-  const project = saveWebProject({ id: crypto.randomUUID(), name: state.projectName || `${state.businessName} Website`, businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal, brand, positioning, sections: buildSections(state.patternIds, positioning), tokens: tokensFromBrand(brand, state.presetId), createdAt: now, updatedAt: now });
+  const sections = buildSections(state.patternIds, positioning).map((section) => state.copyDrafts?.[section.patternId] ? { ...section, copy: state.copyDrafts[section.patternId] } : section);
+  const project = saveWebProject({ id: crypto.randomUUID(), name: state.projectName || `${state.businessName} Website`, businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal, brand, positioning, sections, tokens: tokensFromBrand(brand, state.presetId), createdAt: now, updatedAt: now });
   createDeliverable({ moduleId: "webstudio", projectId: project.id, kind: "static-site", format: "html-css-zip", status: "draft", title: `${project.businessName} responsive website`, assetRefs: [] });
   return project;
 }
@@ -103,6 +144,7 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const html = useMemo(() => compileSite(project, true), [project]);
+  const audit = useMemo(() => auditSite(project), [project]);
   const mediaAssets = useMemo(() => loadAssets().filter((asset) => Boolean(asset.url)), []);
 
   const updateSection = (id: string, patch: Partial<SectionInstance>) => onChange(saveWebProject({ ...project, sections: project.sections.map((section) => section.id === id ? { ...section, ...patch } : section) }));
@@ -128,13 +170,13 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
       }
       const manifest = JSON.stringify({ projectId: exportProject.id, positioning: exportProject.positioning, designTokens: exportProject.tokens, patterns: exportProject.sections.map((section) => section.patternId) }, null, 2);
       const mediaPrompts = exportProject.sections.filter((section) => patternById(section.patternId).family === "hero" && !section.mediaUrl).map((section) => `- ${section.copy.heading}: premium on-brand website hero image, palette ${project.tokens.primary} and ${project.tokens.accent}, no rendered text`).join("\n") || "No placeholder imagery remains.";
-      downloadBlob(buildZip([{ name: "index.html", bytes: encoder.encode(compileSite(exportProject, false)) }, { name: "styles.css", bytes: encoder.encode(compileCss(exportProject.tokens)) }, { name: "site-spec.json", bytes: encoder.encode(manifest) }, { name: "media-prompts.md", bytes: encoder.encode(`# Media prompts\n\n${mediaPrompts}`) }, { name: "assets/README.txt", bytes: encoder.encode("Selected Production Library images are bundled here. Add or replace local media freely." ) }, { name: "README.txt", bytes: encoder.encode("Upload this folder to any static host. No framework, build step, account, or runtime dependency is required.") }, ...mediaEntries]), `${slug(project.name)}-static-site.zip`);
+      downloadBlob(buildZip([{ name: "index.html", bytes: encoder.encode(compileSite(exportProject, false)) }, { name: "styles.css", bytes: encoder.encode(compileCss(exportProject.tokens)) }, { name: "site-spec.json", bytes: encoder.encode(manifest) }, { name: "quality-report.json", bytes: encoder.encode(JSON.stringify(auditSite(exportProject), null, 2)) }, { name: "media-prompts.md", bytes: encoder.encode(`# Media prompts\n\n${mediaPrompts}`) }, { name: "assets/README.txt", bytes: encoder.encode("Selected Production Library images are bundled here. Add or replace local media freely." ) }, { name: "README.txt", bytes: encoder.encode("Upload this folder to any static host. No framework, build step, account, or runtime dependency is required.") }, ...mediaEntries]), `${slug(project.name)}-static-site.zip`);
       listDeliverables({ moduleId: "webstudio", projectId: project.id }).forEach((deliverable) => saveDeliverable({ ...deliverable, status: "approved" }));
       setNote("Static HTML/CSS site ZIP exported.");
     } finally { setBusy(false); }
   };
 
-  return <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-semibold">{project.businessName}</h2><p className="text-xs text-muted">{project.positioning.promise}</p></div><div className="flex gap-2"><Button variant={viewport === "desktop" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("desktop")}><Monitor /></Button><Button variant={viewport === "tablet" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("tablet")}><Laptop /></Button><Button variant={viewport === "mobile" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("mobile")}><Smartphone /></Button><Button onClick={exportSite} disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Download />} Export Site ZIP</Button></div></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_330px]"><div className="overflow-auto rounded-xl border border-border bg-elevated p-3"><iframe title={`${project.businessName} responsive preview`} srcDoc={html} sandbox="allow-same-origin" className="mx-auto h-[720px] rounded-lg border-0 bg-white transition-all" style={{ width: VIEWPORT_WIDTH[viewport], maxWidth: "100%" }} /></div>{studioMode !== "director" ? <div className="space-y-3"><Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Edit copy, imagery, and curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{project.sections.map((section) => <div key={section.id} className="space-y-2 rounded-md border border-border p-3"><select value={section.patternId} onChange={(event) => updateSection(section.id, { patternId: event.target.value })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm">{SECTION_PATTERNS.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select><Input value={section.copy.heading} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, heading: event.target.value } })} aria-label="Section heading" /><Textarea value={section.copy.body} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, body: event.target.value } })} className="min-h-20" aria-label="Section body" />{patternById(section.patternId).family === "hero" ? <select value={section.mediaUrl ?? ""} onChange={(event) => updateSection(section.id, { mediaUrl: event.target.value || undefined })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"><option value="">Generated placeholder + export prompt</option>{mediaAssets.map((asset) => <option key={asset.id} value={asset.url}>{asset.entityName} · {asset.sheetType}</option>)}</select> : null}<div className="text-[10px] uppercase tracking-wide text-muted">{patternById(section.patternId).family}</div></div>)}</CardContent></Card>{studioMode === "creator" ? <Card><CardHeader><CardTitle>Design Tokens</CardTitle></CardHeader><CardContent className="grid grid-cols-2 gap-2">{(["primary", "accent", "background", "text"] as const).map((key) => <label key={key} className="text-xs capitalize text-muted">{key}<Input type="color" value={project.tokens[key]} onChange={(event) => onChange(saveWebProject({ ...project, tokens: { ...project.tokens, [key]: event.target.value } }))} className="mt-1 p-1" /></label>)}</CardContent></Card> : null}</div> : null}</div></div>;
+  return <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-semibold">{project.businessName}</h2><p className="text-xs text-muted">{project.positioning.promise}</p></div><div className="flex gap-2"><Badge variant={audit.score >= 90 ? "success" : "default"}>Quality {audit.score}</Badge><Button variant={viewport === "desktop" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("desktop")}><Monitor /></Button><Button variant={viewport === "tablet" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("tablet")}><Laptop /></Button><Button variant={viewport === "mobile" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("mobile")}><Smartphone /></Button><Button onClick={exportSite} disabled={busy || audit.score < 90}>{busy ? <Loader2 className="animate-spin" /> : <Download />} Export Site ZIP</Button></div></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_330px]"><div className="overflow-auto rounded-xl border border-border bg-elevated p-3"><iframe title={`${project.businessName} responsive preview`} srcDoc={html} sandbox="allow-same-origin" className="mx-auto h-[720px] rounded-lg border-0 bg-white transition-all" style={{ width: VIEWPORT_WIDTH[viewport], maxWidth: "100%" }} /></div>{studioMode !== "director" ? <div className="space-y-3"><Card><CardHeader><CardTitle>Quality Gate</CardTitle><CardDescription>{audit.checks.filter((check) => check.passed).length}/{audit.checks.length} static checks passed.</CardDescription></CardHeader><CardContent className="space-y-1">{audit.checks.map((check) => <div key={check.id} className={cn("text-xs", check.passed ? "text-muted" : "text-danger")}>{check.passed ? "✓" : "×"} {check.label}</div>)}</CardContent></Card><Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Edit copy, imagery, and curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{project.sections.map((section) => <div key={section.id} className="space-y-2 rounded-md border border-border p-3"><select value={section.patternId} onChange={(event) => updateSection(section.id, { patternId: event.target.value })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm">{SECTION_PATTERNS.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select><Input value={section.copy.heading} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, heading: event.target.value } })} aria-label="Section heading" /><Textarea value={section.copy.body} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, body: event.target.value } })} className="min-h-20" aria-label="Section body" />{patternById(section.patternId).family === "hero" ? <select value={section.mediaUrl ?? ""} onChange={(event) => updateSection(section.id, { mediaUrl: event.target.value || undefined })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"><option value="">Generated placeholder + export prompt</option>{mediaAssets.map((asset) => <option key={asset.id} value={asset.url}>{asset.entityName} · {asset.sheetType}</option>)}</select> : null}<div className="text-[10px] uppercase tracking-wide text-muted">{patternById(section.patternId).family}</div></div>)}</CardContent></Card>{studioMode === "creator" ? <Card><CardHeader><CardTitle>Design Tokens</CardTitle></CardHeader><CardContent className="grid grid-cols-2 gap-2">{(["primary", "accent", "background", "text"] as const).map((key) => <label key={key} className="text-xs capitalize text-muted">{key}<Input type="color" value={project.tokens[key]} onChange={(event) => onChange(saveWebProject({ ...project, tokens: { ...project.tokens, [key]: event.target.value } }))} className="mt-1 p-1" /></label>)}</CardContent></Card> : null}</div> : null}</div></div>;
 }
 
 export function WebStudio() {

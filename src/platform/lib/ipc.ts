@@ -389,6 +389,11 @@ export const api = {
     return invoke<PromptPack>("generate_prompt_pack", { projectId, input });
   },
 
+  generateStructuredText: (provider: ProviderId, prompt: string, schema: string): Promise<string> =>
+    isTauri
+      ? invoke<string>("generate_structured_text", { provider, prompt, schema })
+      : Promise.reject(new Error("Provider-backed structured text runs in the desktop app.")),
+
   getLatestPack: (projectId: string) =>
     isTauri
       ? invoke<PromptPack | null>("get_latest_pack", { projectId })

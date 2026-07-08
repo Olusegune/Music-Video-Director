@@ -44,6 +44,7 @@ pub fn run() {
             commands::set_provider_key,
             commands::clear_provider_key,
             commands::generate_prompt_pack,
+            commands::generate_structured_text,
             commands::get_latest_pack,
             commands::save_pack,
             commands::generate_shot_image,

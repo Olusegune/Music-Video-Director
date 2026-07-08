@@ -107,6 +107,8 @@ Provider metadata includes `supportsImageReferences` based on the actual Rust ad
 
 Web Studio compiles one structured `WebProject` through one deterministic renderer. The iframe preview uses inline CSS from that compiler; static export uses the same HTML with the same compiler-produced CSS split into `styles.css`. AI/local copy stages may fill typed slots but never emit layout code. Static ZIP packaging uses shared `platform/lib/archive.ts`; Production Library media is copied into the export so machine-local asset URLs do not leak into the finished website.
 
+Provider-backed Web copy crosses the IPC boundary through `generate_structured_text`; the Rust core reads the Gemini key from the OS keychain and requests JSON-only output. `apps/webstudio/lib/webAi.ts` treats that output as untrusted and validates every field before it can replace deterministic local positioning/copy. `siteAudit.ts` runs a deterministic pre-export gate and writes its result into `quality-report.json` inside the static-site ZIP.
+
 ### Motion Studio (app-specific)
 
 | System | Modules |

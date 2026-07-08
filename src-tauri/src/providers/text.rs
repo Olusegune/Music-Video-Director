@@ -69,6 +69,35 @@ impl GeminiTextProvider {
             model: DEFAULT_MODEL.to_string(),
         }
     }
+
+    /// Generic structured-text path used by non-MotionForge modules. The
+    /// caller owns schema validation; this method guarantees JSON-only output.
+    pub async fn generate_structured(&self, prompt: &str, schema: &str) -> Result<String> {
+        let url = format!(
+            "{ENDPOINT}/{model}:generateContent?key={key}",
+            model = self.model,
+            key = self.api_key
+        );
+        let instruction = format!(
+            "Return ONLY valid JSON with no markdown fences. It must match this schema and contain no extra keys:\n{schema}"
+        );
+        let body = json!({
+            "system_instruction": { "parts": [{ "text": instruction }] },
+            "contents": [{ "parts": [{ "text": prompt }] }],
+            "generationConfig": { "temperature": 0.55, "responseMimeType": "application/json" }
+        });
+        let response = reqwest::Client::new().post(&url).json(&body).send().await.context("calling Gemini structured-text API")?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            return Err(anyhow!("Gemini structured-text error {status}: {text}"));
+        }
+        let value: serde_json::Value = response.json().await.context("parsing Gemini structured response")?;
+        value["candidates"][0]["content"]["parts"][0]["text"]
+            .as_str()
+            .map(str::to_owned)
+            .ok_or_else(|| anyhow!("unexpected Gemini structured response: {value}"))
+    }
 }
 
 impl TextProvider for GeminiTextProvider {

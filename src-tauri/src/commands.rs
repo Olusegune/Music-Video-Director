@@ -64,6 +64,22 @@ pub fn delete_project(db: State<Db>, id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn generate_structured_text(
+    provider: String,
+    prompt: String,
+    schema: String,
+) -> Result<String, String> {
+    match provider.as_str() {
+        "gemini" => {
+            let key = secrets::get_key("gemini").map_err(err)?
+                .ok_or("Add a Gemini API key in the API Key Dashboard.")?;
+            GeminiTextProvider::new(key).generate_structured(&prompt, &schema).await.map_err(err)
+        }
+        _ => Err(format!("Structured text is not wired for provider '{provider}' yet.")),
+    }
+}
+
+#[tauri::command]
 pub fn list_brand_kits(db: State<Db>) -> Result<Vec<BrandKit>, String> {
     let conn = db.0.lock().map_err(err)?;
     db::list_brand_kits(&conn).map_err(err)
