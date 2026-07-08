@@ -109,6 +109,8 @@ Web Studio compiles one structured `WebProject` through one deterministic render
 
 Provider-backed Web copy crosses the IPC boundary through `generate_structured_text`; the Rust core reads the Gemini key from the OS keychain and requests JSON-only output. `apps/webstudio/lib/webAi.ts` treats that output as untrusted and validates every field before it can replace deterministic local positioning/copy. `siteAudit.ts` runs a deterministic pre-export gate and writes its result into `quality-report.json` inside the static-site ZIP.
 
+`scripts/web-export-smoke.ts` is the repeatable compiler/export regression check. It builds a complete fixture, requires a quality score of at least 90, checks semantic HTML and responsive/reduced-motion CSS, creates a real ZIP through `platform/lib/archive.ts`, and verifies its signature and required entries. Run it with `npm run test:web-export`.
+
 ### Motion Studio (app-specific)
 
 | System | Modules |

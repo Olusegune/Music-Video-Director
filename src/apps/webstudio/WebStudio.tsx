@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Code2, Download, Globe2, Laptop, Loader2, Monitor, Palette, Plus, Smartphone, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, Code2, Copy, Download, Globe2, Laptop, Loader2, Monitor, Palette, Plus, Smartphone, Sparkles, Trash2 } from "lucide-react";
 import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/platform/components/ui/card";
@@ -9,7 +9,7 @@ import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/component
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna } from "@/platform/lib/brandDna";
-import { createDeliverable, listDeliverables, saveDeliverable } from "@/platform/lib/deliverables";
+import { createDeliverable, deleteDeliverables, listDeliverables, saveDeliverable } from "@/platform/lib/deliverables";
 import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
@@ -24,7 +24,7 @@ import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioni
 import { compileCss, compileSite } from "@/apps/webstudio/lib/siteCompiler";
 import { TOKEN_PRESETS, tokensFromBrand } from "@/apps/webstudio/lib/tokens";
 import type { Positioning, SectionInstance, WebProject } from "@/apps/webstudio/lib/types";
-import { listWebProjects, saveWebProject } from "@/apps/webstudio/lib/webStore";
+import { deleteWebProject, listWebProjects, saveWebProject } from "@/apps/webstudio/lib/webStore";
 import { COPY_SCHEMA, parseCopyDrafts, parsePositioning, POSITIONING_SCHEMA } from "@/apps/webstudio/lib/webAi";
 import type { SectionCopy } from "@/apps/webstudio/lib/types";
 import { auditSite } from "@/apps/webstudio/lib/siteAudit";
@@ -146,8 +146,27 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
   const html = useMemo(() => compileSite(project, true), [project]);
   const audit = useMemo(() => auditSite(project), [project]);
   const mediaAssets = useMemo(() => loadAssets().filter((asset) => Boolean(asset.url)), []);
-
-  const updateSection = (id: string, patch: Partial<SectionInstance>) => onChange(saveWebProject({ ...project, sections: project.sections.map((section) => section.id === id ? { ...section, ...patch } : section) }));
+  const persist = (next: WebProject) => onChange(saveWebProject(next));
+  const updateSection = (id: string, patch: Partial<SectionInstance>) =>
+    persist({ ...project, sections: project.sections.map((section) => section.id === id ? { ...section, ...patch } : section) });
+  const moveSection = (id: string, direction: -1 | 1) => {
+    const index = project.sections.findIndex((section) => section.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= project.sections.length) return;
+    const sections = [...project.sections];
+    [sections[index], sections[target]] = [sections[target], sections[index]];
+    persist({ ...project, sections });
+  };
+  const duplicateSection = (section: SectionInstance) => {
+    const index = project.sections.findIndex((item) => item.id === section.id);
+    const sections = [...project.sections];
+    sections.splice(index + 1, 0, { ...section, id: crypto.randomUUID(), copy: { ...section.copy, items: [...section.copy.items] } });
+    persist({ ...project, sections });
+  };
+  const removeSection = (id: string) => {
+    if (project.sections.length <= 1) { setNote("A site needs at least one section."); return; }
+    persist({ ...project, sections: project.sections.filter((section) => section.id !== id) });
+  };
   const exportSite = async () => {
     setBusy(true);
     try {
@@ -164,19 +183,59 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
           const path = `assets/${section.id}.${extension}`;
           mediaEntries.push({ name: path, bytes: new Uint8Array(await response.arrayBuffer()) });
           section.mediaUrl = path;
-        } catch {
-          section.mediaUrl = undefined;
-        }
+        } catch { section.mediaUrl = undefined; }
       }
       const manifest = JSON.stringify({ projectId: exportProject.id, positioning: exportProject.positioning, designTokens: exportProject.tokens, patterns: exportProject.sections.map((section) => section.patternId) }, null, 2);
       const mediaPrompts = exportProject.sections.filter((section) => patternById(section.patternId).family === "hero" && !section.mediaUrl).map((section) => `- ${section.copy.heading}: premium on-brand website hero image, palette ${project.tokens.primary} and ${project.tokens.accent}, no rendered text`).join("\n") || "No placeholder imagery remains.";
-      downloadBlob(buildZip([{ name: "index.html", bytes: encoder.encode(compileSite(exportProject, false)) }, { name: "styles.css", bytes: encoder.encode(compileCss(exportProject.tokens)) }, { name: "site-spec.json", bytes: encoder.encode(manifest) }, { name: "quality-report.json", bytes: encoder.encode(JSON.stringify(auditSite(exportProject), null, 2)) }, { name: "media-prompts.md", bytes: encoder.encode(`# Media prompts\n\n${mediaPrompts}`) }, { name: "assets/README.txt", bytes: encoder.encode("Selected Production Library images are bundled here. Add or replace local media freely." ) }, { name: "README.txt", bytes: encoder.encode("Upload this folder to any static host. No framework, build step, account, or runtime dependency is required.") }, ...mediaEntries]), `${slug(project.name)}-static-site.zip`);
+      downloadBlob(buildZip([
+        { name: "index.html", bytes: encoder.encode(compileSite(exportProject, false)) },
+        { name: "styles.css", bytes: encoder.encode(compileCss(exportProject.tokens)) },
+        { name: "site-spec.json", bytes: encoder.encode(manifest) },
+        { name: "quality-report.json", bytes: encoder.encode(JSON.stringify(auditSite(exportProject), null, 2)) },
+        { name: "media-prompts.md", bytes: encoder.encode(`# Media prompts\n\n${mediaPrompts}`) },
+        { name: "assets/README.txt", bytes: encoder.encode("Selected Production Library images are bundled here. Add or replace local media freely.") },
+        { name: "README.txt", bytes: encoder.encode("Upload this folder to any static host. No framework, build step, account, or runtime dependency is required.") },
+        ...mediaEntries,
+      ]), `${slug(project.name)}-static-site.zip`);
       listDeliverables({ moduleId: "webstudio", projectId: project.id }).forEach((deliverable) => saveDeliverable({ ...deliverable, status: "approved" }));
       setNote("Static HTML/CSS site ZIP exported.");
     } finally { setBusy(false); }
   };
 
-  return <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-semibold">{project.businessName}</h2><p className="text-xs text-muted">{project.positioning.promise}</p></div><div className="flex gap-2"><Badge variant={audit.score >= 90 ? "success" : "default"}>Quality {audit.score}</Badge><Button variant={viewport === "desktop" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("desktop")}><Monitor /></Button><Button variant={viewport === "tablet" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("tablet")}><Laptop /></Button><Button variant={viewport === "mobile" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("mobile")}><Smartphone /></Button><Button onClick={exportSite} disabled={busy || audit.score < 90}>{busy ? <Loader2 className="animate-spin" /> : <Download />} Export Site ZIP</Button></div></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_330px]"><div className="overflow-auto rounded-xl border border-border bg-elevated p-3"><iframe title={`${project.businessName} responsive preview`} srcDoc={html} sandbox="allow-same-origin" className="mx-auto h-[720px] rounded-lg border-0 bg-white transition-all" style={{ width: VIEWPORT_WIDTH[viewport], maxWidth: "100%" }} /></div>{studioMode !== "director" ? <div className="space-y-3"><Card><CardHeader><CardTitle>Quality Gate</CardTitle><CardDescription>{audit.checks.filter((check) => check.passed).length}/{audit.checks.length} static checks passed.</CardDescription></CardHeader><CardContent className="space-y-1">{audit.checks.map((check) => <div key={check.id} className={cn("text-xs", check.passed ? "text-muted" : "text-danger")}>{check.passed ? "✓" : "×"} {check.label}</div>)}</CardContent></Card><Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Edit copy, imagery, and curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{project.sections.map((section) => <div key={section.id} className="space-y-2 rounded-md border border-border p-3"><select value={section.patternId} onChange={(event) => updateSection(section.id, { patternId: event.target.value })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm">{SECTION_PATTERNS.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select><Input value={section.copy.heading} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, heading: event.target.value } })} aria-label="Section heading" /><Textarea value={section.copy.body} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, body: event.target.value } })} className="min-h-20" aria-label="Section body" />{patternById(section.patternId).family === "hero" ? <select value={section.mediaUrl ?? ""} onChange={(event) => updateSection(section.id, { mediaUrl: event.target.value || undefined })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"><option value="">Generated placeholder + export prompt</option>{mediaAssets.map((asset) => <option key={asset.id} value={asset.url}>{asset.entityName} · {asset.sheetType}</option>)}</select> : null}<div className="text-[10px] uppercase tracking-wide text-muted">{patternById(section.patternId).family}</div></div>)}</CardContent></Card>{studioMode === "creator" ? <Card><CardHeader><CardTitle>Design Tokens</CardTitle></CardHeader><CardContent className="grid grid-cols-2 gap-2">{(["primary", "accent", "background", "text"] as const).map((key) => <label key={key} className="text-xs capitalize text-muted">{key}<Input type="color" value={project.tokens[key]} onChange={(event) => onChange(saveWebProject({ ...project, tokens: { ...project.tokens, [key]: event.target.value } }))} className="mt-1 p-1" /></label>)}</CardContent></Card> : null}</div> : null}</div></div>;
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div><h2 className="text-lg font-semibold">{project.businessName}</h2><p className="text-xs text-muted">{project.positioning.promise}</p></div>
+        <div className="flex gap-2">
+          <Badge variant={audit.score >= 90 ? "success" : "default"}>Quality {audit.score}</Badge>
+          <Button variant={viewport === "desktop" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("desktop")}><Monitor /></Button>
+          <Button variant={viewport === "tablet" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("tablet")}><Laptop /></Button>
+          <Button variant={viewport === "mobile" ? "primary" : "secondary"} size="icon" onClick={() => setViewport("mobile")}><Smartphone /></Button>
+          <Button onClick={exportSite} disabled={busy || audit.score < 90}>{busy ? <Loader2 className="animate-spin" /> : <Download />} Export Site ZIP</Button>
+        </div>
+      </div>
+      {note ? <p className="text-xs text-muted">{note}</p> : null}
+      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_350px]">
+        <div className="overflow-auto rounded-xl border border-border bg-elevated p-3"><iframe title={`${project.businessName} responsive preview`} srcDoc={html} sandbox="allow-same-origin" className="mx-auto h-[720px] rounded-lg border-0 bg-white transition-all" style={{ width: VIEWPORT_WIDTH[viewport], maxWidth: "100%" }} /></div>
+        {studioMode !== "director" ? (
+          <div className="space-y-3">
+            <Card><CardHeader><CardTitle>Positioning</CardTitle><CardDescription>Edit the strategic spine used by metadata and navigation.</CardDescription></CardHeader><CardContent className="space-y-2"><Input value={project.positioning.promise} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, promise: event.target.value } })} aria-label="Core promise" /><Textarea value={project.positioning.offer} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, offer: event.target.value } })} className="min-h-20" aria-label="Offer positioning" /><Input value={project.positioning.cta} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, cta: event.target.value } })} aria-label="Primary CTA" /></CardContent></Card>
+            <Card><CardHeader><CardTitle>Quality Gate</CardTitle><CardDescription>{audit.checks.filter((check) => check.passed).length}/{audit.checks.length} static checks passed.</CardDescription></CardHeader><CardContent className="space-y-1">{audit.checks.map((check) => <div key={check.id} className={cn("text-xs", check.passed ? "text-muted" : "text-danger")}>{check.passed ? "✓" : "×"} {check.label}</div>)}</CardContent></Card>
+            <Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Reorder, duplicate, remove, edit, and swap curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{project.sections.map((section, index) => (
+              <div key={section.id} className="space-y-2 rounded-md border border-border p-3">
+                <div className="flex items-center gap-1"><span className="mr-auto text-[10px] uppercase tracking-wide text-muted">{index + 1} · {patternById(section.patternId).family}</span><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, -1)} disabled={index === 0}><ArrowUp /></Button><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, 1)} disabled={index === project.sections.length - 1}><ArrowDown /></Button><Button size="icon" variant="ghost" onClick={() => duplicateSection(section)}><Copy /></Button><Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}><Trash2 /></Button></div>
+                <select value={section.patternId} onChange={(event) => updateSection(section.id, { patternId: event.target.value })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm">{SECTION_PATTERNS.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select>
+                <Input value={section.copy.heading} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, heading: event.target.value } })} aria-label="Section heading" />
+                <Textarea value={section.copy.body} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, body: event.target.value } })} className="min-h-20" aria-label="Section body" />
+                {patternById(section.patternId).family === "hero" ? <select value={section.mediaUrl ?? ""} onChange={(event) => updateSection(section.id, { mediaUrl: event.target.value || undefined })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"><option value="">Generated placeholder + export prompt</option>{mediaAssets.map((asset) => <option key={asset.id} value={asset.url}>{asset.entityName} · {asset.sheetType}</option>)}</select> : null}
+              </div>
+            ))}</CardContent></Card>
+            {studioMode === "creator" ? <Card><CardHeader><CardTitle>Design Tokens</CardTitle></CardHeader><CardContent className="grid grid-cols-2 gap-2">{(["primary", "accent", "background", "text"] as const).map((key) => <label key={key} className="text-xs capitalize text-muted">{key}<Input type="color" value={project.tokens[key]} onChange={(event) => persist({ ...project, tokens: { ...project.tokens, [key]: event.target.value } })} className="mt-1 p-1" /></label>)}</CardContent></Card> : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 export function WebStudio() {
@@ -197,5 +256,14 @@ export function WebStudio() {
     { id: "build", title: "Build", subtitle: "Create the responsive site and export-ready project.", component: BuildStep },
   ], onComplete: (state) => { const project = createProject(state); setProjects(listWebProjects()); setActiveId(project.id); setFlowOpen(false); } }), []);
   const saveActive = (project: WebProject) => { setProjects(listWebProjects()); setActiveId(project.id); };
-  return <div className="flex h-full flex-col overflow-y-auto"><header className="border-b border-border px-8 py-5"><div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grad-primary flex h-10 w-10 items-center justify-center rounded-xl text-white"><Globe2 /></span><div><h1 className="text-lg font-semibold">Web Studio</h1><p className="text-xs text-muted">Positioning-first responsive websites you own.</p></div></div><div className="flex gap-2"><Badge variant="primary">{STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}</Badge><Badge>{routerLabel}</Badge><Button variant="secondary" onClick={openBrandKits}><Palette /> Brand Kits</Button><Button onClick={() => setFlowOpen(true)}><Plus /> New Website</Button></div></div></header><div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]"><aside className="space-y-3"><Card><CardHeader><CardTitle>Web Projects</CardTitle><CardDescription>{projects.length} local sites</CardDescription></CardHeader><CardContent className="space-y-2">{projects.map((project) => <button key={project.id} onClick={() => { setActiveId(project.id); setFlowOpen(false); }} className={cn("w-full rounded-md border p-3 text-left", active?.id === project.id ? "border-primary bg-primary/10" : "border-border")}><span className="block text-sm font-medium">{project.name}</span><span className="block text-xs text-muted">{project.sections.length} sections</span></button>)}</CardContent></Card><Card><CardHeader><CardTitle>Mode</CardTitle></CardHeader><CardContent className="space-y-2">{STUDIO_MODES.map((mode) => <Button key={mode.id} variant={studioMode === mode.id ? "primary" : "secondary"} className="w-full justify-start" onClick={() => setStudioMode(mode.id)}>{mode.label}</Button>)}</CardContent></Card>{active ? <Card><CardHeader><CardTitle>Deliverables</CardTitle></CardHeader><CardContent className="text-xs text-muted">{listDeliverables({ moduleId: "webstudio", projectId: active.id }).length} static site package</CardContent></Card> : null}</aside><main className="min-w-0">{flowOpen ? <GuidedFlowShell definition={definition} onExit={() => setFlowOpen(false)} onComplete={() => undefined} /> : active ? <WebWorkbench project={active} onChange={saveActive} /> : <Card><CardContent className="flex min-h-96 flex-col items-center justify-center gap-3 text-center"><Code2 className="h-10 w-10 text-primary" /><h2 className="text-lg font-semibold">Build a positioned website</h2><p className="max-w-md text-sm text-muted">Strategy, copy, curated patterns, responsive preview, and static export in one guided flow.</p><Button onClick={() => setFlowOpen(true)}><Sparkles /> Start Web Studio</Button></CardContent></Card>}</main></div></div>;
+  const removeActiveProject = () => {
+    if (!active || !confirm(`Delete web project “${active.name}”? This removes its local site specification and deliverable record.`)) return;
+    deleteWebProject(active.id);
+    deleteDeliverables({ moduleId: "webstudio", projectId: active.id });
+    const remaining = listWebProjects();
+    setProjects(remaining);
+    setActiveId(remaining[0]?.id ?? "");
+    setFlowOpen(remaining.length === 0);
+  };
+  return <div className="flex h-full flex-col overflow-y-auto"><header className="border-b border-border px-8 py-5"><div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grad-primary flex h-10 w-10 items-center justify-center rounded-xl text-white"><Globe2 /></span><div><h1 className="text-lg font-semibold">Web Studio</h1><p className="text-xs text-muted">Positioning-first responsive websites you own.</p></div></div><div className="flex gap-2"><Badge variant="primary">{STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}</Badge><Badge>{routerLabel}</Badge><Button variant="secondary" onClick={openBrandKits}><Palette /> Brand Kits</Button><Button onClick={() => setFlowOpen(true)}><Plus /> New Website</Button></div></div></header><div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]"><aside className="space-y-3"><Card><CardHeader><CardTitle>Web Projects</CardTitle><CardDescription>{projects.length} local sites</CardDescription></CardHeader><CardContent className="space-y-2">{projects.map((project) => <button key={project.id} onClick={() => { setActiveId(project.id); setFlowOpen(false); }} className={cn("w-full rounded-md border p-3 text-left", active?.id === project.id ? "border-primary bg-primary/10" : "border-border")}><span className="block text-sm font-medium">{project.name}</span><span className="block text-xs text-muted">{project.sections.length} sections</span></button>)}</CardContent></Card><Card><CardHeader><CardTitle>Mode</CardTitle></CardHeader><CardContent className="space-y-2">{STUDIO_MODES.map((mode) => <Button key={mode.id} variant={studioMode === mode.id ? "primary" : "secondary"} className="w-full justify-start" onClick={() => setStudioMode(mode.id)}>{mode.label}</Button>)}</CardContent></Card>{active ? <Card><CardHeader><CardTitle>Deliverables</CardTitle></CardHeader><CardContent className="space-y-3 text-xs text-muted"><div>{listDeliverables({ moduleId: "webstudio", projectId: active.id }).length} static site package</div><Button variant="danger" size="sm" className="w-full" onClick={removeActiveProject}><Trash2 /> Delete Project</Button></CardContent></Card> : null}</aside><main className="min-w-0">{flowOpen ? <GuidedFlowShell definition={definition} onExit={() => setFlowOpen(false)} onComplete={() => undefined} /> : active ? <WebWorkbench project={active} onChange={saveActive} /> : <Card><CardContent className="flex min-h-96 flex-col items-center justify-center gap-3 text-center"><Code2 className="h-10 w-10 text-primary" /><h2 className="text-lg font-semibold">Build a positioned website</h2><p className="max-w-md text-sm text-muted">Strategy, copy, curated patterns, responsive preview, and static export in one guided flow.</p><Button onClick={() => setFlowOpen(true)}><Sparkles /> Start Web Studio</Button></CardContent></Card>}</main></div></div>;
 }

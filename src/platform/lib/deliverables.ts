@@ -68,3 +68,10 @@ export function createDeliverable(input: Omit<Deliverable, "id" | "createdAt" | 
     ...input,
   });
 }
+
+export function deleteDeliverables(filter: Partial<Pick<Deliverable, "moduleId" | "projectId">>) {
+  const retained = readDeliverables().filter(
+    (item) => !((!filter.moduleId || item.moduleId === filter.moduleId) && (!filter.projectId || item.projectId === filter.projectId))
+  );
+  writeDeliverables(retained);
+}

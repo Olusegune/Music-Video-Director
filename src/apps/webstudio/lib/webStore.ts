@@ -14,3 +14,7 @@ export function saveWebProject(project: WebProject): WebProject {
   localStorage.setItem(LS, JSON.stringify(all));
   return next;
 }
+
+export function deleteWebProject(projectId: string) {
+  localStorage.setItem(LS, JSON.stringify(listWebProjects().filter((project) => project.id !== projectId)));
+}
