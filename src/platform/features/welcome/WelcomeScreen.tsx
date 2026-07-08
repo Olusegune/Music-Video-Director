@@ -3,7 +3,7 @@ import { Boxes, Music, LifeBuoy, Globe, Megaphone, Sparkles, X, Library, Users, 
 import { useAppStore } from "@/platform/store/useAppStore";
 import { getShowWelcome, setShowWelcome } from "@/platform/lib/settings";
 import { Button } from "@/platform/components/ui/button";
-import heroArt from "@/assets/director-studio-ecosystem-v1.png";
+import heroArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const modules = [
   { key: "music", title: "Music Video Director", desc: "Songs into cinematic treatments", icon: Music, accent: "from-violet-500/25 to-violet-500/5" },
@@ -33,7 +33,7 @@ export function WelcomeScreen() {
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#07080b] p-4 sm:p-6">
       <div className="relative flex h-full max-h-[880px] w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-[#101216] shadow-2xl shadow-black/70">
         <section className="relative hidden w-[46%] overflow-hidden lg:block">
-          <img src={heroArt} alt="Five connected creative disciplines inside Director Studio" className="absolute inset-0 h-full w-full object-cover object-center" />
+          <img src={heroArt} alt="Afrofuturistic creator directing a connected world of film, music, design, fashion, products, and storytelling" className="absolute inset-0 h-full w-full object-cover object-[center_68%]" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#101216]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/35" />
           <div className="absolute inset-x-0 bottom-0 p-8">

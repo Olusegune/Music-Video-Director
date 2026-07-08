@@ -63,7 +63,6 @@ export function Sidebar() {
     openCampaignStudio,
     openProject,
     setWizardOpen,
-    openDirectorWizard,
     setSearchOpen,
     lastSavedAt,
     studioMode,
@@ -98,13 +97,6 @@ export function Sidebar() {
           className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-border px-3 py-2 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:bg-elevated/60"
         >
           <Plus className="h-4 w-4" /> New production
-        </button>
-        <button
-          onClick={openDirectorWizard}
-          title="Magic Mode — direct a full music video in one click"
-          className="grad-gold flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] px-3 py-2 text-sm font-semibold text-[var(--color-gold-foreground)] shadow-sm shadow-[var(--color-gold)]/25 transition hover:brightness-105"
-        >
-          <Clapperboard className="h-4 w-4" /> Magic Mode
         </button>
         <button
           onClick={() => setSearchOpen(true)}

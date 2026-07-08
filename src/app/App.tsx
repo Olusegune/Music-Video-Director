@@ -31,7 +31,6 @@ import { WelcomeScreen } from "@/platform/features/welcome/WelcomeScreen";
 import { NewProjectWizard } from "@/platform/features/projects/NewProjectWizard";
 import { MagicDirect } from "@/apps/music-video/features/mvdirector/MagicDirect";
 import { SessionGuard } from "@/platform/features/recovery/SessionGuard";
-import { MagicFlowButton } from "@/apps/music-video/components/magic/MagicFlowButton";
 import { MiniPlayer } from "@/apps/music-video/components/magic/MiniPlayer";
 import { DirectorWizard } from "@/apps/music-video/features/director/DirectorWizard";
 import { MusicVideoGuidedFlow } from "@/apps/music-video/features/director/MusicVideoGuidedFlow";
@@ -47,31 +46,12 @@ installMusicVideoBindings();
 export default function App() {
   const view = useAppStore((s) => s.view);
   const inspectorOpen = useAppStore((s) => s.inspectorOpen);
-  const welcomeOpen = useAppStore((s) => s.welcomeOpen);
-  const wizardOpen = useAppStore((s) => s.wizardOpen);
-  const magicSongId = useAppStore((s) => s.magicSongId);
-  const directorOpen = useAppStore((s) => s.directorOpen);
   const guidedFlowV2 = useAppStore((s) => s.guidedFlowV2);
   const dataVersion = useAppStore((s) => s.dataVersion);
   useGlobalShortcuts();
   useEffect(() => {
     installUndo();
   }, []);
-
-  // The Magic Flow is always one click away — except when an overlay is up, or
-  // on the surfaces that already show the big hero button.
-  const showFab =
-    !welcomeOpen &&
-    !wizardOpen &&
-    !magicSongId &&
-    !directorOpen &&
-    view !== "dashboard" &&
-    view !== "song" &&
-    view !== "magicoutput" &&
-    view !== "motionstudio" &&
-    view !== "glamstudio" &&
-    view !== "webstudio" &&
-    view !== "campaignstudio";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -120,7 +100,6 @@ export default function App() {
       <MiniPlayer />
       <GlobalSearch />
       <Toast />
-      {showFab && <MagicFlowButton variant="fab" />}
       <StartupSplash />
     </div>
   );

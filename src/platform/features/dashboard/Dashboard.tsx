@@ -34,7 +34,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/platform/components/ui/card";
-import { MagicFlowButton } from "@/apps/music-video/components/magic/MagicFlowButton";
 import splashArt from "@/assets/director-studio-splash.png";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -141,7 +140,9 @@ export function Dashboard() {
               Every idea. Every style. One vision.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <MagicFlowButton variant="hero" />
+              <Button size="lg" onClick={() => setWizardOpen(true)}>
+                <Clapperboard className="h-4 w-4" /> Start with Director
+              </Button>
               <Button variant="secondary" size="lg" onClick={openDirectorMode}>
                 Open Director Mode
               </Button>

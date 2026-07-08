@@ -19,4 +19,5 @@ for (const label of ["Music Video Director", "Motion Studio", "Glam Studio", "We
   if (!welcome.includes(label) || !router.includes(label)) throw new Error(`${label} missing from suite onboarding`);
 }
 if (!welcome.includes("Start with Director") || !welcome.includes("Director Engine")) throw new Error("Director Studio platform identity is incomplete");
+if (sidebar.includes('> Magic Mode') || dashboard.includes("MagicFlowButton")) throw new Error("Music Video Magic Mode leaked into the global suite shell");
 console.log(JSON.stringify({ ok: true, studios: studios.length, surfaces: ["router", "sidebar", "dashboard", "search"] }));

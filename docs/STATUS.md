@@ -118,6 +118,7 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
+- **Commercial identity refinement** - the user-supplied Afrofuturistic creator artwork is the optimized launch/welcome identity (`director-studio-splash-afrofuturist-v1.jpg`). Global Magic Mode entry points were removed from the suite shell and Director's Home; Music Video Director retains its own Magic Mode while Start with Director remains the platform router. Browser QA passed at 1280×720 with readable copy, intentional portrait crop, and no horizontal overflow.
 - **V1 suite pass** - Director Studio now launches as a five-module creative operating system: one non-duplicated startup experience, new ecosystem artwork, readable suite welcome, universal Start with Director router, searchable platform/module help, and explicit Director Engine resource access in Motion Studio. Campaign adds a synchronized calendar and ICS export; Web adds multi-page/SEO compilation and export; Glam adds a 15-second product-film treatment. Automated release coverage now includes all three V1 artifact paths.
 - **Current release polish** - Director's Home now exposes Motion, Glam, Web, and Campaign as first-class studio cards; Ctrl+K indexes the same studio destinations. `npm run test:release` guards app routing/sidebar/dashboard/search discovery plus Web and Campaign export fixtures and the production build.
 - **Next** - deepen provider-backed product-film rendering, visual page-route management, and calendar drag/reschedule interactions after this packaged V1 foundation.

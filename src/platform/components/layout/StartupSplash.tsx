@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/platform/lib/utils";
-import splashArt from "@/assets/director-studio-ecosystem-v1.png";
+import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 import { useAppStore } from "@/platform/store/useAppStore";
 
 export function StartupSplash() {
@@ -50,7 +50,7 @@ export function StartupSplash() {
           src={splashArt}
           alt="Director Studio creative ecosystem"
           onLoad={() => setLoaded(true)}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-[center_72%]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/45" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
