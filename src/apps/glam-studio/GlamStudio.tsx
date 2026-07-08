@@ -61,6 +61,7 @@ import type {
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
+import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { buildProductFilmPlan, productFilmMarkdown, type ProductFilmPlan } from "@/apps/glam-studio/lib/productFilm";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
@@ -813,7 +814,7 @@ function ProjectPreview({
             {project.heroLoop.value}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={onGenerate} disabled={generating}>
+            <Button variant="gold" onClick={onGenerate} disabled={generating}>
               {generating ? <Loader2 className="animate-spin" /> : <Sparkles />} Generate hero
             </Button>
             <Button variant="secondary" onClick={onImprove}>
@@ -1278,7 +1279,7 @@ export function GlamStudio() {
             <Button variant="secondary" onClick={openAssets}>
               <Layers3 /> Assets
             </Button>
-            <Button onClick={() => setFlowOpen(true)}>
+            <Button variant="gold" onClick={() => setFlowOpen(true)}>
               <Wand2 /> New Glam Project
             </Button>
           </div>
@@ -1365,18 +1366,7 @@ export function GlamStudio() {
               downloadingFormat={downloadingFormat}
             />
           ) : (
-            <Card>
-              <CardContent className="flex min-h-96 flex-col items-center justify-center gap-3 text-center">
-                <Shirt className="h-10 w-10 text-primary" />
-                <div className="text-lg font-semibold">Build a luxury product campaign</div>
-                <p className="max-w-md text-sm text-muted">
-                  Product intake, Brand DNA, luxury look, campaign concept, hero prompt loop, and format pack deliverables.
-                </p>
-                <Button onClick={() => setFlowOpen(true)}>
-                  <Sparkles /> Start Glam Studio
-                </Button>
-              </CardContent>
-            </Card>
+            <CreativeEmptyState icon={<Shirt />} title="Build a luxury product campaign" description="Art-direct a complete visual world from product truth and Brand DNA—then carry it into heroes, social formats, and film." ideas={["Noir editorial", "Sculptural light", "Beauty macro", "15s product film"]} action="Create campaign" onAction={() => setFlowOpen(true)} />
           )}
         </main>
       </div>

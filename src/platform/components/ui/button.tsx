@@ -40,6 +40,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, ...props }, ref) => (
     <button
       ref={ref}
+      data-ui="button"
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />

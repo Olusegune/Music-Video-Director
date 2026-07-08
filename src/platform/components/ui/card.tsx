@@ -4,6 +4,7 @@ import { cn } from "@/platform/lib/utils";
 function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
+      data-ui="card"
       className={cn(
         "rounded-[var(--radius-card)] border border-border bg-surface text-foreground shadow-card",
         className

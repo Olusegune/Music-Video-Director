@@ -135,11 +135,11 @@ export function Sidebar() {
       {/* Grouped nav — reads as a director's production flow, top to bottom. */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         <NavGroup label="Director Studio apps">
-          <NavItem icon={<Music className="h-4 w-4" />} label="Music Video Director" active={view === "song" || view === "mvdirector"} onClick={openSong} />
-          <NavItem icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
-          <NavItem icon={<Sparkles className="h-4 w-4" />} label="Glam Studio" active={view === "glamstudio"} onClick={openGlamStudio} />
-          <NavItem icon={<Globe className="h-4 w-4" />} label="Web Studio" active={view === "webstudio"} onClick={openWebStudio} />
-          <NavItem icon={<Megaphone className="h-4 w-4" />} label="Campaign Studio" active={view === "campaignstudio"} onClick={openCampaignStudio} />
+          <NavItem tone="violet" icon={<Music className="h-4 w-4" />} label="Music Video Director" active={view === "song" || view === "mvdirector"} onClick={openSong} />
+          <NavItem tone="cyan" icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
+          <NavItem tone="gold" icon={<Sparkles className="h-4 w-4" />} label="Glam Studio" active={view === "glamstudio"} onClick={openGlamStudio} />
+          <NavItem tone="green" icon={<Globe className="h-4 w-4" />} label="Web Studio" active={view === "webstudio"} onClick={openWebStudio} />
+          <NavItem tone="pink" icon={<Megaphone className="h-4 w-4" />} label="Campaign Studio" active={view === "campaignstudio"} onClick={openCampaignStudio} />
         </NavGroup>
 
         <NavGroup label="Director Mode / Advanced">
@@ -256,26 +256,30 @@ function NavItem({
   label,
   active,
   onClick,
+  tone,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   onClick?: () => void;
+  tone?: "violet" | "cyan" | "gold" | "green" | "pink";
 }) {
+  const activeTone = { violet: "bg-violet-500/12 text-violet-400", cyan: "bg-cyan-500/12 text-cyan-400", gold: "bg-amber-500/12 text-amber-400", green: "bg-emerald-500/12 text-emerald-400", pink: "bg-fuchsia-500/12 text-fuchsia-400" };
+  const barTone = { violet: "bg-violet-400", cyan: "bg-cyan-400", gold: "bg-amber-400", green: "bg-emerald-400", pink: "bg-fuchsia-400" };
   return (
     <button
       onClick={onClick}
       className={cn(
         "group relative flex w-full items-center gap-2.5 rounded-[var(--radius-button)] px-2.5 py-1.5 text-sm transition-colors",
         active
-          ? "bg-primary/12 text-primary"
+          ? tone ? activeTone[tone] : "bg-primary/12 text-primary"
           : "text-muted hover:bg-elevated/60 hover:text-foreground"
       )}
     >
       {active && (
-        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+        <span className={cn("absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full", tone ? barTone[tone] : "bg-primary")} />
       )}
-      <span className={cn("shrink-0", active && "text-primary")}>{icon}</span>
+      <span className={cn("shrink-0", active && !tone && "text-primary")}>{icon}</span>
       <span className="truncate">{label}</span>
     </button>
   );

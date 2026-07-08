@@ -21,8 +21,9 @@ export function SummaryStep({
         {items.map((item) => (
           <div
             key={item.label}
-            className="rounded-md border border-border bg-elevated/40 p-3"
+            className="group relative overflow-hidden rounded-lg border border-border bg-elevated/40 p-3 pl-4 transition hover:border-primary/30"
           >
+            <span className="absolute inset-y-0 left-0 w-0.5 bg-success/70" />
             <dt className="text-xs text-muted">{item.label}</dt>
             <dd className="mt-1 text-sm font-medium">{item.value}</dd>
           </div>

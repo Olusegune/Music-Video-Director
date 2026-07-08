@@ -60,7 +60,7 @@ export default function App() {
 
       {/* CENTER — workspace. Keyed by dataVersion so an undo/redo restore
           remounts the active view and it re-reads the restored state. */}
-      <main key={dataVersion} className="flex min-w-0 flex-1 flex-col">
+      <main key={dataVersion} className={`studio-view studio-view-${view} flex min-w-0 flex-1 flex-col`}>
         {view === "song" && <SongStudio />}
         {view === "mvdirector" && <MvDirector />}
         {view === "magicoutput" && <MagicOutputScreen />}

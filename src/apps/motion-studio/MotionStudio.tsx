@@ -46,6 +46,7 @@ import {
 } from "./lib/projects";
 import { PRODUCTION_TYPES, VISUAL_STYLES, directionSummary, productionType, visualStyle } from "./lib/templates";
 import type { MotionProject, MotionProjectDraft, MotionScene } from "./lib/types";
+import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 
 const emptyDraft: MotionProjectDraft = {
   name: "New Product Motion Film",
@@ -234,7 +235,7 @@ export function MotionStudio() {
 
   return (
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-6">
-      <section className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-border bg-surface p-5 shadow-card">
+      <section className="module-hero flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-card">
         <div className="max-w-3xl">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="accent">Director Studio module</Badge>
@@ -354,7 +355,7 @@ export function MotionStudio() {
                   </Button>
                 ))}
               </div>
-              <Button className="w-full" onClick={handleCreateProject}>
+              <Button variant="gold" className="w-full" onClick={handleCreateProject}>
                 <Sparkles /> Generate storyboard
               </Button>
             </CardContent>
@@ -394,25 +395,7 @@ export function MotionStudio() {
 
         <div className="flex min-w-0 flex-col gap-5">
           {!activeProject ? (
-            <Card className="min-h-[460px]">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clapperboard className="size-4 text-primary" /> Motion Studio Workspace
-                </CardTitle>
-                <CardDescription>Create a Motion Studio project to open the functional workflow.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {["Choose Project Type", "Style / Creative Direction", "Script", "Storyboard", "Export Review"].map((label, index) => (
-                  <div key={label} className="rounded-lg border border-border bg-elevated p-4">
-                    <div className="mb-3 flex size-9 items-center justify-center rounded-md bg-primary/15 text-primary">
-                      {index + 1}
-                    </div>
-                    <div className="text-sm font-semibold">{label}</div>
-                    <p className="mt-1 text-xs leading-5 text-muted">Ready for a project generated from the Motion Studio source workflow.</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <CreativeEmptyState icon={<Clapperboard />} title="Direct motion before the first keyframe" description="Choose a format and visual language; Motion Studio will assemble a timed storyboard, camera plan, audio direction, and production prompts." ideas={["SaaS explainer", "Product reveal", "UI motion", "Social spot"]} action="Create storyboard" onAction={handleCreateProject} />
           ) : (
             <>
               <Card>

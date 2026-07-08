@@ -149,6 +149,8 @@ Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now tal
 
 ## Verification discipline
 
+Visual identity is platform-owned in `styles/globals.css`: `studio-view-*` classes set module accents while shared `Card`, `Button`, Guided Flow cards, and `CreativeEmptyState` consume the common interaction language. Modules may express personality through the accent and purpose-built previews, but should not fork spacing, component geometry, focus behavior, or semantic success/warning colors.
+
 The release-level frontend check is `npm run test:release`. `scripts/app-shell-smoke.mjs` verifies each first-class studio remains reachable through suite onboarding, the router, sidebar, Director's Home, and global search. Web coverage validates multi-page canonical/metadata compilation; Campaign coverage validates one ICS event per planned deliverable; Glam coverage validates the timed product-film treatment before the production build runs.
 
 Every change: `npx tsc --noEmit`, then live verification in the browser preview

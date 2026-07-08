@@ -34,7 +34,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/platform/components/ui/card";
-import splashArt from "@/assets/director-studio-splash.png";
+import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
   "SaaS Product",
@@ -155,11 +155,12 @@ export function Dashboard() {
             <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted">Creative studios</h2>
             <p className="mt-1 text-sm text-muted">Choose a focused workflow or orchestrate the whole launch.</p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StudioCard icon={<Boxes className="h-5 w-5" />} title="Motion Studio" desc="Build motion concepts, shots, and production-ready prompts." onClick={openMotionStudio} />
-            <StudioCard icon={<WandSparkles className="h-5 w-5" />} title="Glam Studio" desc="Create luxury campaign looks and exact-format hero assets." onClick={openGlamStudio} />
-            <StudioCard icon={<Globe className="h-5 w-5" />} title="Web Studio" desc="Plan, edit, audit, and export a responsive campaign site." onClick={openWebStudio} />
-            <StudioCard icon={<Megaphone className="h-5 w-5" />} title="Campaign Studio" desc="Orchestrate every channel from strategy through launch kit." onClick={openCampaignStudio} featured />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <StudioCard icon={<Music className="h-5 w-5" />} title="Music Video" desc="Turn songs into cinematic, beat-aware stories." capability="Song · Cast · Timeline" tone="violet" onClick={openSong} />
+            <StudioCard icon={<Boxes className="h-5 w-5" />} title="Motion Studio" desc="Build motion concepts, shots, and production prompts." capability="Boards · Motion · Audio" tone="cyan" onClick={openMotionStudio} />
+            <StudioCard icon={<WandSparkles className="h-5 w-5" />} title="Glam Studio" desc="Create luxury campaign looks and product films." capability="Looks · Heroes · Formats" tone="gold" onClick={openGlamStudio} />
+            <StudioCard icon={<Globe className="h-5 w-5" />} title="Web Studio" desc="Design and export a responsive campaign site." capability="Pages · Preview · SEO" tone="green" onClick={openWebStudio} />
+            <StudioCard icon={<Megaphone className="h-5 w-5" />} title="Campaign Studio" desc="Orchestrate every channel through launch." capability="Strategy · Plan · Calendar" tone="pink" onClick={openCampaignStudio} featured />
           </div>
         </section>
 
@@ -354,13 +355,12 @@ export function Dashboard() {
   );
 }
 
-function StudioCard({ icon, title, desc, onClick, featured = false }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void; featured?: boolean }) {
+function StudioCard({ icon, title, desc, capability, tone, onClick, featured = false }: { icon: React.ReactNode; title: string; desc: string; capability: string; tone: "violet" | "cyan" | "gold" | "green" | "pink"; onClick: () => void; featured?: boolean }) {
+  const tones = { violet: "from-violet-500/30 via-indigo-500/10", cyan: "from-cyan-400/30 via-blue-500/10", gold: "from-amber-400/30 via-orange-500/10", green: "from-emerald-400/30 via-teal-500/10", pink: "from-fuchsia-400/30 via-rose-500/10" };
   return (
-    <button onClick={onClick} className={`group rounded-[var(--radius-card)] border p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-card ${featured ? "border-[var(--color-gold)]/35 bg-[var(--color-gold)]/5" : "border-border bg-surface"}`}>
-      <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary transition group-hover:bg-primary/18">{icon}</span>
-      <span className="block text-sm font-semibold">{title}</span>
-      <span className="mt-1 block text-xs leading-relaxed text-muted">{desc}</span>
-      <span className="mt-4 block text-xs font-semibold text-primary">Open studio →</span>
+    <button onClick={onClick} className={`group overflow-hidden rounded-xl border text-left transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-card ${featured ? "border-[var(--color-gold)]/35" : "border-border"}`}>
+      <span className={`creative-preview block h-24 bg-gradient-to-br ${tones[tone]} to-background p-3`}><span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-white">{icon}</span><span className="absolute bottom-3 left-3 right-3 flex gap-1.5"><i className="h-1 flex-[1.4] rounded-full bg-white/35" /><i className="h-1 flex-1 rounded-full bg-white/15" /><i className="h-1 w-5 rounded-full bg-white/25" /></span></span>
+      <span className="block bg-surface p-3.5"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block min-h-9 text-xs leading-relaxed text-muted">{desc}</span><span className="mt-3 block text-[10px] font-medium uppercase tracking-wide text-muted">{capability}</span></span>
     </button>
   );
 }
