@@ -15,7 +15,6 @@ import {
   Check,
   Loader2,
   Trash2,
-  FileSearch,
 } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
@@ -41,6 +40,9 @@ import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Badge } from "@/platform/components/ui/badge";
+import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
+import { ModuleHeader } from "@/platform/components/visual";
+import { newPerformer, savePerformer } from "@/apps/music-video/lib/cast";
 
 const SAMPLE = `INT. RAIN-SOAKED ALLEY - NIGHT
 
@@ -71,6 +73,10 @@ Empty ships don't need guards.`;
 export function ScriptStudio() {
   const queryClient = useQueryClient();
   const openCharacters = useAppStore((s) => s.openCharacters);
+  const openCast = useAppStore((s) => s.openCast);
+  const studioMode = useAppStore((s) => s.studioMode);
+  const setStudioMode = useAppStore((s) => s.setStudioMode);
+  const activeSongId = useAppStore((s) => s.activeSongId);
 
   const [doc, setDoc] = useState<ScriptDoc>(() => loadScripts()[0] ?? newScript());
   const [recent, setRecent] = useState<ScriptDoc[]>(() => loadScripts());
@@ -150,6 +156,28 @@ export function ScriptStudio() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["characters"] }),
   });
 
+  const sendToCast = useMutation({
+    mutationFn: async (ec: ExtractedCharacter) => {
+      const character = extractedToCharacter(ec);
+      await api.saveCharacter(character);
+      const performer = newPerformer("Actor");
+      savePerformer({
+        ...performer,
+        name: ec.name,
+        role: "Actor",
+        characterId: character.id,
+        performanceNotes: ec.descriptionLine || `Imported from Script Studio: ${doc.title}`,
+        lipSync: false,
+      });
+      return ec.name;
+    },
+    onSuccess: (name) => {
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+      setNotice(`${name} was added to Character Bible and sent to Music Video Cast.`);
+      openCast();
+    },
+  });
+
   const addAll = useMutation({
     mutationFn: async (chars: ExtractedCharacter[]) => {
       const fresh = chars.filter((c) => !existingNames.has(c.name.toLowerCase()));
@@ -200,15 +228,33 @@ export function ScriptStudio() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-8 py-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <FileText className="h-5 w-5 shrink-0 text-primary" />
+      <ModuleHeader
+        module="platform"
+        icon={<FileText className="h-5 w-5" />}
+        title="Script Studio"
+        subtitle="Feeds your Bibles — used by all studios."
+        mode={studioMode}
+        onModeChange={setStudioMode}
+        primaryLabel="Import Script"
+        primaryIcon={<Upload className="h-4 w-4" />}
+        onPrimary={() => fileInput.current?.click()}
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-8 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <Input
             value={doc.title}
             onChange={(e) => setDoc({ ...doc, title: e.target.value })}
             aria-label="Script title"
             className="h-9 w-72 font-semibold"
           />
+          <div className="hidden items-center gap-2 text-[11px] text-muted md:flex">
+            <Badge variant="primary">Analyze</Badge>
+            <span>→</span>
+            <Badge>Bibles</Badge>
+            <span>→</span>
+            <Badge variant="accent">Available in every studio</Badge>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -246,7 +292,7 @@ export function ScriptStudio() {
             Analyze Script
           </Button>
         </div>
-      </header>
+      </div>
 
       {recent.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-8 py-2">
@@ -336,14 +382,22 @@ export function ScriptStudio() {
         {/* RIGHT — analysis */}
         <div className="min-h-0 overflow-y-auto p-6">
           {!a ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <FileSearch className="mb-3 h-8 w-8 text-muted" />
-              <p className="text-sm font-medium">No analysis yet</p>
-              <p className="mt-1 max-w-xs text-xs text-muted">
-                Import or paste a script, then hit{" "}
-                <span className="text-foreground">Analyze Script</span> to extract characters,
-                locations, props, scenes, and tone — all offline.
-              </p>
+            <div className="h-full">
+              <CreativeEmptyState
+                icon={<FileText />}
+                title="Turn script text into shared production DNA"
+                description="Import lyrics, a screenplay, or any scene notes. Script Studio extracts cast, locations, props, tone, and motifs into the shared Bibles that Music Video Director and every other studio can reuse."
+                action="Analyze this script"
+                onAction={analyze}
+              />
+              <div className="sr-only">
+                <p className="text-sm font-medium">No analysis yet</p>
+                <p className="mt-1 max-w-xs text-xs text-muted">
+                  Import or paste a script, then hit{" "}
+                  <span className="text-foreground">Analyze Script</span> to extract characters,
+                  locations, props, scenes, and tone — all offline.
+                </p>
+              </div>
             </div>
           ) : (
             <Analysis
@@ -352,15 +406,18 @@ export function ScriptStudio() {
               existingEnvNames={existingEnvNames}
               existingPropNames={existingPropNames}
               onAdd={(ec) => addCharacter.mutate(ec)}
+              onSendToCast={(ec) => sendToCast.mutate(ec)}
               onAddAll={() => addAll.mutate(a.characters)}
               onAddEnvironments={(items) => addEnvironments.mutate(items)}
               onAddProps={(items, category) => addProps.mutate({ items, category })}
               busy={
                 addCharacter.isPending ||
+                sendToCast.isPending ||
                 addAll.isPending ||
                 addEnvironments.isPending ||
                 addProps.isPending
               }
+              canSendToCast={Boolean(activeSongId)}
               onOpenBible={openCharacters}
             />
           )}
@@ -376,10 +433,12 @@ function Analysis({
   existingEnvNames,
   existingPropNames,
   onAdd,
+  onSendToCast,
   onAddAll,
   onAddEnvironments,
   onAddProps,
   busy,
+  canSendToCast,
   onOpenBible,
 }: {
   analysis: ScriptAnalysis;
@@ -387,10 +446,12 @@ function Analysis({
   existingEnvNames: Set<string>;
   existingPropNames: Set<string>;
   onAdd: (ec: ExtractedCharacter) => void;
+  onSendToCast: (ec: ExtractedCharacter) => void;
   onAddAll: () => void;
   onAddEnvironments: (items: ExtractedEntity[]) => void;
   onAddProps: (items: ExtractedEntity[], category: string) => void;
   busy: boolean;
+  canSendToCast: boolean;
   onOpenBible: () => void;
 }) {
   const remaining = analysis.characters.filter(
@@ -472,16 +533,30 @@ function Analysis({
                     </p>
                   )}
                 </div>
-                {!inBible && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => onAdd(c)}
-                    disabled={busy}
-                    className="shrink-0"
-                  >
-                    <Plus className="h-4 w-4" /> Add
-                  </Button>
+                {(!inBible || canSendToCast) && (
+                  <div className="flex shrink-0 flex-col gap-1.5">
+                    {!inBible && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => onAdd(c)}
+                        disabled={busy}
+                      >
+                        <Plus className="h-4 w-4" /> Add
+                      </Button>
+                    )}
+                    {canSendToCast && (
+                      <Button
+                        size="sm"
+                        variant={inBible ? "secondary" : "ghost"}
+                        onClick={() => onSendToCast(c)}
+                        disabled={busy}
+                        title="Add this character to the active Music Video cast"
+                      >
+                        <Users className="h-4 w-4" /> Send to Cast
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             );

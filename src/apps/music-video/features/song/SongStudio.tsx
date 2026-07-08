@@ -37,6 +37,7 @@ export function SongStudio() {
   const activeId = useAppStore((s) => s.activeSongId);
   const setActiveId = useAppStore((s) => s.setActiveSong);
   const openMvDirector = useAppStore((s) => s.openMvDirector);
+  const openScripts = useAppStore((s) => s.openScripts);
   const setMagicSongId = useAppStore((s) => s.setMagicSongId);
 
   const active = songs.find((s) => s.id === activeId) ?? null;
@@ -264,6 +265,7 @@ export function SongStudio() {
                 setActiveId(active.id);
                 openMvDirector();
               }}
+              onOpenScripts={openScripts}
             />
           )}
         </main>

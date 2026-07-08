@@ -179,6 +179,7 @@ function SongImportStep({ state, patch }: GuidedFlowStepComponentProps<MusicVide
 }
 
 function LyricsStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+  const openScripts = useAppStore((s) => s.openScripts);
   const parsed = state.lyrics.trim() ? parseScript(state.lyrics) : null;
   return (
     <div className="space-y-3">
@@ -200,6 +201,10 @@ function LyricsStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlo
         {state.lyrics.trim() ? (
           <Badge>{state.lyrics.trim().split(/\r?\n/).filter(Boolean).length} lines</Badge>
         ) : null}
+        <Button variant="secondary" size="sm" onClick={openScripts}>
+          <FileText className="h-3.5 w-3.5" />
+          Deep-analyze in Script Studio
+        </Button>
       </div>
       <Textarea
         value={state.lyrics}

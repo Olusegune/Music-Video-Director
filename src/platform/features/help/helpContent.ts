@@ -170,6 +170,31 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    id: "script-studio",
+    title: "Script Studio and the shared Bibles",
+    section: "Shared libraries & tools",
+    relatedViews: ["scripts", "characters", "world", "props", "cast"],
+    updatedAt,
+    keywords: "script studio lyrics screenplay bibles cast characters locations props music video",
+    action: { label: "Open Script Studio", view: "scripts" },
+    blocks: [
+      {
+        body: "Script Studio is the text-analysis workbench for Director Studio. It is not only a Music Video page: it turns lyrics, screenplays, scene notes, and campaign scripts into reusable production DNA.",
+      },
+      {
+        steps: [
+          "Paste or import a TXT, PDF, DOCX, Fountain, lyrics, or script file.",
+          "Run Analyze Script to extract characters, locations, props, vehicles, creatures, tone, scenes, and motifs.",
+          "Send extracted people to the Character Bible, and when a Music Video song is active, send them directly to Cast.",
+          "Reuse those Bibles from Music Video Director, Motion Studio, Glam Studio, Web Studio, and Campaign Studio.",
+        ],
+      },
+      {
+        tip: "Music files still start in Song Studio. Text that needs deeper character/world/prop analysis belongs in Script Studio.",
+      },
+    ],
+  },
+  {
     id: "music-video-templates",
     title: "Music Video Templates",
     section: "Shared libraries & tools",

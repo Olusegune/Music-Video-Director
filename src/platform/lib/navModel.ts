@@ -135,6 +135,7 @@ export const NAV_MODEL: NavSectionModel[] = [
       { id: "props", label: "Props & Vehicles", view: "props", icon: "package" },
       { id: "assets", label: "Asset Library", view: "assets", icon: "library" },
       { id: "brandkits", label: "Brand Kits", view: "brandkits", icon: "palette" },
+      { id: "scripts", label: "Script Studio", view: "scripts", icon: "file" },
     ],
   },
   {
@@ -142,7 +143,6 @@ export const NAV_MODEL: NavSectionModel[] = [
     label: "Tools",
     items: [
       { id: "dashboard", label: "Dashboard", view: "dashboard", icon: "dashboard" },
-      { id: "scripts", label: "Script Studio", view: "scripts", icon: "file" },
       { id: "export", label: "Export Center", view: "export", icon: "book" },
     ],
   },

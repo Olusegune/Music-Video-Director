@@ -13,6 +13,7 @@ function openView(view: View) {
     song: state.openSong,
     mvdirector: state.openMvDirector,
     templates: state.openTemplates,
+    scripts: state.openScripts,
     cast: state.openCast,
     choreography: state.openChoreography,
     timeline: state.openTimeline,

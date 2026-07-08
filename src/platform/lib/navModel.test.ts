@@ -62,4 +62,13 @@ describe("navigation model", () => {
     expect(topLevelViews).not.toContain("choreography");
     expect(topLevelViews).not.toContain("timeline");
   });
+
+  it("places Script Studio in Production Library, not Tools", () => {
+    const library = NAV_MODEL.find((section) => section.id === "library");
+    const tools = NAV_MODEL.find((section) => section.id === "tools");
+
+    expect(library?.items.map((item) => item.view)).toContain("scripts");
+    expect(tools?.items.map((item) => item.view)).not.toContain("scripts");
+    expect(VIEW_MODULE.scripts).toBeNull();
+  });
 });

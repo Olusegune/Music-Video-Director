@@ -17,6 +17,7 @@ import {
   Square,
   Repeat,
   Volume2,
+  FileText,
 } from "lucide-react";
 import {
   formatTime,
@@ -75,6 +76,7 @@ export function SongView({
   onReplace,
   onDirect,
   onOpenDirector,
+  onOpenScripts,
 }: {
   song: SongMap;
   onChange: (next: SongMap) => void;
@@ -83,6 +85,7 @@ export function SongView({
   onReplace: () => void;
   onDirect: () => void;
   onOpenDirector: () => void;
+  onOpenScripts: () => void;
 }) {
   const player = useAudioPlayer();
   const [selectedSectionId, setSelectedSectionId] = useState<string>(song.sections[0]?.id ?? "");
@@ -190,6 +193,15 @@ export function SongView({
           >
             <Clapperboard className="h-4 w-4" />
             Open Director
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenScripts}
+            title="Open Script Studio to extract characters, locations, props, and story cues into shared Bibles"
+          >
+            <FileText className="h-4 w-4" />
+            Deep-analyze script
           </Button>
           <Button
             variant="ghost"
