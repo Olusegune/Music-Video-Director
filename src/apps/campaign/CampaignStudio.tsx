@@ -4,13 +4,17 @@ import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/platform/components/ui/card";
 import { Textarea } from "@/platform/components/ui/textarea";
+import { Input } from "@/platform/components/ui/input";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna } from "@/platform/lib/brandDna";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
-import { deleteDeliverables, listDeliverables, saveDeliverable } from "@/platform/lib/deliverables";
+import { createDeliverable, deleteDeliverable, deleteDeliverables, listDeliverables, saveDeliverable } from "@/platform/lib/deliverables";
 import { setSeedContext, type SeedTarget } from "@/platform/lib/seedContext";
+import { api } from "@/platform/lib/ipc";
+import { loadRouterConfig, routeProvider } from "@/platform/lib/providers";
+import type { ProviderId } from "@/platform/lib/types";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -19,6 +23,9 @@ import { buildCampaignConcept, buildCampaignStrategy } from "@/apps/campaign/lib
 import { generatePlan, produceNativeCopy } from "@/apps/campaign/lib/planGenerator";
 import { buildCampaignMarkdown, buildPlanCsv, buildStrategyPdf } from "@/apps/campaign/lib/packageExport";
 import type { CampaignChannel, CampaignEffort, CampaignPlanItem, CampaignProject } from "@/apps/campaign/lib/types";
+import type { CampaignConcept, CampaignStrategy } from "@/apps/campaign/lib/types";
+import { CAMPAIGN_COPY_SCHEMA, CAMPAIGN_IDEA_SCHEMA, parseCampaignCopy, parseCampaignIdea } from "@/apps/campaign/lib/campaignAi";
+import { buildSeedContext } from "@/apps/campaign/lib/seed";
 
 interface CampaignFlowState {
   name: string;
@@ -30,11 +37,22 @@ interface CampaignFlowState {
   effort: CampaignEffort;
   brandName: string;
   brandTone: string;
+  strategy?: CampaignStrategy;
+  concept?: CampaignConcept;
 }
 
 const todayPlus = (days: number) => { const date = new Date(); date.setDate(date.getDate() + days); return date.toISOString().slice(0, 10); };
 const INITIAL: CampaignFlowState = { name: "New Launch Campaign", product: "", productDescription: "", goal: "Launch with clarity and convert early interest", audience: "", launchDate: todayPlus(30), effort: "small", brandName: "", brandTone: "confident, specific, human" };
 const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "campaign";
+
+async function generateStructured(prompt: string, schema: string) {
+  const config = loadRouterConfig();
+  if (config.mode === "local") return null;
+  const statuses = await api.getProviderKeyStatuses();
+  const configured = new Set<ProviderId>(statuses.filter((status) => status.configured).map((status) => status.provider));
+  const provider = routeProvider("text", config, configured);
+  return provider === "gemini" ? api.generateStructuredText(provider, prompt, schema) : null;
+}
 
 function ProductStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlowState>) {
   return <IntakeFormStep value={{ name: state.name, product: state.product, productDescription: state.productDescription, brandName: state.brandName, brandTone: state.brandTone }} onChange={(next) => patch({ name: next.name ?? "", product: next.product ?? "", productDescription: next.productDescription ?? "", brandName: next.brandName ?? "", brandTone: next.brandTone ?? "" })} fields={[
@@ -54,10 +72,13 @@ function AudienceStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlo
   return <IntakeFormStep value={{ audience: state.audience }} onChange={(next) => patch({ audience: next.audience ?? "" })} fields={[{ id: "audience", label: "Primary audience", type: "textarea", placeholder: "Who needs to care, and what tension are they feeling now?" }]} />;
 }
 
-function IdeaStep({ state }: GuidedFlowStepComponentProps<CampaignFlowState>) {
-  const strategy = buildCampaignStrategy(state.product || "The product", state.productDescription, state.audience || "the primary audience", state.goal);
-  const concept = buildCampaignConcept(state.product || "The product", strategy);
-  return <div className="grid gap-3 md:grid-cols-2"><Card><CardHeader><CardTitle>{concept.bigIdea}</CardTitle><CardDescription>Campaign idea</CardDescription></CardHeader><CardContent><p className="text-xl font-semibold">{concept.tagline}</p><p className="mt-3 text-sm text-muted">{concept.visualWorld}</p></CardContent></Card><Card><CardHeader><CardTitle>Message system</CardTitle></CardHeader><CardContent className="space-y-2">{strategy.pillars.map((pillar) => <div key={pillar} className="rounded-md bg-elevated p-3 text-sm">{pillar}</div>)}</CardContent></Card></div>;
+function IdeaStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlowState>) {
+  const strategy = state.strategy ?? buildCampaignStrategy(state.product || "The product", state.productDescription, state.audience || "the primary audience", state.goal);
+  const concept = state.concept ?? buildCampaignConcept(state.product || "The product", strategy);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const draft = async () => { setBusy(true); setNote(""); try { const raw = await generateStructured(`Act as a senior integrated campaign strategist. Product: ${state.product}. Description: ${state.productDescription}. Audience: ${state.audience}. Goal: ${state.goal}. Brand voice: ${state.brandTone}. Create one specific strategy and one ownable campaign concept. Do not invent statistics or testimonials.`, CAMPAIGN_IDEA_SCHEMA); if (!raw) { patch({ strategy, concept }); setNote("Local campaign strategy ready."); } else { const parsed = parseCampaignIdea(raw); patch(parsed); setNote("Studio campaign strategy passed schema validation."); } } catch (error) { setNote(error instanceof Error ? `${error.message} Keeping the local strategy.` : "Keeping the local strategy."); } finally { setBusy(false); } };
+  return <div className="space-y-3"><div className="flex justify-end"><Button variant="secondary" onClick={draft} disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Sparkles />} Draft campaign platform</Button></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-3 md:grid-cols-2"><Card><CardHeader><CardTitle>{concept.bigIdea}</CardTitle><CardDescription>Campaign idea</CardDescription></CardHeader><CardContent><p className="text-xl font-semibold">{concept.tagline}</p><p className="mt-3 text-sm text-muted">{concept.visualWorld}</p></CardContent></Card><Card><CardHeader><CardTitle>Message system</CardTitle></CardHeader><CardContent className="space-y-2">{strategy.pillars.map((pillar) => <div key={pillar} className="rounded-md bg-elevated p-3 text-sm">{pillar}</div>)}</CardContent></Card></div></div>;
 }
 
 function AssetsStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlowState>) {
@@ -79,8 +100,8 @@ function LaunchKitStep({ state }: GuidedFlowStepComponentProps<CampaignFlowState
 
 function createCampaign(state: CampaignFlowState): CampaignProject {
   const id = crypto.randomUUID();
-  const strategy = buildCampaignStrategy(state.product, state.productDescription, state.audience, state.goal);
-  const concept = buildCampaignConcept(state.product, strategy);
+  const strategy = state.strategy ?? buildCampaignStrategy(state.product, state.productDescription, state.audience, state.goal);
+  const concept = state.concept ?? buildCampaignConcept(state.product, strategy);
   const brand = createBrandDna({ name: state.brandName || `${state.product} Brand`, tone: state.brandTone, productLine: state.product, tagline: concept.tagline, palette: concept.palette });
   const now = new Date().toISOString();
   return saveCampaign({ id, name: state.name || `${state.product} Launch`, product: state.product, productDescription: state.productDescription, goal: state.goal, audience: state.audience, launchDate: state.launchDate, effort: state.effort, brand, strategy, concept, plan: generatePlan(id, strategy, state.effort), createdAt: now, updatedAt: now });
@@ -96,22 +117,46 @@ function CampaignWorkbench({ project, onChange }: { project: CampaignProject; on
   const { studioMode, openGlamStudio, openWebStudio, openMotionStudio } = useAppStore();
   const [note, setNote] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [busyCopyId, setBusyCopyId] = useState("");
   const deliverables = listDeliverables({ projectId: project.id });
   const statusFor = (item: CampaignPlanItem) => deliverables.find((deliverable) => deliverable.id === item.deliverableId)?.status ?? "planned";
   const persist = (next: CampaignProject) => onChange(saveCampaign(next));
-  const produce = (item: CampaignPlanItem) => {
+  const produce = async (item: CampaignPlanItem) => {
     if (item.channel !== "social" && item.channel !== "email") return;
-    const content = produceNativeCopy(item.title, item.channel, project.product, project.concept.tagline, project.strategy);
+    setBusyCopyId(item.id);
+    let content = produceNativeCopy(item.title, item.channel, project.product, project.concept.tagline, project.strategy);
+    try {
+      const raw = await generateStructured(`Write the finished ${item.channel} asset “${item.title}” for ${project.product}. Strategy: ${JSON.stringify(project.strategy)}. Campaign concept: ${JSON.stringify(project.concept)}. Brand voice: ${project.brand.voice.tone}. Never invent statistics, reviews, or scarcity.`, CAMPAIGN_COPY_SCHEMA);
+      if (raw) content = parseCampaignCopy(raw);
+    } catch (error) {
+      setNote(error instanceof Error ? `${error.message} Used local campaign copy.` : "Used local campaign copy.");
+    }
     persist({ ...project, plan: project.plan.map((candidate) => candidate.id === item.id ? { ...candidate, content } : candidate) });
     const deliverable = deliverables.find((candidate) => candidate.id === item.deliverableId);
     if (deliverable) saveDeliverable({ ...deliverable, status: "approved", assetRefs: [`campaign-copy:${item.id}`] });
     setNote(`${item.title} produced and approved.`);
+    setBusyCopyId("");
   };
   const handoff = (item: CampaignPlanItem, target: SeedTarget) => {
-    setSeedContext(target, { campaignId: project.id, campaignName: project.name, sourceDeliverableId: item.deliverableId, brandDnaId: project.brand.id, product: project.product, goal: project.goal, audience: project.audience, messaging: { promise: project.strategy.keyMessage, pillars: project.strategy.pillars, tagline: project.concept.tagline }, lookId: "noir-editorial" });
+    setSeedContext(target, buildSeedContext(project, item));
     const deliverable = deliverables.find((candidate) => candidate.id === item.deliverableId);
     if (deliverable) saveDeliverable({ ...deliverable, status: "generating" });
     if (target === "glamstudio") openGlamStudio(); else if (target === "webstudio") openWebStudio(); else openMotionStudio();
+  };
+  const updatePlanItem = (id: string, patch: Partial<CampaignPlanItem>) => {
+    const current = project.plan.find((item) => item.id === id);
+    if (!current) return;
+    persist({ ...project, plan: project.plan.map((item) => item.id === id ? { ...item, ...patch } : item) });
+    const deliverable = deliverables.find((item) => item.id === current.deliverableId);
+    if (deliverable && patch.title) saveDeliverable({ ...deliverable, title: patch.title });
+  };
+  const addPlanItem = () => {
+    const deliverable = createDeliverable({ moduleId: "campaignstudio", projectId: project.id, kind: "social", format: "social-copy", status: "planned", title: "New campaign deliverable", assetRefs: [] });
+    persist({ ...project, plan: [...project.plan, { id: crypto.randomUUID(), deliverableId: deliverable.id, title: deliverable.title, channel: "social", ownerModule: "campaignstudio", dueOffset: 0, brief: project.strategy.keyMessage }] });
+  };
+  const removePlanItem = (item: CampaignPlanItem) => {
+    deleteDeliverable(item.deliverableId);
+    persist({ ...project, plan: project.plan.filter((candidate) => candidate.id !== item.id) });
   };
   const exportPackage = async () => {
     setExporting(true);
@@ -132,7 +177,15 @@ function CampaignWorkbench({ project, onChange }: { project: CampaignProject; on
     } finally { setExporting(false); }
   };
   const sorted = [...project.plan].sort((left, right) => left.dueOffset - right.dueOffset);
-  return <div className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">{project.name}</h2><p className="text-sm text-muted">{project.concept.bigIdea} · {project.concept.tagline}</p></div><Button onClick={exportPackage} disabled={exporting}>{exporting ? <Loader2 className="animate-spin" /> : <Download />} Export Launch Kit</Button></div>{note ? <p className="text-xs text-muted">{note}</p> : null}<div className="grid gap-4 lg:grid-cols-2"><Card><CardHeader><CardTitle>Campaign Strategy</CardTitle><CardDescription>{project.strategy.positioning}</CardDescription></CardHeader><CardContent className="space-y-2">{project.strategy.pillars.map((pillar) => <div key={pillar} className="rounded-md bg-elevated p-3 text-sm">{pillar}</div>)}</CardContent></Card><Card><CardHeader><CardTitle>{project.concept.bigIdea}</CardTitle><CardDescription>Creative platform</CardDescription></CardHeader><CardContent><p className="text-2xl font-semibold">{project.concept.tagline}</p><p className="mt-3 text-sm text-muted">{project.concept.visualWorld}</p></CardContent></Card></div>{studioMode !== "director" ? <Card><CardHeader><CardTitle>Strategy Editor</CardTitle><CardDescription>Changes propagate into handoff seeds and package exports.</CardDescription></CardHeader><CardContent className="space-y-2"><Textarea value={project.strategy.positioning} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, positioning: event.target.value } })} /><Textarea value={project.strategy.keyMessage} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, keyMessage: event.target.value } })} /></CardContent></Card> : null}<div><div className="mb-3 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><h3 className="font-semibold">Deliverables & Launch Sequence</h3><Badge>{project.plan.length} items</Badge></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{sorted.map((item) => { const status = statusFor(item); return <Card key={item.id}><CardHeader><div className="flex items-center justify-between"><Badge>{CHANNEL_META[item.channel].label}</Badge><Badge variant={status === "approved" ? "success" : "default"}>{status}</Badge></div><CardTitle className="mt-2 flex items-center gap-2">{CHANNEL_META[item.channel].icon}{item.title}</CardTitle><CardDescription>{dueDate(project.launchDate, item.dueOffset)} · {item.dueOffset >= 0 ? "+" : ""}{item.dueOffset} days</CardDescription></CardHeader><CardContent className="space-y-3"><p className="line-clamp-3 text-xs text-muted">{item.content || item.brief}</p>{item.channel === "social" || item.channel === "email" ? <Button className="w-full" variant={item.content ? "success" : "primary"} onClick={() => produce(item)}>{item.content ? <BadgeCheck /> : <Sparkles />}{item.content ? "Produced" : "Produce Copy"}</Button> : item.channel === "glam" ? <Button className="w-full" onClick={() => handoff(item, "glamstudio")}><Send /> Produce in Glam</Button> : item.channel === "web" ? <Button className="w-full" onClick={() => handoff(item, "webstudio")}><Send /> Produce in Web</Button> : <Button className="w-full" variant="secondary" onClick={() => handoff(item, "motionstudio")}><Send /> Open Motion</Button>}</CardContent></Card>; })}</div></div></div>;
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">{project.name}</h2><p className="text-sm text-muted">{project.concept.bigIdea} · {project.concept.tagline}</p></div><Button onClick={exportPackage} disabled={exporting}>{exporting ? <Loader2 className="animate-spin" /> : <Download />} Export Launch Kit</Button></div>
+      {note ? <p className="text-xs text-muted">{note}</p> : null}
+      <div className="grid gap-4 lg:grid-cols-2"><Card><CardHeader><CardTitle>Campaign Strategy</CardTitle><CardDescription>{project.strategy.positioning}</CardDescription></CardHeader><CardContent className="space-y-2">{project.strategy.pillars.map((pillar) => <div key={pillar} className="rounded-md bg-elevated p-3 text-sm">{pillar}</div>)}</CardContent></Card><Card><CardHeader><CardTitle>{project.concept.bigIdea}</CardTitle><CardDescription>Creative platform</CardDescription></CardHeader><CardContent><p className="text-2xl font-semibold">{project.concept.tagline}</p><p className="mt-3 text-sm text-muted">{project.concept.visualWorld}</p></CardContent></Card></div>
+      {studioMode !== "director" ? <Card><CardHeader><CardTitle>Strategy & Plan Editor</CardTitle><CardDescription>Changes propagate into handoff seeds and package exports.</CardDescription></CardHeader><CardContent className="space-y-2"><Textarea value={project.strategy.positioning} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, positioning: event.target.value } })} /><Textarea value={project.strategy.keyMessage} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, keyMessage: event.target.value } })} /><Button variant="secondary" onClick={addPlanItem}><Plus /> Add Deliverable</Button></CardContent></Card> : null}
+      <div><div className="mb-3 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><h3 className="font-semibold">Deliverables & Launch Sequence</h3><Badge>{project.plan.length} items</Badge></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{sorted.map((item) => { const status = statusFor(item); return <Card key={item.id}><CardHeader><div className="flex items-center justify-between"><Badge>{CHANNEL_META[item.channel].label}</Badge><Badge variant={status === "approved" ? "success" : "default"}>{status}</Badge></div>{studioMode !== "director" ? <div className="space-y-2"><Input value={item.title} onChange={(event) => updatePlanItem(item.id, { title: event.target.value })} aria-label="Deliverable title" /><div className="flex gap-2"><Input type="number" value={item.dueOffset} onChange={(event) => updatePlanItem(item.id, { dueOffset: Number(event.target.value) })} aria-label="Due offset days" /><Button size="icon" variant="danger" onClick={() => removePlanItem(item)}><Trash2 /></Button></div></div> : <CardTitle className="mt-2 flex items-center gap-2">{CHANNEL_META[item.channel].icon}{item.title}</CardTitle>}<CardDescription>{dueDate(project.launchDate, item.dueOffset)} · {item.dueOffset >= 0 ? "+" : ""}{item.dueOffset} days</CardDescription></CardHeader><CardContent className="space-y-3"><p className="line-clamp-3 text-xs text-muted">{item.content || item.brief}</p>{item.channel === "social" || item.channel === "email" ? <Button className="w-full" variant={item.content ? "success" : "primary"} disabled={busyCopyId === item.id} onClick={() => produce(item)}>{busyCopyId === item.id ? <Loader2 className="animate-spin" /> : item.content ? <BadgeCheck /> : <Sparkles />}{item.content ? "Produced" : "Produce Copy"}</Button> : item.channel === "glam" ? <Button className="w-full" onClick={() => handoff(item, "glamstudio")}><Send /> Produce in Glam</Button> : item.channel === "web" ? <Button className="w-full" onClick={() => handoff(item, "webstudio")}><Send /> Produce in Web</Button> : <Button className="w-full" variant="secondary" onClick={() => handoff(item, "motionstudio")}><Send /> Open Motion</Button>}</CardContent></Card>; })}</div></div>
+    </div>
+  );
 }
 
 export function CampaignStudio() {

@@ -124,6 +124,8 @@ Provider-backed Web copy crosses the IPC boundary through `generate_structured_t
 
 Campaign Studio owns strategy, orchestration, native social/email copy, and package assembly—not specialist image, web, or motion generation. `SeedContext` is the only Campaign-to-specialist coupling surface. It carries Brand DNA, messaging, product/audience context, campaign/source-deliverable IDs, and an optional Look; Glam/Web consume it without importing Campaign code. The deliverable registry remains the shared status source of truth.
 
+Campaign provider output follows the same trust boundary as Web: the generic native `generate_structured_text` command returns JSON text, while `apps/campaign/lib/campaignAi.ts` validates the complete strategy/concept or copy schema before state changes. `apps/campaign/lib/seed.ts` is the pure Campaign-to-SeedContext adapter and is covered by the export smoke fixture.
+
 `scripts/campaign-export-smoke.ts` verifies the smallest plan still has at least eight deliverables across at least three channels, then validates strategy PDF, plan CSV, and ZIP signatures. Run it with `npm run test:campaign-export`.
 
 ### Motion Studio (app-specific)

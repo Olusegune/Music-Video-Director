@@ -75,3 +75,7 @@ export function deleteDeliverables(filter: Partial<Pick<Deliverable, "moduleId" 
   );
   writeDeliverables(retained);
 }
+
+export function deleteDeliverable(id: string) {
+  writeDeliverables(readDeliverables().filter((deliverable) => deliverable.id !== id));
+}

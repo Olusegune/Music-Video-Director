@@ -3,6 +3,8 @@ import { planBlueprint } from "../src/apps/campaign/lib/planGenerator";
 import { buildCampaignConcept, buildCampaignStrategy } from "../src/apps/campaign/lib/strategy";
 import { buildCampaignMarkdown, buildPlanCsv, buildStrategyPdf } from "../src/apps/campaign/lib/packageExport";
 import type { CampaignProject } from "../src/apps/campaign/lib/types";
+import { parseCampaignCopy, parseCampaignIdea } from "../src/apps/campaign/lib/campaignAi";
+import { buildSeedContext } from "../src/apps/campaign/lib/seed";
 
 const strategy = buildCampaignStrategy("Aura", "a refillable premium lip oil", "design-conscious beauty buyers", "Launch and convert early demand");
 const concept = buildCampaignConcept("Aura", strategy);
@@ -15,6 +17,11 @@ const project: CampaignProject = {
   plan: blueprint.map((item, index) => ({ id: `item-${index}`, deliverableId: `delivery-${index}`, title: item.title, channel: item.channel, ownerModule: item.owner, dueOffset: item.offset, brief: strategy.keyMessage })),
   createdAt: "2026-07-07T00:00:00.000Z", updatedAt: "2026-07-07T00:00:00.000Z",
 };
+const parsedIdea = parseCampaignIdea(JSON.stringify({ strategy, concept }));
+const parsedCopy = parseCampaignCopy(JSON.stringify({ content: "A complete on-message launch asset with a clear customer next step." }));
+const seed = buildSeedContext(project, project.plan[0]);
+if (parsedIdea.strategy.pillars.length < 3 || parsedCopy.length < 20) throw new Error("Campaign AI schema validation smoke failed.");
+if (seed.campaignId !== project.id || seed.sourceDeliverableId !== project.plan[0].deliverableId || seed.messaging.pillars.length < 3) throw new Error("SeedContext propagation smoke failed.");
 const pdf = buildStrategyPdf(project);
 const csv = buildPlanCsv(project);
 const markdown = buildCampaignMarkdown(project);
@@ -24,4 +31,4 @@ const encoder = new TextEncoder();
 const zip = buildZip([{ name: "strategy/strategy.pdf", bytes: pdf }, { name: "plan/deliverables.csv", bytes: encoder.encode(csv) }, { name: "strategy/campaign-plan.md", bytes: encoder.encode(markdown) }]);
 const bytes = new Uint8Array(await zip.arrayBuffer());
 if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error("Campaign ZIP signature is invalid.");
-console.log(JSON.stringify({ ok: true, deliverables: blueprint.length, channels: new Set(blueprint.map((item) => item.channel)).size, pdfBytes: pdf.length, zipBytes: bytes.length }));
+console.log(JSON.stringify({ ok: true, deliverables: blueprint.length, channels: new Set(blueprint.map((item) => item.channel)).size, seedTargetReady: true, schemaValidated: true, pdfBytes: pdf.length, zipBytes: bytes.length }));
