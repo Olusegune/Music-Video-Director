@@ -44,6 +44,9 @@ export function GlobalSearch() {
   const setActiveSong = useAppStore((s) => s.setActiveSong);
   const openSong = useAppStore((s) => s.openSong);
   const openMvDirector = useAppStore((s) => s.openMvDirector);
+  const openCast = useAppStore((s) => s.openCast);
+  const openChoreography = useAppStore((s) => s.openChoreography);
+  const openTimeline = useAppStore((s) => s.openTimeline);
   const openCharacters = useAppStore((s) => s.openCharacters);
   const openWorld = useAppStore((s) => s.openWorld);
   const openProps = useAppStore((s) => s.openProps);
@@ -126,6 +129,43 @@ export function GlobalSearch() {
         label: "Campaign Studio",
         sub: "Cross-channel launch orchestration",
         go: openCampaignStudio,
+      }
+    );
+    hits.push(
+      {
+        type: "Music Video",
+        icon: <Music className="h-4 w-4" />,
+        label: "Music Video · Song Studio",
+        sub: "Import and map a track",
+        go: openSong,
+      },
+      {
+        type: "Music Video",
+        icon: <Clapperboard className="h-4 w-4" />,
+        label: "Music Video · Direct",
+        sub: "Shot list, treatment, and direction",
+        go: openMvDirector,
+      },
+      {
+        type: "Music Video",
+        icon: <Users className="h-4 w-4" />,
+        label: "Music Video · Cast",
+        sub: "Performers and roles",
+        go: openCast,
+      },
+      {
+        type: "Music Video",
+        icon: <Sparkles className="h-4 w-4" />,
+        label: "Music Video · Choreography",
+        sub: "Movement, blocking, and energy",
+        go: openChoreography,
+      },
+      {
+        type: "Music Video",
+        icon: <Film className="h-4 w-4" />,
+        label: "Music Video · Timeline",
+        sub: "Timed shots and render handoff",
+        go: openTimeline,
       }
     );
     const songs = loadSongs();
@@ -214,6 +254,9 @@ export function GlobalSearch() {
     setActiveSong,
     openSong,
     openMvDirector,
+    openCast,
+    openChoreography,
+    openTimeline,
     openCharacters,
     openWorld,
     openProps,

@@ -142,7 +142,7 @@ interface AppState {
 const initialSongId = getActiveSongId();
 
 export const useAppStore = create<AppState>((set) => ({
-  view: "song",
+  view: "dashboard",
   activeProjectId: null,
   activeSongId: initialSongId,
   activeTemplateId: templateForSong(initialSongId),
