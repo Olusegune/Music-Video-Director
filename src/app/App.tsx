@@ -40,6 +40,7 @@ import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
 import { installUndo } from "@/platform/lib/undo";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { installMusicVideoBindings } from "@/apps/music-video/musicVideoBindings";
+import { hydrateStartupStores, markAppShellMounted } from "@/platform/lib/startupReadiness";
 
 installMusicVideoBindings();
 
@@ -51,6 +52,8 @@ export default function App() {
   useGlobalShortcuts();
   useEffect(() => {
     installUndo();
+    hydrateStartupStores();
+    markAppShellMounted();
   }, []);
 
   return (
