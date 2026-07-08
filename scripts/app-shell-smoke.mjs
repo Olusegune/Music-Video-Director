@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const app = read("src/app/App.tsx");
+const navModel = read("src/platform/lib/navModel.ts");
 const sidebar = read("src/platform/components/layout/Sidebar.tsx");
 const dashboard = read("src/platform/features/dashboard/Dashboard.tsx");
 const search = read("src/platform/features/search/GlobalSearch.tsx");
@@ -17,8 +18,10 @@ const studios = [
 
 for (const [view, label, action] of studios) {
   if (!app.includes(`view === "${view}"`)) throw new Error(`${label} missing from App routing`);
-  if (!sidebar.includes(`label="${label}"`) || !sidebar.includes(`onClick={${action}}`))
-    throw new Error(`${label} missing from Sidebar`);
+  if (!navModel.includes(`label: "${label}"`) || !navModel.includes(`view: "${view}"`))
+    throw new Error(`${label} missing from nav model`);
+  if (!sidebar.includes("NAV_MODEL") || !sidebar.includes("moduleForView"))
+    throw new Error("Sidebar is not rendering the navigation model");
   if (!dashboard.includes(`title="${label}"`) || !dashboard.includes(`onClick={${action}}`))
     throw new Error(`${label} missing from Dashboard`);
   if (!search.includes(`label: "${label}"`) || !search.includes(`go: ${action}`))
