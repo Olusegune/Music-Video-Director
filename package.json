@@ -9,8 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "test:web-export": "esbuild scripts/web-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/web-export-smoke.mjs && node C:/tmp/web-export-smoke.mjs",
     "test:campaign-export": "esbuild scripts/campaign-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/campaign-export-smoke.mjs && node C:/tmp/campaign-export-smoke.mjs",
+    "test:glam-film": "esbuild scripts/glam-film-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/glam-film-smoke.mjs && node C:/tmp/glam-film-smoke.mjs",
     "test:app-shell": "node scripts/app-shell-smoke.mjs",
-    "test:release": "npm run test:app-shell && npm run test:web-export && npm run test:campaign-export && npm run build",
+    "test:release": "npm run test:app-shell && npm run test:web-export && npm run test:campaign-export && npm run test:glam-film && npm run build",
     "preview": "vite preview",
     "tauri": "tauri"
   },

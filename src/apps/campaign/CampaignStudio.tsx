@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BadgeCheck, CalendarDays, Download, Globe2, Image, Loader2, Mail, Megaphone, Plus, Send, Sparkles, Trash2, Video } from "lucide-react";
+import { BadgeCheck, CalendarDays, CalendarPlus, Download, Globe2, Image, Loader2, Mail, Megaphone, Plus, Send, Sparkles, Trash2, Video } from "lucide-react";
 import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/platform/components/ui/card";
@@ -26,6 +26,7 @@ import type { CampaignChannel, CampaignEffort, CampaignPlanItem, CampaignProject
 import type { CampaignConcept, CampaignStrategy } from "@/apps/campaign/lib/types";
 import { CAMPAIGN_COPY_SCHEMA, CAMPAIGN_IDEA_SCHEMA, parseCampaignCopy, parseCampaignIdea } from "@/apps/campaign/lib/campaignAi";
 import { buildSeedContext } from "@/apps/campaign/lib/seed";
+import { buildCampaignIcs, groupPlanByDate } from "@/apps/campaign/lib/calendar";
 
 interface CampaignFlowState {
   name: string;
@@ -169,6 +170,7 @@ function CampaignWorkbench({ project, onChange }: { project: CampaignProject; on
         { name: "strategy/campaign-plan.md", bytes: encoder.encode(buildCampaignMarkdown(project)) },
         { name: "plan/deliverables.csv", bytes: encoder.encode(buildPlanCsv(project)) },
         { name: "plan/registry.json", bytes: encoder.encode(JSON.stringify(deliverables, null, 2)) },
+        { name: "plan/campaign-calendar.ics", bytes: encoder.encode(buildCampaignIcs(project)) },
         { name: "production/pending-prompts.md", bytes: encoder.encode(pending || "All planned copy is produced.") },
         ...native.map((item) => ({ name: `${item.channel}/${slug(item.title)}.txt`, bytes: encoder.encode(item.content ?? "") })),
       ];
@@ -176,13 +178,19 @@ function CampaignWorkbench({ project, onChange }: { project: CampaignProject; on
       setNote(`Launch kit exported with ${entries.length} files.`);
     } finally { setExporting(false); }
   };
+  const exportCalendar = () => {
+    downloadBlob(new Blob([buildCampaignIcs(project)], { type: "text/calendar;charset=utf-8" }), `${slug(project.name)}-calendar.ics`);
+    setNote("Campaign calendar exported for Apple Calendar, Outlook, or Google Calendar.");
+  };
   const sorted = [...project.plan].sort((left, right) => left.dueOffset - right.dueOffset);
+  const calendar = groupPlanByDate(project);
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">{project.name}</h2><p className="text-sm text-muted">{project.concept.bigIdea} · {project.concept.tagline}</p></div><Button onClick={exportPackage} disabled={exporting}>{exporting ? <Loader2 className="animate-spin" /> : <Download />} Export Launch Kit</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">{project.name}</h2><p className="text-sm text-muted">{project.concept.bigIdea} · {project.concept.tagline}</p></div><div className="flex gap-2"><Button variant="secondary" onClick={exportCalendar}><CalendarPlus /> Export Calendar</Button><Button onClick={exportPackage} disabled={exporting}>{exporting ? <Loader2 className="animate-spin" /> : <Download />} Export Launch Kit</Button></div></div>
       {note ? <p className="text-xs text-muted">{note}</p> : null}
       <div className="grid gap-4 lg:grid-cols-2"><Card><CardHeader><CardTitle>Campaign Strategy</CardTitle><CardDescription>{project.strategy.positioning}</CardDescription></CardHeader><CardContent className="space-y-2">{project.strategy.pillars.map((pillar) => <div key={pillar} className="rounded-md bg-elevated p-3 text-sm">{pillar}</div>)}</CardContent></Card><Card><CardHeader><CardTitle>{project.concept.bigIdea}</CardTitle><CardDescription>Creative platform</CardDescription></CardHeader><CardContent><p className="text-2xl font-semibold">{project.concept.tagline}</p><p className="mt-3 text-sm text-muted">{project.concept.visualWorld}</p></CardContent></Card></div>
       {studioMode !== "director" ? <Card><CardHeader><CardTitle>Strategy & Plan Editor</CardTitle><CardDescription>Changes propagate into handoff seeds and package exports.</CardDescription></CardHeader><CardContent className="space-y-2"><Textarea value={project.strategy.positioning} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, positioning: event.target.value } })} /><Textarea value={project.strategy.keyMessage} onChange={(event) => persist({ ...project, strategy: { ...project.strategy, keyMessage: event.target.value } })} /><Button variant="secondary" onClick={addPlanItem}><Plus /> Add Deliverable</Button></CardContent></Card> : null}
+      <Card><CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /> Campaign Calendar</CardTitle><CardDescription>Every date stays synchronized with the production plan.</CardDescription></div><Badge>{project.launchDate} launch</Badge></div></CardHeader><CardContent><div className="flex gap-3 overflow-x-auto pb-2">{calendar.map((group) => <div key={group.date.toISOString()} className={cn("w-44 shrink-0 rounded-lg border p-3", group.date.toISOString().slice(0, 10) === project.launchDate ? "border-primary bg-primary/10" : "border-border bg-elevated/35")}><p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{group.date.toLocaleDateString(undefined, { weekday: "short" })}</p><p className="text-sm font-semibold">{group.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p><div className="mt-3 space-y-2">{group.items.map((item) => <div key={item.id} className="rounded-md border border-border bg-surface p-2"><div className="flex items-center gap-1.5 text-[10px] uppercase text-muted">{CHANNEL_META[item.channel].icon}{CHANNEL_META[item.channel].label}</div><p className="mt-1 text-xs font-medium leading-snug">{item.title}</p></div>)}</div></div>)}</div></CardContent></Card>
       <div><div className="mb-3 flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary" /><h3 className="font-semibold">Deliverables & Launch Sequence</h3><Badge>{project.plan.length} items</Badge></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{sorted.map((item) => { const status = statusFor(item); return <Card key={item.id}><CardHeader><div className="flex items-center justify-between"><Badge>{CHANNEL_META[item.channel].label}</Badge><Badge variant={status === "approved" ? "success" : "default"}>{status}</Badge></div>{studioMode !== "director" ? <div className="space-y-2"><Input value={item.title} onChange={(event) => updatePlanItem(item.id, { title: event.target.value })} aria-label="Deliverable title" /><div className="flex gap-2"><Input type="number" value={item.dueOffset} onChange={(event) => updatePlanItem(item.id, { dueOffset: Number(event.target.value) })} aria-label="Due offset days" /><Button size="icon" variant="danger" onClick={() => removePlanItem(item)}><Trash2 /></Button></div></div> : <CardTitle className="mt-2 flex items-center gap-2">{CHANNEL_META[item.channel].icon}{item.title}</CardTitle>}<CardDescription>{dueDate(project.launchDate, item.dueOffset)} · {item.dueOffset >= 0 ? "+" : ""}{item.dueOffset} days</CardDescription></CardHeader><CardContent className="space-y-3"><p className="line-clamp-3 text-xs text-muted">{item.content || item.brief}</p>{item.channel === "social" || item.channel === "email" ? <Button className="w-full" variant={item.content ? "success" : "primary"} disabled={busyCopyId === item.id} onClick={() => produce(item)}>{busyCopyId === item.id ? <Loader2 className="animate-spin" /> : item.content ? <BadgeCheck /> : <Sparkles />}{item.content ? "Produced" : "Produce Copy"}</Button> : item.channel === "glam" ? <Button className="w-full" onClick={() => handoff(item, "glamstudio")}><Send /> Produce in Glam</Button> : item.channel === "web" ? <Button className="w-full" onClick={() => handoff(item, "webstudio")}><Send /> Produce in Web</Button> : <Button className="w-full" variant="secondary" onClick={() => handoff(item, "motionstudio")}><Send /> Open Motion</Button>}</CardContent></Card>; })}</div></div>
     </div>
   );

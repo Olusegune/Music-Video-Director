@@ -1,5 +1,5 @@
 import { patternById } from "@/apps/webstudio/lib/patterns";
-import type { DesignTokens, SectionInstance, WebProject } from "@/apps/webstudio/lib/types";
+import type { DesignTokens, SectionInstance, WebPage, WebProject } from "@/apps/webstudio/lib/types";
 
 const esc = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
 const list = (items: string[], className = "cards") => `<div class="${className}">${items.map((item) => `<article><span class="mark" aria-hidden="true"></span><p>${esc(item)}</p></article>`).join("")}</div>`;
@@ -36,4 +36,17 @@ export function compileSite(project: WebProject, inlineCss = true) {
   const sections = project.sections.map((section, index) => sectionHtml(section, index === 0)).join("\n");
   const description = project.positioning.promise || project.businessDescription;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${esc(description)}"><meta name="theme-color" content="${esc(project.tokens.background)}"><meta property="og:title" content="${esc(project.businessName)} — ${esc(project.positioning.offer)}"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><title>${esc(project.businessName)} — ${esc(project.positioning.offer)}</title>${inlineCss ? `<style>${css}</style>` : `<link rel="stylesheet" href="styles.css">`}</head><body><header><strong>${esc(project.businessName)}</strong><nav aria-label="Primary navigation"><a href="#contact">${esc(project.positioning.cta)}</a></nav></header><main>${sections}</main><footer>© ${new Date().getFullYear()} ${esc(project.businessName)}. Built with Director Studio.</footer></body></html>`;
+}
+
+export function compilePage(project: WebProject, page: WebPage, inlineCss = true) {
+  const base = compileSite({ ...project, sections: page.sections }, inlineCss);
+  const title = (project.seo?.titleTemplate || `%s — ${project.businessName}`).replace("%s", page.title);
+  const navPages = project.pages?.length ? project.pages : [page];
+  const nav = navPages.map((item) => `<a href="${item.slug === "index" ? "index.html" : `${esc(item.slug)}.html`}">${esc(item.title)}</a>`).join(" ");
+  const canonical = project.seo?.siteUrl ? `${project.seo.siteUrl.replace(/\/$/, "")}/${page.slug === "index" ? "" : `${page.slug}.html`}` : "";
+  return base
+    .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(page.description || project.positioning.promise)}">`)
+    .replace(/<nav aria-label="Primary navigation">.*?<\/nav>/, `<nav aria-label="Primary navigation">${nav}</nav>`)
+    .replace("</head>", `${project.seo?.indexable === false ? '<meta name="robots" content="noindex,nofollow">' : ""}${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}${project.seo?.socialImage ? `<meta property="og:image" content="${esc(project.seo.socialImage)}">` : ""}</head>`);
 }

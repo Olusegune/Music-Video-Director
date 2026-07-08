@@ -51,9 +51,26 @@ export interface WebProject {
   brand: BrandDna;
   positioning: Positioning;
   sections: SectionInstance[];
+  pages?: WebPage[];
+  seo?: SiteSeo;
   tokens: DesignTokens;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WebPage {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  sections: SectionInstance[];
+}
+
+export interface SiteSeo {
+  titleTemplate: string;
+  siteUrl: string;
+  socialImage?: string;
+  indexable: boolean;
 }
 
 export interface SectionPattern {

@@ -118,7 +118,8 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
+- **V1 suite pass** - Director Studio now launches as a five-module creative operating system: one non-duplicated startup experience, new ecosystem artwork, readable suite welcome, universal Start with Director router, searchable platform/module help, and explicit Director Engine resource access in Motion Studio. Campaign adds a synchronized calendar and ICS export; Web adds multi-page/SEO compilation and export; Glam adds a 15-second product-film treatment. Automated release coverage now includes all three V1 artifact paths.
 - **Current release polish** - Director's Home now exposes Motion, Glam, Web, and Campaign as first-class studio cards; Ctrl+K indexes the same studio destinations. `npm run test:release` guards app routing/sidebar/dashboard/search discovery plus Web and Campaign export fixtures and the production build.
-- **Next** - complete cross-module UI QA, then begin the selected V1 pass (Glam product film, Web multi-page/SEO, or Campaign calendar/ICS).
+- **Next** - deepen provider-backed product-film rendering, visual page-route management, and calendar drag/reschedule interactions after this packaged V1 foundation.
 - Then build Web Studio on the same Brand DNA, deliverables, and Guided Flow platform primitives.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

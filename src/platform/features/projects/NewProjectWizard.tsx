@@ -1,124 +1,20 @@
-import { LayoutTemplate, Sparkles, FolderOpen, Clapperboard, X, ArrowRight } from "lucide-react";
+import { LayoutTemplate, Music, Boxes, Clapperboard, X, ArrowRight, Globe, Megaphone, WandSparkles } from "lucide-react";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { Button } from "@/platform/components/ui/button";
 import { cn } from "@/platform/lib/utils";
 
-/**
- * New-project wizard — four ways to start, per the spec, Magic Mode first and
- * recommended:
- *  1. Magic Mode — guided wizard, fastest path to a finished video
- *  2. Director Mode — empty workspace, full manual control (formerly "Blank studio")
- *  3. Blank Project — the separate, non-music-video motion-graphics pipeline
- *  4. Template — start from a genre/style blueprint
- * The app never forces a template — Director Mode goes straight to an empty Song Studio.
- */
 export function NewProjectWizard() {
-  const open = useAppStore((s) => s.wizardOpen);
-  const setOpen = useAppStore((s) => s.setWizardOpen);
-  const openTemplates = useAppStore((s) => s.openTemplates);
-  const openSong = useAppStore((s) => s.openSong);
-  const openMotionStudio = useAppStore((s) => s.openMotionStudio);
-  const openDirectorWizard = useAppStore((s) => s.openDirectorWizard);
-  const setActiveTemplate = useAppStore((s) => s.setActiveTemplate);
-  const setActiveSong = useAppStore((s) => s.setActiveSong);
-
-  if (!open) return null;
-  const close = (then?: () => void) => {
-    setOpen(false);
-    then?.();
-  };
-
+  const store = useAppStore();
+  if (!store.wizardOpen) return null;
+  const close = (then?: () => void) => { store.setWizardOpen(false); then?.(); };
   const options = [
-    {
-      icon: <Clapperboard className="h-6 w-6" />,
-      title: "Magic Mode",
-      badge: "Recommended",
-      desc: "Upload a song, add an artist, choose a style — the Director builds the whole video for you.",
-      go: () => close(openDirectorWizard),
-      primary: true,
-    },
-    {
-      icon: <Sparkles className="h-6 w-6" />,
-      title: "Director Mode",
-      desc: "An empty workspace with full manual control — import a song and build every element by hand.",
-      go: () =>
-        close(() => {
-          setActiveTemplate(null); // no blueprint bias
-          setActiveSong(null); // fresh production
-          openSong();
-        }),
-    },
-    {
-      icon: <FolderOpen className="h-6 w-6" />,
-      title: "Blank Project",
-      desc: "Start a non-music-video motion-graphics project — ads, explainers, and other one-off pieces.",
-      go: () => close(openMotionStudio),
-    },
-    {
-      icon: <LayoutTemplate className="h-6 w-6" />,
-      title: "Template",
-      desc: "Start with a genre/style blueprint — the Director adapts it to your song.",
-      go: () =>
-        close(() => {
-          setActiveSong(null); // fresh production; the template only supplies the blueprint
-          openTemplates();
-        }),
-    },
+    { icon: Music, title: "Music Video Director", desc: "Direct a song-aware film with cast, choreography, shots, and timeline.", go: store.openDirectorWizard, accent: "violet" },
+    { icon: Boxes, title: "Motion Studio", desc: "Create an explainer, commercial, UI animation, or product reveal.", go: store.openMotionStudio, accent: "cyan" },
+    { icon: WandSparkles, title: "Glam Studio", desc: "Art-direct luxury imagery, exact formats, and a product-film treatment.", go: store.openGlamStudio, accent: "amber" },
+    { icon: Globe, title: "Web Studio", desc: "Build a positioned, responsive multi-page campaign experience.", go: store.openWebStudio, accent: "emerald" },
+    { icon: Megaphone, title: "Campaign Studio", desc: "Orchestrate strategy, studios, calendar, and launch kit from one brief.", go: store.openCampaignStudio, accent: "gold", badge: "All channels" },
+    { icon: LayoutTemplate, title: "Shared Templates", desc: "Browse Director Engine style and production blueprints.", go: store.openTemplates, accent: "default" },
   ];
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur">
-      <div className="w-full max-w-3xl overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <h2 className="text-lg font-semibold leading-tight">New production</h2>
-            <p className="text-xs text-muted">How would you like to start?</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => close()} aria-label="Close">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
-          {options.map((o) => (
-            <button
-              key={o.title}
-              onClick={o.go}
-              className={cn(
-                "group relative flex flex-col items-start gap-3 rounded-[var(--radius-card)] border p-4 text-left transition-colors",
-                o.primary
-                  ? "border-[var(--color-gold)]/50 bg-[var(--color-gold)]/[0.06] hover:border-[var(--color-gold)]"
-                  : "border-border bg-surface hover:border-primary/50 hover:bg-elevated/40"
-              )}
-            >
-              {o.badge && (
-                <span className="absolute right-3 top-3 rounded-full bg-[var(--color-gold)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-gold-foreground)]">
-                  {o.badge}
-                </span>
-              )}
-              <span
-                className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-xl",
-                  o.primary ? "grad-gold text-[var(--color-gold-foreground)]" : "bg-elevated text-primary"
-                )}
-              >
-                {o.icon}
-              </span>
-              <span className="flex-1">
-                <span className="block text-sm font-semibold">{o.title}</span>
-                <span className="mt-0.5 block text-xs text-muted">{o.desc}</span>
-              </span>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-[11px] font-medium opacity-0 transition-opacity group-hover:opacity-100",
-                  o.primary ? "text-[var(--color-gold-foreground)]" : "text-primary"
-                )}
-              >
-                Start <ArrowRight className="h-3 w-3" />
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="fixed inset-0 z-[95] flex items-center justify-center bg-background/85 p-6 backdrop-blur-md"><div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl"><div className="flex items-center justify-between border-b border-border px-7 py-5"><div><div className="flex items-center gap-2"><Clapperboard className="h-5 w-5 text-primary" /><h2 className="text-xl font-semibold">Start with Director</h2></div><p className="mt-1 text-xs text-muted">Choose the outcome. Director Studio keeps its context connected.</p></div><Button variant="ghost" size="icon" onClick={() => close()} aria-label="Close"><X /></Button></div><div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-3">{options.map(({ icon: Icon, title, desc, go, accent, badge }) => <button key={title} onClick={() => close(go)} className={cn("group relative flex min-h-44 flex-col items-start rounded-xl border border-border bg-elevated/25 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-elevated/60", accent === "gold" && "border-[var(--color-gold)]/35 bg-[var(--color-gold)]/5")}>
+    {badge ? <span className="absolute right-3 top-3 rounded-full bg-[var(--color-gold)]/15 px-2 py-1 text-[10px] font-semibold text-[var(--color-gold)]">{badge}</span> : null}<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span><span className="mt-4 text-sm font-semibold">{title}</span><span className="mt-1 flex-1 text-xs leading-relaxed text-muted">{desc}</span><span className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary opacity-70 transition group-hover:translate-x-0.5 group-hover:opacity-100">Begin <ArrowRight className="h-3.5 w-3.5" /></span></button>)}</div></div></div>;
 }

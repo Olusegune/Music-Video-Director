@@ -5,6 +5,7 @@ import { buildCampaignMarkdown, buildPlanCsv, buildStrategyPdf } from "../src/ap
 import type { CampaignProject } from "../src/apps/campaign/lib/types";
 import { parseCampaignCopy, parseCampaignIdea } from "../src/apps/campaign/lib/campaignAi";
 import { buildSeedContext } from "../src/apps/campaign/lib/seed";
+import { buildCampaignIcs } from "../src/apps/campaign/lib/calendar";
 
 const strategy = buildCampaignStrategy("Aura", "a refillable premium lip oil", "design-conscious beauty buyers", "Launch and convert early demand");
 const concept = buildCampaignConcept("Aura", strategy);
@@ -25,10 +26,12 @@ if (seed.campaignId !== project.id || seed.sourceDeliverableId !== project.plan[
 const pdf = buildStrategyPdf(project);
 const csv = buildPlanCsv(project);
 const markdown = buildCampaignMarkdown(project);
+const ics = buildCampaignIcs(project);
 if (new TextDecoder().decode(pdf.slice(0, 8)) !== "%PDF-1.4") throw new Error("Strategy PDF signature is invalid.");
 if (csv.split("\n").length !== project.plan.length + 1) throw new Error("Plan CSV row count is invalid.");
+if (!ics.includes("BEGIN:VCALENDAR") || (ics.match(/BEGIN:VEVENT/g) ?? []).length !== project.plan.length) throw new Error("Campaign calendar export is invalid.");
 const encoder = new TextEncoder();
 const zip = buildZip([{ name: "strategy/strategy.pdf", bytes: pdf }, { name: "plan/deliverables.csv", bytes: encoder.encode(csv) }, { name: "strategy/campaign-plan.md", bytes: encoder.encode(markdown) }]);
 const bytes = new Uint8Array(await zip.arrayBuffer());
 if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error("Campaign ZIP signature is invalid.");
-console.log(JSON.stringify({ ok: true, deliverables: blueprint.length, channels: new Set(blueprint.map((item) => item.channel)).size, seedTargetReady: true, schemaValidated: true, pdfBytes: pdf.length, zipBytes: bytes.length }));
+console.log(JSON.stringify({ ok: true, deliverables: blueprint.length, channels: new Set(blueprint.map((item) => item.channel)).size, calendarEvents: project.plan.length, seedTargetReady: true, schemaValidated: true, pdfBytes: pdf.length, zipBytes: bytes.length }));

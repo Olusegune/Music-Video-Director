@@ -24,6 +24,7 @@ import {
   BookOpen,
   Mic2,
   ImageOff,
+  Library,
 } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -60,6 +61,33 @@ function blockText(b: Block): string {
 }
 
 const ARTICLES: Article[] = [
+  {
+    id: "director-studio-overview",
+    title: "Director Studio overview",
+    icon: <Clapperboard className="h-4 w-4" />,
+    keywords: "modules platform suite director engine motion glam web campaign shared assets",
+    action: { label: "Open Director's Home", go: (s) => s.openDashboard() },
+    blocks: [
+      { p: "Director Studio is one connected AI creative operating system. Choose the specialist studio that matches the deliverable; Director Engine keeps brand, assets, providers, production memory, and handoffs connected underneath." },
+      { h: "Five specialist studios" },
+      { steps: ["Music Video Director — song-aware films, cast, choreography, shots, and final timeline.", "Motion Studio — explainers, commercials, product motion, UI animation, and storyboards.", "Glam Studio — luxury visual campaigns, exact-format imagery, and product-film treatments.", "Web Studio — positioned responsive websites with multi-page static export and SEO controls.", "Campaign Studio — strategy, cross-channel planning, production handoffs, calendars, and launch kits."] },
+      { tip: "Start with Director when you know the outcome but not the module. Open a specialist studio directly when you already know the deliverable." },
+    ],
+  },
+  {
+    id: "shared-director-engine",
+    title: "Shared Director Engine resources",
+    icon: <Library className="h-4 w-4" />,
+    keywords: "characters locations worlds props wardrobe assets brand dna templates styles providers reusable shared",
+    blocks: [{ p: "Characters, locations, props, generated assets, Brand DNA, style presets, model routing, and deliverable records belong to Director Studio—not to a single module. Specialist studios reference these shared resources so a campaign can move between image, motion, web, and launch planning without losing its identity." }, { steps: ["Use Production Library tools in the sidebar to create durable characters, worlds, props, and assets.", "Use Brand Kits for palette, voice, typography, and product-line continuity.", "Use Campaign Studio handoffs to seed Glam, Web, and Motion with the same strategy and source deliverable.", "Use API Keys and AI Models once; the platform router applies those settings across studios."] }],
+  },
+  {
+    id: "v1-studios",
+    title: "V1 studio workflows",
+    icon: <Sparkles className="h-4 w-4" />,
+    keywords: "calendar ics multipage seo product film",
+    blocks: [{ h: "Campaign calendar" }, { p: "Campaign Studio turns due offsets into a synchronized visual sequence and exports a standards-based ICS calendar inside and outside the launch kit." }, { h: "Multi-page web export" }, { p: "Web Studio manages pages, slugs, descriptions, canonical URLs, shared navigation, and exports framework-free HTML/CSS." }, { h: "Product film" }, { p: "Glam Studio creates a reference-conscious 15-second film treatment with timed shots, motion direction, audio beats, and production prompts." }],
+  },
   {
     id: "getting-started",
     title: "Getting started",

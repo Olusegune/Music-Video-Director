@@ -22,9 +22,9 @@ import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
 import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioning";
-import { compileCss, compileSite } from "@/apps/webstudio/lib/siteCompiler";
+import { compileCss, compilePage } from "@/apps/webstudio/lib/siteCompiler";
 import { TOKEN_PRESETS, tokensFromBrand } from "@/apps/webstudio/lib/tokens";
-import type { Positioning, SectionInstance, WebProject } from "@/apps/webstudio/lib/types";
+import type { Positioning, SectionInstance, WebPage, WebProject } from "@/apps/webstudio/lib/types";
 import { deleteWebProject, listWebProjects, saveWebProject } from "@/apps/webstudio/lib/webStore";
 import { COPY_SCHEMA, parseCopyDrafts, parsePositioning, POSITIONING_SCHEMA } from "@/apps/webstudio/lib/webAi";
 import type { SectionCopy } from "@/apps/webstudio/lib/types";
@@ -132,7 +132,7 @@ function createProject(state: WebFlowState): WebProject {
   const brand = getBrandDna(state.campaignSeed?.brandDnaId) ?? createBrandDna({ name: state.brandName || state.businessName, tone: state.brandTone, productLine: state.businessName, tagline: positioning.promise, palette: TOKEN_PRESETS.find((preset) => preset.id === state.presetId)?.tokens ? [TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.primary, TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.accent] : [] });
   const now = new Date().toISOString();
   const sections = buildSections(state.patternIds, positioning).map((section) => state.copyDrafts?.[section.patternId] ? { ...section, copy: state.copyDrafts[section.patternId] } : section);
-  const project = saveWebProject({ id: crypto.randomUUID(), name: state.projectName || `${state.businessName} Website`, businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal, brand, positioning, sections, tokens: tokensFromBrand(brand, state.presetId), createdAt: now, updatedAt: now });
+  const project = saveWebProject({ id: crypto.randomUUID(), name: state.projectName || `${state.businessName} Website`, businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal, brand, positioning, sections, pages: [{ id: crypto.randomUUID(), title: "Home", slug: "index", description: positioning.promise, sections }], seo: { titleTemplate: `%s — ${state.businessName}`, siteUrl: "", indexable: true }, tokens: tokensFromBrand(brand, state.presetId), createdAt: now, updatedAt: now });
   createDeliverable({ moduleId: "webstudio", projectId: project.id, kind: "static-site", format: "html-css-zip", status: "draft", title: `${project.businessName} responsive website`, assetRefs: [] });
   if (state.campaignSeed) {
     const source = listDeliverables().find((deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId);
@@ -149,29 +149,39 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
-  const html = useMemo(() => compileSite(project, true), [project]);
+  const pages: WebPage[] = project.pages?.length ? project.pages : [{ id: "home", title: "Home", slug: "index", description: project.positioning.promise, sections: project.sections }];
+  const [activePageId, setActivePageId] = useState(() => pages[0].id);
+  const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
+  const workingSections = activePage.sections;
+  const html = useMemo(() => compilePage({ ...project, pages }, activePage, true), [project, activePage, pages]);
   const audit = useMemo(() => auditSite(project), [project]);
   const mediaAssets = useMemo(() => loadAssets().filter((asset) => Boolean(asset.url)), []);
   const persist = (next: WebProject) => onChange(saveWebProject(next));
+  const persistPage = (nextPage: WebPage) => persist({ ...project, pages: pages.map((page) => page.id === nextPage.id ? nextPage : page), sections: nextPage.slug === "index" ? nextPage.sections : project.sections });
   const updateSection = (id: string, patch: Partial<SectionInstance>) =>
-    persist({ ...project, sections: project.sections.map((section) => section.id === id ? { ...section, ...patch } : section) });
+    persistPage({ ...activePage, sections: workingSections.map((section) => section.id === id ? { ...section, ...patch } : section) });
   const moveSection = (id: string, direction: -1 | 1) => {
-    const index = project.sections.findIndex((section) => section.id === id);
+    const index = workingSections.findIndex((section) => section.id === id);
     const target = index + direction;
-    if (index < 0 || target < 0 || target >= project.sections.length) return;
-    const sections = [...project.sections];
+    if (index < 0 || target < 0 || target >= workingSections.length) return;
+    const sections = [...workingSections];
     [sections[index], sections[target]] = [sections[target], sections[index]];
-    persist({ ...project, sections });
+    persistPage({ ...activePage, sections });
   };
   const duplicateSection = (section: SectionInstance) => {
-    const index = project.sections.findIndex((item) => item.id === section.id);
-    const sections = [...project.sections];
+    const index = workingSections.findIndex((item) => item.id === section.id);
+    const sections = [...workingSections];
     sections.splice(index + 1, 0, { ...section, id: crypto.randomUUID(), copy: { ...section.copy, items: [...section.copy.items] } });
-    persist({ ...project, sections });
+    persistPage({ ...activePage, sections });
   };
   const removeSection = (id: string) => {
-    if (project.sections.length <= 1) { setNote("A site needs at least one section."); return; }
-    persist({ ...project, sections: project.sections.filter((section) => section.id !== id) });
+    if (workingSections.length <= 1) { setNote("A page needs at least one section."); return; }
+    persistPage({ ...activePage, sections: workingSections.filter((section) => section.id !== id) });
+  };
+  const addPage = () => {
+    const number = pages.length + 1;
+    const page: WebPage = { id: crypto.randomUUID(), title: `Page ${number}`, slug: `page-${number}`, description: project.positioning.promise, sections: project.sections.slice(0, 3).map((section) => ({ ...section, id: crypto.randomUUID(), copy: { ...section.copy, items: [...section.copy.items] } })) };
+    persist({ ...project, pages: [...pages, page] }); setActivePageId(page.id);
   };
   const exportSite = async () => {
     setBusy(true);
@@ -194,7 +204,7 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
       const manifest = JSON.stringify({ projectId: exportProject.id, positioning: exportProject.positioning, designTokens: exportProject.tokens, patterns: exportProject.sections.map((section) => section.patternId) }, null, 2);
       const mediaPrompts = exportProject.sections.filter((section) => patternById(section.patternId).family === "hero" && !section.mediaUrl).map((section) => `- ${section.copy.heading}: premium on-brand website hero image, palette ${project.tokens.primary} and ${project.tokens.accent}, no rendered text`).join("\n") || "No placeholder imagery remains.";
       downloadBlob(buildZip([
-        { name: "index.html", bytes: encoder.encode(compileSite(exportProject, false)) },
+        ...(pages.map((page) => ({ name: page.slug === "index" ? "index.html" : `${page.slug}.html`, bytes: encoder.encode(compilePage({ ...exportProject, pages }, page, false)) }))),
         { name: "styles.css", bytes: encoder.encode(compileCss(exportProject.tokens)) },
         { name: "site-spec.json", bytes: encoder.encode(manifest) },
         { name: "quality-report.json", bytes: encoder.encode(JSON.stringify(auditSite(exportProject), null, 2)) },
@@ -221,15 +231,17 @@ function WebWorkbench({ project, onChange }: { project: WebProject; onChange: (p
         </div>
       </div>
       {note ? <p className="text-xs text-muted">{note}</p> : null}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-2"><span className="px-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Pages</span>{pages.map((page) => <button key={page.id} onClick={() => setActivePageId(page.id)} className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition", activePage.id === page.id ? "bg-primary text-primary-foreground" : "bg-elevated text-muted hover:text-foreground")}>{page.title}</button>)}<Button size="sm" variant="ghost" onClick={addPage}><Plus /> Add page</Button></div>
       <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_350px]">
         <div className="overflow-auto rounded-xl border border-border bg-elevated p-3"><iframe title={`${project.businessName} responsive preview`} srcDoc={html} sandbox="allow-same-origin" className="mx-auto h-[720px] rounded-lg border-0 bg-white transition-all" style={{ width: VIEWPORT_WIDTH[viewport], maxWidth: "100%" }} /></div>
         {studioMode !== "director" ? (
           <div className="space-y-3">
+            <Card><CardHeader><CardTitle>Page & SEO</CardTitle><CardDescription>Search and social metadata for this page.</CardDescription></CardHeader><CardContent className="space-y-2"><Input value={activePage.title} onChange={(event) => persistPage({ ...activePage, title: event.target.value })} aria-label="Page title" /><Input value={activePage.slug} onChange={(event) => persistPage({ ...activePage, slug: slug(event.target.value) })} aria-label="Page slug" disabled={activePage.slug === "index"} /><Textarea value={activePage.description} onChange={(event) => persistPage({ ...activePage, description: event.target.value })} className="min-h-20" aria-label="Meta description" /><Input value={project.seo?.siteUrl ?? ""} onChange={(event) => persist({ ...project, seo: { titleTemplate: project.seo?.titleTemplate ?? `%s — ${project.businessName}`, indexable: project.seo?.indexable ?? true, ...project.seo, siteUrl: event.target.value } })} placeholder="https://example.com" aria-label="Canonical site URL" /></CardContent></Card>
             <Card><CardHeader><CardTitle>Positioning</CardTitle><CardDescription>Edit the strategic spine used by metadata and navigation.</CardDescription></CardHeader><CardContent className="space-y-2"><Input value={project.positioning.promise} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, promise: event.target.value } })} aria-label="Core promise" /><Textarea value={project.positioning.offer} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, offer: event.target.value } })} className="min-h-20" aria-label="Offer positioning" /><Input value={project.positioning.cta} onChange={(event) => persist({ ...project, positioning: { ...project.positioning, cta: event.target.value } })} aria-label="Primary CTA" /></CardContent></Card>
             <Card><CardHeader><CardTitle>Quality Gate</CardTitle><CardDescription>{audit.checks.filter((check) => check.passed).length}/{audit.checks.length} static checks passed.</CardDescription></CardHeader><CardContent className="space-y-1">{audit.checks.map((check) => <div key={check.id} className={cn("text-xs", check.passed ? "text-muted" : "text-danger")}>{check.passed ? "✓" : "×"} {check.label}</div>)}</CardContent></Card>
-            <Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Reorder, duplicate, remove, edit, and swap curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{project.sections.map((section, index) => (
+            <Card><CardHeader><CardTitle>Section Stack</CardTitle><CardDescription>Reorder, duplicate, remove, edit, and swap curated patterns.</CardDescription></CardHeader><CardContent className="space-y-3">{workingSections.map((section, index) => (
               <div key={section.id} className="space-y-2 rounded-md border border-border p-3">
-                <div className="flex items-center gap-1"><span className="mr-auto text-[10px] uppercase tracking-wide text-muted">{index + 1} · {patternById(section.patternId).family}</span><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, -1)} disabled={index === 0}><ArrowUp /></Button><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, 1)} disabled={index === project.sections.length - 1}><ArrowDown /></Button><Button size="icon" variant="ghost" onClick={() => duplicateSection(section)}><Copy /></Button><Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}><Trash2 /></Button></div>
+                <div className="flex items-center gap-1"><span className="mr-auto text-[10px] uppercase tracking-wide text-muted">{index + 1} · {patternById(section.patternId).family}</span><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, -1)} disabled={index === 0}><ArrowUp /></Button><Button size="icon" variant="ghost" onClick={() => moveSection(section.id, 1)} disabled={index === workingSections.length - 1}><ArrowDown /></Button><Button size="icon" variant="ghost" onClick={() => duplicateSection(section)}><Copy /></Button><Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}><Trash2 /></Button></div>
                 <select value={section.patternId} onChange={(event) => updateSection(section.id, { patternId: event.target.value })} className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm">{SECTION_PATTERNS.map((pattern) => <option key={pattern.id} value={pattern.id}>{pattern.name}</option>)}</select>
                 <Input value={section.copy.heading} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, heading: event.target.value } })} aria-label="Section heading" />
                 <Textarea value={section.copy.body} onChange={(event) => updateSection(section.id, { copy: { ...section.copy, body: event.target.value } })} className="min-h-20" aria-label="Section body" />

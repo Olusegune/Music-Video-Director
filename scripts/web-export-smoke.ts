@@ -1,6 +1,6 @@
 import { buildZip } from "../src/platform/lib/archive";
 import { auditSite } from "../src/apps/webstudio/lib/siteAudit";
-import { compileCss, compileSite } from "../src/apps/webstudio/lib/siteCompiler";
+import { compileCss, compilePage, compileSite } from "../src/apps/webstudio/lib/siteCompiler";
 import type { WebProject } from "../src/apps/webstudio/lib/types";
 
 const project: WebProject = {
@@ -32,10 +32,15 @@ const project: WebProject = {
 };
 
 const html = compileSite(project, false);
+const about = { id: "about", title: "About", slug: "about", description: "Meet Northstar Studio", sections: project.sections.slice(0, 2) };
+project.pages = [{ id: "home", title: "Home", slug: "index", description: project.positioning.promise, sections: project.sections }, about];
+project.seo = { titleTemplate: "%s — Northstar", siteUrl: "https://northstar.example", indexable: true };
+const aboutHtml = compilePage(project, about, false);
 const css = compileCss(project.tokens);
 const audit = auditSite(project);
 if (audit.score < 90) throw new Error(`Quality gate failed: ${audit.score}`);
 if (!html.includes('<link rel="stylesheet" href="styles.css">') || !html.includes("<main>")) throw new Error("Static HTML structure is incomplete.");
+if (!aboutHtml.includes("about.html") || !aboutHtml.includes('rel="canonical"') || !aboutHtml.includes("About — Northstar")) throw new Error("Multi-page SEO compilation failed.");
 if (!css.includes("@media(max-width:760px)") || !css.includes("prefers-reduced-motion")) throw new Error("Responsive/accessibility CSS is incomplete.");
 const encoder = new TextEncoder();
 const zip = buildZip([{ name: "index.html", bytes: encoder.encode(html) }, { name: "styles.css", bytes: encoder.encode(css) }, { name: "quality-report.json", bytes: encoder.encode(JSON.stringify(audit)) }]);

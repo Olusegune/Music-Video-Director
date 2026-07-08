@@ -14,6 +14,7 @@ import {
   Shirt,
   Sparkles,
   Wand2,
+  Video,
 } from "lucide-react";
 import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
@@ -60,6 +61,7 @@ import type {
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
+import { buildProductFilmPlan, productFilmMarkdown, type ProductFilmPlan } from "@/apps/glam-studio/lib/productFilm";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
 
@@ -98,6 +100,7 @@ interface GlamProject {
   selectedHeroAssetId?: string;
   formatLayouts?: Record<string, GlamFormatLayout>;
   formats: string[];
+  productFilm?: ProductFilmPlan;
   createdAt: string;
   updatedAt: string;
 }
@@ -654,6 +657,7 @@ function createProjectFromState(state: GlamFlowState): GlamProject {
     heroAssets: [],
     formatLayouts: Object.fromEntries(state.formats.map((format) => [format, { ...DEFAULT_GLAM_LAYOUT }])),
     formats: state.formats,
+    productFilm: buildProductFilmPlan(state.productName, concept.headline, look),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -899,6 +903,10 @@ function ProjectPreview({
               );
             })}
           </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Video className="h-4 w-4 text-primary" /> Product Film</CardTitle><CardDescription>Director-ready 15-second master with reference-safe prompts.</CardDescription></CardHeader>
+          <CardContent className="space-y-2">{(project.productFilm ?? buildProductFilmPlan(project.productName, project.concept.headline, project.look)).shots.map((shot, index) => <div key={shot.id} className="flex gap-3 rounded-md border border-border p-2.5"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">{index + 1}</span><div className="min-w-0"><div className="flex items-center gap-2"><p className="text-xs font-semibold">{shot.frame}</p><Badge>{shot.duration}s</Badge></div><p className="mt-1 text-[11px] text-muted">{shot.motion}</p></div></div>)}</CardContent>
         </Card>
         <Card>
           <CardHeader>
@@ -1158,6 +1166,7 @@ export function GlamStudio() {
       const encoder = new TextEncoder();
       rendered.push({ name: "prompt-pack.json", bytes: encoder.encode(JSON.stringify(promptPackFor(activeProject), null, 2)) });
       rendered.push({ name: "README.md", bytes: encoder.encode(promptPackMarkdown(activeProject)) });
+      rendered.push({ name: "product-film/15-second-master.md", bytes: encoder.encode(productFilmMarkdown(activeProject.productFilm ?? buildProductFilmPlan(activeProject.productName, activeProject.concept.headline, activeProject.look))) });
       const blob = buildZip(rendered);
       downloadBlob(blob, `${slug(activeProject.name)}-campaign-pack.zip`);
       const assetIds = [hero.id];

@@ -149,7 +149,7 @@ Phase 4 coupling found and partially fixed: `platform/store/useAppStore` now tal
 
 ## Verification discipline
 
-The release-level frontend check is `npm run test:release`. `scripts/app-shell-smoke.mjs` verifies each first-class studio remains reachable through the router, sidebar, Director's Home, and global search before the existing Web/Campaign artifact checks and production build run.
+The release-level frontend check is `npm run test:release`. `scripts/app-shell-smoke.mjs` verifies each first-class studio remains reachable through suite onboarding, the router, sidebar, Director's Home, and global search. Web coverage validates multi-page canonical/metadata compilation; Campaign coverage validates one ICS event per planned deliverable; Glam coverage validates the timed product-film treatment before the production build runs.
 
 Every change: `npx tsc --noEmit`, then live verification in the browser preview
 (synthetic WAV fixtures for audio flows), then commit with a scoped message.

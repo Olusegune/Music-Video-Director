@@ -18,6 +18,9 @@ import {
   SlidersHorizontal,
   Sparkles,
   Wand2,
+  Users,
+  Map,
+  Package,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/platform/components/ui/badge";
@@ -99,6 +102,10 @@ export function MotionStudio() {
     openTemplates,
     openSettings,
     openDashboard,
+    openCharacters,
+    openWorld,
+    openProps,
+    openBrandKits,
   } = useAppStore();
   const [routerConfig] = useState(() => loadRouterConfig());
   const [draft, setDraft] = useState<MotionProjectDraft>(emptyDraft);
@@ -252,6 +259,8 @@ export function MotionStudio() {
           </Button>
         </div>
       </section>
+
+      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3"><div className="mr-2"><p className="text-xs font-semibold">Director Engine resources</p><p className="text-[10px] text-muted">Shared across every studio</p></div><Button size="sm" variant="ghost" onClick={openCharacters}><Users /> Characters</Button><Button size="sm" variant="ghost" onClick={openWorld}><Map /> Locations</Button><Button size="sm" variant="ghost" onClick={openProps}><Package /> Props</Button><Button size="sm" variant="ghost" onClick={openAssets}><Image /> Assets</Button><Button size="sm" variant="ghost" onClick={openBrandKits}><Palette /> Brand DNA</Button></section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-4">
         <Card>

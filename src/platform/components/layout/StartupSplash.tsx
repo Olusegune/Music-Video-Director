@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/platform/lib/utils";
-import splashArt from "@/assets/director-studio-splash.png";
+import splashArt from "@/assets/director-studio-ecosystem-v1.png";
+import { useAppStore } from "@/platform/store/useAppStore";
 
 export function StartupSplash() {
+  const welcomeOpen = useAppStore((s) => s.welcomeOpen);
   const [loaded, setLoaded] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [minimumElapsed, setMinimumElapsed] = useState(false);
@@ -29,30 +31,36 @@ export function StartupSplash() {
     return () => window.clearTimeout(exit);
   }, [appReady, loaded, minimumElapsed]);
 
-  if (dismissed) return null;
+  // The welcome screen is itself the full-size launch experience. Rendering a
+  // second splash above it caused the small→large flash reported in packaged builds.
+  if (dismissed || welcomeOpen) return null;
 
   const exiting = loaded && appReady && minimumElapsed;
 
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[90] flex items-center justify-center bg-background/95 p-6 backdrop-blur-sm transition-opacity duration-300",
+        "fixed inset-0 z-[90] flex items-center justify-center overflow-hidden bg-[#07080b] transition-opacity duration-300",
         exiting ? "pointer-events-none opacity-0" : "opacity-100"
       )}
       aria-label="Director Studio startup splash"
     >
-      <div
-        className={cn(
-          "flex h-[260px] w-[min(420px,calc(100vw-32px))] items-center justify-center rounded-2xl border border-white/10 bg-black/55 p-3 shadow-2xl shadow-black/40 transition duration-300",
-          exiting ? "scale-[0.98] opacity-0" : "scale-100 opacity-100"
-        )}
-      >
+      <div className={cn("relative h-full w-full transition duration-300", exiting ? "opacity-0" : "opacity-100")}>
         <img
           src={splashArt}
-          alt="Director Studio"
+          alt="Director Studio creative ecosystem"
           onLoad={() => setLoaded(true)}
-          className="max-h-full max-w-full rounded-xl object-contain"
+          className="absolute inset-0 h-full w-full object-cover"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/45" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
+          <div className="rounded-2xl border border-white/10 bg-black/35 px-10 py-7 shadow-2xl backdrop-blur-md">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/55">Wheelbarrow</p>
+            <p className="mt-2 text-4xl font-black tracking-[0.08em]">DIRECTOR</p>
+            <p className="text-sm font-semibold tracking-[0.5em] text-primary">STUDIO</p>
+            <p className="mt-4 text-sm text-white/65">Every idea. Every style. One vision.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
