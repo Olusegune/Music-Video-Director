@@ -4,9 +4,7 @@ import {
   getActiveSongId,
   setActiveSongId,
   getStudioMode,
-  getGuidedFlowV2,
   setStudioMode as persistStudioMode,
-  setGuidedFlowV2 as persistGuidedFlowV2,
   type StudioMode,
 } from "@/platform/lib/settings";
 import { saveActiveTemplateId } from "@/platform/lib/templates";
@@ -82,8 +80,6 @@ interface AppState {
    *  Presentation-only — switching never loses work. Persisted via settings. */
   studioMode: StudioMode;
   setStudioMode: (mode: StudioMode) => void;
-  guidedFlowV2: boolean;
-  setGuidedFlowV2: (on: boolean) => void;
 
   openSong: () => void;
   openMvDirector: () => void;
@@ -107,8 +103,8 @@ interface AppState {
   setPendingMagic: (v: boolean) => void;
   /** Launch the Magic Flow: direct the active/most-recent song, or guide to import. */
   startMagicFlow: () => void;
-  /** Open the blank-canvas Director Wizard (the main "Direct My Music Video" CTA). */
-  openDirectorWizard: () => void;
+  /** Open the Music Video guided flow (the main "Direct My Music Video" CTA). */
+  openMusicVideoGuidedFlow: () => void;
   setDirectorOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
   /** Load the prebuilt demo production and open it in the MV Director. */
@@ -163,11 +159,6 @@ export const useAppStore = create<AppState>((set) => ({
     persistStudioMode(mode);
     set({ studioMode: mode });
   },
-  guidedFlowV2: getGuidedFlowV2(),
-  setGuidedFlowV2: (guidedFlowV2) => {
-    persistGuidedFlowV2(guidedFlowV2);
-    set({ guidedFlowV2 });
-  },
 
   openSong: () => set({ view: "song", activeProjectId: null }),
   openMvDirector: () => set({ view: "mvdirector" }),
@@ -203,7 +194,8 @@ export const useAppStore = create<AppState>((set) => ({
       // No song yet — guide the user to import one, then auto-continue.
       return { welcomeOpen: false, view: "song", pendingMagic: true };
     }),
-  openDirectorWizard: () => set({ directorOpen: true, welcomeOpen: false, wizardOpen: false }),
+  openMusicVideoGuidedFlow: () =>
+    set({ directorOpen: true, welcomeOpen: false, wizardOpen: false }),
   setDirectorOpen: (directorOpen) => set({ directorOpen }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   openDemoProject: () => {

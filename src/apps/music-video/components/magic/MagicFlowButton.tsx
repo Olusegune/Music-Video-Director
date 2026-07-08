@@ -30,7 +30,7 @@ export function MagicFlowButton({
   variant?: "hero" | "fab";
   className?: string;
 }) {
-  const open = useAppStore((s) => s.openDirectorWizard);
+  const open = useAppStore((s) => s.openMusicVideoGuidedFlow);
 
   if (variant === "fab") {
     return (

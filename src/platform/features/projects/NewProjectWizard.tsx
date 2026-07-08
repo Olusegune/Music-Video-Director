@@ -25,7 +25,7 @@ export function NewProjectWizard() {
       icon: Music,
       title: "Music Video Director",
       desc: "Direct a song-aware film with cast, choreography, shots, and timeline.",
-      go: store.openDirectorWizard,
+      go: store.openMusicVideoGuidedFlow,
       accent: "violet",
     },
     {
