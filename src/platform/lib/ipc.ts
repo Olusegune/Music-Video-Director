@@ -77,7 +77,8 @@ function lsGet<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
+  } catch (error) {
+    console.warn(`[Director Studio] Could not read local mock storage key "${key}".`, error);
     return fallback;
   }
 }
