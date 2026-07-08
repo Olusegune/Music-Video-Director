@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "test:web-export": "esbuild scripts/web-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/web-export-smoke.mjs && node C:/tmp/web-export-smoke.mjs",
+    "test:campaign-export": "esbuild scripts/campaign-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/campaign-export-smoke.mjs && node C:/tmp/campaign-export-smoke.mjs",
     "preview": "vite preview",
     "tauri": "tauri"
   },

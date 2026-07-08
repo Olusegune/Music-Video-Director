@@ -8,7 +8,8 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
-import { createBrandDna } from "@/platform/lib/brandDna";
+import { createBrandDna, getBrandDna } from "@/platform/lib/brandDna";
+import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
 import { createDeliverable, deleteDeliverables, listDeliverables, saveDeliverable } from "@/platform/lib/deliverables";
 import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
@@ -30,6 +31,7 @@ import type { SectionCopy } from "@/apps/webstudio/lib/types";
 import { auditSite } from "@/apps/webstudio/lib/siteAudit";
 
 interface WebFlowState {
+  campaignSeed?: SeedContext;
   projectName: string;
   businessName: string;
   businessDescription: string;
@@ -127,11 +129,15 @@ function BuildStep({ state }: GuidedFlowStepComponentProps<WebFlowState>) {
 
 function createProject(state: WebFlowState): WebProject {
   const positioning = positioningFor(state);
-  const brand = createBrandDna({ name: state.brandName || state.businessName, tone: state.brandTone, productLine: state.businessName, tagline: positioning.promise, palette: TOKEN_PRESETS.find((preset) => preset.id === state.presetId)?.tokens ? [TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.primary, TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.accent] : [] });
+  const brand = getBrandDna(state.campaignSeed?.brandDnaId) ?? createBrandDna({ name: state.brandName || state.businessName, tone: state.brandTone, productLine: state.businessName, tagline: positioning.promise, palette: TOKEN_PRESETS.find((preset) => preset.id === state.presetId)?.tokens ? [TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.primary, TOKEN_PRESETS.find((preset) => preset.id === state.presetId)!.tokens.accent] : [] });
   const now = new Date().toISOString();
   const sections = buildSections(state.patternIds, positioning).map((section) => state.copyDrafts?.[section.patternId] ? { ...section, copy: state.copyDrafts[section.patternId] } : section);
   const project = saveWebProject({ id: crypto.randomUUID(), name: state.projectName || `${state.businessName} Website`, businessName: state.businessName, businessDescription: state.businessDescription, audience: state.audience, proofPoints: split(state.proofPoints), ctaGoal: state.ctaGoal, brand, positioning, sections, tokens: tokensFromBrand(brand, state.presetId), createdAt: now, updatedAt: now });
   createDeliverable({ moduleId: "webstudio", projectId: project.id, kind: "static-site", format: "html-css-zip", status: "draft", title: `${project.businessName} responsive website`, assetRefs: [] });
+  if (state.campaignSeed) {
+    const source = listDeliverables().find((deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId);
+    if (source) saveDeliverable({ ...source, status: "draft", assetRefs: [...source.assetRefs, `web-project:${project.id}`] });
+  }
   return project;
 }
 
@@ -243,10 +249,11 @@ export function WebStudio() {
   const [router] = useState(() => loadRouterConfig());
   const [projects, setProjects] = useState(() => listWebProjects());
   const [activeId, setActiveId] = useState(() => listWebProjects()[0]?.id ?? "");
-  const [flowOpen, setFlowOpen] = useState(() => listWebProjects().length === 0);
+  const [campaignSeed] = useState(() => consumeSeedContext("webstudio"));
+  const [flowOpen, setFlowOpen] = useState(() => Boolean(campaignSeed) || listWebProjects().length === 0);
   const active = projects.find((project) => project.id === activeId) ?? projects[0] ?? null;
   const routerLabel = ROUTER_MODES.find((mode) => mode.id === router.mode)?.label ?? "Auto";
-  const definition = useMemo<GuidedFlowDefinition<WebFlowState>>(() => ({ id: "webstudio.single-page", moduleId: "webstudio", version: 1, title: "Web Studio Magic Flow", description: "Turn a business brief into a positioned, written, designed, responsive website.", initialState: INITIAL, steps: [
+  const definition = useMemo<GuidedFlowDefinition<WebFlowState>>(() => ({ id: "webstudio.single-page", moduleId: "webstudio", version: 1, title: "Web Studio Magic Flow", description: "Turn a business brief into a positioned, written, designed, responsive website.", initialState: campaignSeed ? { ...INITIAL, campaignSeed, projectName: `${campaignSeed.campaignName} · Landing Page`, businessName: getBrandDna(campaignSeed.brandDnaId)?.name ?? campaignSeed.product, businessDescription: campaignSeed.messaging.promise, audience: campaignSeed.audience, ctaGoal: campaignSeed.goal, brandName: getBrandDna(campaignSeed.brandDnaId)?.name ?? campaignSeed.product, brandTone: getBrandDna(campaignSeed.brandDnaId)?.voice.tone ?? INITIAL.brandTone, positioning: { audience: campaignSeed.audience, offer: campaignSeed.messaging.promise, promise: campaignSeed.messaging.promise, valueProps: campaignSeed.messaging.pillars, objections: ["Why now?", "Why this offer?", "What happens next?"], proof: campaignSeed.messaging.pillars, cta: campaignSeed.goal } } : INITIAL, steps: [
     { id: "business", title: "Business", subtitle: "Brief the agency team.", component: BusinessStep, validate: (state) => Boolean(state.businessName.trim() && state.businessDescription.trim()) || "Add the business name and a short description." },
     { id: "offer", title: "Offer", subtitle: "Approve the positioning and core promise.", component: OfferStep },
     { id: "audience", title: "Audience", subtitle: "Sharpen the message, proof, and conversion goal.", component: AudienceStep, validate: (state) => Boolean(state.audience.trim()) || "Describe the primary audience." },
@@ -254,7 +261,7 @@ export function WebStudio() {
     { id: "style", title: "Style", subtitle: "Choose the token system.", component: StyleStep },
     { id: "copy", title: "Copy", subtitle: "Review the structured message system.", component: CopyStep },
     { id: "build", title: "Build", subtitle: "Create the responsive site and export-ready project.", component: BuildStep },
-  ], onComplete: (state) => { const project = createProject(state); setProjects(listWebProjects()); setActiveId(project.id); setFlowOpen(false); } }), []);
+  ], onComplete: (state) => { const project = createProject(state); setProjects(listWebProjects()); setActiveId(project.id); setFlowOpen(false); } }), [campaignSeed]);
   const saveActive = (project: WebProject) => { setProjects(listWebProjects()); setActiveId(project.id); };
   const removeActiveProject = () => {
     if (!active || !confirm(`Delete web project “${active.name}”? This removes its local site specification and deliverable record.`)) return;

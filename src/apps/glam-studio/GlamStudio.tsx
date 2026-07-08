@@ -27,7 +27,8 @@ import {
 import { Textarea } from "@/platform/components/ui/textarea";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
-import { createBrandDna, type BrandDna } from "@/platform/lib/brandDna";
+import { createBrandDna, getBrandDna, type BrandDna } from "@/platform/lib/brandDna";
+import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
 import {
   createDeliverable,
   listDeliverables,
@@ -111,6 +112,7 @@ interface ProductProfile {
 }
 
 interface GlamFlowState {
+  campaignSeed?: SeedContext;
   projectName: string;
   productName: string;
   category: ProductCategory | "";
@@ -628,7 +630,7 @@ function ExportStep({ state }: GuidedFlowStepComponentProps<GlamFlowState>) {
 function createProjectFromState(state: GlamFlowState): GlamProject {
   const look = lookById(state.lookId);
   const concept = conceptById(state);
-  const brand = createBrandDna({
+  const brand = getBrandDna(state.campaignSeed?.brandDnaId) ?? createBrandDna({
     name: state.brandName || `${state.productName || "Untitled"} Brand`,
     tone: state.brandTone,
     productLine: state.productName,
@@ -667,6 +669,10 @@ function createProjectFromState(state: GlamFlowState): GlamProject {
       assetRefs: [],
     })
   );
+  if (state.campaignSeed) {
+    const source = listDeliverables().find((deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId);
+    if (source) saveDeliverable({ ...source, status: "draft", assetRefs: [...source.assetRefs, `glam-project:${project.id}`] });
+  }
   return project;
 }
 
@@ -933,7 +939,8 @@ export function GlamStudio() {
   const [routerConfig] = useState(() => loadRouterConfig());
   const [projects, setProjects] = useState<GlamProject[]>(() => readProjects());
   const [activeProjectId, setActiveProjectId] = useState(() => readProjects()[0]?.id ?? "");
-  const [flowOpen, setFlowOpen] = useState(() => readProjects().length === 0);
+  const [campaignSeed] = useState(() => consumeSeedContext("glamstudio"));
+  const [flowOpen, setFlowOpen] = useState(() => Boolean(campaignSeed) || readProjects().length === 0);
   const [generating, setGenerating] = useState(false);
   const [generationNote, setGenerationNote] = useState("");
   const [exportingCampaign, setExportingCampaign] = useState(false);
@@ -949,7 +956,18 @@ export function GlamStudio() {
       version: 1,
       title: "New Glam Campaign",
       description: "Create a luxury product campaign pack with Brand DNA, Look DNA, concepts, hero prompt, and format deliverables.",
-      initialState: INITIAL_FLOW,
+      initialState: campaignSeed ? {
+        ...INITIAL_FLOW,
+        campaignSeed,
+        projectName: `${campaignSeed.campaignName} · Glam Assets`,
+        productName: campaignSeed.product,
+        productDescription: campaignSeed.messaging.promise,
+        audience: campaignSeed.audience,
+        brandName: getBrandDna(campaignSeed.brandDnaId)?.name ?? campaignSeed.product,
+        brandTone: getBrandDna(campaignSeed.brandDnaId)?.voice.tone ?? INITIAL_FLOW.brandTone,
+        tagline: campaignSeed.messaging.tagline,
+        lookId: campaignSeed.lookId ?? INITIAL_FLOW.lookId,
+      } : INITIAL_FLOW,
       steps: [
         {
           id: "product",
@@ -1016,7 +1034,7 @@ export function GlamStudio() {
         setFlowOpen(false);
       },
     }),
-    []
+    [campaignSeed]
   );
 
   function improveHero() {
@@ -1238,6 +1256,7 @@ export function GlamStudio() {
               <div>
                 <h1 className="text-lg font-semibold">Glam Studio</h1>
                 <p className="text-xs text-muted">Luxury product campaign packs powered by platform Guided Flow.</p>
+                {campaignSeed ? <p className="mt-1 text-xs text-primary">Part of {campaignSeed.campaignName}</p> : null}
               </div>
             </div>
           </div>

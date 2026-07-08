@@ -24,6 +24,7 @@ import { TimelineView } from "@/apps/music-video/features/timeline/TimelineView"
 import { MotionStudio } from "@/apps/motion-studio/MotionStudio";
 import { GlamStudio } from "@/apps/glam-studio/GlamStudio";
 import { WebStudio } from "@/apps/webstudio/WebStudio";
+import { CampaignStudio } from "@/apps/campaign/CampaignStudio";
 import { TemplatesView } from "@/platform/features/templates/TemplatesView";
 import { HelpCenter } from "@/platform/features/help/HelpCenter";
 import { WelcomeScreen } from "@/platform/features/welcome/WelcomeScreen";
@@ -69,7 +70,8 @@ export default function App() {
     view !== "magicoutput" &&
     view !== "motionstudio" &&
     view !== "glamstudio" &&
-    view !== "webstudio";
+    view !== "webstudio" &&
+    view !== "campaignstudio";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -88,6 +90,7 @@ export default function App() {
         {view === "motionstudio" && <MotionStudio />}
         {view === "glamstudio" && <GlamStudio />}
         {view === "webstudio" && <WebStudio />}
+        {view === "campaignstudio" && <CampaignStudio />}
         {view === "templates" && <TemplatesView />}
         {view === "help" && <HelpCenter />}
         {view === "dashboard" && <Dashboard />}

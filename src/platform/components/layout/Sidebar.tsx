@@ -25,6 +25,7 @@ import {
   Check,
   Boxes,
   Search as SearchIcon,
+  Megaphone,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
@@ -59,6 +60,7 @@ export function Sidebar() {
     openMotionStudio,
     openGlamStudio,
     openWebStudio,
+    openCampaignStudio,
     openProject,
     setWizardOpen,
     openDirectorWizard,
@@ -145,6 +147,7 @@ export function Sidebar() {
           <NavItem icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
           <NavItem icon={<Sparkles className="h-4 w-4" />} label="Glam Studio" active={view === "glamstudio"} onClick={openGlamStudio} />
           <NavItem icon={<Globe className="h-4 w-4" />} label="Web Studio" active={view === "webstudio"} onClick={openWebStudio} />
+          <NavItem icon={<Megaphone className="h-4 w-4" />} label="Campaign Studio" active={view === "campaignstudio"} onClick={openCampaignStudio} />
         </NavGroup>
 
         <NavGroup label="Director Mode / Advanced">

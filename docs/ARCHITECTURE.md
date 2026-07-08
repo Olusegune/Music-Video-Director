@@ -111,6 +111,21 @@ Provider-backed Web copy crosses the IPC boundary through `generate_structured_t
 
 `scripts/web-export-smoke.ts` is the repeatable compiler/export regression check. It builds a complete fixture, requires a quality score of at least 90, checks semantic HTML and responsive/reduced-motion CSS, creates a real ZIP through `platform/lib/archive.ts`, and verifies its signature and required entries. Run it with `npm run test:web-export`.
 
+### Campaign Studio (app-specific orchestration)
+
+| System | Modules |
+|---|---|
+| App/workbench + Guided Flow | `apps/campaign/CampaignStudio.tsx` |
+| Domain/storage | `apps/campaign/lib/types.ts`, `campaignStore.ts` |
+| Strategy/concept | `apps/campaign/lib/strategy.ts` |
+| Deterministic plan + native copy | `apps/campaign/lib/planGenerator.ts` |
+| Launch-kit PDF/CSV/Markdown | `apps/campaign/lib/packageExport.ts` |
+| Cross-studio contract | `platform/lib/seedContext.ts` |
+
+Campaign Studio owns strategy, orchestration, native social/email copy, and package assembly—not specialist image, web, or motion generation. `SeedContext` is the only Campaign-to-specialist coupling surface. It carries Brand DNA, messaging, product/audience context, campaign/source-deliverable IDs, and an optional Look; Glam/Web consume it without importing Campaign code. The deliverable registry remains the shared status source of truth.
+
+`scripts/campaign-export-smoke.ts` verifies the smallest plan still has at least eight deliverables across at least three channels, then validates strategy PDF, plan CSV, and ZIP signatures. Run it with `npm run test:campaign-export`.
+
 ### Motion Studio (app-specific)
 
 | System | Modules |
