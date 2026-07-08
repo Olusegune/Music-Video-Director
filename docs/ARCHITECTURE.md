@@ -93,6 +93,20 @@ The physical split is now in place: reusable systems live under
 Glam Studio is a guided luxury product campaign module. It owns product/category/look/concept heuristics and campaign raster/ZIP export locally, while Brand DNA, deliverable records, loop events, StudioMode, and UI shell remain platform-owned so Web and Campaign can reuse them. Campaign typography is a real DOM overlay captured into each exact-size PNG; image models are never asked to paint final copy. Projects persist a selected hero plus per-format crop/copy layout maps. Saved Looks and Concepts use bounded local registries and are composed back into later Guided Flows without becoming platform-specific data.
 
 Provider metadata includes `supportsImageReferences` based on the actual Rust adapter contract. Glam uses it to prefer Google/Gemini, OpenAI/GPT Image, or WaveSpeed reference-conditioning paths when product photos exist. If only text-to-image adapters are configured, the output is explicitly labeled Look-alike mode rather than product-faithful.
+
+### Web Studio (app-specific)
+
+| System | Modules |
+|---|---|
+| App/workbench + Guided Flow | `apps/webstudio/WebStudio.tsx` |
+| Domain/storage | `apps/webstudio/lib/types.ts`, `webStore.ts` |
+| Curated layout registry | `apps/webstudio/lib/patterns.ts` (12 patterns, four families) |
+| Positioning/copy | `apps/webstudio/lib/positioning.ts` |
+| Brand token compiler | `apps/webstudio/lib/tokens.ts` |
+| Single preview/export renderer | `apps/webstudio/lib/siteCompiler.ts` |
+
+Web Studio compiles one structured `WebProject` through one deterministic renderer. The iframe preview uses inline CSS from that compiler; static export uses the same HTML with the same compiler-produced CSS split into `styles.css`. AI/local copy stages may fill typed slots but never emit layout code. Static ZIP packaging uses shared `platform/lib/archive.ts`; Production Library media is copied into the export so machine-local asset URLs do not leak into the finished website.
+
 ### Motion Studio (app-specific)
 
 | System | Modules |

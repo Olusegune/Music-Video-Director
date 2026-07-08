@@ -58,6 +58,7 @@ export function Sidebar() {
     openModels,
     openMotionStudio,
     openGlamStudio,
+    openWebStudio,
     openProject,
     setWizardOpen,
     openDirectorWizard,
@@ -143,6 +144,7 @@ export function Sidebar() {
           <NavItem icon={<Music className="h-4 w-4" />} label="Music Video Director" active={view === "song" || view === "mvdirector"} onClick={openSong} />
           <NavItem icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
           <NavItem icon={<Sparkles className="h-4 w-4" />} label="Glam Studio" active={view === "glamstudio"} onClick={openGlamStudio} />
+          <NavItem icon={<Globe className="h-4 w-4" />} label="Web Studio" active={view === "webstudio"} onClick={openWebStudio} />
         </NavGroup>
 
         <NavGroup label="Director Mode / Advanced">

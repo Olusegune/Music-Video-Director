@@ -23,6 +23,7 @@ import { ChoreographyView } from "@/apps/music-video/features/choreography/Chore
 import { TimelineView } from "@/apps/music-video/features/timeline/TimelineView";
 import { MotionStudio } from "@/apps/motion-studio/MotionStudio";
 import { GlamStudio } from "@/apps/glam-studio/GlamStudio";
+import { WebStudio } from "@/apps/webstudio/WebStudio";
 import { TemplatesView } from "@/platform/features/templates/TemplatesView";
 import { HelpCenter } from "@/platform/features/help/HelpCenter";
 import { WelcomeScreen } from "@/platform/features/welcome/WelcomeScreen";
@@ -67,7 +68,8 @@ export default function App() {
     view !== "song" &&
     view !== "magicoutput" &&
     view !== "motionstudio" &&
-    view !== "glamstudio";
+    view !== "glamstudio" &&
+    view !== "webstudio";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
@@ -85,6 +87,7 @@ export default function App() {
         {view === "timeline" && <TimelineView />}
         {view === "motionstudio" && <MotionStudio />}
         {view === "glamstudio" && <GlamStudio />}
+        {view === "webstudio" && <WebStudio />}
         {view === "templates" && <TemplatesView />}
         {view === "help" && <HelpCenter />}
         {view === "dashboard" && <Dashboard />}

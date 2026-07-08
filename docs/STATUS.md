@@ -7,6 +7,7 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Web Studio MVP foundation**: added a first-class `src/apps/webstudio/` module and app-shell route. Its platform Guided Flow covers Business, Offer positioning approval, Audience/proof/CTA, single-page section stack, design-token Style, structured Copy, and Build. The workbench previews the same deterministic compiler at desktop/tablet/mobile widths, exposes section copy/pattern/media controls in Studio+, exposes tokens in Creator, consumes Production Library imagery, registers a static-site deliverable, and exports a zero-runtime HTML/CSS ZIP with bundled local assets, site spec, and local-mode media prompts. The curated registry ships 12 patterns across hero, proof, trust, and conversion families.
 - **Glam Studio guided skeleton**: added `src/apps/glam-studio/GlamStudio.tsx` as the first Remaining Modules app after Motion Studio. It uses the platform `GuidedFlowShell`, global StudioMode, shared UI/theme, provider-router settings display, new platform Brand DNA registry, deliverable registry, and loop engine. The flow covers product intake, product type, Brand DNA, luxury look, campaign concept, format pack, and export approval, then saves a local Glam project with planned deliverables.
 - **Glam Studio MVP hardening**: product intake now captures structured materials, colors, packaging, claims, must-preserve fidelity notes, and real image-reference data. Saved Glam projects can generate provider-routed hero images, retain variants in the shared generated-asset registry, surface them in the Production Library, advance deliverables from planned to draft/approved, and export complete local-mode prompt packs as Markdown or JSON.
 - **Glam Studio format-pack export**: approved heroes now render into the selected exact-size 1080x1080, 1080x1350, 1080x1920, and 1920x1080 PNG formats. Headlines, brand names, and product names are composited as real typography via `html-to-image`, never model-painted. A dependency-free ZIP writer bundles the rendered assets with JSON and Markdown production packs in one campaign download.
@@ -112,6 +113,6 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
-- **Next** - commit the completed Glam MVP checkpoint, then begin Web Studio MVP on the shared Brand DNA, Guided Flow, deliverable registry, and campaign-export foundations.
+- **Next** - harden Web Studio positioning/copy with provider-backed schema validation and run the static-export/Lighthouse acceptance pass.
 - Then build Web Studio on the same Brand DNA, deliverables, and Guided Flow platform primitives.
 - Continuous: branding pass once named; QA + installer rebuild per phase.
