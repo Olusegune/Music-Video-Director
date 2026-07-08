@@ -87,9 +87,12 @@ The physical split is now in place: reusable systems live under
 | System | Modules |
 |---|---|
 | App workflow | `apps/glam-studio/GlamStudio.tsx` |
+| Exact-size campaign export | `apps/glam-studio/lib/campaignExport.ts` (`html-to-image` typography composition + dependency-free ZIP STORE packaging) |
 | Shared systems consumed | `platform/components/flow`, `platform/lib/brandDna`, `platform/lib/deliverables`, `platform/lib/loopEngine`, `platform/store/useAppStore`, shared UI/theme, provider-router settings |
 
-Glam Studio is a guided luxury product campaign module. It owns product/category/look/concept heuristics locally for now, while Brand DNA, deliverable records, loop events, StudioMode, and UI shell remain platform-owned so Web and Campaign can reuse them.
+Glam Studio is a guided luxury product campaign module. It owns product/category/look/concept heuristics and campaign raster/ZIP export locally, while Brand DNA, deliverable records, loop events, StudioMode, and UI shell remain platform-owned so Web and Campaign can reuse them. Campaign typography is a real DOM overlay captured into each exact-size PNG; image models are never asked to paint final copy. Projects persist a selected hero plus per-format crop/copy layout maps. Saved Looks and Concepts use bounded local registries and are composed back into later Guided Flows without becoming platform-specific data.
+
+Provider metadata includes `supportsImageReferences` based on the actual Rust adapter contract. Glam uses it to prefer Google/Gemini, OpenAI/GPT Image, or WaveSpeed reference-conditioning paths when product photos exist. If only text-to-image adapters are configured, the output is explicitly labeled Look-alike mode rather than product-faithful.
 ### Motion Studio (app-specific)
 
 | System | Modules |

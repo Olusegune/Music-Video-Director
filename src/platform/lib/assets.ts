@@ -61,7 +61,8 @@ export type AssetOrigin =
   | "World Bible"
   | "Props & Vehicles"
   | "Choreography"
-  | "Animation Lab";
+  | "Animation Lab"
+  | "Glam Studio";
 
 /**
  * True when a Prop's `category` is really choreography output. Matches the

@@ -10,15 +10,17 @@ import { Input } from "@/platform/components/ui/input";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { cn } from "@/platform/lib/utils";
 import { SafeDeleteDialog } from "@/platform/features/assets/SafeDeleteDialog";
+import { deleteAsset, loadAssets } from "@/platform/lib/generatedAssets";
 
 // A library "kind" is the tab/grouping a user sees — an origin, not a storage
 // bucket. Choreography assets live in the Prop bible but group on their own.
-type LibKind = "Character" | "Environment" | "Prop" | "Choreography" | "Motion test";
+type LibKind = "Character" | "Environment" | "Prop" | "Choreography" | "Motion test" | "Glam";
 
 interface LibItem {
   id: string;
   entityId: string; // bible entity id (for delete/usage); "" for motion tests
   motionId?: string; // motion-test id, when applicable
+  generatedId?: string;
   kind: LibKind;
   /** The persistent Bible this asset is stored in (for safe-delete). */
   storageKind: AssetKind;
@@ -37,6 +39,7 @@ const KIND_ICON: Record<LibKind, React.ReactNode> = {
   Prop: <Package className="h-3 w-3" />,
   Choreography: <Footprints className="h-3 w-3" />,
   "Motion test": <Film className="h-3 w-3" />,
+  Glam: <ImageOff className="h-3 w-3" />,
 };
 
 /** The system each library kind belongs to — shown as the card's origin badge. */
@@ -46,9 +49,10 @@ const KIND_ORIGIN: Record<LibKind, AssetOrigin> = {
   Prop: "Props & Vehicles",
   Choreography: "Choreography",
   "Motion test": "Animation Lab",
+  Glam: "Glam Studio",
 };
 
-const TABS: ("All" | LibKind)[] = ["All", "Character", "Environment", "Prop", "Choreography", "Motion test"];
+const TABS: ("All" | LibKind)[] = ["All", "Character", "Environment", "Prop", "Glam", "Choreography", "Motion test"];
 
 export function AssetLibrary() {
   const openCharacters = useAppStore((s) => s.openCharacters);
@@ -113,7 +117,22 @@ export function AssetLibrary() {
       isVideo: true,
       open: openAnimation,
     }));
-    return [...refs, ...motion];
+    const glam: LibItem[] = loadAssets()
+      .filter((asset) => asset.entityKind === "glam")
+      .map((asset) => ({
+        id: `glam:${asset.id}`,
+        entityId: asset.entityId,
+        generatedId: asset.id,
+        kind: "Glam",
+        storageKind: "Prop",
+        origin: "Glam Studio",
+        category: asset.sheetType,
+        label: asset.entityName,
+        src: asset.url,
+        isVideo: false,
+        open: () => undefined,
+      }));
+    return [...glam, ...refs, ...motion];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characters, environments, props, openCharacters, openWorld, openProps, openAnimation, openChoreography, tick]);
 
@@ -125,6 +144,13 @@ export function AssetLibrary() {
   };
 
   const removeItem = (item: LibItem) => {
+    if (item.kind === "Glam" && item.generatedId) {
+      if (confirm(`Delete Glam asset “${item.label}”?`)) {
+        deleteAsset(item.generatedId);
+        setTick((n) => n + 1);
+      }
+      return;
+    }
     if (item.kind === "Motion test" && item.motionId) {
       if (confirm(`Delete motion test “${item.label}”?`)) {
         deleteMotionTest(item.motionId);
