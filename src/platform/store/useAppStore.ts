@@ -4,7 +4,9 @@ import {
   getActiveSongId,
   setActiveSongId,
   getStudioMode,
+  getGuidedFlowV2,
   setStudioMode as persistStudioMode,
+  setGuidedFlowV2 as persistGuidedFlowV2,
   type StudioMode,
 } from "@/platform/lib/settings";
 import { saveActiveTemplateId } from "@/platform/lib/templates";
@@ -83,6 +85,8 @@ interface AppState {
    *  Presentation-only — switching never loses work. Persisted via settings. */
   studioMode: StudioMode;
   setStudioMode: (mode: StudioMode) => void;
+  guidedFlowV2: boolean;
+  setGuidedFlowV2: (on: boolean) => void;
 
   openSong: () => void;
   openMvDirector: () => void;
@@ -158,6 +162,11 @@ export const useAppStore = create<AppState>((set) => ({
   setStudioMode: (mode: StudioMode) => {
     persistStudioMode(mode);
     set({ studioMode: mode });
+  },
+  guidedFlowV2: getGuidedFlowV2(),
+  setGuidedFlowV2: (guidedFlowV2) => {
+    persistGuidedFlowV2(guidedFlowV2);
+    set({ guidedFlowV2 });
   },
 
   openSong: () => set({ view: "song", activeProjectId: null }),

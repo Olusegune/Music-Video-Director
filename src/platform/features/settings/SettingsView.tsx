@@ -57,6 +57,8 @@ export function SettingsView() {
   const [router, setRouter] = useState<RouterConfig>(() => loadRouterConfig());
   const [showWelcome, setShowWelcomeState] = useState(() => getShowWelcome());
   const setWelcomeOpen = useAppStore((s) => s.setWelcomeOpen);
+  const guidedFlowV2 = useAppStore((s) => s.guidedFlowV2);
+  const setGuidedFlowV2 = useAppStore((s) => s.setGuidedFlowV2);
 
   function toggleWelcome(next: boolean) {
     setShowWelcomeState(next);
@@ -117,6 +119,31 @@ export function SettingsView() {
             <Button variant="secondary" size="sm" onClick={() => setWelcomeOpen(true)}>
               <Clapperboard className="h-4 w-4" /> Show welcome now
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" /> Guided Flow
+            </CardTitle>
+            <CardDescription>
+              Use the platform Magic Flow shell for Music Video Director.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={guidedFlowV2}
+                onChange={(event) => setGuidedFlowV2(event.target.checked)}
+                className="h-4 w-4 accent-[var(--color-primary)]"
+              />
+              Use Guided Flow V2 for Magic Mode
+            </label>
+            <Badge variant={guidedFlowV2 ? "success" : "default"}>
+              {guidedFlowV2 ? "Enabled" : "Legacy default"}
+            </Badge>
           </CardContent>
         </Card>
 

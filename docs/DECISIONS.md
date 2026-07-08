@@ -3,6 +3,11 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D8 - 2026-07-07 - Music Video Magic Mode runs on platform Guided Flow V2 by default
+
+**What:** Added `MusicVideoGuidedFlow.tsx`, a Music Video app wrapper that registers a platform `GuidedFlowDefinition` for the existing Magic Mode sequence: song import, lyrics/script, performers, video type, story, style, and direct. It reuses Music Video Director internals for song analysis, lyric distribution, auto-casting, story beats, template/style selection, and hands approved projects to the existing `MagicDirect` pipeline. `mf.guidedFlowV2` is now default-on after packaged verification, with Settings exposing an opt-back toggle for the legacy wizard.
+
+**Why better:** Magic Mode is now proof that the platform flow system can host a real shipped module without moving music-video logic into `src/platform/` or duplicating provider/settings/theme systems. StudioMode stays additive inside the flow: Director gets the guided path, Studio gets creative direction controls, and Creator gets technical prompt/flow context. Risk: live in-app browser click-through QA is still blocked by the local URL policy, so this pass relies on TypeScript/build/package/release-launch verification plus code-level tier coverage.
 ## D7 - 2026-07-07 - Magic Mode becomes platform Guided Flow, but migration stays flagged
 
 **What:** Added the platform Guided Flow foundation in `src/platform/lib/guidedFlow.ts` and `src/platform/components/flow/`. Flow definitions now have reusable step contracts, local draft/session persistence, validation gates, and a shared shell that respects the global Director/Studio/Creator mode. Added `src/platform/lib/studioMode.ts` as the cross-module behavior map and `mf.guidedFlowV2` as an off-by-default migration flag. The startup splash was also changed from a full-screen cropped image to a compact contained Director Studio loading card with shorter readiness-driven dismissal.

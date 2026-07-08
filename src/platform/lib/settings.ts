@@ -25,14 +25,17 @@ export function setShowWelcome(show: boolean): void {
 }
 
 /**
- * Platform Guided Flow migration flag. Defaults off so existing Music Video
- * Director flows remain the shipping path until the wrapped flow is verified.
+ * Platform Guided Flow migration flag. Defaults on after packaged verification;
+ * users can still opt back to the legacy Music Video Director wizard.
  */
 export function getGuidedFlowV2(): boolean {
   try {
-    return localStorage.getItem(LS_GUIDED_FLOW_V2) === "1";
+    const value = localStorage.getItem(LS_GUIDED_FLOW_V2);
+    if (value === "1") return true;
+    if (value === "0") return false;
+    return true;
   } catch {
-    return false;
+    return true;
   }
 }
 

@@ -39,7 +39,7 @@ Core philosophy, in priority order:
   in the Sidebar. Surfaces map it to their own disclosure tiers. Mode changes
   are presentation-only — they can never lose work.
 
-- Guided creation flows are platform-owned. `src/platform/lib/guidedFlow.ts` defines flow/session contracts, local drafts, validation gates, and step advancement; `src/platform/components/flow/` provides the shared shell and reusable step primitives. Music Video Director's current Magic flow remains the default until it is wrapped behind the off-by-default `mf.guidedFlowV2` flag and packaged-verified.
+- Guided creation flows are platform-owned. `src/platform/lib/guidedFlow.ts` defines flow/session contracts, local drafts, validation gates, and step advancement; `src/platform/components/flow/` provides the shared shell and reusable step primitives. Music Video Director now defaults to the platform `MusicVideoGuidedFlow` wrapper through `mf.guidedFlowV2`; the legacy wizard remains available when the flag is explicitly disabled.
 
 ## Platform ↔ app boundary map
 
@@ -76,7 +76,7 @@ The physical split is now in place: reusable systems live under
 | Choreography | `lib/choreography.ts`, `lib/choreographyLayouts.ts`, `lib/choreoDirectives.ts`, `lib/stickFigurePoses.ts`, `features/choreography/` |
 | Cast / performers | `lib/cast.ts`, `lib/performerDetect.ts`, `lib/roleMeta.tsx`, `lib/danceStyleMeta.tsx`, `features/cast/` |
 | Story Mode / video types | `lib/storyMode.ts`, `lib/videoTypes.ts` |
-| Magic Mode wizard | `features/director/DirectorWizard.tsx`, `lib/magic.ts`, `features/mvdirector/MagicOutputScreen.tsx`; future wrapper should register a platform `GuidedFlowDefinition` without moving music-video internals into `src/platform/` |
+| Magic Mode / Guided Flow | `features/director/MusicVideoGuidedFlow.tsx` registers the platform `GuidedFlowDefinition`; `features/director/DirectorWizard.tsx` remains as the legacy opt-back wizard; `features/mvdirector/MagicDirect.tsx` remains the local directing pipeline; `features/mvdirector/MagicOutputScreen.tsx` remains the result screen |
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 

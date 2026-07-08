@@ -7,6 +7,7 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Music Video Guided Flow V2**: wrapped Magic Mode in a platform `GuidedFlowDefinition` at `src/apps/music-video/features/director/MusicVideoGuidedFlow.tsx`. The V2 flow reuses the shared `GuidedFlowShell`, delegates song analysis/cast/story/style setup to existing Music Video Director internals, hands the approved production to the existing `MagicDirect` local directing pipeline, adds StudioMode-gated creative/technical panels, and is now the default via `mf.guidedFlowV2` while Settings can opt back to the legacy wizard.
 - **Guided Flow platform prep + splash refinement**: imported the Remaining Modules and Guided Flow addendum specs into `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` and `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`; added platform Guided Flow contracts/session storage in `src/platform/lib/guidedFlow.ts`; added shared flow shell/step primitives in `src/platform/components/flow/`; added `src/platform/lib/studioMode.ts` as the reusable StudioMode behavior map; added the off-by-default `mf.guidedFlowV2` migration flag; and replaced the startup splash's full-screen cropped image with a compact contained Director Studio loading card that dismisses on readiness with a short fallback.
 - **Director Studio branding pass**: integrated the generated Director Studio Windows icon and splashscreen. The Tauri icon set was regenerated from `src/assets/director-studio-icon.png`; the old music-video-focused splash asset was replaced by `src/assets/director-studio-splash.png`; app shell, browser title, native window title, settings/about copy, welcome splash, and dashboard hero now use Director Studio as the broad product identity.
 - **Motion Studio integration pass**: converted the thin Phase 4 shell into a functional second app/module under `src/apps/motion-studio/` using the existing Director Studio platform. Reused and adapted MotionStudio source domain concepts for production types, visual styles, creative direction, local project storage, storyboard generation, scene critique/improve, and version checkpoints. Discarded the standalone Electron shell, duplicate settings/store/provider stack, and duplicate UI kit. Motion Studio now supports New Motion Project, requested project type selection, business/product input, marketing brief, script, visual style selection, generated storyboard, motion style/scene plan, voice/audio plan, timeline/export placeholder, and StudioMode-gated Director/Studio/Creator controls.
@@ -63,6 +64,13 @@ Latest Director Studio branding verification:
 - Browser QA: startup splash appeared immediately with `Director Studio` alt text, faded out cleanly, shell title/copy used Director Studio, Music Video Director and Motion Studio both rendered, and browser console had no errors.
 - Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`; NSIS setup has an associated icon resource; MSI ProductName is `Director Studio`.
 
+
+Latest Music Video Guided Flow V2 verification:
+- Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-v2-20260707-205217`
+- Safe default proof: `npx tsc --noEmit`, `npm run build`, and `npm run tauri build -- --bundles msi,nsis` passed while `mf.guidedFlowV2` still defaulted off.
+- Final default-on proof: `npx tsc --noEmit`, `npm run build`, and `npm run tauri build -- --bundles msi,nsis` passed after flipping the default on.
+- Windows launch: release executable smoke launch passed with window title `Director Studio`.
+- StudioMode coverage: V2 uses `GuidedFlowShell` mode gating, with Director primary guided steps, Studio creative controls, and Creator technical prompt/flow panels compiled through typecheck/build. Browser interaction against `http://127.0.0.1:1420/` remains blocked by the in-app browser URL policy, so live click-through tier QA was not performed in this pass.
 
 Latest Guided Flow / splash verification:
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-20260707-203120`

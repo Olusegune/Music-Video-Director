@@ -31,6 +31,7 @@ import { SessionGuard } from "@/platform/features/recovery/SessionGuard";
 import { MagicFlowButton } from "@/apps/music-video/components/magic/MagicFlowButton";
 import { MiniPlayer } from "@/apps/music-video/components/magic/MiniPlayer";
 import { DirectorWizard } from "@/apps/music-video/features/director/DirectorWizard";
+import { MusicVideoGuidedFlow } from "@/apps/music-video/features/director/MusicVideoGuidedFlow";
 import { Toast } from "@/platform/components/ui/toast";
 import { GlobalSearch } from "@/platform/features/search/GlobalSearch";
 import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
@@ -47,6 +48,7 @@ export default function App() {
   const wizardOpen = useAppStore((s) => s.wizardOpen);
   const magicSongId = useAppStore((s) => s.magicSongId);
   const directorOpen = useAppStore((s) => s.directorOpen);
+  const guidedFlowV2 = useAppStore((s) => s.guidedFlowV2);
   const dataVersion = useAppStore((s) => s.dataVersion);
   useGlobalShortcuts();
   useEffect(() => {
@@ -104,7 +106,7 @@ export default function App() {
       <WelcomeScreen />
       <NewProjectWizard />
       <MagicDirect />
-      <DirectorWizard />
+      {guidedFlowV2 ? <MusicVideoGuidedFlow /> : <DirectorWizard />}
       <SessionGuard />
       <MiniPlayer />
       <GlobalSearch />

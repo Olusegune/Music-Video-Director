@@ -182,9 +182,8 @@ export function advanceGuidedFlowSession<TState>(
   session: GuidedFlowSession<TState>
 ): { session: GuidedFlowSession<TState>; error?: string; completed?: boolean } {
   const validation = validateGuidedFlowStep(definition, session);
-  if (validation !== true) return { session, error: validation };
-
   const step = definition.steps[session.stepIndex];
+  if (validation !== true && !step?.skippable) return { session, error: validation };
   const completedStepIds = step
     ? Array.from(new Set([...session.completedStepIds, step.id]))
     : session.completedStepIds;
