@@ -39,6 +39,8 @@ Core philosophy, in priority order:
   in the Sidebar. Surfaces map it to their own disclosure tiers. Mode changes
   are presentation-only — they can never lose work.
 
+- Guided creation flows are platform-owned. `src/platform/lib/guidedFlow.ts` defines flow/session contracts, local drafts, validation gates, and step advancement; `src/platform/components/flow/` provides the shared shell and reusable step primitives. Music Video Director's current Magic flow remains the default until it is wrapped behind the off-by-default `mf.guidedFlowV2` flag and packaged-verified.
+
 ## Platform ↔ app boundary map
 
 The physical split is now in place: reusable systems live under
@@ -56,6 +58,7 @@ The physical split is now in place: reusable systems live under
 | Bibles (canonical entity libraries) | `features/characters/`, `features/world/`, `features/props/`, `lib/types.ts` |
 | Style Library | `lib/templates.ts`, `features/templates/`, `components/templates/TemplateCard.tsx` |
 | Project Memory | `lib/snapshots.ts`, `lib/undo.ts`, `lib/settings.ts`, `lib/scriptStore.ts` |
+| Guided Flow / Magic Flow | `lib/guidedFlow.ts`, `components/flow/GuidedFlowShell.tsx`, `components/flow/steps/*`, `lib/studioMode.ts` |
 | Persistence facade | `lib/ipc.ts` + the Rust core |
 | Shared UI kit | `components/ui/*` (CardPicker, HelpHint, AssetImage/AssetVideo with broken-state recourse, buttons, inputs), `components/layout/` |
 | Export | `lib/bibleExport.ts`, `lib/pack.ts`, `features/export/` |
@@ -73,7 +76,7 @@ The physical split is now in place: reusable systems live under
 | Choreography | `lib/choreography.ts`, `lib/choreographyLayouts.ts`, `lib/choreoDirectives.ts`, `lib/stickFigurePoses.ts`, `features/choreography/` |
 | Cast / performers | `lib/cast.ts`, `lib/performerDetect.ts`, `lib/roleMeta.tsx`, `lib/danceStyleMeta.tsx`, `features/cast/` |
 | Story Mode / video types | `lib/storyMode.ts`, `lib/videoTypes.ts` |
-| Magic Mode wizard | `features/director/DirectorWizard.tsx`, `lib/magic.ts`, `features/mvdirector/MagicOutputScreen.tsx` |
+| Magic Mode wizard | `features/director/DirectorWizard.tsx`, `lib/magic.ts`, `features/mvdirector/MagicOutputScreen.tsx`; future wrapper should register a platform `GuidedFlowDefinition` without moving music-video internals into `src/platform/` |
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 

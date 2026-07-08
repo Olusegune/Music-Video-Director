@@ -7,6 +7,7 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Guided Flow platform prep + splash refinement**: imported the Remaining Modules and Guided Flow addendum specs into `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` and `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`; added platform Guided Flow contracts/session storage in `src/platform/lib/guidedFlow.ts`; added shared flow shell/step primitives in `src/platform/components/flow/`; added `src/platform/lib/studioMode.ts` as the reusable StudioMode behavior map; added the off-by-default `mf.guidedFlowV2` migration flag; and replaced the startup splash's full-screen cropped image with a compact contained Director Studio loading card that dismisses on readiness with a short fallback.
 - **Director Studio branding pass**: integrated the generated Director Studio Windows icon and splashscreen. The Tauri icon set was regenerated from `src/assets/director-studio-icon.png`; the old music-video-focused splash asset was replaced by `src/assets/director-studio-splash.png`; app shell, browser title, native window title, settings/about copy, welcome splash, and dashboard hero now use Director Studio as the broad product identity.
 - **Motion Studio integration pass**: converted the thin Phase 4 shell into a functional second app/module under `src/apps/motion-studio/` using the existing Director Studio platform. Reused and adapted MotionStudio source domain concepts for production types, visual styles, creative direction, local project storage, storyboard generation, scene critique/improve, and version checkpoints. Discarded the standalone Electron shell, duplicate settings/store/provider stack, and duplicate UI kit. Motion Studio now supports New Motion Project, requested project type selection, business/product input, marketing brief, script, visual style selection, generated storyboard, motion style/scene plan, voice/audio plan, timeline/export placeholder, and StudioMode-gated Director/Studio/Creator controls.
 
@@ -62,6 +63,15 @@ Latest Director Studio branding verification:
 - Browser QA: startup splash appeared immediately with `Director Studio` alt text, faded out cleanly, shell title/copy used Director Studio, Music Video Director and Motion Studio both rendered, and browser console had no errors.
 - Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`; NSIS setup has an associated icon resource; MSI ProductName is `Director Studio`.
 
+
+Latest Guided Flow / splash verification:
+- Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-20260707-203120`
+- Specs added: `docs/DIRECTOR-STUDIO-MODULES-SPEC.md`, `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`
+- `mf.guidedFlowV2` remains off by default; Music Video Director still uses the existing Magic/Director flows until the wrapper migration is built and verified.
+- Typecheck/build: `npx tsc --noEmit` and `npm run build` passed.
+- Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release exe smoke launch passed with window title `Director Studio`.
+- Browser QA: in-app browser reload was blocked by its URL policy for `http://127.0.0.1:1420/`, so no browser-surface interaction was performed in this pass.
+
 Latest Motion Studio integration verification:
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-phase-motionstudio-20260707-182249`
 - Typecheck/build: `npm run build` passed.
@@ -83,5 +93,6 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
-- **Next** - connect Motion Studio storyboard beats to the shared GenerationPanel/provider execution path and asset library saves, then move dashboard/search/assets app-specific data reads behind registries.
+- **Next** - wrap the existing Music Video Magic/Director flow in a `GuidedFlowDefinition` behind `mf.guidedFlowV2`, QA it in all StudioMode tiers, then flip the flag only after packaged Windows verification.
+- After Guided Flow V2 is verified, start Glam Studio using the platform flow shell/primitives rather than a module-local wizard.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

@@ -1,6 +1,7 @@
 // Lightweight app preferences (non-secret) persisted in localStorage.
 
 const LS_SHOW_WELCOME = "mf.showWelcome";
+const LS_GUIDED_FLOW_V2 = "mf.guidedFlowV2";
 
 /**
  * Whether the welcome screen shows at startup. Defaults to true (show) — best
@@ -18,6 +19,26 @@ export function getShowWelcome(): boolean {
 export function setShowWelcome(show: boolean): void {
   try {
     localStorage.setItem(LS_SHOW_WELCOME, show ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Platform Guided Flow migration flag. Defaults off so existing Music Video
+ * Director flows remain the shipping path until the wrapped flow is verified.
+ */
+export function getGuidedFlowV2(): boolean {
+  try {
+    return localStorage.getItem(LS_GUIDED_FLOW_V2) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setGuidedFlowV2(on: boolean): void {
+  try {
+    localStorage.setItem(LS_GUIDED_FLOW_V2, on ? "1" : "0");
   } catch {
     /* ignore */
   }

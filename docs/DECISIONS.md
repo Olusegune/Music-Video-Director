@@ -3,6 +3,12 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D7 - 2026-07-07 - Magic Mode becomes platform Guided Flow, but migration stays flagged
+
+**What:** Added the platform Guided Flow foundation in `src/platform/lib/guidedFlow.ts` and `src/platform/components/flow/`. Flow definitions now have reusable step contracts, local draft/session persistence, validation gates, and a shared shell that respects the global Director/Studio/Creator mode. Added `src/platform/lib/studioMode.ts` as the cross-module behavior map and `mf.guidedFlowV2` as an off-by-default migration flag. The startup splash was also changed from a full-screen cropped image to a compact contained Director Studio loading card with shorter readiness-driven dismissal.
+
+**Why better:** The remaining Director Studio apps can now use one guided creation engine instead of each building its own wizard, and StudioMode stays additive: Director is guided, Studio adds creative controls, Creator adds technical controls. Risk: Music Video Director is not yet running through the new flow shell; keeping `mf.guidedFlowV2` off avoids breaking the shipped Magic/Director path while the wrapper is implemented and packaged-verified next.
+
 ## D6 - 2026-07-07 - Motion Studio source is integrated as a module, not an app fork
 
 **What:** Ported the useful MotionStudio source concepts into `src/apps/motion-studio/`: production types, visual style selection, creative direction, local motion-project storage, storyboard generation, scene critique/improve, scene approval, loop log, and version checkpoints. The standalone Electron entrypoint, source Zustand store, duplicate settings/provider router, duplicate UI kit, and package/build files were intentionally left behind.
