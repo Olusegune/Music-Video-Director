@@ -442,42 +442,6 @@ export function MotionStudio() {
         </Card>
       </section>
 
-      <Card className="relative overflow-hidden border-white/10 bg-slate-950/70 shadow-[0_24px_80px_rgba(0,0,0,0.25)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(124,58,237,0.18),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(14,165,233,0.12),transparent_32%)]" />
-        <CardHeader className="relative">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl tracking-[-0.03em]">
-                Choose a motion template
-              </CardTitle>
-              <CardDescription>
-                Big visual cards replace the old text list. Artwork is shown uncropped so embedded
-                typography and composition stay intact.
-              </CardDescription>
-            </div>
-            <Badge variant="accent">{selectedTemplate.name}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="relative">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {PRODUCTION_TYPES.map((type) => (
-              <MotionTemplateCard
-                key={type.id}
-                template={type}
-                active={draft.typeId === type.id}
-                onSelect={() =>
-                  setDraft((current) => ({
-                    ...current,
-                    typeId: type.id,
-                    durationSec: type.defaultDuration,
-                  }))
-                }
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="flex flex-col gap-5">
           <Card>
@@ -495,18 +459,31 @@ export function MotionStudio() {
                 onChange={(event) => updateDraft("name", event.target.value)}
                 placeholder="Project name"
               />
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                  Selected template
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold">{selectedTemplate.name}</div>
-                    <div className="mt-1 text-xs leading-5 text-muted">
-                      {selectedTemplate.description}
+                    <div className="text-sm font-semibold">Choose a motion template</div>
+                    <div className="mt-1 text-xs text-muted">
+                      All {PRODUCTION_TYPES.length} templates preserve their storyboard workflows.
                     </div>
                   </div>
-                  <Badge>{selectedTemplate.defaultDuration}s</Badge>
+                  <Badge variant="accent">{selectedTemplate.name}</Badge>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                  {PRODUCTION_TYPES.map((type) => (
+                    <MotionTemplateCard
+                      key={type.id}
+                      template={type}
+                      active={draft.typeId === type.id}
+                      onSelect={() =>
+                        setDraft((current) => ({
+                          ...current,
+                          typeId: type.id,
+                          durationSec: type.defaultDuration,
+                        }))
+                      }
+                    />
+                  ))}
                 </div>
               </div>
               <Textarea
