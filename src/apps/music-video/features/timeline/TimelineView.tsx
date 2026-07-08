@@ -480,7 +480,7 @@ export function TimelineView() {
           }))
           .filter((s) => s.src);
         if (segments.length === 0) {
-          throw new Error("Generate at least one frame or clip in the MV Director first.");
+          throw new Error("Generate at least one frame or clip in Direct first.");
         }
         const voiceLayers = (song.audioTracks ?? [])
           .filter((t) => t.url)
@@ -523,8 +523,8 @@ export function TimelineView() {
     return (
       <Empty
         onAction={openMvDirector}
-        label="Open MV Director"
-        message={`Direct “${song.name}” first — the timeline assembles the shots the MV Director lays out.`}
+        label="Open Direct"
+        message={`Direct “${song.name}” first — the timeline assembles the planned shots.`}
       />
     );
   }

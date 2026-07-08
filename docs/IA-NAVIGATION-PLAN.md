@@ -27,6 +27,7 @@ DIRECTOR STUDIO (studios)
   ▸ Music Video Director        ← expands when active:
       Song Studio
       Direct          (rename of "MV Director" ⭑)
+      Templates       (MV genre templates — moved from global Tools ⭑⭑)
       Cast
       Choreography
       Timeline
@@ -39,7 +40,7 @@ PRODUCTION LIBRARY
   Character Bible · World Bible · Props & Vehicles · Asset Library · Brand Kits
 
 TOOLS
-  Dashboard ⭑ · Templates ⭑ · Script Studio · Animation Lab · Export Center
+  Dashboard ⭑ · Script Studio · Animation Lab · Export Center
 
 SYSTEM
   API Keys · AI Models · Settings
@@ -50,7 +51,7 @@ Behavior rules:
 - **Clicking a studio enters its home** (its landing/workbench view) and expands its sub-nav; the previously active studio's group collapses. Exactly one studio group is ever expanded. Non-MV studios have no sub-items yet — their group is just the door (sub-nav slots exist for when Glam/Web/Campaign grow real sub-surfaces).
 - **App boots to Dashboard** (studio-backlot framing per the UX review), not Song Studio. ⭑ Dashboard moves under Tools per the user's structure, but also remains the boot view and the brand-block click target.
 - **Sub-views are only reachable inside their studio.** Outside MV, the five MV items don't render. GlobalSearch/Help/Onboarding may still navigate to them directly — doing so auto-enters MV (expands the group, sets active module). Deep links therefore keep working by construction.
-- **Templates moves from the studio strip into Tools** ⭑ (it's a cross-studio utility, not a studio).
+- **Templates moves inside Music Video Director** ⭑⭑ (correction 2026-07-08, supersedes the earlier "move to Tools" call): code inspection shows `platform/lib/templates.ts` and `TemplatesView` are 100% MV content — genre blueprints (Afrobeats, Hip Hop, K-Pop, Gospel…) with chorus structures, choreography styles, and song adaptation. Motion Studio already has its own separate template system (`apps/motion-studio/lib/templates.ts`). "Templates" is therefore a **per-studio concept, not a global tool**: the nav item becomes an MV sub-item labeled "Templates"; other studios surface their own template galleries inside their own flows/homes. The generic binding layer (`appBindings.ts`) stays in platform. Code move (templates.ts + TemplatesView → `apps/music-video`) can follow later, like Animation Lab — but the nav entry moves now so presentation stops contradicting content.
 - **"New production" button becomes module-aware:** in a studio context it starts that studio's Magic Flow; at Dashboard/Tools level it opens a "pick a studio" chooser. (Ship the chooser minimal — five tiles.)
 - The StudioMode (Director/Studio/Creator) pill stays where it is in the sidebar header — it's platform-level, orthogonal to navigation.
 - Visual: studio entries get their module icon + color accent; sub-items are indented, smaller, with a thin rail line — the "workspace within" reading. No second sidebar, no top-tab bar (a second chrome layer would fight the Inspector and cost horizontal space at 800×600).
@@ -129,7 +130,7 @@ Explicit non-goals: no renaming of View values, no removal of `open*` actions, n
 
 > In the Director Studio repo, implement the navigation/IA restructure per `docs/IA-NAVIGATION-PLAN.md` (read it fully first).
 >
-> **Step 1 — nav model.** Create `src/platform/lib/navModel.ts`: `ModuleId`, a `VIEW_MODULE: Record<View, ModuleId>` covering every member of the `View` union in `useAppStore.ts` (exhaustive — add a compile-time exhaustiveness check), and a `NAV_MODEL` data tree matching §2 of the plan: Director Studio (5 studios; Music Video Director has subItems song/mvdirector→"Direct"/cast/choreography/timeline), Production Library (characters, world, props, assets, brandkits), Tools (dashboard, templates, scripts, animation, export), System (apikeys, models, settings). `magicoutput` maps to musicvideo but is not listed. Add vitest coverage.
+> **Step 1 — nav model.** Create `src/platform/lib/navModel.ts`: `ModuleId`, a `VIEW_MODULE: Record<View, ModuleId>` covering every member of the `View` union in `useAppStore.ts` (exhaustive — add a compile-time exhaustiveness check), and a `NAV_MODEL` data tree matching §2 of the plan: Director Studio (5 studios; Music Video Director has subItems song/mvdirector→"Direct"/templates/cast/choreography/timeline — `templates` maps to ModuleId "musicvideo", see §2 correction), Production Library (characters, world, props, assets, brandkits), Tools (dashboard, scripts, animation, export), System (apikeys, models, settings). `magicoutput` maps to musicvideo but is not listed. Add vitest coverage.
 > **Step 2 — sidebar.** Refactor `src/platform/components/layout/Sidebar.tsx` to render from `NAV_MODEL`. Active module = `VIEW_MODULE[view]` (derived — never stored). Studio rows are doors; the active studio's group expands in place with indented sub-items and a rail line; exactly one group expanded. Keep brand block, New production, Search, StudioMode pill, projects list, and footer as-is. Use selector-based store subscriptions. Keep it usable at 800×600 (scrollable sections).
 > **Step 3 — boot view.** Change the store default `view` from `"song"` to `"dashboard"`. Then verify/fix every flow that assumed the old default: WelcomeScreen, OnboardingChecklist, SessionGuard, splash dismissal.
 > **Step 4 — call-site sweep.** Audit all `open*`/`setView` call sites (GlobalSearch, useGlobalShortcuts, HelpCenter, Dashboard, AssetLibrary, TemplatesView, WelcomeScreen, onboarding, MV screens). Navigating to an MV sub-view from anywhere must auto-enter MV (which it does by derivation — just verify highlighting). Prefix GlobalSearch result labels for module-owned views ("Music Video · Cast"). Make "New production" module-aware: inside a studio it starts that studio's flow; elsewhere it opens a minimal 5-tile studio chooser before the existing wizard.

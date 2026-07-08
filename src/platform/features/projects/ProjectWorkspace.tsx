@@ -463,7 +463,9 @@ export function ProjectWorkspace() {
         {pack && workspaceMode === "storyboard" && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] uppercase tracking-wide text-muted">Magic:</span>
+              <span className="text-[11px] uppercase tracking-wide text-muted">
+                Creative assist:
+              </span>
               <Button variant="secondary" size="sm" onClick={() => runMagic(makeItCinematic)}>
                 <Clapperboard className="h-4 w-4" /> Make it Cinematic
               </Button>
@@ -480,7 +482,7 @@ export function ProjectWorkspace() {
                 <MonitorPlay className="h-4 w-4" /> Splash Screen
               </Button>
               <Button variant="primary" size="sm" onClick={() => runMagic(directorMode)}>
-                <Megaphone className="h-4 w-4" /> Director Mode
+                <Megaphone className="h-4 w-4" /> Full directing pass
               </Button>
               <span className="mx-1 h-5 w-px bg-border" />
               <Button variant="secondary" size="sm" onClick={saveDna}>

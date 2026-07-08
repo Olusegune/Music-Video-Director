@@ -48,7 +48,7 @@ export function OnboardingChecklist({ hasSongs }: { hasSongs: boolean }) {
       icon: <Clapperboard className="h-4 w-4" />,
       title: "Direct your first video",
       desc: "Generate a beat-synced treatment, then frames, clips, and a render.",
-      action: { label: "Open MV Director", onClick: openMvDirector },
+      action: { label: "Open Direct", onClick: openMvDirector },
     },
   ];
 

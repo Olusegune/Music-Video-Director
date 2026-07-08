@@ -95,7 +95,7 @@ export function WelcomeScreen() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/35" />
           <div className="absolute inset-x-0 bottom-0 p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/55">
-              Powered by Director Engine
+              Connected by Director Studio
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/75">
               One intelligence layer connects your brand, cast, worlds, assets, styles, providers,

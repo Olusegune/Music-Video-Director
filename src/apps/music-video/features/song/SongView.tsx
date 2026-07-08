@@ -186,7 +186,7 @@ export function SongView({
             variant="secondary"
             size="sm"
             onClick={onOpenDirector}
-            title="Open the MV Director without auto-directing"
+            title="Open Direct without auto-directing"
           >
             <Clapperboard className="h-4 w-4" />
             Open Director

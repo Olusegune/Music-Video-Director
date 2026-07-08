@@ -125,7 +125,7 @@ export function SettingsView() {
               <Sparkles className="h-4 w-4 text-primary" /> Guided Flow
             </CardTitle>
             <CardDescription>
-              Use the platform Magic Flow shell for Music Video Director.
+              Use the shared guided-flow shell for Music Video Director.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
@@ -136,7 +136,7 @@ export function SettingsView() {
                 onChange={(event) => setGuidedFlowV2(event.target.checked)}
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
-              Use Guided Flow V2 for Magic Mode
+              Use Guided Flow V2 for Music Video Director
             </label>
             <Badge variant={guidedFlowV2 ? "success" : "default"}>
               {guidedFlowV2 ? "Enabled" : "Legacy default"}

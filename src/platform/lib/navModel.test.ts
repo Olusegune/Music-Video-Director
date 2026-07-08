@@ -52,9 +52,11 @@ describe("navigation model", () => {
     expect(musicVideo?.subItems?.map((item) => item.view)).toEqual([
       "song",
       "mvdirector",
+      "templates",
       "cast",
       "choreography",
       "timeline",
+      "animation",
     ]);
     expect(topLevelViews).not.toContain("cast");
     expect(topLevelViews).not.toContain("choreography");

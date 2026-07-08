@@ -156,8 +156,8 @@ function EmptyState({ onAdd }: { onAdd: (role?: PerformerRole) => void }) {
         </div>
         <h2 className="text-base font-semibold">No performers yet</h2>
         <p className="mt-1 text-sm text-muted">
-          Add the people in your video. The MV Director and Choreography engine reference them by
-          role and dance style.
+          Add the people in your video. Direct and Choreography reference them by role and dance
+          style.
         </p>
         <div className="mt-4 flex justify-center gap-2">
           <Button onClick={() => onAdd("Lead Singer")}>

@@ -228,8 +228,8 @@ function MvReadiness({ configured }: { configured: Set<string> }) {
       </div>
       <p className="mt-2 text-[11px] text-muted">
         {readyCount === 3
-          ? "All set — the MV Director can generate frames, clips, and voice. Final render also needs FFmpeg installed."
-          : "Add at least one key per capability to unlock generation in the MV Director. Planning (Song Brain, Director, Choreography, Timeline) works with no keys."}
+          ? "All set — Music Video Director can generate frames, clips, and voice. Final render also needs FFmpeg installed."
+          : "Add at least one key per capability to unlock generation in Music Video Director. Planning (Song Studio, Direct, Choreography, Timeline) works with no keys."}
       </p>
     </section>
   );

@@ -225,6 +225,9 @@ export function AssetLibrary() {
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-lg font-semibold">Production Library</h1>
         <p className="text-xs text-muted">
+          Shared across all studios · reusable generated and imported assets.
+        </p>
+        <p className="text-xs text-muted">
           Every reusable asset — characters, sets, props, pose &amp; formation sheets, and motion
           tests — searchable across the whole production.
         </p>

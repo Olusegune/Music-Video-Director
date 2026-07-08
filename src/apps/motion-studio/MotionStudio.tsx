@@ -384,7 +384,7 @@ export function MotionStudio() {
 
       <section className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
         <div className="mr-2">
-          <p className="text-xs font-semibold">Director Engine resources</p>
+          <p className="text-xs font-semibold">Shared Director Studio resources</p>
           <p className="text-[10px] text-muted">Shared across every studio</p>
         </div>
         <Button size="sm" variant="ghost" onClick={openCharacters}>

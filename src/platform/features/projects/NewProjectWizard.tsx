@@ -60,7 +60,7 @@ export function NewProjectWizard() {
     {
       icon: LayoutTemplate,
       title: "Shared Templates",
-      desc: "Browse Director Engine style and production blueprints.",
+      desc: "Browse Music Video Director style and production blueprints.",
       go: store.openTemplates,
       accent: "default",
     },

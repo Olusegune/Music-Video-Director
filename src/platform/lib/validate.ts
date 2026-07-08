@@ -34,7 +34,7 @@ export function validateProduction(
     if (!treatment) {
       issues.push({
         level: "warning",
-        message: `“${song.name}” has no treatment yet — open MV Director and Direct it.`,
+        message: `“${song.name}” has no treatment yet — open Music Video Director → Direct.`,
       });
     } else {
       const shots = treatment.sections.flatMap((s) => s.shots);

@@ -158,6 +158,9 @@ export function AnimationLab() {
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-lg font-semibold">Animation Lab</h1>
         <p className="text-xs text-muted">
+          Part of Music Video Director · animate planned shots and transitions.
+        </p>
+        <p className="text-xs text-muted">
           A motion-testing workspace — pick a subject and a test, dial in the shot, and generate.
           Same controls as everywhere else.
         </p>

@@ -520,8 +520,8 @@ export function MvDirector() {
           </div>
           <h2 className="text-base font-semibold">No song to direct yet</h2>
           <p className="mt-1 text-sm text-muted">
-            Import and analyze a track in Song Studio first — the MV Director builds the video
-            around its structure and energy.
+            Import and analyze a track in Song Studio first — Direct builds the video around its
+            structure and energy.
           </p>
           <Button className="mt-4" onClick={openSong}>
             <Music className="h-4 w-4" />
@@ -597,7 +597,7 @@ export function MvDirector() {
             <Clapperboard className="h-4.5 w-4.5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold leading-tight">MV Director</h1>
+            <h1 className="text-lg font-semibold leading-tight">Direct</h1>
             <p className="text-xs text-muted">
               Directing <span className="text-foreground">{song.name}</span> · {song.bpm} BPM ·{" "}
               {song.sections.length} sections
@@ -640,7 +640,7 @@ export function MvDirector() {
           <button
             onClick={openHelp}
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-elevated hover:text-foreground"
-            title="Help — MV Director guide"
+            title="Help — Direct guide"
             aria-label="Help"
           >
             <HelpCircle className="h-3.5 w-3.5" />

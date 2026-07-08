@@ -131,7 +131,7 @@ export function Dashboard() {
                 <Clapperboard className="h-4 w-4" /> Start with Director
               </Button>
               <Button variant="secondary" size="lg" onClick={openDirectorMode}>
-                Open Director Mode
+                Open Director Studio
               </Button>
             </div>
           </div>

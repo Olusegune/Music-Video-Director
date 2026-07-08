@@ -163,7 +163,10 @@ export function TemplatesView() {
           <LayoutTemplate className="h-4.5 w-4.5 text-white" />
         </div>
         <div className="mr-auto">
-          <h1 className="text-lg font-semibold leading-tight">Templates</h1>
+          <h1 className="text-lg font-semibold leading-tight">Music Video Templates</h1>
+          <p className="text-xs text-muted">
+            Part of Music Video Director · adapts directing blueprints to the active song.
+          </p>
           <p className="text-xs text-muted">
             Production blueprints by genre, style, and format — the Director Brain adapts them to
             your song.
