@@ -24,8 +24,7 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { Textarea } from "@/platform/components/ui/textarea";
-import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
-import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
+import { GuidedFlowShell } from "@/platform/components/flow";
 import { createBrandDna, getBrandDna, type BrandDna } from "@/platform/lib/brandDna";
 import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
 import {
@@ -70,6 +69,15 @@ import {
   productFilmMarkdown,
   type ProductFilmPlan,
 } from "@/apps/glam-studio/lib/productFilm";
+import {
+  BrandStep,
+  CategoryStep,
+  ProductStep,
+} from "@/apps/glam-studio/features/intake/IntakeSteps";
+import { LookStep } from "@/apps/glam-studio/features/looks/LookStep";
+import { ConceptStep } from "@/apps/glam-studio/features/hero/ConceptStep";
+import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
+import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
 
@@ -223,35 +231,6 @@ const LOOKS: LuxuryLook[] = [
   },
 ];
 
-const CATEGORIES: { id: ProductCategory; title: string; description: string }[] = [
-  {
-    id: "beauty",
-    title: "Beauty",
-    description: "Skincare, makeup, haircare, and cosmetic launches.",
-  },
-  {
-    id: "fashion",
-    title: "Fashion",
-    description: "Apparel drops, accessories, lookbook assets, and capsule collections.",
-  },
-  {
-    id: "jewelry",
-    title: "Jewelry",
-    description: "Precious details, macro shine, heirloom positioning.",
-  },
-  {
-    id: "fragrance",
-    title: "Fragrance",
-    description: "Bottle hero shots, mood worlds, and sensual storytelling.",
-  },
-  { id: "wellness", title: "Wellness", description: "Clean, credible, sensory product campaigns." },
-  {
-    id: "tech-luxury",
-    title: "Luxury Tech",
-    description: "Premium hardware, devices, and high-spec products.",
-  },
-];
-
 const FORMAT_OPTIONS = GLAM_FORMATS.map((format) => ({
   ...format,
   description: `${format.width} x ${format.height} campaign asset`,
@@ -301,18 +280,6 @@ function downloadText(filename: string, content: string, mime: string) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result ?? "");
-      resolve(dataUrl.includes(",") ? dataUrl.slice(dataUrl.indexOf(",") + 1) : dataUrl);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("Could not read product image."));
-    reader.readAsDataURL(file);
-  });
 }
 
 function buildProductProfile(state: GlamFlowState): ProductProfile {
@@ -446,258 +413,6 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
     .join(" ");
 }
 
-function ProductStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  return (
-    <div className="space-y-4">
-      <IntakeFormStep
-        value={{
-          projectName: state.projectName,
-          productName: state.productName,
-          productDescription: state.productDescription,
-          audience: state.audience,
-          materials: state.materials,
-          colors: state.colors,
-          packaging: state.packaging,
-          productClaims: state.productClaims,
-          fidelityNotes: state.fidelityNotes,
-        }}
-        onChange={(next) =>
-          patch({
-            projectName: next.projectName ?? "",
-            productName: next.productName ?? "",
-            productDescription: next.productDescription ?? "",
-            audience: next.audience ?? "",
-            materials: next.materials ?? "",
-            colors: next.colors ?? "",
-            packaging: next.packaging ?? "",
-            productClaims: next.productClaims ?? "",
-            fidelityNotes: next.fidelityNotes ?? "",
-          })
-        }
-        fields={[
-          { id: "projectName", label: "Project name", placeholder: "Summer lip oil launch" },
-          { id: "productName", label: "Product name", placeholder: "Aura Lip Oil" },
-          {
-            id: "productDescription",
-            label: "Product description",
-            type: "textarea",
-            placeholder:
-              "Describe shape, material, color, ingredients, packaging, price point, and must-preserve details.",
-          },
-          {
-            id: "audience",
-            label: "Audience",
-            placeholder: "Gen Z beauty buyers, boutique shoppers, founders...",
-          },
-          { id: "materials", label: "Materials", placeholder: "frosted glass, brushed gold, silk" },
-          {
-            id: "colors",
-            label: "Exact product colors",
-            placeholder: "oxblood, warm ivory, #C8A96A",
-          },
-          {
-            id: "packaging",
-            label: "Packaging and silhouette",
-            placeholder: "30ml square bottle, rounded cap, embossed monogram",
-          },
-          {
-            id: "productClaims",
-            label: "Claims / benefits",
-            placeholder: "24-hour hydration, refillable, vegan",
-          },
-          {
-            id: "fidelityNotes",
-            label: "Must-preserve details",
-            type: "textarea",
-            placeholder:
-              "Logo placement, cap shape, proportions, materials, and details the model must not change.",
-          },
-        ]}
-      />
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-border bg-elevated/40 py-6 text-center hover:border-primary/50">
-        <Image className="h-6 w-6 text-muted" />
-        <span className="text-sm font-medium">Add product references</span>
-        <span className="text-xs text-muted">
-          Used as product-fidelity references during hero generation
-        </span>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={async (event) => {
-            const files = Array.from(event.target.files ?? []);
-            event.target.value = "";
-            if (!files.length) return;
-            const data = await Promise.all(files.map(fileToDataUrl));
-            patch({
-              productPhotoNames: [...state.productPhotoNames, ...files.map((file) => file.name)],
-              productPhotoData: [...state.productPhotoData, ...data],
-            });
-          }}
-        />
-      </label>
-      {state.productPhotoNames.length ? (
-        <div className="flex flex-wrap gap-2">
-          {state.productPhotoNames.map((name) => (
-            <Badge key={name}>{name}</Badge>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function CategoryStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  return (
-    <PickCardStep
-      value={state.category || undefined}
-      onChange={(id) => patch({ category: id as ProductCategory })}
-      options={CATEGORIES.map((category) => ({
-        id: category.id,
-        title: category.title,
-        description: category.description,
-        visual: (
-          <span className="block h-full w-full bg-[radial-gradient(circle_at_70%_35%,rgba(255,255,255,.25),transparent_24%),linear-gradient(135deg,rgba(243,201,105,.28),rgba(139,92,246,.18),rgba(0,0,0,.18))]" />
-        ),
-      }))}
-    />
-  );
-}
-
-function BrandStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  return (
-    <IntakeFormStep
-      value={{
-        brandName: state.brandName,
-        brandTone: state.brandTone,
-        tagline: state.tagline,
-      }}
-      onChange={(next) =>
-        patch({
-          brandName: next.brandName ?? "",
-          brandTone: next.brandTone ?? "",
-          tagline: next.tagline ?? "",
-        })
-      }
-      fields={[
-        { id: "brandName", label: "Brand name", placeholder: "Maison Vale" },
-        {
-          id: "brandTone",
-          label: "Brand voice",
-          placeholder: "quiet luxury, sensual, clinical...",
-        },
-        { id: "tagline", label: "Tagline / headline direction", placeholder: "Optional" },
-      ]}
-    />
-  );
-}
-
-function LookStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  const looks = [
-    ...readSavedLooks(),
-    ...LOOKS.filter((look) => !readSavedLooks().some((saved) => saved.id === look.id)),
-  ];
-  return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {looks.map((look) => (
-        <button
-          key={look.id}
-          type="button"
-          onClick={() => patch({ lookId: look.id })}
-          className={cn(
-            "overflow-hidden rounded-[var(--radius-card)] border bg-surface text-left transition hover:border-primary/50",
-            state.lookId === look.id ? "border-primary" : "border-border"
-          )}
-        >
-          <div
-            className="h-28"
-            style={{
-              background: `linear-gradient(135deg, ${look.palette[0]}, ${look.palette[1]} 42%, ${look.palette[2]} 70%, ${look.palette[3]})`,
-            }}
-          />
-          <div className="p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="font-semibold">{look.name}</div>
-              {state.lookId === look.id ? <Badge variant="primary">Selected</Badge> : null}
-            </div>
-            <p className="mt-1 text-xs text-muted">{look.family}</p>
-            <p className="mt-3 text-xs text-muted">{look.set}</p>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ConceptStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  const concepts = [
-    ...readSavedConcepts(),
-    ...conceptsFor(state).filter(
-      (concept) => !readSavedConcepts().some((saved) => saved.id === concept.id)
-    ),
-  ];
-  return (
-    <div className="grid gap-3 lg:grid-cols-3">
-      {concepts.map((concept) => (
-        <button
-          key={concept.id}
-          type="button"
-          onClick={() => patch({ conceptId: concept.id })}
-          className={cn(
-            "rounded-[var(--radius-card)] border bg-surface p-4 text-left transition hover:border-primary/50",
-            state.conceptId === concept.id ? "border-primary bg-primary/10" : "border-border"
-          )}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">{concept.territory}</span>
-            <Badge variant={concept.score >= 90 ? "success" : "default"}>{concept.score}</Badge>
-          </div>
-          <p className="mt-3 text-lg font-semibold leading-snug">{concept.headline}</p>
-          <p className="mt-3 text-xs leading-5 text-muted">{concept.visualDirection}</p>
-          <ul className="mt-3 space-y-1 text-xs text-muted">
-            {concept.shotList.map((shot) => (
-              <li key={shot}>- {shot}</li>
-            ))}
-          </ul>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function FormatsStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  return (
-    <PickCardStep
-      columns={4}
-      value=""
-      onChange={(id) => {
-        const formats = state.formats.includes(id)
-          ? state.formats.filter((format) => format !== id)
-          : [...state.formats, id];
-        patch({ formats });
-      }}
-      options={FORMAT_OPTIONS.map((format) => ({
-        id: format.id,
-        title: format.title,
-        description: format.description,
-        badge: state.formats.includes(format.id) ? "Included" : "Add",
-        visual: (
-          <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-300/25 via-black/10 to-fuchsia-400/20">
-            <span
-              className="rounded border border-white/35 bg-white/10"
-              style={{
-                width: `${Math.max(34, Math.min(74, format.width / 24))}px`,
-                height: `${Math.max(28, Math.min(74, format.height / 24))}px`,
-              }}
-            />
-          </span>
-        ),
-      }))}
-    />
-  );
-}
-
 function CreativeControls({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
   return (
     <Textarea
@@ -716,24 +431,6 @@ function CreatorControls({ state }: GuidedFlowStepComponentProps<GlamFlowState>)
     <pre className="max-h-52 overflow-auto rounded-md border border-border bg-background/70 p-3 text-xs text-muted">
       {buildHeroPrompt(state, concept, look)}
     </pre>
-  );
-}
-
-function ExportStep({ state }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  const look = lookById(state.lookId);
-  const concept = conceptById(state);
-  return (
-    <SummaryStep
-      title="Approve the campaign pack"
-      items={[
-        { label: "Product", value: state.productName || "Untitled product" },
-        { label: "Category", value: state.category || "Uncategorized" },
-        { label: "Brand", value: state.brandName || "Untitled brand" },
-        { label: "Look", value: look.name },
-        { label: "Concept", value: concept.territory },
-        { label: "Formats", value: `${state.formats.length} deliverables` },
-      ]}
-    />
   );
 }
 
