@@ -61,11 +61,18 @@ import {
 } from "@/apps/music-video/lib/cast";
 import { ROLE_META } from "@/apps/music-video/lib/roleMeta";
 import { CardPicker } from "@/platform/components/ui/card-picker";
-import { GenerationPanel, type GenerateOpts } from "@/platform/components/generation/GenerationPanel";
+import {
+  GenerationPanel,
+  type GenerateOpts,
+} from "@/platform/components/generation/GenerationPanel";
 import { newCharacter } from "@/platform/lib/characterDna";
 import { allTemplates } from "@/platform/lib/templates";
 import { VIDEO_TYPES, stylePicksFor, type VideoTypeKey } from "@/apps/music-video/lib/videoTypes";
-import { STORY_FEELINGS, buildStoryBeats, type StoryFeelingKey } from "@/apps/music-video/lib/storyMode";
+import {
+  STORY_FEELINGS,
+  buildStoryBeats,
+  type StoryFeelingKey,
+} from "@/apps/music-video/lib/storyMode";
 import { TemplateCard, NoStyleCard } from "@/platform/components/templates/TemplateCard";
 import { useAudioPlayer } from "@/apps/music-video/lib/audioPlayer";
 import { Button } from "@/platform/components/ui/button";
@@ -207,9 +214,7 @@ export function DirectorWizard() {
     };
     await api.saveCharacter(character);
     setPortraits((p) => ({ ...p, [performerId]: url }));
-    setCast((c) =>
-      c.map((x) => (x.id === performerId ? { ...x, characterId: character.id } : x))
-    );
+    setCast((c) => c.map((x) => (x.id === performerId ? { ...x, characterId: character.id } : x)));
   };
 
   // Upload a portrait for a performer.
@@ -316,8 +321,7 @@ export function DirectorWizard() {
     close();
   };
 
-  const canNext =
-    step === 0 ? !!song : true; // later steps are optional
+  const canNext = step === 0 ? !!song : true; // later steps are optional
 
   const next = () => {
     if (step === 1) applyLyrics();
@@ -384,7 +388,11 @@ export function DirectorWizard() {
             )}
 
             {step === 0 && (
-              <StepShell icon={<Music className="h-5 w-5" />} title="Import your song" desc="Everything starts from the track — an MP3/WAV export from Suno works exactly the same way. The Director maps tempo, sections, and energy locally.">
+              <StepShell
+                icon={<Music className="h-5 w-5" />}
+                title="Import your song"
+                desc="Everything starts from the track — an MP3/WAV export from Suno works exactly the same way. The Director maps tempo, sections, and energy locally."
+              >
                 {song ? (
                   <div className="flex items-center gap-3 rounded-[var(--radius-card)] border border-success/40 bg-success/10 p-3 text-sm">
                     <Check className="h-4 w-4 text-success" />
@@ -419,7 +427,11 @@ export function DirectorWizard() {
             )}
 
             {step === 1 && (
-              <StepShell icon={<Mic2 className="h-5 w-5" />} title="Add the lyrics" desc="Paste the lyrics (or skip), or upload a lyrics/script file. The Director spaces the lines across the song's sections so each part can be staged.">
+              <StepShell
+                icon={<Mic2 className="h-5 w-5" />}
+                title="Add the lyrics"
+                desc="Paste the lyrics (or skip), or upload a lyrics/script file. The Director spaces the lines across the song's sections so each part can be staged."
+              >
                 <div className="mb-2 flex items-center gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-button)] border border-border bg-elevated/40 px-2.5 py-1.5 text-xs font-medium text-foreground hover:border-primary/40">
                     <FileText className="h-3.5 w-3.5" /> Upload lyrics or script (.txt)
@@ -449,15 +461,21 @@ export function DirectorWizard() {
                 <Textarea
                   value={lyrics}
                   onChange={(e) => setLyrics(e.target.value)}
-                  placeholder={"Paste lyrics here — one line per row.\n(Optional — you can skip this.)"}
+                  placeholder={
+                    "Paste lyrics here — one line per row.\n(Optional — you can skip this.)"
+                  }
                   className="min-h-48"
                 />
                 {parsedPreview && (
                   <div className="mt-3 rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3">
                     <div className="mb-2 text-xs font-semibold text-muted">What we found</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {parsedPreview.songTitle && <Chip label={`Title: ${parsedPreview.songTitle}`} />}
-                      {parsedPreview.artistName && <Chip label={`Artist: ${parsedPreview.artistName}`} />}
+                      {parsedPreview.songTitle && (
+                        <Chip label={`Title: ${parsedPreview.songTitle}`} />
+                      )}
+                      {parsedPreview.artistName && (
+                        <Chip label={`Artist: ${parsedPreview.artistName}`} />
+                      )}
                       {parsedPreview.genre && <Chip label={parsedPreview.genre} />}
                       {parsedPreview.mood && <Chip label={parsedPreview.mood} />}
                       {parsedPreview.themes.map((t) => (
@@ -473,10 +491,14 @@ export function DirectorWizard() {
                         <Chip label={`${parsedPreview.sections.length} sections marked`} />
                       )}
                       {parsedPreview.hookMoments.length > 0 && (
-                        <Chip label={`${parsedPreview.hookMoments.length} hook line${parsedPreview.hookMoments.length === 1 ? "" : "s"}`} />
+                        <Chip
+                          label={`${parsedPreview.hookMoments.length} hook line${parsedPreview.hookMoments.length === 1 ? "" : "s"}`}
+                        />
                       )}
                       {parsedPreview.choreographyMoments.length > 0 && (
-                        <Chip label={`${parsedPreview.choreographyMoments.length} choreo moment${parsedPreview.choreographyMoments.length === 1 ? "" : "s"}`} />
+                        <Chip
+                          label={`${parsedPreview.choreographyMoments.length} choreo moment${parsedPreview.choreographyMoments.length === 1 ? "" : "s"}`}
+                        />
                       )}
                     </div>
                   </div>
@@ -485,16 +507,24 @@ export function DirectorWizard() {
             )}
 
             {step === 2 && (
-              <StepShell icon={<Users className="h-5 w-5" />} title="Who's performing?" desc="The Director detected these performers from your song. Upload or generate a photo, choose a role, and add a short vibe — no long forms.">
+              <StepShell
+                icon={<Users className="h-5 w-5" />}
+                title="Who's performing?"
+                desc="The Director detected these performers from your song. Upload or generate a photo, choose a role, and add a short vibe — no long forms."
+              >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {cast.map((p, i) => (
-                    <div key={p.id} className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated/30">
+                    <div
+                      key={p.id}
+                      className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated/30"
+                    >
                       {/* Portrait — the card's primary focus, casting-sheet sized. */}
                       <div className="relative aspect-[4/5] w-full bg-elevated">
                         <label
                           className={cn(
                             "group flex h-full w-full cursor-pointer items-center justify-center overflow-hidden",
-                            !portraits[p.id] && "border-b border-dashed border-border hover:border-primary/50"
+                            !portraits[p.id] &&
+                              "border-b border-dashed border-border hover:border-primary/50"
                           )}
                           title="Upload a photo — becomes this performer's generation reference"
                         >
@@ -502,7 +532,11 @@ export function DirectorWizard() {
                             <Loader2 className="h-6 w-6 animate-spin text-muted" />
                           ) : portraits[p.id] ? (
                             <>
-                              <img src={portraits[p.id]} alt="" className="h-full w-full object-cover" />
+                              <img
+                                src={portraits[p.id]}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
                               <span className="absolute inset-0 hidden items-center justify-center bg-black/50 group-hover:flex">
                                 <Camera className="h-6 w-6 text-white" />
                               </span>
@@ -555,7 +589,9 @@ export function DirectorWizard() {
                         <Input
                           value={p.name}
                           onChange={(e) =>
-                            setCast((c) => c.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+                            setCast((c) =>
+                              c.map((x, j) => (j === i ? { ...x, name: e.target.value } : x))
+                            )
                           }
                           className="h-9 text-base font-semibold"
                           aria-label={`Performer ${i + 1} name`}
@@ -584,7 +620,9 @@ export function DirectorWizard() {
                           value={p.performanceNotes}
                           onChange={(e) =>
                             setCast((c) =>
-                              c.map((x, j) => (j === i ? { ...x, performanceNotes: e.target.value } : x))
+                              c.map((x, j) =>
+                                j === i ? { ...x, performanceNotes: e.target.value } : x
+                              )
                             )
                           }
                           placeholder="Short vibe — e.g. confident, playful, intense"
@@ -655,7 +693,11 @@ export function DirectorWizard() {
             )}
 
             {step === 3 && (
-              <StepShell icon={<Clapperboard className="h-5 w-5" />} title="What kind of video is this?" desc="This shapes how the Director approaches every section — performance-forward, story-led, choreography-first, animated, or an abstract run of movements.">
+              <StepShell
+                icon={<Clapperboard className="h-5 w-5" />}
+                title="What kind of video is this?"
+                desc="This shapes how the Director approaches every section — performance-forward, story-led, choreography-first, animated, or an abstract run of movements."
+              >
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {VIDEO_TYPES.map((v) => (
                     <button
@@ -671,7 +713,9 @@ export function DirectorWizard() {
                       <span
                         className={cn(
                           "flex h-8 w-8 items-center justify-center rounded-lg",
-                          videoType === v.key ? "bg-primary/20 text-primary" : "bg-elevated text-muted"
+                          videoType === v.key
+                            ? "bg-primary/20 text-primary"
+                            : "bg-elevated text-muted"
                         )}
                       >
                         {VIDEO_TYPE_ICON[v.key]}
@@ -690,7 +734,11 @@ export function DirectorWizard() {
             )}
 
             {step === 4 && (
-              <StepShell icon={<BookOpen className="h-5 w-5" />} title="Choose the story feeling" desc="Most music videos need a story layer, even while the performer sings. Pick a feeling — or skip it for performance only.">
+              <StepShell
+                icon={<BookOpen className="h-5 w-5" />}
+                title="Choose the story feeling"
+                desc="Most music videos need a story layer, even while the performer sings. Pick a feeling — or skip it for performance only."
+              >
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {STORY_FEELINGS.map((f) => (
                     <button
@@ -706,7 +754,9 @@ export function DirectorWizard() {
                       <span
                         className={cn(
                           "flex h-8 w-8 items-center justify-center rounded-lg",
-                          storyFeeling === f.key ? "bg-primary/20 text-primary" : "bg-elevated text-muted"
+                          storyFeeling === f.key
+                            ? "bg-primary/20 text-primary"
+                            : "bg-elevated text-muted"
                         )}
                       >
                         {STORY_FEELING_ICON[f.key]}
@@ -734,7 +784,11 @@ export function DirectorWizard() {
             )}
 
             {step === 5 && (
-              <StepShell icon={<Palette className="h-5 w-5" />} title="Pick a visual style" desc="Choose a blueprint the Director will adapt to your song — or go with no style for a neutral cinematic look.">
+              <StepShell
+                icon={<Palette className="h-5 w-5" />}
+                title="Pick a visual style"
+                desc="Choose a blueprint the Director will adapt to your song — or go with no style for a neutral cinematic look."
+              >
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   <NoStyleCard active={styleId === null} onClick={() => setStyleId(null)} />
                   {stylePicks.map((t) => (
@@ -750,9 +804,20 @@ export function DirectorWizard() {
             )}
 
             {step === 6 && (
-              <StepShell icon={<Sparkles className="h-5 w-5" />} title="Direct my music video" desc="The Director will now analyze the song and generate a beat-synced treatment, shot list, and choreography into a brand-new production.">
+              <StepShell
+                icon={<Sparkles className="h-5 w-5" />}
+                title="Direct my music video"
+                desc="The Director will now analyze the song and generate a beat-synced treatment, shot list, and choreography into a brand-new production."
+              >
                 <ul className="space-y-1.5 text-sm text-muted">
-                  {["Analyze the song", "Cast the performers", "Write the story beats", "Plan the beat-synced shot list", "Choreograph the chorus", "Assemble your treatment"].map((s) => (
+                  {[
+                    "Analyze the song",
+                    "Cast the performers",
+                    "Write the story beats",
+                    "Plan the beat-synced shot list",
+                    "Choreograph the chorus",
+                    "Assemble your treatment",
+                  ].map((s) => (
                     <li key={s} className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {s}
                     </li>
@@ -764,7 +829,11 @@ export function DirectorWizard() {
 
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-border px-5 py-3">
-            <Button variant="ghost" size="sm" onClick={() => (step === 0 ? close() : setStep((s) => s - 1))}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => (step === 0 ? close() : setStep((s) => s - 1))}
+            >
               <ArrowLeft className="h-4 w-4" /> {step === 0 ? "Cancel" : "Back"}
             </Button>
             {step < STEPS.length - 1 ? (
@@ -772,7 +841,10 @@ export function DirectorWizard() {
                 {step === 1 && !lyrics.trim() ? "Skip" : "Next"} <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
-              <button onClick={finish} className="magic-cta inline-flex items-center gap-2 rounded-[var(--radius-button)] px-4 py-2 text-sm font-bold">
+              <button
+                onClick={finish}
+                className="magic-cta inline-flex items-center gap-2 rounded-[var(--radius-button)] px-4 py-2 text-sm font-bold"
+              >
                 <Clapperboard className="h-4 w-4" /> Direct my music video
               </button>
             )}
@@ -817,4 +889,3 @@ function StepShell({
     </div>
   );
 }
-

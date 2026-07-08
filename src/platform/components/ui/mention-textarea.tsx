@@ -40,8 +40,14 @@ export function MentionTextarea({
   rows?: number;
   autoFocus?: boolean;
 }) {
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+  });
   const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
 
   // One option per named asset (hero image), deduped by label.
@@ -61,9 +67,7 @@ export function MentionTextarea({
   const matches =
     query === null
       ? []
-      : options
-          .filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 6);
+      : options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase())).slice(0, 6);
 
   const onInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const v = e.target.value;

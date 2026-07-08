@@ -15,15 +15,7 @@ export interface ExtractResult {
   warning?: string;
 }
 
-export const ACCEPTED_EXTENSIONS = [
-  ".txt",
-  ".md",
-  ".csv",
-  ".fountain",
-  ".pdf",
-  ".doc",
-  ".docx",
-];
+export const ACCEPTED_EXTENSIONS = [".txt", ".md", ".csv", ".fountain", ".pdf", ".doc", ".docx"];
 export const ACCEPT_ATTR = ACCEPTED_EXTENSIONS.join(",");
 
 function extOf(name: string): string {
@@ -78,9 +70,7 @@ async function extractPdf(file: File): Promise<string> {
     const line = content.items
       // TextItem has `str`; TextMarkedContent does not.
       .map((it) =>
-        typeof (it as { str?: string }).str === "string"
-          ? (it as { str: string }).str
-          : ""
+        typeof (it as { str?: string }).str === "string" ? (it as { str: string }).str : ""
       )
       .join(" ");
     pages.push(line);

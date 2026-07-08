@@ -7,12 +7,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary:
-          "grad-primary text-white shadow-sm shadow-primary/25 hover:brightness-110",
-        accent:
-          "grad-accent font-semibold text-[#06283d] shadow-sm hover:brightness-105",
-        gold:
-          "grad-gold font-semibold text-[var(--color-gold-foreground)] shadow-sm shadow-[var(--color-gold)]/25 hover:brightness-105",
+        primary: "grad-primary text-white shadow-sm shadow-primary/25 hover:brightness-110",
+        accent: "grad-accent font-semibold text-[#06283d] shadow-sm hover:brightness-105",
+        gold: "grad-gold font-semibold text-[var(--color-gold-foreground)] shadow-sm shadow-[var(--color-gold)]/25 hover:brightness-105",
         success: "bg-success text-white shadow-sm hover:brightness-110",
         secondary:
           "border border-border bg-elevated text-foreground hover:border-primary/40 hover:bg-elevated/70",
@@ -33,8 +30,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {}
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, ...props }, ref) => (

@@ -83,19 +83,15 @@ export function SessionGuard() {
             <ShieldCheck className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-base font-semibold leading-tight">
-              Recover your last session?
-            </h2>
-            <p className="text-xs text-muted">
-              The app didn't close normally last time.
-            </p>
+            <h2 className="text-base font-semibold leading-tight">Recover your last session?</h2>
+            <p className="text-xs text-muted">The app didn't close normally last time.</p>
           </div>
         </div>
         <div className="space-y-3 p-6">
           <p className="text-sm text-muted">
             Your work is already saved — but we kept a snapshot from{" "}
-            <span className="text-foreground">{when}</span> just in case. Restore it,
-            or keep the current state.
+            <span className="text-foreground">{when}</span> just in case. Restore it, or keep the
+            current state.
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setRecover(null)}>

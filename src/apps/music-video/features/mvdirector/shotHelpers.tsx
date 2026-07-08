@@ -93,8 +93,16 @@ export const LIGHTING_PRESETS: { label: string; value: string }[] = [
 
 /** First-class story-intent emotions, selectable as tags. */
 export const STORY_EMOTIONS = [
-  "Wonder", "Triumph", "Mystery", "Discovery", "Joy",
-  "Isolation", "Celebration", "Tension", "Hope", "Awe",
+  "Wonder",
+  "Triumph",
+  "Mystery",
+  "Discovery",
+  "Joy",
+  "Isolation",
+  "Celebration",
+  "Tension",
+  "Hope",
+  "Awe",
 ];
 
 export function fileToDataUrl(file: File): Promise<string> {
@@ -136,7 +144,9 @@ export function directorSummary(shot: MvShot, approach: string): string {
     `This ${approach.toLowerCase()} shot ${emotions ? `leans into ${emotions.toLowerCase()}` : "carries the section's energy"}.`,
     cam ? `The camera ${cam}.` : "",
     light ? `Lighting: ${light}.` : "",
-    perfLine ? `Performance: ${perfLine}.` : "No performer in frame — the world itself becomes the subject.",
+    perfLine
+      ? `Performance: ${perfLine}.`
+      : "No performer in frame — the world itself becomes the subject.",
   ];
   return parts.filter(Boolean).join(" ");
 }
@@ -155,11 +165,15 @@ export function directorBrain(
 
   if (!shot.storyIntent?.trim()) {
     const intent = isChorus ? "Triumph, Celebration" : isIntro ? "Wonder, Mystery" : "Discovery";
-    tips.push(`No story intent yet — ${isChorus ? "choruses hit hardest with triumph/celebration" : isIntro ? "intros set wonder + mystery" : "give the shot a reason to exist"}.`);
+    tips.push(
+      `No story intent yet — ${isChorus ? "choruses hit hardest with triumph/celebration" : isIntro ? "intros set wonder + mystery" : "give the shot a reason to exist"}.`
+    );
     actions.push({ label: `Set intent: ${intent}`, patch: { storyIntent: intent } });
   }
   if (isChorus && approach !== "Abstract" && !shot.choreo?.length) {
-    tips.push("Chorus = performance payoff. Assign your lead + a move in Choreography & Direction.");
+    tips.push(
+      "Chorus = performance payoff. Assign your lead + a move in Choreography & Direction."
+    );
   }
   // Camera suggestion by section.
   const camSuggest = isChorus
@@ -171,13 +185,17 @@ export function directorBrain(
     actions.push({ label: `Camera: ${camSuggest.label}`, patch: { movement: camSuggest.value } });
   }
   // Lighting suggestion by energy.
-  const lightSuggest = energy >= 0.66
-    ? LIGHTING_PRESETS.find((l) => l.label === "Concert")!
-    : energy >= 0.4
-      ? LIGHTING_PRESETS.find((l) => l.label === "Gold Rim")!
-      : LIGHTING_PRESETS.find((l) => l.label === "Blue Ambient")!;
+  const lightSuggest =
+    energy >= 0.66
+      ? LIGHTING_PRESETS.find((l) => l.label === "Concert")!
+      : energy >= 0.4
+        ? LIGHTING_PRESETS.find((l) => l.label === "Gold Rim")!
+        : LIGHTING_PRESETS.find((l) => l.label === "Blue Ambient")!;
   if (shot.lighting !== lightSuggest.value) {
-    actions.push({ label: `Lighting: ${lightSuggest.label}`, patch: { lighting: lightSuggest.value } });
+    actions.push({
+      label: `Lighting: ${lightSuggest.label}`,
+      patch: { lighting: lightSuggest.value },
+    });
   }
   return { tips, actions };
 }
@@ -185,7 +203,9 @@ export function directorBrain(
 /** Compact a model label for an on-preview badge: drop the ★ and the trailing
  *  provider parenthetical, and truncate. "★ Seedance 2.0 (Fal · audio)" → "Seedance 2.0". */
 export function badgeLabel(label: string): string {
-  const cleaned = label.replace(/^★\s*/, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const cleaned = label
+    .replace(/^★\s*/, "")
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim();
   return cleaned.length > 22 ? `${cleaned.slice(0, 21)}…` : cleaned;
 }
-

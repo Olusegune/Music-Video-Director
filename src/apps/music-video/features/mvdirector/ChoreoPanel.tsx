@@ -80,8 +80,8 @@ export function ChoreoPanel({
         </datalist>
         {assignments.length === 0 && (
           <p className="text-[10px] text-muted/70">
-            No moves assigned — the shot uses the section's auto choreography. Add one to
-            assign a specific performer + move.
+            No moves assigned — the shot uses the section's auto choreography. Add one to assign a
+            specific performer + move.
           </p>
         )}
         {assignments.map((a, i) => (
@@ -111,7 +111,11 @@ export function ChoreoPanel({
                       title={`${p.name} — ${p.role}`}
                     >
                       {p.image ? (
-                        <AssetImage src={p.image} alt={p.name} className="h-7 w-7 rounded-full object-cover" />
+                        <AssetImage
+                          src={p.image}
+                          alt={p.name}
+                          className="h-7 w-7 rounded-full object-cover"
+                        />
                       ) : (
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-elevated text-[10px] font-semibold uppercase">
                           {p.name.slice(0, 2)}
@@ -169,7 +173,9 @@ export function ChoreoPanel({
                         a.move === ps.label ? "border-primary" : "border-border"
                       )}
                     />
-                    <span className="w-full truncate text-center text-[9px] text-muted">{ps.label}</span>
+                    <span className="w-full truncate text-center text-[9px] text-muted">
+                      {ps.label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -246,7 +252,6 @@ export function ChoreoPanel({
           <Plus className="h-3 w-3" /> Add performer + move
         </button>
       </div>
-
     </div>
   );
 }

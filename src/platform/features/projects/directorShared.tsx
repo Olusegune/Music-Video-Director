@@ -21,9 +21,7 @@ export function Field({
 }) {
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
-      <span className="px-1.5 text-[10px] uppercase tracking-wide text-muted">
-        {label}
-      </span>
+      <span className="px-1.5 text-[10px] uppercase tracking-wide text-muted">{label}</span>
       {textarea ? (
         <InlineTextarea value={value} onChange={onChange} rows={2} />
       ) : (
@@ -49,9 +47,7 @@ export function ShotPlanCard({
     <Card className={shot.locked ? "opacity-90" : ""}>
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <span className={accent === "primary" ? "text-primary" : "text-accent"}>
-            {icon}
-          </span>
+          <span className={accent === "primary" ? "text-primary" : "text-accent"}>{icon}</span>
           <Badge variant={accent}>Shot {shot.number}</Badge>
           <span className="text-sm font-medium">{shot.name}</span>
         </div>

@@ -14,7 +14,10 @@ import {
   FolderInput,
 } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
-import { GenerationPanel, type GenerateOpts } from "@/platform/components/generation/GenerationPanel";
+import {
+  GenerationPanel,
+  type GenerateOpts,
+} from "@/platform/components/generation/GenerationPanel";
 import {
   UPLOAD_CATEGORIES,
   categoryBible,
@@ -136,9 +139,7 @@ export function LockToggle({
         <span className="block text-sm font-medium">
           {locked ? lockedTitle : "Consistency unlocked"}
         </span>
-        <span className="block text-[11px] text-muted">
-          {locked ? lockedHint : unlockedHint}
-        </span>
+        <span className="block text-[11px] text-muted">{locked ? lockedHint : unlockedHint}</span>
       </span>
     </button>
   );
@@ -178,12 +179,7 @@ export function MoveAssetMenu({
       if (fromKind === "Prop") onPropCategory?.(target);
       return; // Character/Environment have no sub-types — nothing to do
     }
-    if (
-      !confirm(
-        `Move "${name}" to "${target}"? It moves to the ${targetBible} Bible.`
-      )
-    )
-      return;
+    if (!confirm(`Move "${name}" to "${target}"? It moves to the ${targetBible} Bible.`)) return;
     setBusy(true);
     try {
       await moveAssetAcrossBibles(fromKind, fromId, target, name, primaryImage, refs);
@@ -287,8 +283,8 @@ export function MediaPanel({
 
       {!isTauri && (
         <p className="text-center text-[11px] text-muted">
-          Browser preview uses a placeholder. The desktop app renders from your
-          chosen image provider.
+          Browser preview uses a placeholder. The desktop app renders from your chosen image
+          provider.
         </p>
       )}
     </div>
@@ -463,7 +459,12 @@ export function PaletteField({
         value={text}
         onChange={(e) => {
           setText(e.target.value);
-          onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean));
+          onChange(
+            e.target.value
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          );
         }}
         placeholder="#0B1B2B, #D4AF37, #00D9FF"
         className="flex h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted focus-visible:border-primary focus-visible:outline-none"

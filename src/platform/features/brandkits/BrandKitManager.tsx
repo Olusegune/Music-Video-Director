@@ -7,12 +7,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Label } from "@/platform/components/ui/label";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/platform/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/platform/components/ui/card";
 
 export function BrandKitManager() {
   const queryClient = useQueryClient();
@@ -182,15 +177,7 @@ function BrandKitCard({ kit }: { kit: BrandKit }) {
   );
 }
 
-function Field({
-  label,
-  id,
-  children,
-}: {
-  label: string;
-  id: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>

@@ -7,14 +7,7 @@
 // a finished, intentional visual, not an empty/upload state.
 
 import { useState } from "react";
-import {
-  Palette,
-  Sparkles,
-  Music,
-  Clapperboard,
-  Drama,
-  type LucideIcon,
-} from "lucide-react";
+import { Palette, Sparkles, Music, Clapperboard, Drama, type LucideIcon } from "lucide-react";
 import type { MvTemplate } from "@/platform/lib/templates";
 import { cn } from "@/platform/lib/utils";
 
@@ -121,9 +114,7 @@ export function TemplateCard({
 
       <div className="flex flex-col gap-1 p-2.5">
         <span className="text-sm font-semibold leading-tight">{template.name}</span>
-        <span className="line-clamp-2 text-[11px] leading-snug text-muted">
-          {template.tagline}
-        </span>
+        <span className="line-clamp-2 text-[11px] leading-snug text-muted">{template.tagline}</span>
         {template.palette.length > 0 && (
           <div className="mt-0.5 flex items-center gap-1">
             {template.palette.slice(0, 5).map((c, i) => (

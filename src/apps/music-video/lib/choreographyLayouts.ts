@@ -34,7 +34,11 @@ const semicircle: ShapeFn = (count) => {
   return Array.from({ length: n }, (_, i) => {
     const t = n === 1 ? 0.5 : i / (n - 1);
     const angle = Math.PI * (0.15 + 0.7 * t);
-    return { x: 0.5 - 0.4 * Math.cos(angle), y: 0.75 - 0.35 * Math.sin(angle), lead: i === Math.floor((n - 1) / 2) };
+    return {
+      x: 0.5 - 0.4 * Math.cos(angle),
+      y: 0.75 - 0.35 * Math.sin(angle),
+      lead: i === Math.floor((n - 1) / 2),
+    };
   });
 };
 
@@ -63,7 +67,11 @@ const twoRows: ShapeFn = (count) => {
   const back = n - front;
   const slots: FormationSlot[] = [];
   for (let i = 0; i < front; i++) {
-    slots.push({ x: 0.2 + (0.6 * i) / clamp(front - 1), y: 0.68, lead: i === Math.floor((front - 1) / 2) });
+    slots.push({
+      x: 0.2 + (0.6 * i) / clamp(front - 1),
+      y: 0.68,
+      lead: i === Math.floor((front - 1) / 2),
+    });
   }
   for (let i = 0; i < back; i++) {
     slots.push({ x: 0.2 + (0.6 * i) / clamp(back - 1), y: 0.38, lead: false });

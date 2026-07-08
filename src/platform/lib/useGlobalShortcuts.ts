@@ -13,12 +13,7 @@ function isTyping(el: EventTarget | null): boolean {
   const node = el as HTMLElement | null;
   if (!node) return false;
   const tag = node.tagName;
-  return (
-    tag === "INPUT" ||
-    tag === "TEXTAREA" ||
-    tag === "SELECT" ||
-    node.isContentEditable
-  );
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || node.isContentEditable;
 }
 
 export function useGlobalShortcuts(): void {

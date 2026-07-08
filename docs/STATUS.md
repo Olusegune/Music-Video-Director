@@ -64,25 +64,28 @@ msi,nsis` after any release-worthy change. Not code-signed (SmartScreen warning
 is expected and documented in Help).
 
 Latest verified Director Studio artifacts:
+
 - Release exe: `src-tauri/target/release/wheelbarrow-motionforge.exe`
 - MSI: `src-tauri/target/release/bundle/msi/Director Studio_0.1.0_x64_en-US.msi`
 - NSIS installer: `src-tauri/target/release/bundle/nsis/Director Studio_0.1.0_x64-setup.exe`
 
 Latest Director Studio branding verification:
+
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-branding-20260707-185143`
 - Icon generation: `npm run tauri icon -- src\assets\director-studio-icon.png` regenerated `src-tauri/icons/*`, including Windows ICO and installer/logo PNGs.
 - Typecheck/build: `npx tsc --noEmit` and `npm run build` passed.
 - Browser QA: startup splash appeared immediately with `Director Studio` alt text, faded out cleanly, shell title/copy used Director Studio, Music Video Director and Motion Studio both rendered, and browser console had no errors.
 - Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`; NSIS setup has an associated icon resource; MSI ProductName is `Director Studio`.
 
-
 Latest Glam Studio verification:
+
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-glam-studio-20260707-210941`
 - Platform prep added: `src/platform/lib/brandDna.ts`, `src/platform/lib/deliverables.ts`, `src/platform/lib/loopEngine.ts`.
 - Typecheck/build: `npx tsc --noEmit` and `npm run build` passed.
 - Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`.
 
 Latest Music Video Guided Flow V2 verification:
+
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-v2-20260707-205217`
 - Safe default proof: `npx tsc --noEmit`, `npm run build`, and `npm run tauri build -- --bundles msi,nsis` passed while `mf.guidedFlowV2` still defaulted off.
 - Final default-on proof: `npx tsc --noEmit`, `npm run build`, and `npm run tauri build -- --bundles msi,nsis` passed after flipping the default on.
@@ -90,6 +93,7 @@ Latest Music Video Guided Flow V2 verification:
 - StudioMode coverage: V2 uses `GuidedFlowShell` mode gating, with Director primary guided steps, Studio creative controls, and Creator technical prompt/flow panels compiled through typecheck/build. Browser interaction against `http://127.0.0.1:1420/` remains blocked by the in-app browser URL policy, so live click-through tier QA was not performed in this pass.
 
 Latest Guided Flow / splash verification:
+
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-20260707-203120`
 - Specs added: `docs/DIRECTOR-STUDIO-MODULES-SPEC.md`, `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`
 - `mf.guidedFlowV2` remains off by default; Music Video Director still uses the existing Magic/Director flows until the wrapper migration is built and verified.
@@ -98,6 +102,7 @@ Latest Guided Flow / splash verification:
 - Browser QA: in-app browser reload was blocked by its URL policy for `http://127.0.0.1:1420/`, so no browser-surface interaction was performed in this pass.
 
 Latest Motion Studio integration verification:
+
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-phase-motionstudio-20260707-182249`
 - Typecheck/build: `npm run build` passed.
 - Browser QA: Music Video Director rendered after reload; Motion Studio opened from the sidebar; a sample SaaS Explainer project generated a storyboard, scene plan, timeline/export placeholder, loop engine, Creator controls, and Improve/Approve updates.

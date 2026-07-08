@@ -25,15 +25,21 @@ export interface SheetSection {
 }
 
 export const TURNAROUND: SheetCell[] = [
-  { key: "front", label: "Front", modifier: "full-body front orthographic view, neutral A-pose, T-pose turnaround" },
-  { key: "threeq", label: "3/4 Front", modifier: "full-body 3/4 front view, neutral standing pose" },
+  {
+    key: "front",
+    label: "Front",
+    modifier: "full-body front orthographic view, neutral A-pose, T-pose turnaround",
+  },
+  {
+    key: "threeq",
+    label: "3/4 Front",
+    modifier: "full-body 3/4 front view, neutral standing pose",
+  },
   { key: "side", label: "Side", modifier: "full-body side profile view, neutral standing pose" },
   { key: "back", label: "Back", modifier: "full-body back view, neutral standing pose" },
 ];
 
-const EXPRESSION_NAMES = [
-  "Happy", "Sad", "Angry", "Fear", "Joy", "Surprise", "Determination",
-];
+const EXPRESSION_NAMES = ["Happy", "Sad", "Angry", "Fear", "Joy", "Surprise", "Determination"];
 
 export const EXPRESSIONS: SheetCell[] = EXPRESSION_NAMES.map((e) => ({
   key: `expr_${e.toLowerCase()}`,
@@ -125,21 +131,36 @@ export function clearSheet(characterId: string) {
 // --- color palette ---------------------------------------------------------
 
 const COLOR_HEX: Record<string, string> = {
-  black: "#1c1c1e", brown: "#6b4423", blonde: "#d9b36b", red: "#a23b2c",
-  auburn: "#7d3a2a", ginger: "#c0612f", grey: "#9aa1ac", gray: "#9aa1ac",
-  white: "#f1ede6", silver: "#c8ccd2", blue: "#3b6ea5", green: "#3f7d56",
-  hazel: "#8a6a3b", amber: "#c98a2b",
+  black: "#1c1c1e",
+  brown: "#6b4423",
+  blonde: "#d9b36b",
+  red: "#a23b2c",
+  auburn: "#7d3a2a",
+  ginger: "#c0612f",
+  grey: "#9aa1ac",
+  gray: "#9aa1ac",
+  white: "#f1ede6",
+  silver: "#c8ccd2",
+  blue: "#3b6ea5",
+  green: "#3f7d56",
+  hazel: "#8a6a3b",
+  amber: "#c98a2b",
   // skin tones
-  fair: "#f0d4bd", light: "#e8c4a2", olive: "#c8a274", tan: "#b88a5f",
-  warm: "#caa07a", brown_skin: "#8a5a3c", dark: "#5a3a28", deep: "#41281c",
+  fair: "#f0d4bd",
+  light: "#e8c4a2",
+  olive: "#c8a274",
+  tan: "#b88a5f",
+  warm: "#caa07a",
+  brown_skin: "#8a5a3c",
+  dark: "#5a3a28",
+  deep: "#41281c",
   ebony: "#3a241a",
 };
 
 function hexFor(token: string): string | null {
   const t = token.toLowerCase().replace(/[^a-z]/g, "");
   if (COLOR_HEX[t]) return COLOR_HEX[t];
-  for (const k of Object.keys(COLOR_HEX))
-    if (t.includes(k)) return COLOR_HEX[k];
+  for (const k of Object.keys(COLOR_HEX)) if (t.includes(k)) return COLOR_HEX[k];
   return null;
 }
 

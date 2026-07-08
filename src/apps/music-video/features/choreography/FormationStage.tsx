@@ -28,11 +28,32 @@ export function FormationStage({
 
   return (
     <div className="rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-40 w-full" role="img" aria-label={`Formation: ${formation}`}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-40 w-full"
+        role="img"
+        aria-label={`Formation: ${formation}`}
+      >
         {/* Stage floor */}
-        <rect x={2} y={2} width={W - 4} height={H - 4} rx={3} className="fill-background/40 stroke-border" strokeWidth={0.5} />
+        <rect
+          x={2}
+          y={2}
+          width={W - 4}
+          height={H - 4}
+          rx={3}
+          className="fill-background/40 stroke-border"
+          strokeWidth={0.5}
+        />
         {/* Depth guides — upstage/downstage hint, purely visual. */}
-        <line x1={2} y1={py(0.5)} x2={W - 2} y2={py(0.5)} className="stroke-border/40" strokeWidth={0.3} strokeDasharray="1.5,1.5" />
+        <line
+          x1={2}
+          y1={py(0.5)}
+          x2={W - 2}
+          y2={py(0.5)}
+          className="stroke-border/40"
+          strokeWidth={0.3}
+          strokeDasharray="1.5,1.5"
+        />
 
         {/* Transition arrows to the next section's formation. */}
         {nextSlots &&
@@ -58,7 +79,14 @@ export function FormationStage({
           })}
 
         <defs>
-          <marker id="formation-arrow" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+          <marker
+            id="formation-arrow"
+            markerWidth="4"
+            markerHeight="4"
+            refX="2"
+            refY="2"
+            orient="auto"
+          >
             <path d="M0,0 L4,2 L0,4 Z" fill={accent} opacity={0.6} />
           </marker>
         </defs>
@@ -75,7 +103,13 @@ export function FormationStage({
               strokeWidth={s.lead ? 0 : 0.8}
             />
             {s.lead && (
-              <text x={px(s.x)} y={py(s.y) + 8} textAnchor="middle" className="fill-muted" fontSize="3.2">
+              <text
+                x={px(s.x)}
+                y={py(s.y) + 8}
+                textAnchor="middle"
+                className="fill-muted"
+                fontSize="3.2"
+              >
                 lead
               </text>
             )}

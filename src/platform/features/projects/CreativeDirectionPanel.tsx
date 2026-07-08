@@ -8,24 +8,13 @@ import {
   newLockItem,
   type TextLockState,
 } from "@/platform/lib/textlock";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/platform/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/platform/components/ui/card";
 import { Button } from "@/platform/components/ui/button";
 import { InlineInput, InlineTextarea } from "@/platform/components/ui/inline-edit";
 
 type Update = (updater: (prev: PromptPack) => PromptPack) => void;
 
-export function CreativeDirectionPanel({
-  pack,
-  update,
-}: {
-  pack: PromptPack;
-  update: Update;
-}) {
+export function CreativeDirectionPanel({ pack, update }: { pack: PromptPack; update: Update }) {
   const cd = pack.creativeDirection;
   const st = pack.style;
 
@@ -143,9 +132,7 @@ export function CreativeDirectionPanel({
             <InlineTextarea
               value={st.visualLanguage}
               rows={2}
-              onChange={(v) =>
-                update((p) => ({ ...p, style: { ...p.style, visualLanguage: v } }))
-              }
+              onChange={(v) => update((p) => ({ ...p, style: { ...p.style, visualLanguage: v } }))}
             />
           </Row>
           <Row label="Color Palette">
@@ -175,34 +162,26 @@ export function CreativeDirectionPanel({
             <Row label="Typography">
               <InlineInput
                 value={st.typography}
-                onChange={(v) =>
-                  update((p) => ({ ...p, style: { ...p.style, typography: v } }))
-                }
+                onChange={(v) => update((p) => ({ ...p, style: { ...p.style, typography: v } }))}
               />
             </Row>
             <Row label="Mood">
               <InlineInput
                 value={st.mood}
-                onChange={(v) =>
-                  update((p) => ({ ...p, style: { ...p.style, mood: v } }))
-                }
+                onChange={(v) => update((p) => ({ ...p, style: { ...p.style, mood: v } }))}
               />
             </Row>
           </div>
           <Row label="Materials">
             <InlineInput
               value={st.materials}
-              onChange={(v) =>
-                update((p) => ({ ...p, style: { ...p.style, materials: v } }))
-              }
+              onChange={(v) => update((p) => ({ ...p, style: { ...p.style, materials: v } }))}
             />
           </Row>
           <Row label="Atmosphere">
             <InlineInput
               value={st.atmosphere}
-              onChange={(v) =>
-                update((p) => ({ ...p, style: { ...p.style, atmosphere: v } }))
-              }
+              onChange={(v) => update((p) => ({ ...p, style: { ...p.style, atmosphere: v } }))}
             />
           </Row>
         </CardContent>
@@ -237,9 +216,7 @@ export function CreativeDirectionPanel({
                 }
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
-              <span className={item.checked ? "text-muted line-through" : ""}>
-                {item.label}
-              </span>
+              <span className={item.checked ? "text-muted line-through" : ""}>{item.label}</span>
             </label>
           ))}
         </CardContent>
@@ -248,18 +225,10 @@ export function CreativeDirectionPanel({
   );
 }
 
-function Row({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="px-1.5 text-[11px] uppercase tracking-wide text-muted">
-        {label}
-      </span>
+      <span className="px-1.5 text-[11px] uppercase tracking-wide text-muted">{label}</span>
       {children}
     </div>
   );
@@ -293,8 +262,8 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
       <CardContent className="flex flex-col gap-3">
         {locks.length === 0 && (
           <p className="text-xs text-muted">
-            No locked text yet. Brand names, CTAs, and numbers detected from the
-            brief land here automatically — or add one below.
+            No locked text yet. Brand names, CTAs, and numbers detected from the brief land here
+            automatically — or add one below.
           </p>
         )}
 
@@ -307,11 +276,7 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
               aria-label="Locked text"
               value={item.text}
               onChange={(e) =>
-                setLocks(
-                  locks.map((l, i) =>
-                    i === idx ? { ...l, text: e.target.value } : l
-                  )
-                )
+                setLocks(locks.map((l, i) => (i === idx ? { ...l, text: e.target.value } : l)))
               }
               placeholder="On-screen text…"
               className="h-8 flex-1 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
@@ -320,11 +285,7 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
               aria-label="Role"
               value={item.role ?? ""}
               onChange={(e) =>
-                setLocks(
-                  locks.map((l, i) =>
-                    i === idx ? { ...l, role: e.target.value } : l
-                  )
-                )
+                setLocks(locks.map((l, i) => (i === idx ? { ...l, role: e.target.value } : l)))
               }
               placeholder="role (e.g. CTA)"
               className="h-8 w-36 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
@@ -336,9 +297,7 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
               onChange={(e) =>
                 setLocks(
                   locks.map((l, i) =>
-                    i === idx
-                      ? { ...l, state: e.target.value as TextLockState }
-                      : l
+                    i === idx ? { ...l, state: e.target.value as TextLockState } : l
                   )
                 )
               }

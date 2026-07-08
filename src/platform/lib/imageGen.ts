@@ -32,25 +32,145 @@ export interface ImageModel {
 // routed through the prioritized providers. `apiModel` is the slug an aggregator
 // adapter sends — confirm against the provider's current catalog if it changes.
 export const IMAGE_MODELS: ImageModel[] = [
-  { id: "nano_banana_pro", label: "★ Nano Banana Pro / Gemini", providerKey: "google_imagen", keyIds: ["google_imagen", "gemini"], hint: "Google Gemini image (Nano Banana Pro) → Imagen fallback" },
-  { id: "nano_banana_2", label: "★ Nano Banana 2 (Kie)", providerKey: "kie", apiModel: "nano-banana-2", keyIds: ["kie"], hint: "Nano Banana 2 via Kie" },
-  { id: "nano_banana_kie", label: "Nano Banana (Kie)", providerKey: "kie", apiModel: "google/nano-banana", keyIds: ["kie"], hint: "Nano Banana via Kie" },
-  { id: "gpt_image", label: "★ ChatGPT Image 2 (OpenAI)", providerKey: "openai", keyIds: ["openai", "gpt_image"], hint: "gpt-image-1 → dall-e-3 fallback" },
+  {
+    id: "nano_banana_pro",
+    label: "★ Nano Banana Pro / Gemini",
+    providerKey: "google_imagen",
+    keyIds: ["google_imagen", "gemini"],
+    hint: "Google Gemini image (Nano Banana Pro) → Imagen fallback",
+  },
+  {
+    id: "nano_banana_2",
+    label: "★ Nano Banana 2 (Kie)",
+    providerKey: "kie",
+    apiModel: "nano-banana-2",
+    keyIds: ["kie"],
+    hint: "Nano Banana 2 via Kie",
+  },
+  {
+    id: "nano_banana_kie",
+    label: "Nano Banana (Kie)",
+    providerKey: "kie",
+    apiModel: "google/nano-banana",
+    keyIds: ["kie"],
+    hint: "Nano Banana via Kie",
+  },
+  {
+    id: "gpt_image",
+    label: "★ ChatGPT Image 2 (OpenAI)",
+    providerKey: "openai",
+    keyIds: ["openai", "gpt_image"],
+    hint: "gpt-image-1 → dall-e-3 fallback",
+  },
   // --- Fal image catalog (each routes a specific fal model slug) ---
-  { id: "fal_flux_dev", label: "Fal · FLUX.1 [dev]", providerKey: "fal", apiModel: "fal-ai/flux/dev", keyIds: ["fal"], hint: "High-quality FLUX dev" },
-  { id: "fal_flux_schnell", label: "Fal · FLUX.1 [schnell]", providerKey: "fal", apiModel: "fal-ai/flux/schnell", keyIds: ["fal"], hint: "Ultra-fast FLUX schnell" },
-  { id: "fal_flux_pro", label: "Fal · FLUX1.1 [pro]", providerKey: "fal", apiModel: "fal-ai/flux-pro/v1.1", keyIds: ["fal"], hint: "FLUX 1.1 Pro" },
-  { id: "fal_flux_ultra", label: "Fal · FLUX1.1 [pro] ultra", providerKey: "fal", apiModel: "fal-ai/flux-pro/v1.1-ultra", keyIds: ["fal"], hint: "Up to 2K, photoreal" },
-  { id: "fal_sd35_large", label: "Fal · Stable Diffusion 3.5 Large", providerKey: "fal", apiModel: "fal-ai/stable-diffusion-v35-large", keyIds: ["fal"], hint: "SD 3.5 Large" },
-  { id: "fal_sd35_medium", label: "Fal · Stable Diffusion 3.5 Medium", providerKey: "fal", apiModel: "fal-ai/stable-diffusion-v35-medium", keyIds: ["fal"], hint: "SD 3.5 Medium" },
-  { id: "fal_recraft", label: "Fal · Recraft V3", providerKey: "fal", apiModel: "fal-ai/recraft/v3/text-to-image", keyIds: ["fal"], hint: "Recraft V3 — text, vector, brand style" },
-  { id: "fal_ideogram", label: "Fal · Ideogram V3", providerKey: "fal", apiModel: "fal-ai/ideogram/v3", keyIds: ["fal"], hint: "Ideogram V3 — typography" },
-  { id: "wavespeed_image", label: "WaveSpeed · FLUX dev", providerKey: "wavespeed", apiModel: "wavespeed-ai/flux-dev", keyIds: ["wavespeed"], hint: "Image via WaveSpeed" },
-  { id: "kie", label: "kie.ai (image, auto)", providerKey: "kie", keyIds: ["kie"], hint: "kie.ai unified jobs API" },
-  { id: "stability", label: "Stability (SDXL)", providerKey: "stability", keyIds: ["stability"], hint: "Stability SDXL" },
-  { id: "grok", label: "Grok / xAI (grok-2-image)", providerKey: "grok", keyIds: ["grok"], hint: "xAI image API" },
-  { id: "midjourney", label: "Midjourney (copy-prompt)", providerKey: "midjourney", keyIds: ["midjourney"], manual: true, hint: "No public API — copy the prompt, generate in Midjourney, then import" },
-  { id: "custom", label: "Auto (first configured)", providerKey: "custom", keyIds: ["fal", "stability", "replicate", "google_imagen", "openai"], hint: "First configured provider" },
+  {
+    id: "fal_flux_dev",
+    label: "Fal · FLUX.1 [dev]",
+    providerKey: "fal",
+    apiModel: "fal-ai/flux/dev",
+    keyIds: ["fal"],
+    hint: "High-quality FLUX dev",
+  },
+  {
+    id: "fal_flux_schnell",
+    label: "Fal · FLUX.1 [schnell]",
+    providerKey: "fal",
+    apiModel: "fal-ai/flux/schnell",
+    keyIds: ["fal"],
+    hint: "Ultra-fast FLUX schnell",
+  },
+  {
+    id: "fal_flux_pro",
+    label: "Fal · FLUX1.1 [pro]",
+    providerKey: "fal",
+    apiModel: "fal-ai/flux-pro/v1.1",
+    keyIds: ["fal"],
+    hint: "FLUX 1.1 Pro",
+  },
+  {
+    id: "fal_flux_ultra",
+    label: "Fal · FLUX1.1 [pro] ultra",
+    providerKey: "fal",
+    apiModel: "fal-ai/flux-pro/v1.1-ultra",
+    keyIds: ["fal"],
+    hint: "Up to 2K, photoreal",
+  },
+  {
+    id: "fal_sd35_large",
+    label: "Fal · Stable Diffusion 3.5 Large",
+    providerKey: "fal",
+    apiModel: "fal-ai/stable-diffusion-v35-large",
+    keyIds: ["fal"],
+    hint: "SD 3.5 Large",
+  },
+  {
+    id: "fal_sd35_medium",
+    label: "Fal · Stable Diffusion 3.5 Medium",
+    providerKey: "fal",
+    apiModel: "fal-ai/stable-diffusion-v35-medium",
+    keyIds: ["fal"],
+    hint: "SD 3.5 Medium",
+  },
+  {
+    id: "fal_recraft",
+    label: "Fal · Recraft V3",
+    providerKey: "fal",
+    apiModel: "fal-ai/recraft/v3/text-to-image",
+    keyIds: ["fal"],
+    hint: "Recraft V3 — text, vector, brand style",
+  },
+  {
+    id: "fal_ideogram",
+    label: "Fal · Ideogram V3",
+    providerKey: "fal",
+    apiModel: "fal-ai/ideogram/v3",
+    keyIds: ["fal"],
+    hint: "Ideogram V3 — typography",
+  },
+  {
+    id: "wavespeed_image",
+    label: "WaveSpeed · FLUX dev",
+    providerKey: "wavespeed",
+    apiModel: "wavespeed-ai/flux-dev",
+    keyIds: ["wavespeed"],
+    hint: "Image via WaveSpeed",
+  },
+  {
+    id: "kie",
+    label: "kie.ai (image, auto)",
+    providerKey: "kie",
+    keyIds: ["kie"],
+    hint: "kie.ai unified jobs API",
+  },
+  {
+    id: "stability",
+    label: "Stability (SDXL)",
+    providerKey: "stability",
+    keyIds: ["stability"],
+    hint: "Stability SDXL",
+  },
+  {
+    id: "grok",
+    label: "Grok / xAI (grok-2-image)",
+    providerKey: "grok",
+    keyIds: ["grok"],
+    hint: "xAI image API",
+  },
+  {
+    id: "midjourney",
+    label: "Midjourney (copy-prompt)",
+    providerKey: "midjourney",
+    keyIds: ["midjourney"],
+    manual: true,
+    hint: "No public API — copy the prompt, generate in Midjourney, then import",
+  },
+  {
+    id: "custom",
+    label: "Auto (first configured)",
+    providerKey: "custom",
+    keyIds: ["fal", "stability", "replicate", "google_imagen", "openai"],
+    hint: "First configured provider",
+  },
 ];
 
 export function findModel(id: string): ImageModel {
@@ -63,7 +183,15 @@ export const PICKER_IMAGE_MODELS = IMAGE_MODELS;
 // --- aspect ratios ---------------------------------------------------------
 
 export const ASPECT_RATIOS = [
-  "1:1", "4:5", "3:4", "2:3", "3:2", "16:9", "9:16", "21:9", "custom",
+  "1:1",
+  "4:5",
+  "3:4",
+  "2:3",
+  "3:2",
+  "16:9",
+  "9:16",
+  "21:9",
+  "custom",
 ] as const;
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
@@ -112,14 +240,12 @@ export function resolveSize(
   customH = 1024
 ): { width: number; height: number } {
   const preset = findSize(sizeId);
-  if (preset.id === "custom")
-    return { width: clampDim(customW), height: clampDim(customH) };
+  if (preset.id === "custom") return { width: clampDim(customW), height: clampDim(customH) };
   if (preset.w && preset.h) return { width: preset.w, height: preset.h };
 
   const long = preset.long ?? 1024;
   const [aw, ah] = aspect === "custom" ? [1, 1] : parseAspect(aspect);
-  if (aw >= ah)
-    return { width: clampDim(long), height: clampDim((long * ah) / aw) };
+  if (aw >= ah) return { width: clampDim(long), height: clampDim((long * ah) / aw) };
   return { width: clampDim((long * aw) / ah), height: clampDim(long) };
 }
 
@@ -134,23 +260,47 @@ export interface SheetTemplate {
 }
 
 export const CHARACTER_TEMPLATES: SheetTemplate[] = [
-  { id: "deluxe", label: "Deluxe Character Sheet", desc: "Full production board — hero portrait, turnaround, expressions, poses, costumes, palette, notes" },
-  { id: "turnaround", label: "Turnaround Sheet", desc: "Front · 3/4 · side · 3/4 back · back, full body" },
+  {
+    id: "deluxe",
+    label: "Deluxe Character Sheet",
+    desc: "Full production board — hero portrait, turnaround, expressions, poses, costumes, palette, notes",
+  },
+  {
+    id: "turnaround",
+    label: "Turnaround Sheet",
+    desc: "Front · 3/4 · side · 3/4 back · back, full body",
+  },
   { id: "expression", label: "Expression Sheet", desc: "Grid of facial expressions" },
   { id: "pose", label: "Pose Sheet", desc: "Dynamic full-body pose references" },
   { id: "costume", label: "Costume Sheet", desc: "Wardrobe variations" },
-  { id: "accessories", label: "Accessories Sheet", desc: "Detail close-ups of props & accessories" },
+  {
+    id: "accessories",
+    label: "Accessories Sheet",
+    desc: "Detail close-ups of props & accessories",
+  },
   { id: "story", label: "Story Moment Sheet", desc: "Cinematic mini-scenes from key beats" },
 ];
 
 export const ENVIRONMENT_TEMPLATES: SheetTemplate[] = [
-  { id: "deluxe", label: "Deluxe Location Sheet", desc: "Establishing + wide + detail + top-down, palette, materials, notes" },
+  {
+    id: "deluxe",
+    label: "Deluxe Location Sheet",
+    desc: "Establishing + wide + detail + top-down, palette, materials, notes",
+  },
   { id: "coverage", label: "Coverage Sheet", desc: "Establishing · wide · detail · top-down" },
-  { id: "times", label: "Time-of-Day Sheet", desc: "Same place at day / golden hour / night / overcast" },
+  {
+    id: "times",
+    label: "Time-of-Day Sheet",
+    desc: "Same place at day / golden hour / night / overcast",
+  },
 ];
 
 export const PROP_TEMPLATES: SheetTemplate[] = [
-  { id: "deluxe", label: "Deluxe Prop Sheet", desc: "Orthographic views, hero render, detail close-ups, materials, palette, scale, data block" },
+  {
+    id: "deluxe",
+    label: "Deluxe Prop Sheet",
+    desc: "Orthographic views, hero render, detail close-ups, materials, palette, scale, data block",
+  },
   { id: "orthographic", label: "Orthographic Sheet", desc: "Front · side · back · top" },
   { id: "renders", label: "Render Sheet", desc: "Hero render, detail render, in-use" },
 ];
@@ -211,7 +361,15 @@ function environmentPrompt(e: Environment, template: string, aspect: string): st
     times: `Create a time-of-day sheet for the same location. ${ar}Show it at day, golden hour, night, and overcast, each labeled, with consistent layout.`,
   };
 
-  return [layouts[template] ?? layouts.deluxe, identity, consistency, style, BOARD, QUALITY, "no people."]
+  return [
+    layouts[template] ?? layouts.deluxe,
+    identity,
+    consistency,
+    style,
+    BOARD,
+    QUALITY,
+    "no people.",
+  ]
     .filter(Boolean)
     .join(" ");
 }

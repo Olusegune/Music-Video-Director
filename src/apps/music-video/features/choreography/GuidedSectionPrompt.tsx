@@ -24,7 +24,10 @@ const TREATMENTS: Treatment[] = [
       ...s,
       energy: Math.max(s.energy, 0.85),
       intensity: "High — full performance energy",
-      performance: { ...(s.performance ?? defaultPerformance(s.kind, s.energy)), intent: "Command the room" },
+      performance: {
+        ...(s.performance ?? defaultPerformance(s.kind, s.energy)),
+        intent: "Command the room",
+      },
     }),
   },
   {
@@ -102,9 +105,7 @@ export function GuidedSectionPrompt({
 }) {
   return (
     <div className="rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3">
-      <p className="mb-2 text-[11px] font-medium text-muted">
-        What should this section feel like?
-      </p>
+      <p className="mb-2 text-[11px] font-medium text-muted">What should this section feel like?</p>
       <div className="flex flex-wrap gap-1.5">
         {TREATMENTS.map((t) => (
           <button

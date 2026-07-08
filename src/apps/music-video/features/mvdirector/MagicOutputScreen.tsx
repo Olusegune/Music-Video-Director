@@ -90,7 +90,8 @@ export function MagicOutputScreen() {
   const keyMoments = allShots.filter((s) => s.lyric || s.idea).slice(0, 6);
   const renderedShots = allShots.filter((s) => s.imageUrl || s.videoUrl).length;
   const storyFeelingDef = findStoryFeeling(song.storyFeeling);
-  const storyFeelingLabel = storyFeelingDef && storyFeelingDef.key !== "none" ? storyFeelingDef.label : null;
+  const storyFeelingLabel =
+    storyFeelingDef && storyFeelingDef.key !== "none" ? storyFeelingDef.label : null;
 
   const regenerate = () => {
     if (!song) return;
@@ -123,9 +124,7 @@ export function MagicOutputScreen() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl grad-gold">
           <Sparkles className="h-6 w-6 text-[var(--color-gold-foreground)]" />
         </div>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight">
-          Your Music Video Is Ready
-        </h1>
+        <h1 className="mt-3 text-2xl font-extrabold tracking-tight">Your Music Video Is Ready</h1>
         <p className="mt-1 text-sm text-muted">
           "{song.name}" · {template?.name ?? "No style"} · {allShots.length} shots
         </p>
@@ -341,7 +340,9 @@ function ChangeStoryOverlay({
                 onClick={() => setFeeling(f.key)}
                 className={cn(
                   "flex flex-col items-start gap-1 rounded-[var(--radius-card)] border p-2.5 text-left transition-colors",
-                  feeling === f.key ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                  feeling === f.key
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/40"
                 )}
               >
                 <span className="text-xs font-semibold">{f.label}</span>
@@ -399,7 +400,12 @@ function ShotThumb({
     <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated/40">
       <div className="relative aspect-video w-full">
         {shot.imageUrl ? (
-          <AssetImage src={shot.imageUrl} alt={shot.idea} className="h-full w-full object-cover" label="Frame" />
+          <AssetImage
+            src={shot.imageUrl}
+            alt={shot.idea}
+            className="h-full w-full object-cover"
+            label="Frame"
+          />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
@@ -407,7 +413,11 @@ function ShotThumb({
               backgroundImage: `radial-gradient(130% 110% at 15% -10%, ${accent}50, transparent 60%), linear-gradient(160deg, ${accent}30, #0a0b10 88%)`,
             }}
           >
-            <Clapperboard className="h-8 w-8" style={{ color: accent, opacity: 0.55 }} strokeWidth={1.25} />
+            <Clapperboard
+              className="h-8 w-8"
+              style={{ color: accent, opacity: 0.55 }}
+              strokeWidth={1.25}
+            />
           </div>
         )}
         <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">

@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Clapperboard,
-  FileText,
-  Loader2,
-  Music,
-  UserPlus,
-} from "lucide-react";
+import { Clapperboard, FileText, Loader2, Music, UserPlus } from "lucide-react";
 import { GuidedFlowShell } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
 import { PickCardStep } from "@/platform/components/flow/steps/PickCardStep";
@@ -18,10 +12,7 @@ import { TemplateCard, NoStyleCard } from "@/platform/components/templates/Templ
 import { api, isTauri } from "@/platform/lib/ipc";
 import { parseScript } from "@/platform/lib/scriptParser";
 import { allTemplates } from "@/platform/lib/templates";
-import type {
-  GuidedFlowDefinition,
-  GuidedFlowStepComponentProps,
-} from "@/platform/lib/guidedFlow";
+import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { useAppStore } from "@/platform/store/useAppStore";
 import {
   analyzeAudioFile,
@@ -108,10 +99,7 @@ function summarizeSong(song: SongMap): string {
   return `${song.bpm} BPM · ${Math.round(song.durationSec)} sec · ${song.sections.length} sections`;
 }
 
-function SongImportStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function SongImportStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,10 +178,7 @@ function SongImportStep({
   );
 }
 
-function LyricsStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function LyricsStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   const parsed = state.lyrics.trim() ? parseScript(state.lyrics) : null;
   return (
     <div className="space-y-3">
@@ -242,10 +227,7 @@ function LyricsStep({
   );
 }
 
-function CastStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function CastStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   function update(index: number, next: Partial<Performer>) {
     patch({
       cast: state.cast.map((performer, i) =>
@@ -276,9 +258,7 @@ function CastStep({
             />
             <select
               value={performer.role}
-              onChange={(event) =>
-                update(index, { role: event.target.value as PerformerRole })
-              }
+              onChange={(event) => update(index, { role: event.target.value as PerformerRole })}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm"
             >
               {PERFORMER_ROLES.map((role) => (
@@ -289,9 +269,7 @@ function CastStep({
             </select>
             <Input
               value={performer.performanceNotes}
-              onChange={(event) =>
-                update(index, { performanceNotes: event.target.value })
-              }
+              onChange={(event) => update(index, { performanceNotes: event.target.value })}
               placeholder="Vibe, wardrobe, or movement note"
               className="mt-2"
             />
@@ -326,10 +304,7 @@ function CastStep({
   );
 }
 
-function VideoTypeStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function VideoTypeStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   return (
     <PickCardStep
       value={state.videoType ?? undefined}
@@ -343,10 +318,7 @@ function VideoTypeStep({
   );
 }
 
-function StoryStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function StoryStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   return (
     <div className="space-y-4">
       <PickCardStep
@@ -370,10 +342,7 @@ function StoryStep({
   );
 }
 
-function StyleStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function StyleStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   const stylePicks = stylePicksFor(state.videoType, allTemplates());
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -390,10 +359,7 @@ function StyleStep({
   );
 }
 
-function CreativeControls({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function CreativeControls({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   return (
     <IntakeFormStep
       value={{
@@ -412,9 +378,7 @@ function CreativeControls({
   );
 }
 
-function CreatorControls({
-  state,
-}: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+function CreatorControls({ state }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   const prompt = [
     `Song: ${state.songName || "Untitled"}`,
     `Video type: ${state.videoType ?? "auto"}`,
@@ -433,8 +397,9 @@ function DirectStep({ state }: GuidedFlowStepComponentProps<MusicVideoFlowState>
   const type = VIDEO_TYPES.find((item) => item.key === state.videoType)?.label ?? "Auto";
   const story =
     STORY_FEELINGS.find((item) => item.key === state.storyFeeling)?.label ?? "Performance only";
-  const style =
-    state.styleId ? allTemplates().find((template) => template.id === state.styleId)?.name ?? state.styleId : "Neutral cinematic";
+  const style = state.styleId
+    ? (allTemplates().find((template) => template.id === state.styleId)?.name ?? state.styleId)
+    : "Neutral cinematic";
   return (
     <SummaryStep
       title="Ready to direct"

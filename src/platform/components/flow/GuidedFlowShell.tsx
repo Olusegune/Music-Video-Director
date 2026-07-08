@@ -112,9 +112,7 @@ export function GuidedFlowShell<TState>({
             <Badge variant="primary">{mode}</Badge>
           </div>
           {definition.description ? (
-            <p className="mt-1 max-w-2xl text-sm text-muted">
-              {definition.description}
-            </p>
+            <p className="mt-1 max-w-2xl text-sm text-muted">{definition.description}</p>
           ) : null}
         </div>
         {onExit ? (
@@ -162,9 +160,7 @@ export function GuidedFlowShell<TState>({
                     <span>
                       <span className="block font-medium">{item.title}</span>
                       {item.subtitle ? (
-                        <span className="block text-xs text-muted">
-                          {item.subtitle}
-                        </span>
+                        <span className="block text-xs text-muted">{item.subtitle}</span>
                       ) : null}
                     </span>
                   </li>
@@ -178,29 +174,28 @@ export function GuidedFlowShell<TState>({
           <Card>
             <CardHeader>
               <CardTitle>{step?.title ?? "Flow complete"}</CardTitle>
-              {step?.subtitle ? (
-                <CardDescription>{step.subtitle}</CardDescription>
-              ) : null}
+              {step?.subtitle ? <CardDescription>{step.subtitle}</CardDescription> : null}
             </CardHeader>
             <CardContent className="space-y-4">
-              {PrimaryStep ? <PrimaryStep {...stepProps} /> : definition.renderSummary?.(session.state)}
+              {PrimaryStep ? (
+                <PrimaryStep {...stepProps} />
+              ) : (
+                definition.renderSummary?.(session.state)
+              )}
               {error ? (
                 <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
                   {error}
                 </p>
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-                <Button
-                  variant="secondary"
-                  onClick={goBack}
-                  disabled={session.stepIndex === 0}
-                >
+                <Button variant="secondary" onClick={goBack} disabled={session.stepIndex === 0}>
                   <ChevronLeft /> Back
                 </Button>
-                <Button onClick={() => void goNext()} disabled={validation !== true && !step?.skippable}>
-                  {session.stepIndex >= definition.steps.length - 1
-                    ? "Approve"
-                    : "Continue"}
+                <Button
+                  onClick={() => void goNext()}
+                  disabled={validation !== true && !step?.skippable}
+                >
+                  {session.stepIndex >= definition.steps.length - 1 ? "Approve" : "Continue"}
                   <ChevronRight />
                 </Button>
               </div>
@@ -211,9 +206,7 @@ export function GuidedFlowShell<TState>({
             <Card>
               <CardHeader>
                 <CardTitle>Creative Controls</CardTitle>
-                <CardDescription>
-                  Studio-level direction for this step.
-                </CardDescription>
+                <CardDescription>Studio-level direction for this step.</CardDescription>
               </CardHeader>
               <CardContent>
                 <AdvancedStep {...stepProps} />
@@ -225,9 +218,7 @@ export function GuidedFlowShell<TState>({
             <Card>
               <CardHeader>
                 <CardTitle>Creator Controls</CardTitle>
-                <CardDescription>
-                  Provider, prompt, and loop details for this step.
-                </CardDescription>
+                <CardDescription>Provider, prompt, and loop details for this step.</CardDescription>
               </CardHeader>
               <CardContent>
                 <TechnicalStep {...stepProps} />

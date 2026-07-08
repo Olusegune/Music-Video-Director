@@ -9,7 +9,7 @@ Prepared 2026-07-07.
 
 **Keep it. Promote it.** Magic Mode is not a Music Video feature that got stale — it is Director Studio's core promise ("you're not prompting an AI, you're briefing a studio") expressed as a UI. The mistake would be to kill it or leave it MV-shaped. Decision:
 
-- **Redefine as a platform-level Guided Flow system**: one engine, one visual language, one entry pattern — with step *definitions* owned by each module.
+- **Redefine as a platform-level Guided Flow system**: one engine, one visual language, one entry pattern — with step _definitions_ owned by each module.
 - **Platform meaning:** "The simplest path from idea to finished creative output," adapting per module.
 - Every module ships exactly one Magic Flow. It is the default first-run experience of every module and the only path Creator-tier users ever need.
 
@@ -17,15 +17,15 @@ Prepared 2026-07-07.
 
 **Recommendation: "Magic Flow"** — user-facing. Internal/technical name: **Guided Flow** (`guidedFlow` in code).
 
-Why: the codebase and users already have "Magic" equity (`MagicFlowButton`, `MagicDirect`, Magic Output); "Flow" reframes it from a *mode you switch into* to a *journey you're taken on*, which is exactly the multi-module semantics. It's short, premium-adjacent, and survives every module ("Glam Magic Flow" reads fine). Verdict on alternatives:
+Why: the codebase and users already have "Magic" equity (`MagicFlowButton`, `MagicDirect`, Magic Output); "Flow" reframes it from a _mode you switch into_ to a _journey you're taken on_, which is exactly the multi-module semantics. It's short, premium-adjacent, and survives every module ("Glam Magic Flow" reads fine). Verdict on alternatives:
 
-- *Guided Mode* — clinical, sounds like accessibility settings. No.
-- *Create Mode* — collides with Creator Mode. Hard no.
-- *Director Flow* — collides with Director Mode; also wrong, since the flow exists in all three modes. No.
-- *Studio Flow / Launch Flow* — Studio collides with Studio Mode; Launch is Campaign-specific. No.
-- *Quick Start* — reads cheap/utility, undermines the premium fantasy. No.
-- *Make It For Me* — childish; violates the non-negotiables. No.
-- *Magic Flow* — keeps equity, zero collisions, premium enough if the visual design carries it. **Yes.**
+- _Guided Mode_ — clinical, sounds like accessibility settings. No.
+- _Create Mode_ — collides with Creator Mode. Hard no.
+- _Director Flow_ — collides with Director Mode; also wrong, since the flow exists in all three modes. No.
+- _Studio Flow / Launch Flow_ — Studio collides with Studio Mode; Launch is Campaign-specific. No.
+- _Quick Start_ — reads cheap/utility, undermines the premium fantasy. No.
+- _Make It For Me_ — childish; violates the non-negotiables. No.
+- _Magic Flow_ — keeps equity, zero collisions, premium enough if the visual design carries it. **Yes.**
 
 Guardrail: "Magic" only stays non-childish through restraint — no sparkles-everywhere, no wand cursors. Visual language: cinematic, dark, confident (the existing MV Magic aesthetic already leans this way). One tasteful signature moment (the generate/reveal transition) is where the "magic" lives.
 
@@ -35,13 +35,13 @@ Guardrail: "Magic" only stays non-childish through restraint — no sparkles-eve
 
 ### 2.1 StudioMode × Magic Flow — the corrected model
 
-This **replaces** the Phase 0 mode semantics in the main spec (which made Creator the casual tier). New model — modes are *lenses on the same Magic Flow*, not separate paths:
+This **replaces** the Phase 0 mode semantics in the main spec (which made Creator the casual tier). New model — modes are _lenses on the same Magic Flow_, not separate paths:
 
-| Mode | Who | Magic Flow behavior |
-|---|---|---|
-| **Director** | "I approve, you produce" | Pure guided flow. Card picks, review gates, plain language. **Zero prompt/model/provider jargon anywhere.** Advanced panels don't render. |
-| **Studio** | Hands-on creative | Same flow + an **"Advanced" disclosure per step** exposing *creative* controls (look tuning, shot list edits, copy editing, layout, format selection). Still no model/provider jargon. Can exit any step into the full workbench and return. |
-| **Creator** | Power user / tinkerer | Studio's controls **plus technical controls**: prompt inspection/override, provider/model pick per step, Loop Engine settings (batch size, rounds), seed/params. |
+| Mode         | Who                      | Magic Flow behavior                                                                                                                                                                                                                          |
+| ------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Director** | "I approve, you produce" | Pure guided flow. Card picks, review gates, plain language. **Zero prompt/model/provider jargon anywhere.** Advanced panels don't render.                                                                                                    |
+| **Studio**   | Hands-on creative        | Same flow + an **"Advanced" disclosure per step** exposing _creative_ controls (look tuning, shot list edits, copy editing, layout, format selection). Still no model/provider jargon. Can exit any step into the full workbench and return. |
+| **Creator**  | Power user / tinkerer    | Studio's controls **plus technical controls**: prompt inspection/override, provider/model pick per step, Loop Engine settings (batch size, rounds), seed/params.                                                                             |
 
 Consequences applied throughout: the "Instant Ad" / "Launch page in 5 min" quick paths from the main spec are no longer "Creator Mode" — they become the natural result of Director Mode with defaults accepted. Creator is the top of the control ladder, not the bottom. Director < Studio < Creator is strictly additive disclosure over one flow — one codebase, no forked UIs.
 
@@ -58,17 +58,17 @@ Platform owns the machinery; modules own the steps.
   - **Advanced drawer**: renders `advancedComponent` in Studio+, plus `technicalComponent` in Creator. Collapsed by default, remembered per user.
   - **Reveal step pattern**: generation steps share a standard "producing → reveal" treatment (the signature Magic moment), wrapping LoopBoard where iteration applies.
 - **Reusable step primitives** (platform): `PickCardStep` (choose 1 of N cards — concepts, looks, video types), `IntakeFormStep` (structured fields, no free-prompt feel), `MediaIntakeStep` (upload/pick from library), `ReviewGateStep` (approve/edit AI output as cards, not JSON), `GenerateStep` (loop + reveal), `SummaryStep` (what you'll get → produce). Target: ≥80% of every module's flow assembled from these; module-specific steps (e.g., MV lyric sync) stay in the module.
-- **Entry points**: the existing floating `MagicFlowButton` is promoted to platform and becomes context-aware — it launches the *current module's* Magic Flow (or resumes its draft). Module home screens lead with a "Start Magic Flow" hero action.
+- **Entry points**: the existing floating `MagicFlowButton` is promoted to platform and becomes context-aware — it launches the _current module's_ Magic Flow (or resumes its draft). Module home screens lead with a "Start Magic Flow" hero action.
 
 ### 2.3 Module Magic Flow definitions (Task 1 / updated workflows)
 
 Each maps to the pipelines already specified in the main spec — the Magic Flow is the guided skin over the module's primary workflow, not a second pipeline:
 
-- **Music Video Director:** Song → Lyrics → Performers → Video Type → Story → Style → Direct *(unchanged; becomes the reference implementation)*
+- **Music Video Director:** Song → Lyrics → Performers → Video Type → Story → Style → Direct _(unchanged; becomes the reference implementation)_
 - **Motion Studio:** Goal → Product/Business → Audience → Script → Style → Storyboard → Generate
-- **Glam Studio:** Product → Brand → Campaign Goal → Look → Format → Generate → Export *(maps to main-spec steps 1–6+8; "Concept" pick folds into Campaign Goal's review gate in Director Mode, expands to a full step in Studio+)*
-- **Web Studio:** Business → Offer → Audience → Pages → Style → Copy → Build *(Offer = the positioning review gate — keep it, it's the leverage step; Pages = section-stack pick in MVP)*
-- **Campaign Studio:** Product → Goal → Audience → Campaign Idea → Assets → Timeline → Launch Kit *(Assets = deliverable plan board; Timeline = date-ordered list in MVP per main spec; Launch Kit = package export)*
+- **Glam Studio:** Product → Brand → Campaign Goal → Look → Format → Generate → Export _(maps to main-spec steps 1–6+8; "Concept" pick folds into Campaign Goal's review gate in Director Mode, expands to a full step in Studio+)_
+- **Web Studio:** Business → Offer → Audience → Pages → Style → Copy → Build _(Offer = the positioning review gate — keep it, it's the leverage step; Pages = section-stack pick in MVP)_
+- **Campaign Studio:** Product → Goal → Audience → Campaign Idea → Assets → Timeline → Launch Kit _(Assets = deliverable plan board; Timeline = date-ordered list in MVP per main spec; Launch Kit = package export)_
 
 Rule: a completed Magic Flow always lands on a real module artifact (project + deliverables), so graduating from Magic Flow to workbench is seamless — nothing is trapped inside the wizard.
 
@@ -76,7 +76,7 @@ Rule: a completed Magic Flow always lands on a real module artifact (project + d
 
 ## 3. Splashscreen Recommendation (Task 5)
 
-**Current defect** (`src/platform/components/layout/StartupSplash.tsx`): a `fixed inset-0 z-[90]` in-app overlay with the splash PNG at `object-cover`, black background, ~1.4–2.7s total including a 900ms *minimum* hold and 520ms exit. On large/maximized windows the art is cropped and the whole app is hijacked — hence "aggressive."
+**Current defect** (`src/platform/components/layout/StartupSplash.tsx`): a `fixed inset-0 z-[90]` in-app overlay with the splash PNG at `object-cover`, black background, ~1.4–2.7s total including a 900ms _minimum_ hold and 520ms exit. On large/maximized windows the art is cropped and the whole app is hijacked — hence "aggressive."
 
 **Recommendation: Option C now, Option D as a V1 flourish. Reject A. Keep B only as the mechanism.**
 
@@ -95,9 +95,9 @@ Amendments to `DIRECTOR-STUDIO-MODULES-SPEC.md`:
 
 1. **Product philosophy** — add: "Every module leads with its Magic Flow. Modes are additive lenses (Director ⊂ Studio ⊂ Creator) on that one flow, not separate products."
 2. **Phase 0** gains two items and one change:
-   - *(changed)* `studioMode.ts` semantics per §2.1 above (Creator = power tier).
-   - *(new)* `platform/lib/guidedFlow.ts` + `platform/components/flow/` (GuidedFlowShell + step primitives). This **absorbs/replaces `loopEngine`'s UI companion plan** — LoopBoard becomes the internal renderer of `GenerateStep`.
-   - *(new)* StartupSplash fix (small; can ship independently and first).
+   - _(changed)_ `studioMode.ts` semantics per §2.1 above (Creator = power tier).
+   - _(new)_ `platform/lib/guidedFlow.ts` + `platform/components/flow/` (GuidedFlowShell + step primitives). This **absorbs/replaces `loopEngine`'s UI companion plan** — LoopBoard becomes the internal renderer of `GenerateStep`.
+   - _(new)_ StartupSplash fix (small; can ship independently and first).
 3. **Module briefs** — each module's "Director Mode" section now reads "Magic Flow in Director Mode"; the separate "Creator Mode quick path" sections are re-expressed as Director-mode defaults; Codex phase lists gain "assemble Magic Flow from platform step primitives" as the final MVP phase (replacing the bespoke 'Director wizard + Creator path' phases).
 4. **Acceptance criteria (all modules)** — add: module ships a registered FlowDefinition; Director Mode renders zero prompt/model/provider strings; flow drafts survive app restart; completed flow produces a normal project editable in the workbench.
 5. **Build order unchanged** (Phase 0 → Glam → Web → Campaign), with splash fix and Guided Flow engine at the front of Phase 0 since MV migration validates the engine before any new module uses it.
@@ -109,6 +109,7 @@ Amendments to `DIRECTOR-STUDIO-MODULES-SPEC.md`:
 ### A. Platform Guided Flow engine + splash fix
 
 **Folder structure / files to create**
+
 ```
 src/platform/lib/guidedFlow.ts        # FlowDefinition, FlowStep, FlowSession, registry,
                                       # createFlowStore (zustand), session persistence
@@ -118,6 +119,7 @@ src/platform/components/flow/
          ReviewGateStep.tsx GenerateStep.tsx SummaryStep.tsx
 src/platform/lib/studioMode.ts        # (amend if built) director|studio|creator per §2.1
 ```
+
 **Files to modify:** `src/platform/components/layout/StartupSplash.tsx` (compact card per §3), `src/app/App.tsx` (promote MagicFlowButton usage to platform, splash readiness signal), `src/platform/features/dashboard/Dashboard.tsx` (resume-draft cards), settings for first-run flag (V1 cinematic).
 **Data models:** `FlowDefinition`, `FlowStep`, `FlowSession`, `FlowStepComponentProps<TState>` (typed state slice + patch fn + mode), flow registry keyed by moduleId.
 **Splash technical plan:** replace fullscreen `object-cover` img with theme-scrim + fixed 420×260 card (`object-contain` logo); dismissal driven by an `appReady` signal (shell mounted + stores hydrated) with 4s safety fallback; min-hold 400ms; 280ms exit fade/scale; keep component API identical (`<StartupSplash/>` in App.tsx) so nothing else changes.
@@ -135,6 +137,7 @@ Each new module (Glam → Web → Campaign, per build order) registers its FlowD
 **Testing steps:** vitest on guidedFlow.ts (navigation state machine: next-gating on validate, back-jump, cancel/save-draft, resume, registry); vitest on splash timing logic (readiness + min-hold + fallback, extracted as a pure hook); manual: full MV Magic Flow run old-vs-new flag, kill-and-relaunch mid-flow resumes correctly, Director mode audit for zero jargon strings.
 **Build/package verification:** `npm run build` green; `npm run tauri build` on Windows; verify packaged launch — splash card centered at 1280×720, maximized, and small (800×600) windows; cold vs warm launch timing; splash art asset loads in packaged resource path.
 **Acceptance criteria:**
+
 1. One platform Guided Flow engine; zero flow-shell code duplicated in modules.
 2. MV Magic Flow runs on the new engine with identical creative results; no MV regressions (flag flip is a no-op for outputs).
 3. Modes are additive disclosure: Director shows no prompt/model/provider UI anywhere in any flow; Studio adds creative controls; Creator adds technical controls.

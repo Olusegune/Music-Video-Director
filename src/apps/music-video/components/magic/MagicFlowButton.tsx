@@ -11,8 +11,14 @@ import { cn } from "@/platform/lib/utils";
 function Sparkles() {
   return (
     <>
-      <Sparkle className="magic-sparkle pointer-events-none absolute -right-1 -top-1 h-3.5 w-3.5 text-white/90" aria-hidden />
-      <Sparkle className="magic-sparkle-2 pointer-events-none absolute -bottom-1 left-2 h-2.5 w-2.5 text-amber-200/90" aria-hidden />
+      <Sparkle
+        className="magic-sparkle pointer-events-none absolute -right-1 -top-1 h-3.5 w-3.5 text-white/90"
+        aria-hidden
+      />
+      <Sparkle
+        className="magic-sparkle-2 pointer-events-none absolute -bottom-1 left-2 h-2.5 w-2.5 text-amber-200/90"
+        aria-hidden
+      />
     </>
   );
 }

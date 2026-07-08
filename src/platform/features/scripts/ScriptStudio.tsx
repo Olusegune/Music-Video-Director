@@ -146,8 +146,7 @@ export function ScriptStudio() {
   };
 
   const addCharacter = useMutation({
-    mutationFn: (ec: ExtractedCharacter) =>
-      api.saveCharacter(extractedToCharacter(ec)),
+    mutationFn: (ec: ExtractedCharacter) => api.saveCharacter(extractedToCharacter(ec)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["characters"] }),
   });
 
@@ -178,8 +177,7 @@ export function ScriptStudio() {
   const addProps = useMutation({
     mutationFn: async ({ items, category }: { items: ExtractedEntity[]; category: string }) => {
       const fresh = items.filter((p) => !existingPropNames.has(p.name.toLowerCase()));
-      for (const p of fresh)
-        await api.saveProp(propFromEntity(p.name, category, p.context));
+      for (const p of fresh) await api.saveProp(propFromEntity(p.name, category, p.context));
       return fresh.length;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["props"] }),
@@ -252,9 +250,7 @@ export function ScriptStudio() {
 
       {recent.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-8 py-2">
-          <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted">
-            Recent
-          </span>
+          <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted">Recent</span>
           {recent.slice(0, 8).map((s) => (
             <button
               key={s.id}
@@ -318,7 +314,12 @@ export function ScriptStudio() {
                 size="sm"
                 className="pointer-events-auto"
                 onClick={() =>
-                  setDoc((d) => ({ ...d, content: SAMPLE, title: d.title === "Untitled Script" ? "Neon Bounty (sample)" : d.title, analysis: null }))
+                  setDoc((d) => ({
+                    ...d,
+                    content: SAMPLE,
+                    title: d.title === "Untitled Script" ? "Neon Bounty (sample)" : d.title,
+                    analysis: null,
+                  }))
                 }
               >
                 <Wand2 className="h-4 w-4 text-accent" /> Load sample script
@@ -340,8 +341,8 @@ export function ScriptStudio() {
               <p className="text-sm font-medium">No analysis yet</p>
               <p className="mt-1 max-w-xs text-xs text-muted">
                 Import or paste a script, then hit{" "}
-                <span className="text-foreground">Analyze Script</span> to extract
-                characters, locations, props, scenes, and tone — all offline.
+                <span className="text-foreground">Analyze Script</span> to extract characters,
+                locations, props, scenes, and tone — all offline.
               </p>
             </div>
           ) : (
@@ -402,16 +403,12 @@ function Analysis({
       <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <div>
-            <span className="text-[11px] uppercase tracking-wide text-muted">
-              Emotional tone
-            </span>
+            <span className="text-[11px] uppercase tracking-wide text-muted">Emotional tone</span>
             <div className="font-medium">{analysis.emotionalTone}</div>
           </div>
           {analysis.visualMotifs.length > 0 && (
             <div className="min-w-0">
-              <span className="text-[11px] uppercase tracking-wide text-muted">
-                Visual motifs
-              </span>
+              <span className="text-[11px] uppercase tracking-wide text-muted">Visual motifs</span>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {analysis.visualMotifs.map((m) => (
                   <Badge key={m} variant="accent">
@@ -433,11 +430,7 @@ function Analysis({
         >
           {remaining > 0 && (
             <Button size="sm" onClick={onAddAll} disabled={busy}>
-              {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Add {remaining} to Bible
             </Button>
           )}
@@ -461,7 +454,9 @@ function Analysis({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{c.name}</span>
-                    <Badge>{c.mentions} {c.mentions === 1 ? "cue" : "cues"}</Badge>
+                    <Badge>
+                      {c.mentions} {c.mentions === 1 ? "cue" : "cues"}
+                    </Badge>
                     {inBible && (
                       <Badge variant="success">
                         <Check className="mr-1 h-3 w-3" /> In Bible
@@ -469,9 +464,7 @@ function Analysis({
                     )}
                   </div>
                   {c.descriptionLine && (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted">
-                      {c.descriptionLine}
-                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted">{c.descriptionLine}</p>
                   )}
                   {c.relationships.length > 0 && (
                     <p className="mt-1 text-[11px] text-muted">
@@ -604,11 +597,7 @@ function EntityList({
       <SectionHead icon={icon} title={title} count={items.length}>
         {remaining > 0 && (
           <Button size="sm" variant="secondary" onClick={onAddAll} disabled={busy}>
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Add {remaining} to {addLabel}
           </Button>
         )}
@@ -622,9 +611,7 @@ function EntityList({
               title={e.context || undefined}
               className={cn(
                 "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs",
-                added
-                  ? "border-success/40 bg-success/10 text-success"
-                  : "border-border bg-surface"
+                added ? "border-success/40 bg-success/10 text-success" : "border-border bg-surface"
               )}
             >
               {added && <Check className="h-3 w-3" />}

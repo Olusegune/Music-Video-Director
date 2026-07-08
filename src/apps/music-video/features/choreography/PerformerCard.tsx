@@ -31,7 +31,10 @@ export function PerformerCard({
         active ? "border-primary bg-primary/10" : "border-border bg-surface hover:border-primary/40"
       )}
     >
-      <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full" style={{ backgroundColor: `${color}22` }}>
+      <span
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full"
+        style={{ backgroundColor: `${color}22` }}
+      >
         {character?.portraitUrl ? (
           <AssetImage
             src={character.portraitUrl}
@@ -61,7 +64,13 @@ export function PerformerCard({
 }
 
 /** The "no specific performer" option, kept visually consistent with real cards. */
-export function GenericPerformerCard({ active, onClick }: { active: boolean; onClick: () => void }) {
+export function GenericPerformerCard({
+  active,
+  onClick,
+}: {
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"

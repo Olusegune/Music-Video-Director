@@ -18,12 +18,7 @@ interface PickCardStepProps {
   columns?: 2 | 3 | 4;
 }
 
-export function PickCardStep({
-  options,
-  value,
-  onChange,
-  columns = 3,
-}: PickCardStepProps) {
+export function PickCardStep({ options, value, onChange, columns = 3 }: PickCardStepProps) {
   return (
     <div
       className={cn(
@@ -46,13 +41,19 @@ export function PickCardStep({
             )}
           >
             <span className="creative-preview flex h-16 items-center justify-between border-b border-border px-4">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/15 text-[var(--module-accent)]">{option.icon ?? <span className="text-sm font-bold">{option.title.slice(0, 2).toUpperCase()}</span>}</span>
-              {option.badge ? <Badge variant={selected ? "primary" : "default"}>{option.badge}</Badge> : null}
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/15 text-[var(--module-accent)]">
+                {option.icon ?? (
+                  <span className="text-sm font-bold">
+                    {option.title.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </span>
+              {option.badge ? (
+                <Badge variant={selected ? "primary" : "default"}>{option.badge}</Badge>
+              ) : null}
             </span>
             <span className="flex items-start justify-between gap-3 p-4">
-              <span className="flex items-center gap-2 text-sm font-semibold">
-                {option.title}
-              </span>
+              <span className="flex items-center gap-2 text-sm font-semibold">{option.title}</span>
               {selected ? <Check className="size-4 text-primary" /> : null}
             </span>
             {option.description ? (

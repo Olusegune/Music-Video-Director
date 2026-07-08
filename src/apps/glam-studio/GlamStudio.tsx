@@ -42,7 +42,13 @@ import {
   improveLoopRun,
   type LoopRun,
 } from "@/platform/lib/loopEngine";
-import { loadRouterConfig, providerInfo, routeProvider, routeReferenceImageProvider, ROUTER_MODES } from "@/platform/lib/providers";
+import {
+  loadRouterConfig,
+  providerInfo,
+  routeProvider,
+  routeReferenceImageProvider,
+  ROUTER_MODES,
+} from "@/platform/lib/providers";
 import { api } from "@/platform/lib/ipc";
 import { addAsset, type GeneratedAsset } from "@/platform/lib/generatedAssets";
 import type { ProviderId } from "@/platform/lib/types";
@@ -54,15 +60,16 @@ import {
   renderGlamFormat,
   type GlamFormatLayout,
 } from "@/apps/glam-studio/lib/campaignExport";
-import type {
-  GuidedFlowDefinition,
-  GuidedFlowStepComponentProps,
-} from "@/platform/lib/guidedFlow";
+import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
-import { buildProductFilmPlan, productFilmMarkdown, type ProductFilmPlan } from "@/apps/glam-studio/lib/productFilm";
+import {
+  buildProductFilmPlan,
+  productFilmMarkdown,
+  type ProductFilmPlan,
+} from "@/apps/glam-studio/lib/productFilm";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
 
@@ -217,12 +224,32 @@ const LOOKS: LuxuryLook[] = [
 ];
 
 const CATEGORIES: { id: ProductCategory; title: string; description: string }[] = [
-  { id: "beauty", title: "Beauty", description: "Skincare, makeup, haircare, and cosmetic launches." },
-  { id: "fashion", title: "Fashion", description: "Apparel drops, accessories, lookbook assets, and capsule collections." },
-  { id: "jewelry", title: "Jewelry", description: "Precious details, macro shine, heirloom positioning." },
-  { id: "fragrance", title: "Fragrance", description: "Bottle hero shots, mood worlds, and sensual storytelling." },
+  {
+    id: "beauty",
+    title: "Beauty",
+    description: "Skincare, makeup, haircare, and cosmetic launches.",
+  },
+  {
+    id: "fashion",
+    title: "Fashion",
+    description: "Apparel drops, accessories, lookbook assets, and capsule collections.",
+  },
+  {
+    id: "jewelry",
+    title: "Jewelry",
+    description: "Precious details, macro shine, heirloom positioning.",
+  },
+  {
+    id: "fragrance",
+    title: "Fragrance",
+    description: "Bottle hero shots, mood worlds, and sensual storytelling.",
+  },
   { id: "wellness", title: "Wellness", description: "Clean, credible, sensory product campaigns." },
-  { id: "tech-luxury", title: "Luxury Tech", description: "Premium hardware, devices, and high-spec products." },
+  {
+    id: "tech-luxury",
+    title: "Luxury Tech",
+    description: "Premium hardware, devices, and high-spec products.",
+  },
 ];
 
 const FORMAT_OPTIONS = GLAM_FORMATS.map((format) => ({
@@ -252,11 +279,19 @@ const INITIAL_FLOW: GlamFlowState = {
 };
 
 function splitList(value: string): string[] {
-  return value.split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(/[,;\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "glam-campaign";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "glam-campaign"
+  );
 }
 
 function downloadText(filename: string, content: string, mime: string) {
@@ -335,7 +370,11 @@ function lookById(id: string): LuxuryLook {
 }
 
 function conceptById(state: GlamFlowState): CampaignConcept {
-  return [...readSavedConcepts(), ...conceptsFor(state)].find((concept) => concept.id === state.conceptId) ?? conceptsFor(state)[0];
+  return (
+    [...readSavedConcepts(), ...conceptsFor(state)].find(
+      (concept) => concept.id === state.conceptId
+    ) ?? conceptsFor(state)[0]
+  );
 }
 
 function conceptsFor(state: GlamFlowState): CampaignConcept[] {
@@ -348,7 +387,12 @@ function conceptsFor(state: GlamFlowState): CampaignConcept[] {
       territory: "The Signature Object",
       headline: state.tagline || `${product} becomes the room's quiet obsession`,
       visualDirection: `${look.name}: isolate ${product} as a sculptural hero on ${look.set}.`,
-      shotList: ["Macro texture reveal", "Hero packshot on set", "Lifestyle crop with negative space", "Format-safe headline crop"],
+      shotList: [
+        "Macro texture reveal",
+        "Hero packshot on set",
+        "Lifestyle crop with negative space",
+        "Format-safe headline crop",
+      ],
       score: 91,
     },
     {
@@ -356,7 +400,12 @@ function conceptsFor(state: GlamFlowState): CampaignConcept[] {
       territory: "Ritual Of Arrival",
       headline: `Made for the moment ${audience} step into`,
       visualDirection: `Build a polished ritual sequence around touch, reveal, and brand color accents.`,
-      shotList: ["Hands entering frame", "Product opening / reveal", "Texture or material moment", "Approved hero crop"],
+      shotList: [
+        "Hands entering frame",
+        "Product opening / reveal",
+        "Texture or material moment",
+        "Approved hero crop",
+      ],
       score: 86,
     },
     {
@@ -364,7 +413,12 @@ function conceptsFor(state: GlamFlowState): CampaignConcept[] {
       territory: "Future Classic",
       headline: `${product}, designed to feel inevitable`,
       visualDirection: `Pair minimal set geometry with premium light control and confident type overlays.`,
-      shotList: ["Symmetric packshot", "Shadow detail", "Color-world variant", "Campaign hero layout"],
+      shotList: [
+        "Symmetric packshot",
+        "Shadow detail",
+        "Color-world variant",
+        "Campaign hero layout",
+      ],
       score: 84,
     },
   ];
@@ -378,20 +432,21 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
     profile.materials.length ? `Exact materials: ${profile.materials.join(", ")}.` : "",
     profile.colors.length ? `Exact product colors: ${profile.colors.join(", ")}.` : "",
     profile.packaging ? `Packaging and silhouette: ${profile.packaging}.` : "",
-    profile.claims.length ? `Benefits to imply visually, never paint as text: ${profile.claims.join(", ")}.` : "",
+    profile.claims.length
+      ? `Benefits to imply visually, never paint as text: ${profile.claims.join(", ")}.`
+      : "",
     profile.fidelityNotes ? `Non-negotiable product fidelity: ${profile.fidelityNotes}.` : "",
     `Brand tone: ${state.brandTone}.`,
     `Look: ${look.name}; palette ${look.palette.join(", ")}; ${look.lighting}; ${look.lens}.`,
     `Campaign territory: ${concept.territory}.`,
     `Visual direction: ${concept.visualDirection}`,
     "Leave clean negative space for real typography overlays. Do not render text in the image.",
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
-function ProductStep({
-  state,
-  patch,
-}: GuidedFlowStepComponentProps<GlamFlowState>) {
+function ProductStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
   return (
     <div className="space-y-4">
       <IntakeFormStep
@@ -426,20 +481,45 @@ function ProductStep({
             id: "productDescription",
             label: "Product description",
             type: "textarea",
-            placeholder: "Describe shape, material, color, ingredients, packaging, price point, and must-preserve details.",
+            placeholder:
+              "Describe shape, material, color, ingredients, packaging, price point, and must-preserve details.",
           },
-          { id: "audience", label: "Audience", placeholder: "Gen Z beauty buyers, boutique shoppers, founders..." },
+          {
+            id: "audience",
+            label: "Audience",
+            placeholder: "Gen Z beauty buyers, boutique shoppers, founders...",
+          },
           { id: "materials", label: "Materials", placeholder: "frosted glass, brushed gold, silk" },
-          { id: "colors", label: "Exact product colors", placeholder: "oxblood, warm ivory, #C8A96A" },
-          { id: "packaging", label: "Packaging and silhouette", placeholder: "30ml square bottle, rounded cap, embossed monogram" },
-          { id: "productClaims", label: "Claims / benefits", placeholder: "24-hour hydration, refillable, vegan" },
-          { id: "fidelityNotes", label: "Must-preserve details", type: "textarea", placeholder: "Logo placement, cap shape, proportions, materials, and details the model must not change." },
+          {
+            id: "colors",
+            label: "Exact product colors",
+            placeholder: "oxblood, warm ivory, #C8A96A",
+          },
+          {
+            id: "packaging",
+            label: "Packaging and silhouette",
+            placeholder: "30ml square bottle, rounded cap, embossed monogram",
+          },
+          {
+            id: "productClaims",
+            label: "Claims / benefits",
+            placeholder: "24-hour hydration, refillable, vegan",
+          },
+          {
+            id: "fidelityNotes",
+            label: "Must-preserve details",
+            type: "textarea",
+            placeholder:
+              "Logo placement, cap shape, proportions, materials, and details the model must not change.",
+          },
         ]}
       />
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-border bg-elevated/40 py-6 text-center hover:border-primary/50">
         <Image className="h-6 w-6 text-muted" />
         <span className="text-sm font-medium">Add product references</span>
-        <span className="text-xs text-muted">Used as product-fidelity references during hero generation</span>
+        <span className="text-xs text-muted">
+          Used as product-fidelity references during hero generation
+        </span>
         <input
           type="file"
           accept="image/*"
@@ -499,7 +579,11 @@ function BrandStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>
       }
       fields={[
         { id: "brandName", label: "Brand name", placeholder: "Maison Vale" },
-        { id: "brandTone", label: "Brand voice", placeholder: "quiet luxury, sensual, clinical..." },
+        {
+          id: "brandTone",
+          label: "Brand voice",
+          placeholder: "quiet luxury, sensual, clinical...",
+        },
         { id: "tagline", label: "Tagline / headline direction", placeholder: "Optional" },
       ]}
     />
@@ -507,7 +591,10 @@ function BrandStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>
 }
 
 function LookStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  const looks = [...readSavedLooks(), ...LOOKS.filter((look) => !readSavedLooks().some((saved) => saved.id === look.id))];
+  const looks = [
+    ...readSavedLooks(),
+    ...LOOKS.filter((look) => !readSavedLooks().some((saved) => saved.id === look.id)),
+  ];
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {looks.map((look) => (
@@ -541,7 +628,12 @@ function LookStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>)
 }
 
 function ConceptStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
-  const concepts = [...readSavedConcepts(), ...conceptsFor(state).filter((concept) => !readSavedConcepts().some((saved) => saved.id === concept.id))];
+  const concepts = [
+    ...readSavedConcepts(),
+    ...conceptsFor(state).filter(
+      (concept) => !readSavedConcepts().some((saved) => saved.id === concept.id)
+    ),
+  ];
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       {concepts.map((concept) => (
@@ -634,13 +726,15 @@ function ExportStep({ state }: GuidedFlowStepComponentProps<GlamFlowState>) {
 function createProjectFromState(state: GlamFlowState): GlamProject {
   const look = lookById(state.lookId);
   const concept = conceptById(state);
-  const brand = getBrandDna(state.campaignSeed?.brandDnaId) ?? createBrandDna({
-    name: state.brandName || `${state.productName || "Untitled"} Brand`,
-    tone: state.brandTone,
-    productLine: state.productName,
-    tagline: state.tagline || concept.headline,
-    palette: look.palette,
-  });
+  const brand =
+    getBrandDna(state.campaignSeed?.brandDnaId) ??
+    createBrandDna({
+      name: state.brandName || `${state.productName || "Untitled"} Brand`,
+      tone: state.brandTone,
+      productLine: state.productName,
+      tagline: state.tagline || concept.headline,
+      palette: look.palette,
+    });
   const prompt = buildHeroPrompt(state, concept, look);
   const timestamp = new Date().toISOString();
   const project: GlamProject = {
@@ -656,7 +750,9 @@ function createProjectFromState(state: GlamFlowState): GlamProject {
     concept,
     heroLoop: createLoopRun("hero image prompt", prompt, concept.score),
     heroAssets: [],
-    formatLayouts: Object.fromEntries(state.formats.map((format) => [format, { ...DEFAULT_GLAM_LAYOUT }])),
+    formatLayouts: Object.fromEntries(
+      state.formats.map((format) => [format, { ...DEFAULT_GLAM_LAYOUT }])
+    ),
     formats: state.formats,
     productFilm: buildProductFilmPlan(state.productName, concept.headline, look),
     createdAt: timestamp,
@@ -675,8 +771,15 @@ function createProjectFromState(state: GlamFlowState): GlamProject {
     })
   );
   if (state.campaignSeed) {
-    const source = listDeliverables().find((deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId);
-    if (source) saveDeliverable({ ...source, status: "draft", assetRefs: [...source.assetRefs, `glam-project:${project.id}`] });
+    const source = listDeliverables().find(
+      (deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId
+    );
+    if (source)
+      saveDeliverable({
+        ...source,
+        status: "draft",
+        assetRefs: [...source.assetRefs, `glam-project:${project.id}`],
+      });
   }
   return project;
 }
@@ -694,7 +797,10 @@ function promptPackFor(project: GlamProject) {
     },
     productProfile: {
       ...project.productProfile,
-      referenceImages: project.productProfile?.referenceImages.map((_, index) => `product-reference-${index + 1}`) ?? [],
+      referenceImages:
+        project.productProfile?.referenceImages.map(
+          (_, index) => `product-reference-${index + 1}`
+        ) ?? [],
     },
     brandDna: project.brand,
     luxuryLook: project.look,
@@ -703,7 +809,8 @@ function promptPackFor(project: GlamProject) {
     selectedHeroAssetId: project.selectedHeroAssetId ?? project.heroAssets?.[0]?.id ?? null,
     formats: project.formats.map((id) => FORMAT_OPTIONS.find((item) => item.id === id) ?? { id }),
     formatLayouts: project.formatLayouts ?? {},
-    typographyRule: "Render campaign typography as a real overlay; never ask an image model to paint the headline.",
+    typographyRule:
+      "Render campaign typography as a real overlay; never ask an image model to paint the headline.",
   };
 }
 
@@ -730,7 +837,10 @@ function promptPackMarkdown(project: GlamProject) {
     "",
     "## Deliverables",
     "",
-    ...pack.formats.map((format) => `- ${"title" in format ? format.title : format.id}: ${"description" in format ? format.description : "custom format"}`),
+    ...pack.formats.map(
+      (format) =>
+        `- ${"title" in format ? format.title : format.id}: ${"description" in format ? format.description : "custom format"}`
+    ),
     "",
     "> Typography is composited as a real overlay. Do not render headline text in the generated image.",
   ].join("\n");
@@ -772,9 +882,12 @@ function ProjectPreview({
   downloadingFormat: string;
 }) {
   const heroAssets = project.heroAssets ?? [];
-  const selectedHero = heroAssets.find((asset) => asset.id === project.selectedHeroAssetId) ?? heroAssets[0];
+  const selectedHero =
+    heroAssets.find((asset) => asset.id === project.selectedHeroAssetId) ?? heroAssets[0];
   const hasProductReferences = Boolean(project.productProfile?.referenceImages.length);
-  const selectedProvider = selectedHero ? providerInfo(selectedHero.provider as ProviderId) : undefined;
+  const selectedProvider = selectedHero
+    ? providerInfo(selectedHero.provider as ProviderId)
+    : undefined;
   const fidelityLabel = !hasProductReferences
     ? "No product reference"
     : selectedProvider?.supportsImageReferences
@@ -788,12 +901,26 @@ function ProjectPreview({
             <Image className="h-4 w-4 text-primary" /> Hero Direction
           </CardTitle>
           <CardDescription>{project.concept.territory}</CardDescription>
-          <div><Badge variant={hasProductReferences && selectedProvider?.supportsImageReferences ? "success" : "default"}>{fidelityLabel}</Badge></div>
+          <div>
+            <Badge
+              variant={
+                hasProductReferences && selectedProvider?.supportsImageReferences
+                  ? "success"
+                  : "default"
+              }
+            >
+              {fidelityLabel}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-elevated">
             {selectedHero?.url ? (
-              <img src={selectedHero.url} alt={`${project.productName} campaign hero`} className="absolute inset-0 h-full w-full object-cover" />
+              <img
+                src={selectedHero.url}
+                alt={`${project.productName} campaign hero`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             ) : null}
             <div
               className="absolute inset-0"
@@ -807,7 +934,9 @@ function ProjectPreview({
               <div className="text-3xl font-black leading-tight text-white drop-shadow">
                 {project.concept.headline}
               </div>
-              <div className="mt-3 text-xs font-semibold uppercase text-white/75">{project.brand.name}</div>
+              <div className="mt-3 text-xs font-semibold uppercase text-white/75">
+                {project.brand.name}
+              </div>
             </div>
           </div>
           <div className="rounded-md border border-border bg-background/60 p-3 text-xs leading-5 text-muted">
@@ -823,8 +952,12 @@ function ProjectPreview({
             <Button onClick={onApprove}>
               <BadgeCheck /> Approve hero
             </Button>
-            <Button variant="secondary" onClick={onSaveLook}><BookmarkPlus /> Save Look</Button>
-            <Button variant="secondary" onClick={onSaveConcept}><BookmarkPlus /> Save Concept</Button>
+            <Button variant="secondary" onClick={onSaveLook}>
+              <BookmarkPlus /> Save Look
+            </Button>
+            <Button variant="secondary" onClick={onSaveConcept}>
+              <BookmarkPlus /> Save Concept
+            </Button>
           </div>
           {generationNote ? <p className="text-xs text-muted">{generationNote}</p> : null}
           {heroAssets.length > 1 ? (
@@ -834,9 +967,18 @@ function ProjectPreview({
                   key={asset.id}
                   type="button"
                   onClick={() => onSelectHero(asset.id)}
-                  className={cn("overflow-hidden rounded-md border", selectedHero?.id === asset.id ? "border-primary ring-2 ring-primary/30" : "border-border")}
+                  className={cn(
+                    "overflow-hidden rounded-md border",
+                    selectedHero?.id === asset.id
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-border"
+                  )}
                 >
-                  <img src={asset.url} alt="Hero variant" className="aspect-square w-full object-cover" />
+                  <img
+                    src={asset.url}
+                    alt="Hero variant"
+                    className="aspect-square w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -859,46 +1001,99 @@ function ProjectPreview({
               const copyTop = layout.copyPosition.startsWith("top");
               const copyRight = layout.copyPosition.endsWith("right");
               return (
-                <div key={deliverable.id} className="space-y-2 rounded-md border border-border px-3 py-2 text-sm">
+                <div
+                  key={deliverable.id}
+                  className="space-y-2 rounded-md border border-border px-3 py-2 text-sm"
+                >
                   <div className="flex items-center justify-between">
                     <span>{deliverable.title}</span>
-                    <Badge variant={deliverable.status === "approved" ? "success" : "default"}>{deliverable.status}</Badge>
+                    <Badge variant={deliverable.status === "approved" ? "success" : "default"}>
+                      {deliverable.status}
+                    </Badge>
                   </div>
                   {preset ? (
                     <div
                       className="relative mx-auto w-full max-w-44 overflow-hidden rounded border border-border bg-elevated"
                       style={{ aspectRatio: `${preset.width} / ${preset.height}` }}
                     >
-                      {selectedHero?.url ? <img src={selectedHero.url} alt={`${preset.title} preview`} className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: `${layout.cropPosition} center` }} /> : null}
-                      <div className={cn("absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/25", copyTop && "rotate-180")} />
-                      <div className={cn("absolute left-2 right-2 text-[8px] font-bold leading-tight text-white drop-shadow", copyTop ? "top-2" : "bottom-2", copyRight ? "text-right" : "text-left")}>
+                      {selectedHero?.url ? (
+                        <img
+                          src={selectedHero.url}
+                          alt={`${preset.title} preview`}
+                          className="absolute inset-0 h-full w-full object-cover"
+                          style={{ objectPosition: `${layout.cropPosition} center` }}
+                        />
+                      ) : null}
+                      <div
+                        className={cn(
+                          "absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/25",
+                          copyTop && "rotate-180"
+                        )}
+                      />
+                      <div
+                        className={cn(
+                          "absolute left-2 right-2 text-[8px] font-bold leading-tight text-white drop-shadow",
+                          copyTop ? "top-2" : "bottom-2",
+                          copyRight ? "text-right" : "text-left"
+                        )}
+                      >
                         {project.concept.headline}
-                        <div className="mt-1 text-[6px] uppercase tracking-widest text-white/75">{project.brand.name}</div>
+                        <div className="mt-1 text-[6px] uppercase tracking-widest text-white/75">
+                          {project.brand.name}
+                        </div>
                       </div>
                     </div>
                   ) : null}
                   <div className="grid grid-cols-2 gap-2">
-                    <label className="text-[10px] text-muted">Crop
+                    <label className="text-[10px] text-muted">
+                      Crop
                       <select
                         value={layout.cropPosition}
-                        onChange={(event) => onLayoutChange(deliverable.format, { ...layout, cropPosition: event.target.value as GlamFormatLayout["cropPosition"] })}
+                        onChange={(event) =>
+                          onLayoutChange(deliverable.format, {
+                            ...layout,
+                            cropPosition: event.target.value as GlamFormatLayout["cropPosition"],
+                          })
+                        }
                         className="mt-1 h-8 w-full rounded-md border border-border bg-surface px-2 text-xs text-foreground"
                       >
-                        <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
                       </select>
                     </label>
-                    <label className="text-[10px] text-muted">Headline
+                    <label className="text-[10px] text-muted">
+                      Headline
                       <select
                         value={layout.copyPosition}
-                        onChange={(event) => onLayoutChange(deliverable.format, { ...layout, copyPosition: event.target.value as GlamFormatLayout["copyPosition"] })}
+                        onChange={(event) =>
+                          onLayoutChange(deliverable.format, {
+                            ...layout,
+                            copyPosition: event.target.value as GlamFormatLayout["copyPosition"],
+                          })
+                        }
                         className="mt-1 h-8 w-full rounded-md border border-border bg-surface px-2 text-xs text-foreground"
                       >
-                        <option value="top-left">Top left</option><option value="top-right">Top right</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option>
+                        <option value="top-left">Top left</option>
+                        <option value="top-right">Top right</option>
+                        <option value="bottom-left">Bottom left</option>
+                        <option value="bottom-right">Bottom right</option>
                       </select>
                     </label>
                   </div>
-                  <Button size="sm" variant="secondary" className="w-full" onClick={() => onDownloadFormat(deliverable.format)} disabled={downloadingFormat === deliverable.format || !selectedHero?.url}>
-                    {downloadingFormat === deliverable.format ? <Loader2 className="animate-spin" /> : <Download />} Download PNG
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => onDownloadFormat(deliverable.format)}
+                    disabled={downloadingFormat === deliverable.format || !selectedHero?.url}
+                  >
+                    {downloadingFormat === deliverable.format ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Download />
+                    )}{" "}
+                    Download PNG
                   </Button>
                 </div>
               );
@@ -906,21 +1101,57 @@ function ProjectPreview({
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Video className="h-4 w-4 text-primary" /> Product Film</CardTitle><CardDescription>Director-ready 15-second master with reference-safe prompts.</CardDescription></CardHeader>
-          <CardContent className="space-y-2">{(project.productFilm ?? buildProductFilmPlan(project.productName, project.concept.headline, project.look)).shots.map((shot, index) => <div key={shot.id} className="flex gap-3 rounded-md border border-border p-2.5"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">{index + 1}</span><div className="min-w-0"><div className="flex items-center gap-2"><p className="text-xs font-semibold">{shot.frame}</p><Badge>{shot.duration}s</Badge></div><p className="mt-1 text-[11px] text-muted">{shot.motion}</p></div></div>)}</CardContent>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-primary" /> Product Film
+            </CardTitle>
+            <CardDescription>
+              Director-ready 15-second master with reference-safe prompts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(
+              project.productFilm ??
+              buildProductFilmPlan(project.productName, project.concept.headline, project.look)
+            ).shots.map((shot, index) => (
+              <div key={shot.id} className="flex gap-3 rounded-md border border-border p-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold">{shot.frame}</p>
+                    <Badge>{shot.duration}s</Badge>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted">{shot.motion}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Download className="h-4 w-4 text-primary" /> Prompt Pack</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-4 w-4 text-primary" /> Prompt Pack
+            </CardTitle>
             <CardDescription>Portable local-mode production instructions.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button onClick={onExportCampaign} disabled={exportingCampaign || !selectedHero?.url}>
-              {exportingCampaign ? <Loader2 className="animate-spin" /> : <FileArchive />} Campaign ZIP
+              {exportingCampaign ? <Loader2 className="animate-spin" /> : <FileArchive />} Campaign
+              ZIP
             </Button>
-            <Button variant="secondary" onClick={() => onExport("markdown")}>Markdown</Button>
-            <Button variant="secondary" onClick={() => onExport("json")}>JSON</Button>
-            {!selectedHero?.url ? <p className="w-full text-xs text-muted">Generate a hero before exporting rendered campaign assets.</p> : null}
+            <Button variant="secondary" onClick={() => onExport("markdown")}>
+              Markdown
+            </Button>
+            <Button variant="secondary" onClick={() => onExport("json")}>
+              JSON
+            </Button>
+            {!selectedHero?.url ? (
+              <p className="w-full text-xs text-muted">
+                Generate a hero before exporting rendered campaign assets.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
         <Card>
@@ -949,13 +1180,18 @@ export function GlamStudio() {
   const [projects, setProjects] = useState<GlamProject[]>(() => readProjects());
   const [activeProjectId, setActiveProjectId] = useState(() => readProjects()[0]?.id ?? "");
   const [campaignSeed] = useState(() => consumeSeedContext("glamstudio"));
-  const [flowOpen, setFlowOpen] = useState(() => Boolean(campaignSeed) || readProjects().length === 0);
+  const [flowOpen, setFlowOpen] = useState(
+    () => Boolean(campaignSeed) || readProjects().length === 0
+  );
   const [generating, setGenerating] = useState(false);
   const [generationNote, setGenerationNote] = useState("");
   const [exportingCampaign, setExportingCampaign] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState("");
-  const activeProject = projects.find((project) => project.id === activeProjectId) ?? projects[0] ?? null;
-  const deliverables = activeProject ? listDeliverables({ moduleId: "glam-studio", projectId: activeProject.id }) : [];
+  const activeProject =
+    projects.find((project) => project.id === activeProjectId) ?? projects[0] ?? null;
+  const deliverables = activeProject
+    ? listDeliverables({ moduleId: "glam-studio", projectId: activeProject.id })
+    : [];
   const routerMode = ROUTER_MODES.find((mode) => mode.id === routerConfig.mode)?.label ?? "Auto";
 
   const definition = useMemo<GuidedFlowDefinition<GlamFlowState>>(
@@ -964,19 +1200,22 @@ export function GlamStudio() {
       moduleId: "glam-studio",
       version: 1,
       title: "New Glam Campaign",
-      description: "Create a luxury product campaign pack with Brand DNA, Look DNA, concepts, hero prompt, and format deliverables.",
-      initialState: campaignSeed ? {
-        ...INITIAL_FLOW,
-        campaignSeed,
-        projectName: `${campaignSeed.campaignName} · Glam Assets`,
-        productName: campaignSeed.product,
-        productDescription: campaignSeed.messaging.promise,
-        audience: campaignSeed.audience,
-        brandName: getBrandDna(campaignSeed.brandDnaId)?.name ?? campaignSeed.product,
-        brandTone: getBrandDna(campaignSeed.brandDnaId)?.voice.tone ?? INITIAL_FLOW.brandTone,
-        tagline: campaignSeed.messaging.tagline,
-        lookId: campaignSeed.lookId ?? INITIAL_FLOW.lookId,
-      } : INITIAL_FLOW,
+      description:
+        "Create a luxury product campaign pack with Brand DNA, Look DNA, concepts, hero prompt, and format deliverables.",
+      initialState: campaignSeed
+        ? {
+            ...INITIAL_FLOW,
+            campaignSeed,
+            projectName: `${campaignSeed.campaignName} · Glam Assets`,
+            productName: campaignSeed.product,
+            productDescription: campaignSeed.messaging.promise,
+            audience: campaignSeed.audience,
+            brandName: getBrandDna(campaignSeed.brandDnaId)?.name ?? campaignSeed.product,
+            brandTone: getBrandDna(campaignSeed.brandDnaId)?.voice.tone ?? INITIAL_FLOW.brandTone,
+            tagline: campaignSeed.messaging.tagline,
+            lookId: campaignSeed.lookId ?? INITIAL_FLOW.lookId,
+          }
+        : INITIAL_FLOW,
       steps: [
         {
           id: "product",
@@ -1061,19 +1300,27 @@ export function GlamStudio() {
   async function generateHero() {
     if (!activeProject || generating) return;
     if (routerConfig.mode === "local") {
-      setGenerationNote("Local prompt-only mode is active. Export the prompt pack to generate externally without an API call.");
+      setGenerationNote(
+        "Local prompt-only mode is active. Export the prompt pack to generate externally without an API call."
+      );
       return;
     }
     setGenerating(true);
     setGenerationNote("Checking configured image providers…");
     try {
       const statuses = await api.getProviderKeyStatuses();
-      const configured = new Set<ProviderId>(statuses.filter((item) => item.configured).map((item) => item.provider));
+      const configured = new Set<ProviderId>(
+        statuses.filter((item) => item.configured).map((item) => item.provider)
+      );
       const references = activeProject.productProfile?.referenceImages ?? [];
-      const referenceProvider = references.length ? routeReferenceImageProvider(routerConfig, configured) : null;
+      const referenceProvider = references.length
+        ? routeReferenceImageProvider(routerConfig, configured)
+        : null;
       const provider = referenceProvider ?? routeProvider("image", routerConfig, configured);
       if (!provider) {
-        setGenerationNote("No routed image provider is configured. Add a key in Settings or export the local prompt pack.");
+        setGenerationNote(
+          "No routed image provider is configured. Add a key in Settings or export the local prompt pack."
+        );
         return;
       }
       const usesReferences = references.length > 0 && provider === referenceProvider;
@@ -1110,11 +1357,13 @@ export function GlamStudio() {
         heroAssets: [asset, ...(activeProject.heroAssets ?? [])].slice(0, 12),
         selectedHeroAssetId: asset.id,
       });
-      deliverables.forEach((deliverable) => saveDeliverable({
-        ...deliverable,
-        status: "draft",
-        assetRefs: Array.from(new Set([...deliverable.assetRefs, asset.id])),
-      }));
+      deliverables.forEach((deliverable) =>
+        saveDeliverable({
+          ...deliverable,
+          status: "draft",
+          assetRefs: Array.from(new Set([...deliverable.assetRefs, asset.id])),
+        })
+      );
       setProjects(readProjects());
       setActiveProjectId(nextProject.id);
       setGenerationNote(
@@ -1133,7 +1382,11 @@ export function GlamStudio() {
     if (!activeProject) return;
     const name = slug(activeProject.name);
     if (format === "json") {
-      downloadText(`${name}-prompt-pack.json`, JSON.stringify(promptPackFor(activeProject), null, 2), "application/json");
+      downloadText(
+        `${name}-prompt-pack.json`,
+        JSON.stringify(promptPackFor(activeProject), null, 2),
+        "application/json"
+      );
     } else {
       downloadText(`${name}-prompt-pack.md`, promptPackMarkdown(activeProject), "text/markdown");
     }
@@ -1142,8 +1395,9 @@ export function GlamStudio() {
 
   async function exportCampaignPack() {
     if (!activeProject || exportingCampaign) return;
-    const hero = activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId)
-      ?? activeProject.heroAssets?.[0];
+    const hero =
+      activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId) ??
+      activeProject.heroAssets?.[0];
     if (!hero?.url) {
       setGenerationNote("Generate and approve a hero before exporting the rendered campaign pack.");
       return;
@@ -1165,14 +1419,36 @@ export function GlamStudio() {
         rendered.push({ name: `assets/${format.id}-${format.width}x${format.height}.png`, bytes });
       }
       const encoder = new TextEncoder();
-      rendered.push({ name: "prompt-pack.json", bytes: encoder.encode(JSON.stringify(promptPackFor(activeProject), null, 2)) });
-      rendered.push({ name: "README.md", bytes: encoder.encode(promptPackMarkdown(activeProject)) });
-      rendered.push({ name: "product-film/15-second-master.md", bytes: encoder.encode(productFilmMarkdown(activeProject.productFilm ?? buildProductFilmPlan(activeProject.productName, activeProject.concept.headline, activeProject.look))) });
+      rendered.push({
+        name: "prompt-pack.json",
+        bytes: encoder.encode(JSON.stringify(promptPackFor(activeProject), null, 2)),
+      });
+      rendered.push({
+        name: "README.md",
+        bytes: encoder.encode(promptPackMarkdown(activeProject)),
+      });
+      rendered.push({
+        name: "product-film/15-second-master.md",
+        bytes: encoder.encode(
+          productFilmMarkdown(
+            activeProject.productFilm ??
+              buildProductFilmPlan(
+                activeProject.productName,
+                activeProject.concept.headline,
+                activeProject.look
+              )
+          )
+        ),
+      });
       const blob = buildZip(rendered);
       downloadBlob(blob, `${slug(activeProject.name)}-campaign-pack.zip`);
       const assetIds = [hero.id];
-      deliverables.forEach((deliverable) => saveDeliverable({ ...deliverable, status: "approved", assetRefs: assetIds }));
-      setGenerationNote(`Exported ${selected.length} exact-size PNG assets plus prompt and production specs.`);
+      deliverables.forEach((deliverable) =>
+        saveDeliverable({ ...deliverable, status: "approved", assetRefs: assetIds })
+      );
+      setGenerationNote(
+        `Exported ${selected.length} exact-size PNG assets plus prompt and production specs.`
+      );
     } catch (error) {
       setGenerationNote(error instanceof Error ? error.message : "Campaign pack export failed.");
     } finally {
@@ -1182,8 +1458,9 @@ export function GlamStudio() {
 
   async function downloadCampaignFormat(formatId: string) {
     if (!activeProject || downloadingFormat) return;
-    const hero = activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId)
-      ?? activeProject.heroAssets?.[0];
+    const hero =
+      activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId) ??
+      activeProject.heroAssets?.[0];
     const format = GLAM_FORMATS.find((candidate) => candidate.id === formatId);
     if (!hero?.url || !format) return;
     setDownloadingFormat(formatId);
@@ -1197,7 +1474,10 @@ export function GlamStudio() {
         palette: activeProject.look.palette,
         layout: activeProject.formatLayouts?.[format.id] ?? DEFAULT_GLAM_LAYOUT,
       });
-      downloadBlob(new Blob([Uint8Array.from(bytes).buffer], { type: "image/png" }), `${slug(activeProject.name)}-${format.id}-${format.width}x${format.height}.png`);
+      downloadBlob(
+        new Blob([Uint8Array.from(bytes).buffer], { type: "image/png" }),
+        `${slug(activeProject.name)}-${format.id}-${format.width}x${format.height}.png`
+      );
       setGenerationNote(`${format.title} PNG downloaded at exact dimensions.`);
     } catch (error) {
       setGenerationNote(error instanceof Error ? error.message : "Format rendering failed.");
@@ -1238,16 +1518,18 @@ export function GlamStudio() {
 
   function approveHero() {
     if (!activeProject) return;
-    const nextProject = saveProject({ ...activeProject, heroLoop: approveLoopRun(activeProject.heroLoop) });
-    const selectedHero = activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId)
-      ?? activeProject.heroAssets?.[0];
+    const nextProject = saveProject({
+      ...activeProject,
+      heroLoop: approveLoopRun(activeProject.heroLoop),
+    });
+    const selectedHero =
+      activeProject.heroAssets?.find((asset) => asset.id === activeProject.selectedHeroAssetId) ??
+      activeProject.heroAssets?.[0];
     deliverables.forEach((deliverable) =>
       saveDeliverable({
         ...deliverable,
         status: "approved",
-        assetRefs: selectedHero
-          ? [selectedHero.id]
-          : [`glam-prompt:${activeProject.id}`],
+        assetRefs: selectedHero ? [selectedHero.id] : [`glam-prompt:${activeProject.id}`],
       })
     );
     setProjects(readProjects());
@@ -1265,13 +1547,19 @@ export function GlamStudio() {
               </span>
               <div>
                 <h1 className="text-lg font-semibold">Glam Studio</h1>
-                <p className="text-xs text-muted">Luxury product campaign packs powered by platform Guided Flow.</p>
-                {campaignSeed ? <p className="mt-1 text-xs text-primary">Part of {campaignSeed.campaignName}</p> : null}
+                <p className="text-xs text-muted">
+                  Luxury product campaign packs powered by platform Guided Flow.
+                </p>
+                {campaignSeed ? (
+                  <p className="mt-1 text-xs text-primary">Part of {campaignSeed.campaignName}</p>
+                ) : null}
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary">{STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}</Badge>
+            <Badge variant="primary">
+              {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label}
+            </Badge>
             <Badge>{routerMode}</Badge>
             <Button variant="secondary" onClick={openBrandKits}>
               <Palette /> Brand Kits
@@ -1366,7 +1654,14 @@ export function GlamStudio() {
               downloadingFormat={downloadingFormat}
             />
           ) : (
-            <CreativeEmptyState icon={<Shirt />} title="Build a luxury product campaign" description="Art-direct a complete visual world from product truth and Brand DNA—then carry it into heroes, social formats, and film." ideas={["Noir editorial", "Sculptural light", "Beauty macro", "15s product film"]} action="Create campaign" onAction={() => setFlowOpen(true)} />
+            <CreativeEmptyState
+              icon={<Shirt />}
+              title="Build a luxury product campaign"
+              description="Art-direct a complete visual world from product truth and Brand DNA—then carry it into heroes, social formats, and film."
+              ideas={["Noir editorial", "Sculptural light", "Beauty macro", "15s product film"]}
+              action="Create campaign"
+              onAction={() => setFlowOpen(true)}
+            />
           )}
         </main>
       </div>

@@ -133,12 +133,8 @@ export function Dashboard() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-[var(--color-gold)]/10" />
           <div className="relative flex flex-col items-center gap-4 px-8 py-12 text-center">
-            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Director Studio
-            </h2>
-            <p className="max-w-md text-sm text-muted">
-              Every idea. Every style. One vision.
-            </p>
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Director Studio</h2>
+            <p className="max-w-md text-sm text-muted">Every idea. Every style. One vision.</p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Button size="lg" onClick={() => setWizardOpen(true)}>
                 <Clapperboard className="h-4 w-4" /> Start with Director
@@ -152,15 +148,55 @@ export function Dashboard() {
 
         <section>
           <div className="mb-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted">Creative studios</h2>
-            <p className="mt-1 text-sm text-muted">Choose a focused workflow or orchestrate the whole launch.</p>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+              Creative studios
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Choose a focused workflow or orchestrate the whole launch.
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <StudioCard icon={<Music className="h-5 w-5" />} title="Music Video" desc="Turn songs into cinematic, beat-aware stories." capability="Song · Cast · Timeline" tone="violet" onClick={openSong} />
-            <StudioCard icon={<Boxes className="h-5 w-5" />} title="Motion Studio" desc="Build motion concepts, shots, and production prompts." capability="Boards · Motion · Audio" tone="cyan" onClick={openMotionStudio} />
-            <StudioCard icon={<WandSparkles className="h-5 w-5" />} title="Glam Studio" desc="Create luxury campaign looks and product films." capability="Looks · Heroes · Formats" tone="gold" onClick={openGlamStudio} />
-            <StudioCard icon={<Globe className="h-5 w-5" />} title="Web Studio" desc="Design and export a responsive campaign site." capability="Pages · Preview · SEO" tone="green" onClick={openWebStudio} />
-            <StudioCard icon={<Megaphone className="h-5 w-5" />} title="Campaign Studio" desc="Orchestrate every channel through launch." capability="Strategy · Plan · Calendar" tone="pink" onClick={openCampaignStudio} featured />
+            <StudioCard
+              icon={<Music className="h-5 w-5" />}
+              title="Music Video"
+              desc="Turn songs into cinematic, beat-aware stories."
+              capability="Song · Cast · Timeline"
+              tone="violet"
+              onClick={openSong}
+            />
+            <StudioCard
+              icon={<Boxes className="h-5 w-5" />}
+              title="Motion Studio"
+              desc="Build motion concepts, shots, and production prompts."
+              capability="Boards · Motion · Audio"
+              tone="cyan"
+              onClick={openMotionStudio}
+            />
+            <StudioCard
+              icon={<WandSparkles className="h-5 w-5" />}
+              title="Glam Studio"
+              desc="Create luxury campaign looks and product films."
+              capability="Looks · Heroes · Formats"
+              tone="gold"
+              onClick={openGlamStudio}
+            />
+            <StudioCard
+              icon={<Globe className="h-5 w-5" />}
+              title="Web Studio"
+              desc="Design and export a responsive campaign site."
+              capability="Pages · Preview · SEO"
+              tone="green"
+              onClick={openWebStudio}
+            />
+            <StudioCard
+              icon={<Megaphone className="h-5 w-5" />}
+              title="Campaign Studio"
+              desc="Orchestrate every channel through launch."
+              capability="Strategy · Plan · Calendar"
+              tone="pink"
+              onClick={openCampaignStudio}
+              featured
+            />
           </div>
         </section>
 
@@ -222,12 +258,23 @@ export function Dashboard() {
                     </CardTitle>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <Stat icon={<Gauge className="h-3 w-3" />} label={`${s.bpm} BPM`} />
-                      <Stat icon={<Clock className="h-3 w-3" />} label={formatTime(s.durationSec)} />
-                      <Stat icon={<Radio className="h-3 w-3" />} label={`${s.sections.length} sections`} />
+                      <Stat
+                        icon={<Clock className="h-3 w-3" />}
+                        label={formatTime(s.durationSec)}
+                      />
+                      <Stat
+                        icon={<Radio className="h-3 w-3" />}
+                        label={`${s.sections.length} sections`}
+                      />
                     </div>
                   </CardHeader>
                   <CardContent className="mt-auto flex gap-2">
-                    <Button size="sm" variant="secondary" className="flex-1" onClick={() => openSongStudio(s.id)}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => openSongStudio(s.id)}
+                    >
                       <Music className="h-3.5 w-3.5" /> Song
                     </Button>
                     <Button size="sm" className="flex-1" onClick={() => directSong(s.id)}>
@@ -246,7 +293,11 @@ export function Dashboard() {
             onClick={() => setShowLegacy((v) => !v)}
             className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted hover:text-foreground"
           >
-            {showLegacy ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            {showLegacy ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
             Motion-graphics projects {projects.length > 0 ? `(${projects.length})` : ""}
           </button>
           {showLegacy && (
@@ -257,8 +308,8 @@ export function Dashboard() {
                     <Plus className="h-4 w-4 text-primary" /> New project
                   </CardTitle>
                   <CardDescription>
-                    The original ad / explainer pipeline (camera, lighting, prompt
-                    pack). Separate from the music-video flow above.
+                    The original ad / explainer pipeline (camera, lighting, prompt pack). Separate
+                    from the music-video flow above.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
@@ -277,10 +328,14 @@ export function Dashboard() {
                       id="type"
                       className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
                       value={form.type}
-                      onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as ProjectType }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, type: e.target.value as ProjectType }))
+                      }
                     >
                       {PROJECT_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -355,12 +410,54 @@ export function Dashboard() {
   );
 }
 
-function StudioCard({ icon, title, desc, capability, tone, onClick, featured = false }: { icon: React.ReactNode; title: string; desc: string; capability: string; tone: "violet" | "cyan" | "gold" | "green" | "pink"; onClick: () => void; featured?: boolean }) {
-  const tones = { violet: "from-violet-500/30 via-indigo-500/10", cyan: "from-cyan-400/30 via-blue-500/10", gold: "from-amber-400/30 via-orange-500/10", green: "from-emerald-400/30 via-teal-500/10", pink: "from-fuchsia-400/30 via-rose-500/10" };
+function StudioCard({
+  icon,
+  title,
+  desc,
+  capability,
+  tone,
+  onClick,
+  featured = false,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  capability: string;
+  tone: "violet" | "cyan" | "gold" | "green" | "pink";
+  onClick: () => void;
+  featured?: boolean;
+}) {
+  const tones = {
+    violet: "from-violet-500/30 via-indigo-500/10",
+    cyan: "from-cyan-400/30 via-blue-500/10",
+    gold: "from-amber-400/30 via-orange-500/10",
+    green: "from-emerald-400/30 via-teal-500/10",
+    pink: "from-fuchsia-400/30 via-rose-500/10",
+  };
   return (
-    <button onClick={onClick} className={`group overflow-hidden rounded-xl border text-left transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-card ${featured ? "border-[var(--color-gold)]/35" : "border-border"}`}>
-      <span className={`creative-preview block h-24 bg-gradient-to-br ${tones[tone]} to-background p-3`}><span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-white">{icon}</span><span className="absolute bottom-3 left-3 right-3 flex gap-1.5"><i className="h-1 flex-[1.4] rounded-full bg-white/35" /><i className="h-1 flex-1 rounded-full bg-white/15" /><i className="h-1 w-5 rounded-full bg-white/25" /></span></span>
-      <span className="block bg-surface p-3.5"><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block min-h-9 text-xs leading-relaxed text-muted">{desc}</span><span className="mt-3 block text-[10px] font-medium uppercase tracking-wide text-muted">{capability}</span></span>
+    <button
+      onClick={onClick}
+      className={`group overflow-hidden rounded-xl border text-left transition duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-card ${featured ? "border-[var(--color-gold)]/35" : "border-border"}`}
+    >
+      <span
+        className={`creative-preview block h-24 bg-gradient-to-br ${tones[tone]} to-background p-3`}
+      >
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-white">
+          {icon}
+        </span>
+        <span className="absolute bottom-3 left-3 right-3 flex gap-1.5">
+          <i className="h-1 flex-[1.4] rounded-full bg-white/35" />
+          <i className="h-1 flex-1 rounded-full bg-white/15" />
+          <i className="h-1 w-5 rounded-full bg-white/25" />
+        </span>
+      </span>
+      <span className="block bg-surface p-3.5">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="mt-1 block min-h-9 text-xs leading-relaxed text-muted">{desc}</span>
+        <span className="mt-3 block text-[10px] font-medium uppercase tracking-wide text-muted">
+          {capability}
+        </span>
+      </span>
     </button>
   );
 }

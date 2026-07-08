@@ -41,7 +41,12 @@ export function MiniPlayer() {
           {formatTime(player.time)} / {formatTime(dur)}
         </span>
         <div className="flex shrink-0 items-center gap-0.5">
-          <button onClick={() => player.skip(-10)} className="rounded p-1 text-muted hover:text-foreground" aria-label="Back 10s" title="Back 10s">
+          <button
+            onClick={() => player.skip(-10)}
+            className="rounded p-1 text-muted hover:text-foreground"
+            aria-label="Back 10s"
+            title="Back 10s"
+          >
             <SkipBack className="h-3.5 w-3.5" />
           </button>
           <button
@@ -51,10 +56,20 @@ export function MiniPlayer() {
           >
             {player.playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
           </button>
-          <button onClick={() => player.skip(10)} className="rounded p-1 text-muted hover:text-foreground" aria-label="Forward 10s" title="Forward 10s">
+          <button
+            onClick={() => player.skip(10)}
+            className="rounded p-1 text-muted hover:text-foreground"
+            aria-label="Forward 10s"
+            title="Forward 10s"
+          >
             <SkipForward className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => player.stop()} className="rounded p-1 text-muted hover:text-foreground" aria-label="Stop" title="Stop">
+          <button
+            onClick={() => player.stop()}
+            className="rounded p-1 text-muted hover:text-foreground"
+            aria-label="Stop"
+            title="Stop"
+          >
             <Square className="h-3.5 w-3.5" />
           </button>
         </div>

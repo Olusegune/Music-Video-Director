@@ -2,7 +2,13 @@ import { establishDirection } from "./direction";
 import { directStoryboard } from "./brain";
 import { DEFAULT_TYPOGRAPHY } from "./templates";
 import type { MotionLoopEvent, MotionProject, MotionProjectDraft, MotionScene } from "./types";
-import { motionUid, nowIso, readMotionStorage, writeMotionStorage, migrateMotionStorage } from "./storage";
+import {
+  motionUid,
+  nowIso,
+  readMotionStorage,
+  writeMotionStorage,
+  migrateMotionStorage,
+} from "./storage";
 
 const PROJECTS_KEY = "projects";
 const VERSIONS_KEY = "versions";
@@ -57,8 +63,11 @@ export function createMotionProject(draft: MotionProjectDraft): MotionProject {
         id: motionUid(),
         stage: "generate",
         target: "storyboard",
-        summary: "Generated initial Motion Studio storyboard from project type, style, brief, and script.",
-        score: Math.round(scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) / scenes.length),
+        summary:
+          "Generated initial Motion Studio storyboard from project type, style, brief, and script.",
+        score: Math.round(
+          scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) / scenes.length
+        ),
         createdAt: now,
       },
     ],
@@ -86,7 +95,10 @@ export function updateMotionScenes(projectId: string, scenes: MotionScene[]): Mo
   return saveMotionProject({ ...project, scenes });
 }
 
-export function addMotionLoopEvent(projectId: string, event: Omit<MotionLoopEvent, "id" | "createdAt">): MotionProject | null {
+export function addMotionLoopEvent(
+  projectId: string,
+  event: Omit<MotionLoopEvent, "id" | "createdAt">
+): MotionProject | null {
   const project = getMotionProject(projectId);
   if (!project) return null;
   return saveMotionProject({
@@ -117,5 +129,7 @@ export function snapshotMotionProject(projectId: string, label: string): void {
 }
 
 export function listMotionVersions(projectId: string): MotionProjectVersion[] {
-  return readMotionStorage<MotionProjectVersion[]>(VERSIONS_KEY, []).filter((version) => version.projectId === projectId);
+  return readMotionStorage<MotionProjectVersion[]>(VERSIONS_KEY, []).filter(
+    (version) => version.projectId === projectId
+  );
 }

@@ -55,6 +55,7 @@ Small, sharp additions to `src/platform/` that all three modules need. ~2–3 da
 **5. Unique Value Proposition.** The only tool that goes product-photo → art-directed campaign concept → consistent multi-format asset pack, with brand DNA enforced across every asset, running local-first with pluggable providers.
 
 **6. Primary Workflow** (the spine — everything else hangs off this):
+
 1. **Product Intake** — upload product photos / describe product; auto-extract product DNA (shape, materials, colors, category).
 2. **Brand** — pick/create Brand DNA (Phase 0 brand kit).
 3. **Look Selection** — choose a Luxury Look (curated looks: Noir Editorial, Golden Hour Atelier, Clinical Minimal, Baroque Opulence, Neon Tech, Automotive Cinematic…) or derive one from reference images via Style DNA.
@@ -82,7 +83,7 @@ Small, sharp additions to `src/platform/` that all three modules need. ~2–3 da
 **17. MVP.** Product intake (images + description), Brand DNA pick, 8 curated Looks, single concept generation (pick of 3), hero loop, 4 core formats (1:1, 4:5, 9:16, 16:9) with simple type overlay, ZIP + prompt-pack export, Creator + Director modes. **Cut from MVP:** video, custom look derivation from references, advanced layout editor, automotive-specific sets.
 **18. V1.** Product film (image-to-video via `videoGen.ts`), look derivation from reference images, layout editor with type presets, full ad-format matrix, concept PDF export, Studio mode complete.
 **19. Future.** Model/talent integration via Character Bible (fashion campaigns with consistent AI models), multi-product scenes, A/B variant packs wired to Campaign Studio, animated banners, print/CMYK exports.
-**20. Technical Risks.** (a) Product fidelity — generated scenes must contain *the user's actual product*; pure text-to-image will hallucinate the product. Mitigation: lean on image-editing/reference-conditioning capable providers; in MVP be honest — "product-faithful" mode requires a reference-capable provider, otherwise generate look-alike scenes and composite the real product photo as an overlay layer in the layout step. This is the module's hardest problem; do not hide it. (b) Text rendering in images is unreliable → render typography as a real HTML/SVG overlay composited at export (repo already has `html-to-image`), never ask the model to paint headlines. (c) Provider variance in look consistency → Look DNA must compile to per-provider prompt dialects (promptTools.ts pattern).
+**20. Technical Risks.** (a) Product fidelity — generated scenes must contain _the user's actual product_; pure text-to-image will hallucinate the product. Mitigation: lean on image-editing/reference-conditioning capable providers; in MVP be honest — "product-faithful" mode requires a reference-capable provider, otherwise generate look-alike scenes and composite the real product photo as an overlay layer in the layout step. This is the module's hardest problem; do not hide it. (b) Text rendering in images is unreliable → render typography as a real HTML/SVG overlay composited at export (repo already has `html-to-image`), never ask the model to paint headlines. (c) Provider variance in look consistency → Look DNA must compile to per-provider prompt dialects (promptTools.ts pattern).
 **21. UX Risks.** Luxury is a taste bar — a mediocre result kills the fantasy; curate Looks hard and ship few. Concept step could feel like homework → keep it to one card-pick. Format matrix could overwhelm → default to 4, expand on demand.
 **22. Success Metrics.** Time from product upload → exported pack < 10 min (Director mode); ≥1 hero approved within 2 loop rounds for 70% of sessions; % of packs exported (completion rate); repeat projects per user.
 **23. Acceptance Criteria.** A user with only a product photo and no prompt-writing produces, in Director mode, an exported ZIP with ≥4 on-format assets sharing one look and brand palette/fonts; works end-to-end in `local` router mode producing a prompt+layout pack; typecheck/build clean; no regressions to Music Video or Motion Studio.
@@ -90,6 +91,7 @@ Small, sharp additions to `src/platform/` that all three modules need. ~2–3 da
 ## Codex Implementation Brief — Glam Studio
 
 **1. Folder structure**
+
 ```
 src/apps/glam/
   GlamStudio.tsx            # module root, mode-aware
@@ -98,6 +100,7 @@ src/apps/glam/
           formats.ts, layoutCompose.ts, glamStore.ts
   features/ intake/ looks/ concept/ hero/ pack/ export/
 ```
+
 **2. Files to create.** The above; plus `platform/lib/loopEngine.ts`, `studioMode.ts`, `brandDna.ts`, `deliverables.ts`, `platform/components/generation/LoopBoard.tsx` (Phase 0 if not already done); curated look definitions as data in `looks.ts`; format presets in `formats.ts`.
 **3. Files to modify.** `src/app/App.tsx` (view + nav), `src/platform/lib/types.ts` (shared ids), `providers.ts` only if adding capability metadata (e.g., `imageEdit` flag on ProviderInfo), `features/brandkits/BrandKitManager.tsx` (adopt BrandDna), dashboard to surface Glam projects.
 **4. Reuse.** imageGen/videoGen, promptTools, styleDna, refs.ts (reference images), assets/generatedAssets, pack.ts, assetSheet, snapshots, undo, settings, providerReady, existing UI kit in `platform/components/ui`.
@@ -112,6 +115,7 @@ src/apps/glam/
 **13. Quality gates.** `npm run build` clean at every phase; add lightweight vitest for formats.ts, layoutCompose.ts (pure functions), concepts JSON parsing; manual smoke: full Director flow in local mode.
 **14. Acceptance.** Same as PRD #23, plus: no imports from `apps/glam` into other apps; platform additions have zero Glam-specific code.
 **15. Compact Codex prompt.**
+
 > In the Director Studio repo, implement Glam Studio per `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` §Module 1. First do Phase 0 platform prep (loopEngine, studioMode, brandDna, deliverables — small, generic, in `src/platform/lib`). Then build `src/apps/glam` following the existing `src/apps/music-video` conventions: Zustand store, platform UI kit, provider router for all AI calls, full functionality in `local` router mode via prompt packs. Ship phases P1–P5 (MVP scope only — no video, no layout editor). Render all typography as HTML/SVG overlays composited with html-to-image, never model-painted text. Keep `tsc --noEmit && vite build` green per phase. Do not modify music-video or motion-studio behavior.
 
 ---
@@ -124,13 +128,14 @@ src/apps/glam/
 
 **2. Target Users.** Founders launching products; freelancers/agencies producing client sites fast; Director Studio users needing a landing page for the campaign they just made.
 
-**3. Core Problem.** AI site builders generate generic layouts with filler copy; agencies are slow and expensive. The real work of a good marketing site is *positioning and copy first, design second* — no current tool sequences it that way.
+**3. Core Problem.** AI site builders generate generic layouts with filler copy; agencies are slow and expensive. The real work of a good marketing site is _positioning and copy first, design second_ — no current tool sequences it that way.
 
 **4. Emotional Outcome.** "I have a $10k agency website team." Reviewing a site proposal, not fighting a page builder.
 
 **5. UVP.** Positioning-first pipeline (offer → message architecture → copy → sitemap → wireframe → styled site), driven by the same Brand/Style DNA as your ad assets, exporting clean static code you own — local-first, no hosted builder lock-in.
 
 **6. Primary Workflow.**
+
 1. **Business Intake** — what you sell, to whom, proof points, CTA goal; optionally ingest existing materials (docParse.ts handles docs/PDFs).
 2. **Positioning** — AI drafts offer positioning + message hierarchy (headline, value props, objections, social proof plan). User approves — this is the most leveraged review gate.
 3. **Sitemap** — page/section list (landing page = section list). Simplify: MVP is single-page sites; sitemap = section stack.
@@ -142,7 +147,7 @@ src/apps/glam/
 
 **7. Director Mode.** Wizard: business intake → AI runs 2–7, gates at positioning approval and full-site review. **8. Studio Mode.** Section-by-section workbench: swap patterns, edit copy inline, tweak design tokens, manage imagery slots. **9. Creator Mode.** "Launch page in 5 minutes": name + one-liner + CTA → single-scroll page from one template family.
 
-**10. Core Screens.** (a) Web Home, (b) Intake, (c) Positioning Review, (d) Site Builder (canvas: section stack + inspector drawer — this is the one big screen), (e) Preview, (f) Export. Sitemap/copy/wireframe are stages *within* the builder, not separate screens.
+**10. Core Screens.** (a) Web Home, (b) Intake, (c) Positioning Review, (d) Site Builder (canvas: section stack + inspector drawer — this is the one big screen), (e) Preview, (f) Export. Sitemap/copy/wireframe are stages _within_ the builder, not separate screens.
 
 **11. Platform Dependencies.** Router (text primary, image secondary), BrandDna, StyleDna, asset library, deliverable registry, docParse, snapshots/undo, ModeSwitch, Loop Engine (copy/hero-section variants).
 
@@ -154,7 +159,7 @@ src/apps/glam/
 **17. MVP.** Single-page sites; intake + positioning + copy + ~12 section patterns across 4 families; token-based theming; imagery from library or generated; responsive preview; static export. Directors + Creator modes. **Cut:** multi-page, forms/backends, custom pattern authoring, animations beyond CSS, CMS, actual deploy integration.
 **18. V1.** Multi-page (up to 5), pattern library ~30, form embeds (mailto/Formspree-style paste-in), SEO/meta pass, deploy guidance, Studio mode complete, per-section image loops.
 **19. Future.** Microsite kits for Campaign Studio, A/B copy exports, blog/CMS export adapters, interactive/video sections using Motion Studio output, localization.
-**20. Technical Risks.** (a) Freeform AI layout generation produces broken CSS — avoided entirely by the curated pattern library; patterns are hand-built React→static-HTML templates, AI only fills structured slots. (b) Static export fidelity vs. in-app preview — render preview *from the same template compiler* as the export (one renderer, two targets). (c) Copy JSON drift — schema-validate every text call, retry with repair.
+**20. Technical Risks.** (a) Freeform AI layout generation produces broken CSS — avoided entirely by the curated pattern library; patterns are hand-built React→static-HTML templates, AI only fills structured slots. (b) Static export fidelity vs. in-app preview — render preview _from the same template compiler_ as the export (one renderer, two targets). (c) Copy JSON drift — schema-validate every text call, retry with repair.
 **21. UX Risks.** Users skip positioning to "see the site" → Creator mode is that valve; keep Director gate short (one screen, editable bullets). Inline copy editing must be truly WYSIWYG or trust dies. Token theming can look samey → each pattern family ships with 3 curated token presets.
 **22. Success Metrics.** Intake → exported site < 15 min Director mode; % sites exported; % positioning approved without full rewrite; Lighthouse ≥ 90 on exports.
 **23. Acceptance.** Director-mode run from a 3-sentence business description yields a responsive single-page site exported as standalone HTML/CSS that scores ≥90 Lighthouse (perf/a11y/SEO basics), on-brand tokens applied, works in `local` router mode (placeholder imagery + prompt pack); build clean; no cross-app regressions.
@@ -162,6 +167,7 @@ src/apps/glam/
 ## Codex Implementation Brief — Web Studio
 
 **1. Folder structure**
+
 ```
 src/apps/webstudio/
   WebStudio.tsx
@@ -170,6 +176,7 @@ src/apps/webstudio/
           tokens.ts, positioning.ts, copyGen.ts, siteCompiler.ts, webStore.ts
   features/ intake/ positioning/ builder/ preview/ export/
 ```
+
 **2. Create.** The above; `siteCompiler.ts` is the heart — compiles `SiteSpec + DesignTokens` to (a) React preview and (b) static HTML/CSS string output from the same template definitions.
 **3. Modify.** `App.tsx` (view/nav), dashboard, `platform/lib/types.ts`; possibly `docParse.ts` reuse untouched.
 **4. Reuse.** Router + text/image gen, promptTools, brandDna, styleDna, docParse, assets, deliverables, snapshots/undo, LoopBoard, UI kit.
@@ -184,6 +191,7 @@ src/apps/webstudio/
 **13. Quality gates.** vitest on siteCompiler + tokens (pure), schema-parse tests for positioning/copy; build green per phase; manual Lighthouse check on export.
 **14. Acceptance.** PRD §23; compiler determinism (same spec → identical HTML); no `apps/webstudio` imports elsewhere.
 **15. Compact Codex prompt.**
+
 > Implement Web Studio per `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` §Module 2 in `src/apps/webstudio`, following music-video app conventions. Core principle: a hand-authored SectionPattern registry + a single `siteCompiler.ts` that renders both the in-app preview and the exported static HTML/CSS from the same templates — the AI only fills structured slots (positioning, copy, media prompts) via schema-validated text calls through the provider router. Build phases P1–P6 (MVP: single-page sites, ~12 patterns). Everything must work in `local` router mode with placeholder imagery. Static export must be a zero-dependency folder scoring ≥90 Lighthouse. Keep `tsc --noEmit && vite build` green per phase.
 
 ---
@@ -192,7 +200,7 @@ src/apps/webstudio/
 
 ### Standalone vs. orchestration — recommendation: **B, presented as C.**
 
-Build Campaign Studio as an **orchestration layer with its own thin surface** — a brief/strategy/calendar UI that *plans* deliverables and delegates production to Glam, Web, and Motion Studio via the deliverable registry. It owns no generation pipelines of its own except two lightweight ones that don't merit modules: **social copy variants and email assets** (text + existing image machinery). A "standalone" Campaign Studio that re-implements image/video/web generation would triple maintenance and guarantee drift; a pure invisible layer has no home for strategy/calendar/status. So: standalone *screens*, orchestrated *production*. The deliverable registry (Phase 0) is what makes this cheap.
+Build Campaign Studio as an **orchestration layer with its own thin surface** — a brief/strategy/calendar UI that _plans_ deliverables and delegates production to Glam, Web, and Motion Studio via the deliverable registry. It owns no generation pipelines of its own except two lightweight ones that don't merit modules: **social copy variants and email assets** (text + existing image machinery). A "standalone" Campaign Studio that re-implements image/video/web generation would triple maintenance and guarantee drift; a pure invisible layer has no home for strategy/calendar/status. So: standalone _screens_, orchestrated _production_. The deliverable registry (Phase 0) is what makes this cheap.
 
 ## Product Brief / PRD
 
@@ -207,11 +215,12 @@ Build Campaign Studio as an **orchestration layer with its own thin surface** �
 **5. UVP.** The only local-first system where one Campaign DNA (strategy + messaging + visual world) provably propagates into ads, film, web, social, and email produced by specialist modules — with a live status board and one export package.
 
 **6. Primary Workflow.**
+
 1. **Campaign Brief** — product, audience, goal, launch date, channels, budget-of-effort (S/M/L).
 2. **Strategy** — AI drafts positioning, key message, 3 pillar messages, audience insight, channel plan. Review gate #1.
 3. **Campaign Concept** — creative platform (big idea, tagline, visual world = Look + tokens seeded from BrandDna). Review gate #2.
 4. **Deliverable Plan** — auto-generated plan in the deliverable registry: N Glam assets, hero film (Motion), landing page (Web), social calendar posts, email sequence — scaled by channel plan and effort size.
-5. **Production** — per deliverable, "Produce" hands off to the owning module *pre-seeded* with Campaign DNA (brand, look, messaging); Campaign Studio tracks status. Social copy + email produced natively.
+5. **Production** — per deliverable, "Produce" hands off to the owning module _pre-seeded_ with Campaign DNA (brand, look, messaging); Campaign Studio tracks status. Social copy + email produced natively.
 6. **Launch Calendar** — deliverables placed on a timeline relative to launch date (templated: teaser → launch → sustain).
 7. **Campaign Package Export** — one ZIP: strategy PDF, all approved assets by channel, calendar (CSV/ICS), landing page folder, prompt packs for anything unproduced.
 
@@ -236,6 +245,7 @@ Build Campaign Studio as an **orchestration layer with its own thin surface** �
 ## Codex Implementation Brief — Campaign Studio
 
 **1. Folder structure**
+
 ```
 src/apps/campaign/
   CampaignStudio.tsx
@@ -244,20 +254,22 @@ src/apps/campaign/
           socialCopy.ts, emailGen.ts, packageExport.ts, campaignStore.ts
   features/ brief/ strategy/ board/ calendar/ export/
 ```
+
 **2. Create.** The above. `seedContext.ts` may live in `platform/lib/` instead (it's the cross-module contract — platform is the right home).
 **3. Modify.** `App.tsx`; Glam and Web intake screens to accept an incoming SeedContext (pre-fill + banner "Part of campaign X"); deliverable registry consumers in Glam/Web to report status; dashboard for campaign cards.
 **4. Reuse.** Deliverable registry, brandDna, router, LoopBoard, pack/bibleExport, Glam's `formats.ts` + `layoutCompose.ts` for social/email graphics (import from a shared platform location if this creates an app→app import — hoist those two into `platform/lib` when Campaign Studio starts).
 **5. New types.** PRD §12; unify `CampaignConcept` with Glam's concept type in platform.
 **6. UI.** BriefForm, StrategyCard (editable doc card), DeliverableBoard (kanban), DeliverableCard (thumbnail + owner-module badge + Produce button), CalendarStrip (V1), PackageExportDialog.
-**7. Services.** strategy.ts / socialCopy.ts / emailGen.ts (schema-validated text), planGenerator.ts (deterministic rules from channel plan + effort size — *not* AI; testable), packageExport.ts.
+**7. Services.** strategy.ts / socialCopy.ts / emailGen.ts (schema-validated text), planGenerator.ts (deterministic rules from channel plan + effort size — _not_ AI; testable), packageExport.ts.
 **8. Router.** text throughout; images via hoisted Glam compose libs; local mode emits the full campaign-plan document pack.
 **9. Loop Engine.** strategy-route triples; social/subject-line variant loops.
 **10. Creative DNA.** Campaign DNA assembly + SeedContext propagation; write to DNA kit.
 **11. Export.** Package ZIP assembling registry assets by channel + strategy PDF + CSV plan; reuse pack.ts.
 **12. Phases.** P1 types+store+brief+strategy gen → P2 concept + plan generator (deterministic) + board UI → P3 native social/email production → P4 SeedContext handoff into Glam/Web + status reporting → P5 package export → P6 Director/Creator modes → P7 (V1) calendar, auto-launch.
 **13. Quality gates.** vitest on planGenerator + packageExport manifest (pure); schema tests; build green per phase; manual: seeded handoff round-trip.
-**14. Acceptance.** PRD §23; SeedContext is the *only* new coupling surface added to Glam/Web.
+**14. Acceptance.** PRD §23; SeedContext is the _only_ new coupling surface added to Glam/Web.
 **15. Compact Codex prompt.**
+
 > Implement Campaign Studio per `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` §Module 3 in `src/apps/campaign`. It is an orchestration layer with its own thin UI: brief → AI strategy/concept (schema-validated text via provider router) → deterministic deliverable plan written to the platform deliverable registry → native production of social/email copy only → seeded handoff (SeedContext contract in `platform/lib`) into Glam and Web Studio, which pre-fill their intakes and report status back through the registry → campaign package ZIP export. Do not re-implement image/video/web generation; hoist Glam's formats/layoutCompose into platform if needed for social graphics. Build phases P1–P6 (MVP: no calendar, list view instead). Full flow must work in `local` router mode as a campaign-plan document pack. Keep builds green; only cross-module change allowed is SeedContext acceptance + registry status updates.
 
 ---

@@ -59,8 +59,14 @@ function Select({
 }
 
 export function AnimationLab() {
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+  });
   const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
 
   const [characterId, setCharacterId] = useState("");
@@ -152,8 +158,8 @@ export function AnimationLab() {
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-lg font-semibold">Animation Lab</h1>
         <p className="text-xs text-muted">
-          A motion-testing workspace — pick a subject and a test, dial in the
-          shot, and generate. Same controls as everywhere else.
+          A motion-testing workspace — pick a subject and a test, dial in the shot, and generate.
+          Same controls as everywhere else.
         </p>
       </header>
 
@@ -162,20 +168,32 @@ export function AnimationLab() {
         <div className="flex flex-col gap-4 overflow-y-auto border-r border-border p-6">
           <div className="flex flex-col gap-1.5">
             <Label>Character</Label>
-            <Select value={characterId} onChange={setCharacterId} icon={<Users className="h-3.5 w-3.5" />}>
+            <Select
+              value={characterId}
+              onChange={setCharacterId}
+              icon={<Users className="h-3.5 w-3.5" />}
+            >
               <option value="">None</option>
               {characters.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </Select>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Environment</Label>
-            <Select value={environmentId} onChange={setEnvironmentId} icon={<Globe className="h-3.5 w-3.5" />}>
+            <Select
+              value={environmentId}
+              onChange={setEnvironmentId}
+              icon={<Globe className="h-3.5 w-3.5" />}
+            >
               <option value="">None</option>
               {environments.map((e) => (
-                <option key={e.id} value={e.id}>{e.name}</option>
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
               ))}
             </Select>
           </div>
@@ -185,7 +203,9 @@ export function AnimationLab() {
             <Select value={propId} onChange={setPropId} icon={<Package className="h-3.5 w-3.5" />}>
               <option value="">None</option>
               {props.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} ({p.category})</option>
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.category})
+                </option>
               ))}
             </Select>
           </div>
@@ -212,8 +232,8 @@ export function AnimationLab() {
 
           {refs.length > 0 && (
             <p className="rounded-md border border-border bg-elevated/40 px-3 py-2 text-[11px] text-muted">
-              {refs.length} reference {refs.length === 1 ? "frame" : "frames"} from your
-              locked assets will drive the clip — same look, in motion.
+              {refs.length} reference {refs.length === 1 ? "frame" : "frames"} from your locked
+              assets will drive the clip — same look, in motion.
             </p>
           )}
         </div>
@@ -235,8 +255,8 @@ export function AnimationLab() {
             />
             {!isTauri && (
               <p className="mt-2 text-center text-[11px] text-muted">
-                Browser preview plays a sample clip; the desktop app uses your
-                chosen video provider.
+                Browser preview plays a sample clip; the desktop app uses your chosen video
+                provider.
               </p>
             )}
           </div>
@@ -253,9 +273,16 @@ export function AnimationLab() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {tests.map((t) => (
-                <div key={t.id} className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card">
+                <div
+                  key={t.id}
+                  className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card"
+                >
                   <div className="relative aspect-video w-full bg-black">
-                    <AssetVideo src={t.url} className="h-full w-full object-cover" label="Motion test" />
+                    <AssetVideo
+                      src={t.url}
+                      className="h-full w-full object-cover"
+                      label="Motion test"
+                    />
                   </div>
                   <div className="flex items-start justify-between gap-2 p-3">
                     <div className="min-w-0">

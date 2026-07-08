@@ -14,13 +14,29 @@ const SEG_SECONDS = 1.1;
 function StickFigure({ pose, accent }: { pose: StickPose; accent: string }) {
   const stroke = accent;
   const line = (a: { x: number; y: number }, b: { x: number; y: number }, key: string) => (
-    <line key={key} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={stroke} strokeWidth={2.4} strokeLinecap="round" />
+    <line
+      key={key}
+      x1={a.x}
+      y1={a.y}
+      x2={b.x}
+      y2={b.y}
+      stroke={stroke}
+      strokeWidth={2.4}
+      strokeLinecap="round"
+    />
   );
   return (
     <g>
       {/* spine + head */}
       {line(pose.neck, pose.hip, "spine")}
-      <circle cx={pose.head.x} cy={pose.head.y} r={5} fill="none" stroke={stroke} strokeWidth={2.4} />
+      <circle
+        cx={pose.head.x}
+        cy={pose.head.y}
+        r={5}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={2.4}
+      />
       {line(pose.neck, pose.head, "neck")}
       {/* arms */}
       {line(pose.neck, pose.elbowL, "armL1")}
@@ -36,13 +52,7 @@ function StickFigure({ pose, accent }: { pose: StickPose; accent: string }) {
   );
 }
 
-export function MotionPreview({
-  poses,
-  accent,
-}: {
-  poses: string[];
-  accent: string;
-}) {
+export function MotionPreview({ poses, accent }: { poses: string[]; accent: string }) {
   const [playing, setPlaying] = useState(true);
   // Continuous progress: integer part = which pose, fraction = ease toward next.
   const [progress, setProgress] = useState(0);
@@ -58,7 +68,9 @@ export function MotionPreview({
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const obs = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting), { threshold: 0.05 });
+    const obs = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting), {
+      threshold: 0.05,
+    });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -90,7 +102,10 @@ export function MotionPreview({
   const nowLabel = poses.filter(Boolean)[seg] ?? "";
 
   return (
-    <div ref={wrapRef} className="rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3">
+    <div
+      ref={wrapRef}
+      className="rounded-[var(--radius-card)] border border-border bg-elevated/30 p-3"
+    >
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
           <PersonStanding className="h-3.5 w-3.5" /> Motion preview
@@ -112,19 +127,33 @@ export function MotionPreview({
         )}
       </div>
       <div className="flex items-center justify-center rounded-[var(--radius-button)] bg-background/40 py-2">
-        <svg viewBox="-18 -12 96 138" className="h-40 w-auto" role="img" aria-label="Stick-figure motion preview">
+        <svg
+          viewBox="-18 -12 96 138"
+          className="h-40 w-auto"
+          role="img"
+          aria-label="Stick-figure motion preview"
+        >
           <StickFigure pose={current} accent={accent} />
         </svg>
       </div>
       <p className="mt-1.5 text-center text-[11px] text-muted">
         {count >= 2 ? (
-          <>Easing through {count} key poses{nowLabel ? <> · <span className="text-foreground">{nowLabel}</span></> : null}</>
+          <>
+            Easing through {count} key poses
+            {nowLabel ? (
+              <>
+                {" "}
+                · <span className="text-foreground">{nowLabel}</span>
+              </>
+            ) : null}
+          </>
         ) : (
           "Add a second key pose to preview the movement between them."
         )}
       </p>
       <p className="mt-0.5 text-center text-[10px] text-muted/70">
-        A rough local sketch — use <span className="font-medium">Motion test</span> above for a real generated clip.
+        A rough local sketch — use <span className="font-medium">Motion test</span> above for a real
+        generated clip.
       </p>
     </div>
   );

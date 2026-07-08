@@ -16,14 +16,46 @@ export interface MotionType {
 }
 
 export const MOTION_TYPES: MotionType[] = [
-  { key: "lipsync", label: "Lip-sync / Dialogue", modifier: "singing to camera with natural lip sync and subtle head movement, medium shot" },
-  { key: "dance", label: "Dance / Choreography", modifier: "performing a full dance routine, rhythmic full-body choreography, energetic" },
-  { key: "walk", label: "Walk Cycle", modifier: "walk cycle, side profile, looping locomotion, full body" },
-  { key: "performance", label: "Performance / Acting", modifier: "expressive performance acting, emotion and gesture, medium close-up" },
-  { key: "action", label: "Action Test", modifier: "dynamic action movement, energetic, full body" },
-  { key: "camera", label: "Camera Move", modifier: "slow cinematic dolly and orbit around the subject, shallow depth of field" },
-  { key: "environment", label: "Environment Motion", modifier: "atmospheric environment in motion — drifting light, particles, weather, living set" },
-  { key: "prop", label: "Prop / Vehicle Motion", modifier: "the prop or vehicle in motion, mechanical movement, dynamic" },
+  {
+    key: "lipsync",
+    label: "Lip-sync / Dialogue",
+    modifier: "singing to camera with natural lip sync and subtle head movement, medium shot",
+  },
+  {
+    key: "dance",
+    label: "Dance / Choreography",
+    modifier: "performing a full dance routine, rhythmic full-body choreography, energetic",
+  },
+  {
+    key: "walk",
+    label: "Walk Cycle",
+    modifier: "walk cycle, side profile, looping locomotion, full body",
+  },
+  {
+    key: "performance",
+    label: "Performance / Acting",
+    modifier: "expressive performance acting, emotion and gesture, medium close-up",
+  },
+  {
+    key: "action",
+    label: "Action Test",
+    modifier: "dynamic action movement, energetic, full body",
+  },
+  {
+    key: "camera",
+    label: "Camera Move",
+    modifier: "slow cinematic dolly and orbit around the subject, shallow depth of field",
+  },
+  {
+    key: "environment",
+    label: "Environment Motion",
+    modifier: "atmospheric environment in motion — drifting light, particles, weather, living set",
+  },
+  {
+    key: "prop",
+    label: "Prop / Vehicle Motion",
+    modifier: "the prop or vehicle in motion, mechanical movement, dynamic",
+  },
   { key: "idle", label: "Idle", modifier: "subtle idle animation, breathing and weight shift" },
 ];
 

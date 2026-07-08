@@ -105,15 +105,50 @@ const THEME_KEYWORDS: [RegExp, string][] = [
 ];
 
 const LOCATION_WORDS = [
-  "city", "street", "club", "beach", "church", "stage", "rooftop", "car",
-  "highway", "desert", "forest", "mountain", "ocean", "bedroom", "kitchen",
-  "hometown", "downtown", "block", "porch", "bar", "studio",
+  "city",
+  "street",
+  "club",
+  "beach",
+  "church",
+  "stage",
+  "rooftop",
+  "car",
+  "highway",
+  "desert",
+  "forest",
+  "mountain",
+  "ocean",
+  "bedroom",
+  "kitchen",
+  "hometown",
+  "downtown",
+  "block",
+  "porch",
+  "bar",
+  "studio",
 ];
 
 const SYMBOL_WORDS = [
-  "fire", "water", "light", "crown", "mirror", "chains", "wings", "storm",
-  "roses", "gold", "stars", "moon", "sun", "diamond", "smoke", "rain",
-  "shadow", "flame", "ocean", "sky",
+  "fire",
+  "water",
+  "light",
+  "crown",
+  "mirror",
+  "chains",
+  "wings",
+  "storm",
+  "roses",
+  "gold",
+  "stars",
+  "moon",
+  "sun",
+  "diamond",
+  "smoke",
+  "rain",
+  "shadow",
+  "flame",
+  "ocean",
+  "sky",
 ];
 
 const DANCE_WORDS = /\b(dance|move|sway|spin|drop|beat|rhythm|shuffle|groove|hips|step)\b/i;
@@ -121,9 +156,32 @@ const RAP_WORDS = /\b(rap|bars|flow|verse.?spit|mic drop)\b/i;
 const HARMONY_WORDS = /\b(choir|harmony|backup|ad.?lib|call and response)\b/i;
 
 const STOPWORDS = new Set([
-  "The", "This", "That", "And", "But", "For", "You", "Your", "With", "From",
-  "When", "Where", "What", "Verse", "Chorus", "Bridge", "Intro", "Outro",
-  "Hook", "Pre", "I", "It", "Oh", "Yeah", "Not", "All",
+  "The",
+  "This",
+  "That",
+  "And",
+  "But",
+  "For",
+  "You",
+  "Your",
+  "With",
+  "From",
+  "When",
+  "Where",
+  "What",
+  "Verse",
+  "Chorus",
+  "Bridge",
+  "Intro",
+  "Outro",
+  "Hook",
+  "Pre",
+  "I",
+  "It",
+  "Oh",
+  "Yeah",
+  "Not",
+  "All",
 ]);
 
 function splitLines(text: string): string[] {
@@ -221,7 +279,9 @@ export function parseScript(rawText: string): ParsedScript {
   const properNouns = repeatedProperNouns(text);
   const locations = [
     ...matchAllKeywords(text, LOCATION_WORDS),
-    ...properNouns.filter((w) => LOCATION_WORDS.some((l) => text.toLowerCase().includes(`${l} ${w.toLowerCase()}`))),
+    ...properNouns.filter((w) =>
+      LOCATION_WORDS.some((l) => text.toLowerCase().includes(`${l} ${w.toLowerCase()}`))
+    ),
   ];
   // Characters: repeated proper nouns that aren't already read as locations.
   const characters = properNouns.filter((w) => !locations.includes(w));
@@ -235,7 +295,8 @@ export function parseScript(rawText: string): ParsedScript {
   const performanceOpportunities: string[] = [];
   if (RAP_WORDS.test(text)) performanceOpportunities.push("Rap verse / spoken bars moment");
   if (HARMONY_WORDS.test(text)) performanceOpportunities.push("Backing harmony / choir moment");
-  if (hookMoments.length > 0) performanceOpportunities.push("Lead vocal hook — the repeated hook line(s)");
+  if (hookMoments.length > 0)
+    performanceOpportunities.push("Lead vocal hook — the repeated hook line(s)");
 
   const choreographyMoments: string[] = [];
   if (sections.length > 0) {

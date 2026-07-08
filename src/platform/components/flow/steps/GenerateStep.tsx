@@ -26,9 +26,7 @@ export function GenerateStep({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">{title}</h3>
-            {description ? (
-              <p className="mt-1 text-sm text-muted">{description}</p>
-            ) : null}
+            {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
           </div>
           <Button onClick={onGenerate} disabled={running}>
             {running ? <Loader2 className="animate-spin" /> : <Sparkles />}

@@ -1,12 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Sparkles,
-  Download,
-  Loader2,
-  ImagePlus,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Loader2, ImagePlus, RefreshCw } from "lucide-react";
 import { isTauri } from "@/platform/lib/ipc";
 import {
   allSheetCells,
@@ -149,7 +142,11 @@ export function SheetStudio(props: SheetStudioProps) {
             <Sparkles className="h-4 w-4" /> Generate Full Sheet
           </Button>
           <Button variant="secondary" onClick={exportPng} disabled={exporting}>
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             Download PNG
           </Button>
         </div>

@@ -30,12 +30,10 @@ export function useProviderReadiness(): ProviderReadiness {
   );
   const loading = !data;
 
-  const isConfigured = (keyIds: string[]) =>
-    keyIds.some((id) => configured.has(id));
+  const isConfigured = (keyIds: string[]) => keyIds.some((id) => configured.has(id));
 
   // Optimistic: allow generation in the browser, and while statuses load.
-  const isReady = (keyIds: string[]) =>
-    !isTauri || loading || isConfigured(keyIds);
+  const isReady = (keyIds: string[]) => !isTauri || loading || isConfigured(keyIds);
 
   return { configured, isConfigured, isReady, loading };
 }

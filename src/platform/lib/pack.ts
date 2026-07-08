@@ -26,9 +26,7 @@ export function defaultReferenceHierarchy(): string[] {
 export function referenceLine(refs: string[]): string {
   const clean = (refs ?? []).filter((r) => r.trim());
   if (clean.length === 0) return "";
-  return `Reference priority (highest first): ${clean
-    .map((r, i) => `${i + 1}) ${r}`)
-    .join("; ")}.`;
+  return `Reference priority (highest first): ${clean.map((r, i) => `${i + 1}) ${r}`).join("; ")}.`;
 }
 
 export function emptyCameraPlan(): CameraPlan {
@@ -83,17 +81,14 @@ export function buildImagePrompt(pack: PromptPack, shot: ShotBreakdown): string 
   const parts = [
     shot.visualDescription || shot.name,
     pack.style.visualLanguage,
-    [shot.camera.shotType, shot.camera.lens, shot.camera.cameraAngle]
-      .filter(Boolean)
-      .join(", "),
+    [shot.camera.shotType, shot.camera.lens, shot.camera.cameraAngle].filter(Boolean).join(", "),
     shot.camera.composition,
     [shot.lighting.keyLight, shot.lighting.colorTemperature, shot.lighting.atmosphere]
       .filter(Boolean)
       .join(", "),
     pack.style.materials,
     pack.style.mood && `${pack.style.mood} mood`,
-    pack.creativeDirection.aspectRatio &&
-      `${pack.creativeDirection.aspectRatio} aspect ratio`,
+    pack.creativeDirection.aspectRatio && `${pack.creativeDirection.aspectRatio} aspect ratio`,
     referenceLine(pack.referenceHierarchy ?? []),
     lockInstructionFor(pack.textLocks ?? []),
   ];

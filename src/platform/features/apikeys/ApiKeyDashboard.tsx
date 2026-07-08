@@ -40,10 +40,7 @@ const CAP_ORDER: Capability[] = ["text", "image", "video", "audio"];
 
 type Display = ConnectionStatus;
 
-const STATUS: Record<
-  Display,
-  { label: string; dot: string; text: string }
-> = {
+const STATUS: Record<Display, { label: string; dot: string; text: string }> = {
   connected: { label: "Connected", dot: "bg-success", text: "text-success" },
   invalid: { label: "Invalid Key", dot: "bg-danger", text: "text-danger" },
   offline: { label: "Offline", dot: "bg-warning", text: "text-warning" },
@@ -84,8 +81,7 @@ export function ApiKeyDashboard() {
     [statuses]
   );
 
-  const invalidateKeys = () =>
-    queryClient.invalidateQueries({ queryKey: ["providerKeys"] });
+  const invalidateKeys = () => queryClient.invalidateQueries({ queryKey: ["providerKeys"] });
 
   const connectedCount = PROVIDERS.filter(
     (p) => configured.has(p.id) && getMeta(p.id).lastStatus === "connected"
@@ -100,8 +96,8 @@ export function ApiKeyDashboard() {
         <div>
           <h1 className="text-lg font-semibold">API Keys</h1>
           <p className="text-xs text-muted">
-            Connect your providers. Keys are encrypted in the OS vault and never
-            leave the Rust core.
+            Connect your providers. Keys are encrypted in the OS vault and never leave the Rust
+            core.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted">
@@ -167,7 +163,12 @@ function MvReadiness({ configured }: { configured: Set<string> }) {
     desc: string;
     icon: React.ReactNode;
   }[] = [
-    { cap: "image", label: "Frames", desc: "Still frame per shot", icon: <ImageIcon className="h-4 w-4" /> },
+    {
+      cap: "image",
+      label: "Frames",
+      desc: "Still frame per shot",
+      icon: <ImageIcon className="h-4 w-4" />,
+    },
     { cap: "video", label: "Clips", desc: "Per-shot video", icon: <Video className="h-4 w-4" /> },
     { cap: "audio", label: "Voice", desc: "Spoken layers", icon: <Mic2 className="h-4 w-4" /> },
   ];
@@ -196,9 +197,7 @@ function MvReadiness({ configured }: { configured: Set<string> }) {
             key={s.cap}
             className={cn(
               "flex items-center gap-3 rounded-[var(--radius-card)] border p-3",
-              s.count > 0
-                ? "border-success/40 bg-success/5"
-                : "border-warning/40 bg-warning/5"
+              s.count > 0 ? "border-success/40 bg-success/5" : "border-warning/40 bg-warning/5"
             )}
           >
             <div
@@ -319,9 +318,7 @@ function ProviderCard({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-semibold">{provider.name}</span>
-            {provider.status === "manual" && (
-              <Badge variant="primary">Manual</Badge>
-            )}
+            {provider.status === "manual" && <Badge variant="primary">Manual</Badge>}
             {provider.status === "planned" && <Badge>Planned</Badge>}
           </div>
           <p className="truncate text-[11px] text-muted">{provider.hint}</p>
@@ -393,11 +390,7 @@ function ProviderCard({
             onKeyDown={(e) => e.key === "Enter" && save()}
             className="flex-1"
           />
-          <Button
-            size="sm"
-            onClick={save}
-            disabled={value.trim().length === 0 || busy === "save"}
-          >
+          <Button size="sm" onClick={save} disabled={value.trim().length === 0 || busy === "save"}>
             {busy === "save" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

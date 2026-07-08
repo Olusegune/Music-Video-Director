@@ -100,10 +100,7 @@ export function composeCharacterDna(c: Character): ComposedDna {
     .filter(Boolean)
     .join(", ");
 
-  const hair = clause(
-    c.hairStyle,
-    c.hairColor && `${c.hairColor} hair`
-  );
+  const hair = clause(c.hairStyle, c.hairColor && `${c.hairColor} hair`);
 
   const body = clause(c.bodyType && `${c.bodyType} build`);
 
@@ -137,13 +134,9 @@ export function composeCharacterDna(c: Character): ComposedDna {
   const locks: string[] = [];
   if (face) locks.push(`Keep the face exactly: ${face}.`);
   if (hair) locks.push(`Keep the hair exactly: ${hair}.`);
-  if (c.primaryOutfit)
-    locks.push(`Primary outfit stays: ${c.primaryOutfit}.`);
-  if (c.distinguishingFeatures)
-    locks.push(`Always preserve: ${c.distinguishingFeatures}.`);
-  locks.push(
-    "Do not change identity, age, ethnicity, body proportions, or outfit between shots."
-  );
+  if (c.primaryOutfit) locks.push(`Primary outfit stays: ${c.primaryOutfit}.`);
+  if (c.distinguishingFeatures) locks.push(`Always preserve: ${c.distinguishingFeatures}.`);
+  locks.push("Do not change identity, age, ethnicity, body proportions, or outfit between shots.");
 
   const negatives = [
     "inconsistent face",
@@ -182,8 +175,16 @@ const GENDER_HINTS: [RegExp, string][] = [
 ];
 
 const HAIR_COLORS = [
-  "black", "brown", "blonde", "red", "auburn", "grey", "gray", "white",
-  "silver", "ginger",
+  "black",
+  "brown",
+  "blonde",
+  "red",
+  "auburn",
+  "grey",
+  "gray",
+  "white",
+  "silver",
+  "ginger",
 ];
 const EYE_COLORS = ["brown", "blue", "green", "hazel", "grey", "gray", "amber"];
 

@@ -91,9 +91,7 @@ export async function importImageToLibrary(
 ): Promise<void> {
   const cat = UPLOAD_CATEGORIES.find((c) => c.id === categoryId) ?? UPLOAD_CATEGORIES[2];
   const label = name || cat.id;
-  const refs = [dataUrl, ...extraRefs].filter(
-    (v, i, a) => v && a.indexOf(v) === i
-  );
+  const refs = [dataUrl, ...extraRefs].filter((v, i, a) => v && a.indexOf(v) === i);
   if (cat.bible === "Character") {
     const c = newCharacter(label);
     c.portraitUrl = dataUrl;
@@ -170,13 +168,37 @@ export function buildAssetRefs(
 ): AssetRef[] {
   const out: AssetRef[] = [];
   for (const c of characters) {
-    pushImages(out, "Character", c.id, c.name || "Character", c.role || "Character", c.portraitUrl, c.referenceImages);
+    pushImages(
+      out,
+      "Character",
+      c.id,
+      c.name || "Character",
+      c.role || "Character",
+      c.portraitUrl,
+      c.referenceImages
+    );
   }
   for (const e of environments) {
-    pushImages(out, "Environment", e.id, e.name || "Environment", e.mood || "Environment", e.establishingUrl, e.referenceImages);
+    pushImages(
+      out,
+      "Environment",
+      e.id,
+      e.name || "Environment",
+      e.mood || "Environment",
+      e.establishingUrl,
+      e.referenceImages
+    );
   }
   for (const p of props) {
-    pushImages(out, "Prop", p.id, p.name || "Prop", p.category || "Prop", p.heroUrl, p.referenceImages);
+    pushImages(
+      out,
+      "Prop",
+      p.id,
+      p.name || "Prop",
+      p.category || "Prop",
+      p.heroUrl,
+      p.referenceImages
+    );
   }
   return out;
 }

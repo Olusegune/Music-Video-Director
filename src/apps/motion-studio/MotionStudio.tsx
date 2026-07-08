@@ -25,7 +25,13 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/platform/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/platform/components/ui/card";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { api } from "@/platform/lib/ipc";
@@ -44,7 +50,13 @@ import {
   snapshotMotionProject,
   updateMotionScenes,
 } from "./lib/projects";
-import { PRODUCTION_TYPES, VISUAL_STYLES, directionSummary, productionType, visualStyle } from "./lib/templates";
+import {
+  PRODUCTION_TYPES,
+  VISUAL_STYLES,
+  directionSummary,
+  productionType,
+  visualStyle,
+} from "./lib/templates";
 import type { MotionProject, MotionProjectDraft, MotionScene } from "./lib/types";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 
@@ -65,7 +77,15 @@ function sceneAccent(scene: MotionScene, project: MotionProject): string {
   return scene.accent || project.direction.colorPalette[2] || "#4F46E5";
 }
 
-function ScenePreview({ project, scene, active }: { project: MotionProject; scene: MotionScene; active?: boolean }) {
+function ScenePreview({
+  project,
+  scene,
+  active,
+}: {
+  project: MotionProject;
+  scene: MotionScene;
+  active?: boolean;
+}) {
   const style = visualStyle(project.styleId);
   const accent = sceneAccent(scene, project);
   return (
@@ -85,9 +105,16 @@ function ScenePreview({ project, scene, active }: { project: MotionProject; scen
       <div className="absolute left-[8%] top-[18%] h-[52%] w-[32%] rounded-lg bg-white/18 ring-1 ring-white/25 backdrop-blur-sm" />
       <div className="absolute right-[8%] top-[22%] h-[16%] w-[38%] rounded-full bg-white/75" />
       <div className="absolute right-[14%] top-[46%] h-[10%] w-[30%] rounded-full bg-white/35" />
-      <div className="absolute bottom-[16%] right-[10%] h-[12%] w-[44%] rounded-full" style={{ background: accent }} />
-      {style.family === "3d" && <div className="absolute left-[18%] top-[28%] h-[28%] w-[28%] rounded-full bg-white/45 shadow-2xl" />}
-      {style.family === "typography" && <div className="absolute left-[10%] top-[18%] text-3xl font-black text-white/85">Aa</div>}
+      <div
+        className="absolute bottom-[16%] right-[10%] h-[12%] w-[44%] rounded-full"
+        style={{ background: accent }}
+      />
+      {style.family === "3d" && (
+        <div className="absolute left-[18%] top-[28%] h-[28%] w-[28%] rounded-full bg-white/45 shadow-2xl" />
+      )}
+      {style.family === "typography" && (
+        <div className="absolute left-[10%] top-[18%] text-3xl font-black text-white/85">Aa</div>
+      )}
       <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/45 px-2 py-1 text-[11px] font-semibold text-white">
         {scene.role} / {scene.start}-{scene.end}s
       </div>
@@ -111,17 +138,25 @@ export function MotionStudio() {
   const [routerConfig] = useState(() => loadRouterConfig());
   const [draft, setDraft] = useState<MotionProjectDraft>(emptyDraft);
   const [projects, setProjects] = useState<MotionProject[]>(() => listMotionProjects());
-  const [activeProjectId, setActiveProjectId] = useState<string>(() => listMotionProjects()[0]?.id ?? "");
+  const [activeProjectId, setActiveProjectId] = useState<string>(
+    () => listMotionProjects()[0]?.id ?? ""
+  );
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const platformProjects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
 
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? null;
   const selectedScene =
-    activeProject?.scenes.find((scene) => scene.id === selectedSceneId) ?? activeProject?.scenes[0] ?? null;
-  const routerMode = ROUTER_MODES.find((mode) => mode.id === routerConfig.mode)?.label ?? "Balanced";
+    activeProject?.scenes.find((scene) => scene.id === selectedSceneId) ??
+    activeProject?.scenes[0] ??
+    null;
+  const routerMode =
+    ROUTER_MODES.find((mode) => mode.id === routerConfig.mode)?.label ?? "Balanced";
   const styleSystemCount = STYLE_PRESETS.length;
   const averageScore = activeProject?.scenes.length
-    ? Math.round(activeProject.scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) / activeProject.scenes.length)
+    ? Math.round(
+        activeProject.scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) /
+          activeProject.scenes.length
+      )
     : 0;
 
   useEffect(() => {
@@ -130,7 +165,10 @@ export function MotionStudio() {
     }
   }, [activeProject, selectedSceneId]);
 
-  const updateDraft = <K extends keyof MotionProjectDraft>(key: K, value: MotionProjectDraft[K]) => {
+  const updateDraft = <K extends keyof MotionProjectDraft>(
+    key: K,
+    value: MotionProjectDraft[K]
+  ) => {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
@@ -145,7 +183,9 @@ export function MotionStudio() {
     const project = createMotionProject({
       ...draft,
       durationSec: draft.durationSec || type.defaultDuration,
-      brief: [draft.businessInput, draft.marketingBrief, draft.script, draft.brief].filter(Boolean).join("\n\n"),
+      brief: [draft.businessInput, draft.marketingBrief, draft.script, draft.brief]
+        .filter(Boolean)
+        .join("\n\n"),
     });
     refreshProjects(project.id);
     setSelectedSceneId(project.scenes[0]?.id ?? "");
@@ -173,7 +213,9 @@ export function MotionStudio() {
       stage: "generate",
       target: "storyboard",
       summary: "Regenerated storyboard from the current brief, script, style, and project type.",
-      score: Math.round(scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) / scenes.length),
+      score: Math.round(
+        scenes.reduce((sum, scene) => sum + (scene.score ?? 80), 0) / scenes.length
+      ),
     });
     refreshProjects(activeProject.id);
     setSelectedSceneId(scenes[0]?.id ?? "");
@@ -181,7 +223,9 @@ export function MotionStudio() {
 
   const improveSelectedScene = () => {
     if (!activeProject || !selectedScene) return;
-    const scenes = activeProject.scenes.map((scene) => (scene.id === selectedScene.id ? improveScene(scene) : scene));
+    const scenes = activeProject.scenes.map((scene) =>
+      scene.id === selectedScene.id ? improveScene(scene) : scene
+    );
     snapshotMotionProject(activeProject.id, `before improve ${selectedScene.role}`);
     updateMotionScenes(activeProject.id, scenes);
     addMotionLoopEvent(activeProject.id, {
@@ -196,7 +240,9 @@ export function MotionStudio() {
   const approveSelectedScene = () => {
     if (!activeProject || !selectedScene) return;
     const scenes = activeProject.scenes.map((scene) =>
-      scene.id === selectedScene.id ? { ...scene, approved: true, score: Math.max(scene.score ?? 82, 90) } : scene
+      scene.id === selectedScene.id
+        ? { ...scene, approved: true, score: Math.max(scene.score ?? 82, 90) }
+        : scene
     );
     const approvedCount = scenes.filter((scene) => scene.approved).length;
     saveMotionProject({
@@ -240,12 +286,14 @@ export function MotionStudio() {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="accent">Director Studio module</Badge>
             <Badge variant="primary">Motion Studio</Badge>
-            <Badge>{STUDIO_MODES.find((mode) => mode.id === studioMode)?.label ?? "Director Mode"}</Badge>
+            <Badge>
+              {STUDIO_MODES.find((mode) => mode.id === studioMode)?.label ?? "Director Mode"}
+            </Badge>
           </div>
           <h1 className="text-3xl font-bold tracking-normal text-foreground">Motion Studio</h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Create commercial motion projects with shared Director Studio systems for mode depth, styling, assets,
-            settings, provider routing, and project memory.
+            Create commercial motion projects with shared Director Studio systems for mode depth,
+            styling, assets, settings, provider routing, and project memory.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -261,7 +309,27 @@ export function MotionStudio() {
         </div>
       </section>
 
-      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3"><div className="mr-2"><p className="text-xs font-semibold">Director Engine resources</p><p className="text-[10px] text-muted">Shared across every studio</p></div><Button size="sm" variant="ghost" onClick={openCharacters}><Users /> Characters</Button><Button size="sm" variant="ghost" onClick={openWorld}><Map /> Locations</Button><Button size="sm" variant="ghost" onClick={openProps}><Package /> Props</Button><Button size="sm" variant="ghost" onClick={openAssets}><Image /> Assets</Button><Button size="sm" variant="ghost" onClick={openBrandKits}><Palette /> Brand DNA</Button></section>
+      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
+        <div className="mr-2">
+          <p className="text-xs font-semibold">Director Engine resources</p>
+          <p className="text-[10px] text-muted">Shared across every studio</p>
+        </div>
+        <Button size="sm" variant="ghost" onClick={openCharacters}>
+          <Users /> Characters
+        </Button>
+        <Button size="sm" variant="ghost" onClick={openWorld}>
+          <Map /> Locations
+        </Button>
+        <Button size="sm" variant="ghost" onClick={openProps}>
+          <Package /> Props
+        </Button>
+        <Button size="sm" variant="ghost" onClick={openAssets}>
+          <Image /> Assets
+        </Button>
+        <Button size="sm" variant="ghost" onClick={openBrandKits}>
+          <Palette /> Brand DNA
+        </Button>
+      </section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-4">
         <Card>
@@ -285,7 +353,10 @@ export function MotionStudio() {
             <CardTitle className="flex items-center gap-2">
               <Boxes className="size-4 text-success" /> Project Memory
             </CardTitle>
-            <CardDescription>{platformProjects.data?.length ?? 0} platform projects, {projects.length} motion projects.</CardDescription>
+            <CardDescription>
+              {platformProjects.data?.length ?? 0} platform projects, {projects.length} motion
+              projects.
+            </CardDescription>
           </CardHeader>
         </Card>
         <Card>
@@ -305,16 +376,28 @@ export function MotionStudio() {
               <CardTitle className="flex items-center gap-2">
                 <FilePlus2 className="size-4 text-primary" /> New Motion Project
               </CardTitle>
-              <CardDescription>Select a project type, style, and brief to generate a real storyboard.</CardDescription>
+              <CardDescription>
+                Select a project type, style, and brief to generate a real storyboard.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} placeholder="Project name" />
+              <Input
+                value={draft.name}
+                onChange={(event) => updateDraft("name", event.target.value)}
+                placeholder="Project name"
+              />
               <div className="grid grid-cols-1 gap-2">
                 {PRODUCTION_TYPES.map((type) => (
                   <button
                     key={type.id}
                     type="button"
-                    onClick={() => setDraft((current) => ({ ...current, typeId: type.id, durationSec: type.defaultDuration }))}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        typeId: type.id,
+                        durationSec: type.defaultDuration,
+                      }))
+                    }
                     className={cn(
                       "rounded-lg border border-border bg-elevated p-3 text-left transition hover:border-primary/50",
                       draft.typeId === type.id && "border-primary bg-primary/10"
@@ -364,7 +447,9 @@ export function MotionStudio() {
           <Card>
             <CardHeader>
               <CardTitle>Visual Style</CardTitle>
-              <CardDescription>Styles are Motion Studio specific, while Creative DNA stays shared.</CardDescription>
+              <CardDescription>
+                Styles are Motion Studio specific, while Creative DNA stays shared.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-2">
               {VISUAL_STYLES.map((style) => (
@@ -383,7 +468,11 @@ export function MotionStudio() {
                   </div>
                   <div className="mb-2 flex gap-1">
                     {style.palette.slice(0, 5).map((color) => (
-                      <span key={color} className="h-4 flex-1 rounded-sm border border-white/10" style={{ background: color }} />
+                      <span
+                        key={color}
+                        className="h-4 flex-1 rounded-sm border border-white/10"
+                        style={{ background: color }}
+                      />
                     ))}
                   </div>
                   <div className="text-xs leading-5 text-muted">{style.description}</div>
@@ -395,7 +484,14 @@ export function MotionStudio() {
 
         <div className="flex min-w-0 flex-col gap-5">
           {!activeProject ? (
-            <CreativeEmptyState icon={<Clapperboard />} title="Direct motion before the first keyframe" description="Choose a format and visual language; Motion Studio will assemble a timed storyboard, camera plan, audio direction, and production prompts." ideas={["SaaS explainer", "Product reveal", "UI motion", "Social spot"]} action="Create storyboard" onAction={handleCreateProject} />
+            <CreativeEmptyState
+              icon={<Clapperboard />}
+              title="Direct motion before the first keyframe"
+              description="Choose a format and visual language; Motion Studio will assemble a timed storyboard, camera plan, audio direction, and production prompts."
+              ideas={["SaaS explainer", "Product reveal", "UI motion", "Social spot"]}
+              action="Create storyboard"
+              onAction={handleCreateProject}
+            />
           ) : (
             <>
               <Card>
@@ -405,7 +501,9 @@ export function MotionStudio() {
                       <Film className="size-4 text-primary" /> {activeProject.name}
                     </CardTitle>
                     <CardDescription>
-                      {productionType(activeProject.typeId).name} / {visualStyle(activeProject.styleId).name} / {activeProject.aspect} / {activeProject.durationSec}s
+                      {productionType(activeProject.typeId).name} /{" "}
+                      {visualStyle(activeProject.styleId).name} / {activeProject.aspect} /{" "}
+                      {activeProject.durationSec}s
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -428,20 +526,26 @@ export function MotionStudio() {
                           <div className="text-sm font-semibold">Creative Direction</div>
                           <Badge variant="accent">Score {averageScore}</Badge>
                         </div>
-                        <p className="text-sm leading-6 text-muted">{directionSummary(activeProject.direction)}</p>
+                        <p className="text-sm leading-6 text-muted">
+                          {directionSummary(activeProject.direction)}
+                        </p>
                       </div>
 
                       {studioMode !== "director" && (
                         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                           <Textarea
                             value={activeProject.marketingBrief}
-                            onChange={(event) => updateActiveProject({ marketingBrief: event.target.value })}
+                            onChange={(event) =>
+                              updateActiveProject({ marketingBrief: event.target.value })
+                            }
                             placeholder="Marketing brief"
                             rows={5}
                           />
                           <Textarea
                             value={activeProject.script}
-                            onChange={(event) => updateActiveProject({ script: event.target.value })}
+                            onChange={(event) =>
+                              updateActiveProject({ script: event.target.value })
+                            }
                             placeholder="Script"
                             rows={5}
                           />
@@ -450,8 +554,16 @@ export function MotionStudio() {
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
                         {activeProject.scenes.map((scene) => (
-                          <div key={scene.id} onClick={() => setSelectedSceneId(scene.id)} className="cursor-pointer">
-                            <ScenePreview project={activeProject} scene={scene} active={scene.id === selectedScene?.id} />
+                          <div
+                            key={scene.id}
+                            onClick={() => setSelectedSceneId(scene.id)}
+                            className="cursor-pointer"
+                          >
+                            <ScenePreview
+                              project={activeProject}
+                              scene={scene}
+                              active={scene.id === selectedScene?.id}
+                            />
                             <div className="mt-2 flex items-center justify-between gap-2 text-xs">
                               <span className="font-semibold">{scene.role}</span>
                               <span className="text-muted">{scene.score ?? 80}/100</span>
@@ -470,7 +582,10 @@ export function MotionStudio() {
                               key={scene.id}
                               type="button"
                               onClick={() => setSelectedSceneId(scene.id)}
-                              className={cn("min-w-16 border-r border-black/10 px-2 text-left text-[10px] font-semibold text-white", scene.approved && "ring-2 ring-success")}
+                              className={cn(
+                                "min-w-16 border-r border-black/10 px-2 text-left text-[10px] font-semibold text-white",
+                                scene.approved && "ring-2 ring-success"
+                              )}
                               style={{
                                 width: `${Math.max(12, ((scene.end - scene.start) / activeProject.durationSec) * 100)}%`,
                                 background: sceneAccent(scene, activeProject),
@@ -482,7 +597,9 @@ export function MotionStudio() {
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Badge>{activeProject.status}</Badge>
-                          <Badge variant="success">{activeProject.scenes.filter((scene) => scene.approved).length} approved</Badge>
+                          <Badge variant="success">
+                            {activeProject.scenes.filter((scene) => scene.approved).length} approved
+                          </Badge>
                           <Button variant="secondary" size="sm">
                             <Download /> Export placeholder
                           </Button>
@@ -495,20 +612,31 @@ export function MotionStudio() {
                         <Card className="border-border bg-elevated">
                           <CardHeader>
                             <CardTitle>{selectedScene.role}</CardTitle>
-                            <CardDescription>{selectedScene.start}-{selectedScene.end}s / energy {selectedScene.energy}</CardDescription>
+                            <CardDescription>
+                              {selectedScene.start}-{selectedScene.end}s / energy{" "}
+                              {selectedScene.energy}
+                            </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-3 text-sm">
                             <div>
-                              <div className="text-xs font-semibold uppercase text-muted">Headline</div>
+                              <div className="text-xs font-semibold uppercase text-muted">
+                                Headline
+                              </div>
                               <p className="mt-1 leading-6">{selectedScene.headline}</p>
                             </div>
                             <div>
-                              <div className="text-xs font-semibold uppercase text-muted">Motion</div>
+                              <div className="text-xs font-semibold uppercase text-muted">
+                                Motion
+                              </div>
                               <p className="mt-1 leading-6 text-muted">{selectedScene.motion}</p>
                             </div>
                             <div>
-                              <div className="text-xs font-semibold uppercase text-muted">Critique</div>
-                              <p className="mt-1 leading-6 text-muted">{critiqueScene(selectedScene)}</p>
+                              <div className="text-xs font-semibold uppercase text-muted">
+                                Critique
+                              </div>
+                              <p className="mt-1 leading-6 text-muted">
+                                {critiqueScene(selectedScene)}
+                              </p>
                             </div>
                             <div className="flex gap-2">
                               <Button variant="secondary" size="sm" onClick={improveSelectedScene}>
@@ -541,17 +669,23 @@ export function MotionStudio() {
                               <CardTitle className="flex items-center gap-2">
                                 <Settings2 className="size-4 text-warning" /> Creator Controls
                               </CardTitle>
-                              <CardDescription>Uses shared provider router preferences, without Motion Studio hardcoding providers.</CardDescription>
+                              <CardDescription>
+                                Uses shared provider router preferences, without Motion Studio
+                                hardcoding providers.
+                              </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                               <div className="rounded-md border border-border bg-surface p-3 text-xs leading-5 text-muted">
-                                Router mode: {routerMode}. Configure image, video, text, and audio preferences in Director Studio settings.
+                                Router mode: {routerMode}. Configure image, video, text, and audio
+                                preferences in Director Studio settings.
                               </div>
                               <Textarea
                                 value={selectedScene.promptOverride ?? ""}
                                 onChange={(event) => {
                                   const scenes = activeProject.scenes.map((scene) =>
-                                    scene.id === selectedScene.id ? { ...scene, promptOverride: event.target.value } : scene
+                                    scene.id === selectedScene.id
+                                      ? { ...scene, promptOverride: event.target.value }
+                                      : scene
                                   );
                                   updateMotionScenes(activeProject.id, scenes);
                                   refreshProjects(activeProject.id);
@@ -573,20 +707,26 @@ export function MotionStudio() {
                   <CardTitle className="flex items-center gap-2">
                     <Layers3 className="size-4 text-primary" /> Loop Engine
                   </CardTitle>
-                  <CardDescription>Generate, critique, score, improve, save version, and approve across Motion Studio stages.</CardDescription>
+                  <CardDescription>
+                    Generate, critique, score, improve, save version, and approve across Motion
+                    Studio stages.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                  {["Generate", "Critique", "Score", "Improve", "Save Version", "Approve"].map((stage, index) => (
-                    <div key={stage} className="rounded-lg border border-border bg-elevated p-3">
-                      <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/15 text-xs font-bold text-primary">
-                        {index + 1}
+                  {["Generate", "Critique", "Score", "Improve", "Save Version", "Approve"].map(
+                    (stage, index) => (
+                      <div key={stage} className="rounded-lg border border-border bg-elevated p-3">
+                        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary/15 text-xs font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <div className="text-sm font-semibold">{stage}</div>
+                        <p className="mt-1 text-xs leading-5 text-muted">
+                          {activeProject.loopLog[index]?.summary ??
+                            "Ready for the next Motion Studio pass."}
+                        </p>
                       </div>
-                      <div className="text-sm font-semibold">{stage}</div>
-                      <p className="mt-1 text-xs leading-5 text-muted">
-                        {activeProject.loopLog[index]?.summary ?? "Ready for the next Motion Studio pass."}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </CardContent>
               </Card>
             </>

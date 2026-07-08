@@ -1,8 +1,34 @@
 // The loaded-song editor surface (extracted from SongStudio.tsx, Phase 2).
 import { useEffect, useState } from "react";
-import { Upload, Play, Pause, Trash2, Wand2, Gauge, Clock, Radio, Clapperboard, Sparkles, Mic2, SkipBack, SkipForward, Square, Repeat, Volume2 } from "lucide-react";
-import { formatTime, sectionColor, type SongMap, type SongSection, type LyricLine } from "@/apps/music-video/lib/songBrain";
-import { detectSectionPerformer, detectAllPerformers } from "@/apps/music-video/lib/performerDetect";
+import {
+  Upload,
+  Play,
+  Pause,
+  Trash2,
+  Wand2,
+  Gauge,
+  Clock,
+  Radio,
+  Clapperboard,
+  Sparkles,
+  Mic2,
+  SkipBack,
+  SkipForward,
+  Square,
+  Repeat,
+  Volume2,
+} from "lucide-react";
+import {
+  formatTime,
+  sectionColor,
+  type SongMap,
+  type SongSection,
+  type LyricLine,
+} from "@/apps/music-video/lib/songBrain";
+import {
+  detectSectionPerformer,
+  detectAllPerformers,
+} from "@/apps/music-video/lib/performerDetect";
 import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Badge } from "@/platform/components/ui/badge";
@@ -41,7 +67,6 @@ function lyricsFromSections(sections: SongSection[]): LyricLine[] {
   return out.sort((a, b) => a.start - b.start);
 }
 
-
 export function SongView({
   song,
   onChange,
@@ -60,9 +85,7 @@ export function SongView({
   onOpenDirector: () => void;
 }) {
   const player = useAudioPlayer();
-  const [selectedSectionId, setSelectedSectionId] = useState<string>(
-    song.sections[0]?.id ?? ""
-  );
+  const [selectedSectionId, setSelectedSectionId] = useState<string>(song.sections[0]?.id ?? "");
 
   // Make sure THIS song is the one loaded in the global player. The import path
   // already loads freshly-imported tracks (object URL); here we resolve a
@@ -90,8 +113,7 @@ export function SongView({
   };
   const togglePlay = () => player.toggle();
 
-  const setSections = (sections: SongSection[]) =>
-    onChange({ ...song, sections });
+  const setSections = (sections: SongSection[]) => onChange({ ...song, sections });
 
   // Fill confident performer roles; leave unclear ones unset so they still prompt.
   const autoDetectPerformers = () => {
@@ -117,21 +139,16 @@ export function SongView({
     );
     // When section lyrics change, rebuild the timed lyric list the Timeline and
     // MV Director read from — so per-section lyrics flow through the pipeline.
-    const lyrics =
-      patch.lyricsText !== undefined ? lyricsFromSections(sections) : song.lyrics;
+    const lyrics = patch.lyricsText !== undefined ? lyricsFromSections(sections) : song.lyrics;
     onChange({ ...song, sections, lyrics });
   };
 
-  const currentSection = song.sections.find(
-    (s) => currentTime >= s.start && currentTime < s.end
-  );
+  const currentSection = song.sections.find((s) => currentTime >= s.start && currentTime < s.end);
 
   return (
     <div className="space-y-5 p-6">
       {/* Your Song — the beginner-friendly summary + main CTA */}
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-        Your Song
-      </div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Your Song</div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <Input
@@ -142,10 +159,7 @@ export function SongView({
           />
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <Stat icon={<Gauge className="h-3.5 w-3.5" />} label={`${song.bpm} BPM`} />
-            <Stat
-              icon={<Clock className="h-3.5 w-3.5" />}
-              label={formatTime(song.durationSec)}
-            />
+            <Stat icon={<Clock className="h-3.5 w-3.5" />} label={formatTime(song.durationSec)} />
             <Stat
               icon={<Radio className="h-3.5 w-3.5" />}
               label={`${song.sections.length} sections`}
@@ -168,7 +182,12 @@ export function SongView({
             <Sparkles className="h-4 w-4" />
             Direct this music video
           </Button>
-          <Button variant="secondary" size="sm" onClick={onOpenDirector} title="Open the MV Director without auto-directing">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenDirector}
+            title="Open the MV Director without auto-directing"
+          >
             <Clapperboard className="h-4 w-4" />
             Open Director
           </Button>
@@ -181,12 +200,7 @@ export function SongView({
             <Upload className="h-4 w-4" />
             Replace
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            aria-label="Delete track"
-          >
+          <Button variant="ghost" size="sm" onClick={onDelete} aria-label="Delete track">
             <Trash2 className="h-4 w-4" />
             Delete
           </Button>
@@ -197,7 +211,14 @@ export function SongView({
       <Card>
         <CardContent className="space-y-3 p-4">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => player.skip(-10)} disabled={!hasAudio} aria-label="Back 10 seconds" title="Back 10s">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => player.skip(-10)}
+              disabled={!hasAudio}
+              aria-label="Back 10 seconds"
+              title="Back 10s"
+            >
               <SkipBack className="h-4 w-4" />
             </Button>
             <Button
@@ -209,10 +230,24 @@ export function SongView({
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => player.stop()} disabled={!hasAudio} aria-label="Stop" title="Stop">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => player.stop()}
+              disabled={!hasAudio}
+              aria-label="Stop"
+              title="Stop"
+            >
               <Square className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => player.skip(10)} disabled={!hasAudio} aria-label="Forward 10 seconds" title="Forward 10s">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => player.skip(10)}
+              disabled={!hasAudio}
+              aria-label="Forward 10 seconds"
+              title="Forward 10s"
+            >
               <SkipForward className="h-4 w-4" />
             </Button>
 
@@ -266,11 +301,7 @@ export function SongView({
             )}
           </div>
 
-          <SongMapCanvas
-            song={song}
-            currentTime={currentTime}
-            onSeek={seek}
-          />
+          <SongMapCanvas song={song} currentTime={currentTime} onSeek={seek} />
 
           {/* Section chips legend */}
           <div className="flex flex-wrap gap-1.5">
@@ -328,14 +359,11 @@ export function SongView({
                 onSelect={() => setSelectedSectionId(s.id)}
                 onSeek={() => seek(s.start + 0.01)}
                 onChange={(next) =>
-                  setSections(
-                    song.sections.map((x) => (x.id === s.id ? next : x))
-                  )
+                  setSections(song.sections.map((x) => (x.id === s.id ? next : x)))
                 }
                 onDelete={
                   song.sections.length > 1
-                    ? () =>
-                        setSections(song.sections.filter((x) => x.id !== s.id))
+                    ? () => setSections(song.sections.filter((x) => x.id !== s.id))
                     : undefined
                 }
                 active={currentTime >= s.start && currentTime < s.end}
@@ -355,9 +383,7 @@ export function SongView({
           />
         ) : (
           <Card>
-            <CardContent className="p-6 text-sm text-muted">
-              No sections yet.
-            </CardContent>
+            <CardContent className="p-6 text-sm text-muted">No sections yet.</CardContent>
           </Card>
         )}
       </div>
@@ -367,7 +393,6 @@ export function SongView({
   );
 }
 
-
 function Stat({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md bg-elevated px-2 py-0.5 text-xs text-muted">
@@ -376,4 +401,3 @@ function Stat({ icon, label }: { icon: React.ReactNode; label: string }) {
     </span>
   );
 }
-

@@ -14,14 +14,9 @@ import { composeCharacterDna, identityAnchor } from "@/platform/lib/characterDna
 const VOCAL_FRONT = ["Lead Singer", "Featured Artist", "Rapper"];
 
 /** Who should appear in a shot, given the section's directorial approach. */
-function performersForSection(
-  approach: MvSectionPlan["approach"],
-  cast: Performer[]
-): Performer[] {
+function performersForSection(approach: MvSectionPlan["approach"], cast: Performer[]): Performer[] {
   if (approach === "Abstract") return [];
-  const vocal = cast.filter(
-    (p) => p.lipSync || VOCAL_FRONT.includes(p.role)
-  );
+  const vocal = cast.filter((p) => p.lipSync || VOCAL_FRONT.includes(p.role));
   const dancers = cast.filter((p) => p.role === "Dancer");
   if (approach === "Performance") return [...vocal.slice(0, 1), ...dancers.slice(0, 1)];
   // Narrative / Hybrid → the lead carries the frame.
@@ -84,7 +79,9 @@ function choreoAssignmentFragment(shot: MvShot): string {
   const parts = list
     .filter((a) => a.performer || a.move)
     .map((a) => {
-      const who = a.role ? `${a.performer || "Performer"} (${a.role.toLowerCase()})` : a.performer || "Performer";
+      const who = a.role
+        ? `${a.performer || "Performer"} (${a.role.toLowerCase()})`
+        : a.performer || "Performer";
       const bits = [
         a.move ? `performs ${a.move}` : "moves",
         a.energy ? `${a.energy.toLowerCase()} energy` : "",
@@ -119,7 +116,10 @@ export function buildShotImagePrompt(ctx: GenContext): string {
     dnas.length > 0
       ? `Featuring: ${dnas.map((d) => d.desc).join("; ")}.`
       : "No people in frame — abstract, atmospheric visual.";
-  const rules = dnas.map((d) => d.rule).filter(Boolean).join(" ");
+  const rules = dnas
+    .map((d) => d.rule)
+    .filter(Boolean)
+    .join(" ");
 
   return [
     `${shot.idea}.`,
@@ -173,7 +173,17 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
 
 /** Find the choreography move/pose covering a given time, as a prompt hint. */
 export function choreoHintForTime(
-  plan: { sections: { start: number; end: number; eightCounts: { startSec: number; phraseA: string }[]; keyPoses: string[] }[] } | null | undefined,
+  plan:
+    | {
+        sections: {
+          start: number;
+          end: number;
+          eightCounts: { startSec: number; phraseA: string }[];
+          keyPoses: string[];
+        }[];
+      }
+    | null
+    | undefined,
   t: number
 ): string | undefined {
   if (!plan) return undefined;

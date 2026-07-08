@@ -18,7 +18,9 @@ const ENERGY_DOTS: Record<string, number> = {
 
 /** Best-effort dot count from a freeform intensity string like "High — sharp and committed". */
 function energyLevel(intensity: string): number {
-  const hit = Object.keys(ENERGY_DOTS).find((k) => intensity.toLowerCase().includes(k.toLowerCase()));
+  const hit = Object.keys(ENERGY_DOTS).find((k) =>
+    intensity.toLowerCase().includes(k.toLowerCase())
+  );
   return hit ? ENERGY_DOTS[hit] : 2;
 }
 
@@ -63,7 +65,10 @@ export function MomentCard({
               {[1, 2, 3, 4].map((i) => (
                 <span
                   key={i}
-                  className={cn("h-1.5 w-1.5 rounded-full", i <= level ? "bg-primary" : "bg-elevated")}
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    i <= level ? "bg-primary" : "bg-elevated"
+                  )}
                 />
               ))}
             </span>
@@ -76,7 +81,12 @@ export function MomentCard({
             {ec.phraseB ? ` → ${ec.phraseB}` : ""}
           </p>
         </div>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform", expanded && "rotate-180")} />
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted transition-transform",
+            expanded && "rotate-180"
+          )}
+        />
       </button>
 
       {expanded && (

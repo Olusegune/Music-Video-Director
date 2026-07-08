@@ -28,20 +28,25 @@ export interface LocalPackInput {
   durationSeconds?: number;
 }
 
-type Role =
-  | "hook"
-  | "context"
-  | "problem"
-  | "reveal"
-  | "proof"
-  | "cta"
-  | "hold";
+type Role = "hook" | "context" | "problem" | "reveal" | "proof" | "cta" | "hold";
 
 // --- script analysis -------------------------------------------------------
 
 const CTA_HINTS = [
-  "sign up", "get started", "download", "learn more", "buy", "subscribe",
-  "join", "try", "visit", "book", "start free", "shop", "register", "claim",
+  "sign up",
+  "get started",
+  "download",
+  "learn more",
+  "buy",
+  "subscribe",
+  "join",
+  "try",
+  "visit",
+  "book",
+  "start free",
+  "shop",
+  "register",
+  "claim",
 ];
 
 function sentences(text: string): string[] {
@@ -53,7 +58,9 @@ function sentences(text: string): string[] {
 }
 
 function detectStats(text: string): string[] {
-  const found = text.match(/\b\d[\d,.]*\s?(%|x|×|k|m|bn|billion|million|hours?|days?|x faster|users?)?/gi);
+  const found = text.match(
+    /\b\d[\d,.]*\s?(%|x|×|k|m|bn|billion|million|hours?|days?|x faster|users?)?/gi
+  );
   return Array.from(new Set((found ?? []).map((s) => s.trim()))).slice(0, 6);
 }
 
@@ -131,13 +138,48 @@ const ROLE_PURPOSE: Record<Role, string> = {
 
 function cameraForRole(role: Role, style?: StylePreset): CameraPlan {
   const base: Record<Role, Partial<CameraPlan>> = {
-    hook: { shotType: "Macro / cold open", movement: "Slow push-in (dolly)", emotionalPurpose: "Intrigue", editorialPurpose: "Establish the hero subject" },
-    context: { shotType: "Wide establishing", movement: "Slow pull-back", emotionalPurpose: "Orient the viewer", editorialPurpose: "Show the world" },
-    problem: { shotType: "Medium, slightly low angle", movement: "Handheld drift", emotionalPurpose: "Unease / friction", editorialPurpose: "Dramatize the problem" },
-    reveal: { shotType: "Medium close-up, hero lock", movement: "Push-in to hero", emotionalPurpose: "Confidence / relief", editorialPurpose: "Reveal the solution" },
-    proof: { shotType: "Tracking across detail", movement: "Tracking shot / orbit", emotionalPurpose: "Credibility", editorialPurpose: "Deliver proof" },
-    cta: { shotType: "Locked hero with title space", movement: "Settle to final hold", emotionalPurpose: "Decisiveness", editorialPurpose: "Drive the action" },
-    hold: { shotType: "Hero lock, centered", movement: "Final hold", emotionalPurpose: "Memorability", editorialPurpose: "Brand lock" },
+    hook: {
+      shotType: "Macro / cold open",
+      movement: "Slow push-in (dolly)",
+      emotionalPurpose: "Intrigue",
+      editorialPurpose: "Establish the hero subject",
+    },
+    context: {
+      shotType: "Wide establishing",
+      movement: "Slow pull-back",
+      emotionalPurpose: "Orient the viewer",
+      editorialPurpose: "Show the world",
+    },
+    problem: {
+      shotType: "Medium, slightly low angle",
+      movement: "Handheld drift",
+      emotionalPurpose: "Unease / friction",
+      editorialPurpose: "Dramatize the problem",
+    },
+    reveal: {
+      shotType: "Medium close-up, hero lock",
+      movement: "Push-in to hero",
+      emotionalPurpose: "Confidence / relief",
+      editorialPurpose: "Reveal the solution",
+    },
+    proof: {
+      shotType: "Tracking across detail",
+      movement: "Tracking shot / orbit",
+      emotionalPurpose: "Credibility",
+      editorialPurpose: "Deliver proof",
+    },
+    cta: {
+      shotType: "Locked hero with title space",
+      movement: "Settle to final hold",
+      emotionalPurpose: "Decisiveness",
+      editorialPurpose: "Drive the action",
+    },
+    hold: {
+      shotType: "Hero lock, centered",
+      movement: "Final hold",
+      emotionalPurpose: "Memorability",
+      editorialPurpose: "Brand lock",
+    },
   };
   const flat = style && (style.group === "2D" || style.group === "Rubberhose");
   const b = base[role];
@@ -169,8 +211,14 @@ function lightingForRole(role: Role, style?: StylePreset): LightingPlan {
   const flat = style && (style.group === "2D" || style.group === "Rubberhose");
   return {
     sceneIntent: intent[role],
-    visualStrategy: flat ? "Flat art-directed color blocking" : "Motivated cinematic key with separation",
-    keyLight: flat ? "Flat even fill" : role === "problem" ? "Hard key, 45° camera-left" : "Soft key, 35° camera-left",
+    visualStrategy: flat
+      ? "Flat art-directed color blocking"
+      : "Motivated cinematic key with separation",
+    keyLight: flat
+      ? "Flat even fill"
+      : role === "problem"
+        ? "Hard key, 45° camera-left"
+        : "Soft key, 35° camera-left",
     fillLight: flat ? "—" : role === "problem" ? "Low fill (1:8)" : "Soft fill (1:3)",
     rimLight: flat ? "Accent edge if needed" : "Cool rim for subject separation",
     colorTemperature: flat ? "Art-directed palette" : "5600K key / 7000K rim",
@@ -234,8 +282,7 @@ export function generateLocalPack(input: LocalPackInput): PromptPack {
   const style = findPreset(styleId);
 
   const sents = sentences(brief);
-  const totalSeconds =
-    input.durationSeconds ?? parseSeconds(project?.duration ?? "30s");
+  const totalSeconds = input.durationSeconds ?? parseSeconds(project?.duration ?? "30s");
   const aspect = project?.aspectRatio ?? "16:9";
   const tone = detectTone(brief, project?.emotionalTone ?? "");
   const stats = detectStats(brief);
@@ -299,10 +346,7 @@ export function generateLocalPack(input: LocalPackInput): PromptPack {
   for (const q of quoted.slice(0, 4)) textLocks.push(newLockItem(q, "locked", "on-screen text"));
   for (const n of stats.slice(0, 4)) textLocks.push(newLockItem(n, "animated", "key number"));
 
-  const title =
-    sents[0]?.slice(0, 60).replace(/[.!?]$/, "") ||
-    brand ||
-    "Untitled Concept";
+  const title = sents[0]?.slice(0, 60).replace(/[.!?]$/, "") || brand || "Untitled Concept";
 
   return {
     creativeDirection: {
@@ -320,8 +364,14 @@ export function generateLocalPack(input: LocalPackInput): PromptPack {
     style: {
       visualLanguage: style?.fragment ?? "Premium, dark-first motion graphics with clean type",
       colorPalette: paletteFor(style),
-      typography: style?.group === "2D" ? "Bold geometric sans + mono accents" : "Refined sans (Inter / Söhne)",
-      materials: style?.group === "3D" ? "PBR surfaces, soft GI, subtle grain" : "Flat fills, soft shadows, subtle grain",
+      typography:
+        style?.group === "2D"
+          ? "Bold geometric sans + mono accents"
+          : "Refined sans (Inter / Söhne)",
+      materials:
+        style?.group === "3D"
+          ? "PBR surfaces, soft GI, subtle grain"
+          : "Flat fills, soft shadows, subtle grain",
       mood: tone,
       atmosphere: style?.lightingHint ?? "Clean studio with volumetric light",
     },
@@ -329,7 +379,9 @@ export function generateLocalPack(input: LocalPackInput): PromptPack {
     textLocks,
     audio: buildAudioDirection(shots, tone, cta ?? "", style?.group),
     referenceHierarchy: [
-      brand ? `${brand} brand logo / wordmark (highest — never alter)` : "Brand logo / wordmark (highest — never alter)",
+      brand
+        ? `${brand} brand logo / wordmark (highest — never alter)`
+        : "Brand logo / wordmark (highest — never alter)",
       "Locked on-screen text",
       style ? `Style reference: ${style.label}` : "Style reference frame",
       "Color palette",

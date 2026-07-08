@@ -10,7 +10,11 @@
 // headline set") fall back to a generic energy+formation lift rather than
 // silently doing nothing — the diff always says what actually changed, so
 // there's never a mystery about what the "AI" did.
-import { defaultPerformance, type ChoreoSection, type PerformanceBrief } from "@/apps/music-video/lib/choreography";
+import {
+  defaultPerformance,
+  type ChoreoSection,
+  type PerformanceBrief,
+} from "@/apps/music-video/lib/choreography";
 
 export interface DirectiveResult {
   next: ChoreoSection;
@@ -18,25 +22,44 @@ export interface DirectiveResult {
   changes: string[];
 }
 
-function bumpEnergy(s: ChoreoSection, target: number, intensity: string): { section: ChoreoSection; changes: string[] } {
+function bumpEnergy(
+  s: ChoreoSection,
+  target: number,
+  intensity: string
+): { section: ChoreoSection; changes: string[] } {
   const changes: string[] = [];
-  if (Math.abs(s.energy - target) > 0.01) changes.push(`Energy: ${Math.round(s.energy * 100)}% → ${Math.round(target * 100)}%`);
+  if (Math.abs(s.energy - target) > 0.01)
+    changes.push(`Energy: ${Math.round(s.energy * 100)}% → ${Math.round(target * 100)}%`);
   if (s.intensity !== intensity) changes.push(`Intensity: "${s.intensity}" → "${intensity}"`);
   return { section: { ...s, energy: target, intensity }, changes };
 }
 
-function setFormation(s: ChoreoSection, formation: string): { section: ChoreoSection; changes: string[] } {
+function setFormation(
+  s: ChoreoSection,
+  formation: string
+): { section: ChoreoSection; changes: string[] } {
   if (s.formation === formation) return { section: s, changes: [] };
-  return { section: { ...s, formation }, changes: [`Formation: "${s.formation}" → "${formation}"`] };
+  return {
+    section: { ...s, formation },
+    changes: [`Formation: "${s.formation}" → "${formation}"`],
+  };
 }
 
-function setPerformance(s: ChoreoSection, patch: Partial<PerformanceBrief>): { section: ChoreoSection; changes: string[] } {
+function setPerformance(
+  s: ChoreoSection,
+  patch: Partial<PerformanceBrief>
+): { section: ChoreoSection; changes: string[] } {
   const perf = s.performance ?? defaultPerformance(s.kind, s.energy);
   const next: PerformanceBrief = { ...perf, ...patch };
-  const changed = (Object.keys(patch) as (keyof PerformanceBrief)[]).some((k) => perf[k] !== next[k]);
+  const changed = (Object.keys(patch) as (keyof PerformanceBrief)[]).some(
+    (k) => perf[k] !== next[k]
+  );
   if (!changed) return { section: s, changes: [] };
   const fields = Object.keys(patch).join(", ");
-  return { section: { ...s, performance: next }, changes: [`Performance brief updated (${fields})`] };
+  return {
+    section: { ...s, performance: next },
+    changes: [`Performance brief updated (${fields})`],
+  };
 }
 
 function addDanceBreak(s: ChoreoSection): { section: ChoreoSection; changes: string[] } {
@@ -79,7 +102,10 @@ const RULES: Rule[] = [
     apply: (s) => {
       const a = bumpEnergy(s, Math.min(s.energy, 0.5), "Sultry — slow and deliberate");
       const b = setFormation(a.section, "organic asymmetry");
-      const c = setPerformance(b.section, { emotion: "Sultry, magnetic", intent: "Draw the eye in" });
+      const c = setPerformance(b.section, {
+        emotion: "Sultry, magnetic",
+        intent: "Draw the eye in",
+      });
       return { section: c.section, changes: [...a.changes, ...b.changes, ...c.changes] };
     },
   },
@@ -96,7 +122,10 @@ const RULES: Rule[] = [
     apply: (s) => {
       const a = bumpEnergy(s, Math.min(s.energy, 0.4), "Grounded — narrative focus");
       const b = setFormation(a.section, "organic asymmetry");
-      const c = setPerformance(b.section, { intent: "Carry the story forward", subtext: "This is the turning point" });
+      const c = setPerformance(b.section, {
+        intent: "Carry the story forward",
+        subtext: "This is the turning point",
+      });
       return { section: c.section, changes: [...a.changes, ...b.changes, ...c.changes] };
     },
   },
@@ -134,6 +163,7 @@ export function applyDirective(section: ChoreoSection, prompt: string): Directiv
   const result = rule ? rule.apply(section) : fallback(section);
   return {
     next: result.section,
-    changes: result.changes.length > 0 ? result.changes : ["No change — already matches that direction."],
+    changes:
+      result.changes.length > 0 ? result.changes : ["No change — already matches that direction."],
   };
 }

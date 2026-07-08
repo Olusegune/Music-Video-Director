@@ -31,11 +31,7 @@ interface IntakeFormStepProps {
   onChange: (next: Record<string, string>) => void;
 }
 
-export function IntakeFormStep({
-  fields,
-  value,
-  onChange,
-}: IntakeFormStepProps) {
+export function IntakeFormStep({ fields, value, onChange }: IntakeFormStepProps) {
   function setField(id: string, next: string) {
     onChange({ ...value, [id]: next });
   }
@@ -43,10 +39,7 @@ export function IntakeFormStep({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {fields.map((field) => (
-        <div
-          key={field.id}
-          className={field.type === "textarea" ? "md:col-span-2" : undefined}
-        >
+        <div key={field.id} className={field.type === "textarea" ? "md:col-span-2" : undefined}>
           <Label htmlFor={field.id}>
             {field.label}
             {field.required ? " *" : ""}

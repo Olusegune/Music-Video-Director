@@ -32,7 +32,9 @@ function writeDeliverables(deliverables: Deliverable[]) {
   }
 }
 
-export function listDeliverables(filter: Partial<Pick<Deliverable, "moduleId" | "projectId">> = {}): Deliverable[] {
+export function listDeliverables(
+  filter: Partial<Pick<Deliverable, "moduleId" | "projectId">> = {}
+): Deliverable[] {
   return readDeliverables().filter(
     (item) =>
       (!filter.moduleId || item.moduleId === filter.moduleId) &&
@@ -59,7 +61,9 @@ export function upsertDeliverables(items: Deliverable[]): Deliverable[] {
   return items.map(saveDeliverable);
 }
 
-export function createDeliverable(input: Omit<Deliverable, "id" | "createdAt" | "updatedAt">): Deliverable {
+export function createDeliverable(
+  input: Omit<Deliverable, "id" | "createdAt" | "updatedAt">
+): Deliverable {
   const timestamp = new Date().toISOString();
   return saveDeliverable({
     id: crypto.randomUUID(),
@@ -71,7 +75,11 @@ export function createDeliverable(input: Omit<Deliverable, "id" | "createdAt" | 
 
 export function deleteDeliverables(filter: Partial<Pick<Deliverable, "moduleId" | "projectId">>) {
   const retained = readDeliverables().filter(
-    (item) => !((!filter.moduleId || item.moduleId === filter.moduleId) && (!filter.projectId || item.projectId === filter.projectId))
+    (item) =>
+      !(
+        (!filter.moduleId || item.moduleId === filter.moduleId) &&
+        (!filter.projectId || item.projectId === filter.projectId)
+      )
   );
   writeDeliverables(retained);
 }

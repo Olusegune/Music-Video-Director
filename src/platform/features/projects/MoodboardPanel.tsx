@@ -10,9 +10,8 @@ export function MoodboardPanel({ pack }: { pack: PromptPack }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-xs text-muted">
-        <Images className="h-4 w-4" />
-        A moodboard derived from your style DNA. Each tile is a ready-to-render
-        image prompt — copy into an image model, or generate from the desktop app.
+        <Images className="h-4 w-4" />A moodboard derived from your style DNA. Each tile is a
+        ready-to-render image prompt — copy into an image model, or generate from the desktop app.
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map((tile) => (
@@ -52,11 +51,7 @@ function Tile({ text }: { text: string }) {
         title="Copy"
         onClick={copy}
       >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-success" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
-        )}
+        {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
       </Button>
     </div>
   );

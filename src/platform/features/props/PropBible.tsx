@@ -16,12 +16,7 @@ import {
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Prop } from "@/platform/lib/types";
-import {
-  composePropDna,
-  isPropDnaStale,
-  newProp,
-  PROP_CATEGORIES,
-} from "@/platform/lib/propDna";
+import { composePropDna, isPropDnaStale, newProp, PROP_CATEGORIES } from "@/platform/lib/propDna";
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
 import { AssetImage } from "@/platform/components/ui/asset-image";
@@ -71,7 +66,10 @@ export function PropBible() {
 
   const create = useMutation({
     mutationFn: (category: string) => {
-      const p = newProp("New " + (category === "All" ? "Prop" : category), category === "All" ? "Prop" : category);
+      const p = newProp(
+        "New " + (category === "All" ? "Prop" : category),
+        category === "All" ? "Prop" : category
+      );
       return api.saveProp(p).then(() => p);
     },
     onSuccess: (p) => {
@@ -147,7 +145,9 @@ export function PropBible() {
             <div className="grad-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm shadow-primary/30">
               <Package className="h-6 w-6 text-white" />
             </div>
-            <p className="text-sm font-medium">No {filter === "All" ? "items" : filter.toLowerCase() + "s"} yet</p>
+            <p className="text-sm font-medium">
+              No {filter === "All" ? "items" : filter.toLowerCase() + "s"} yet
+            </p>
             <p className="mt-1 max-w-sm text-xs text-muted">
               Create one, or import props, vehicles, and creatures from Script Studio.
             </p>
@@ -160,8 +160,7 @@ export function PropBible() {
                 prop={p}
                 onClick={() => setSelectedId(p.id)}
                 onDelete={() => {
-                  if (confirm(`Delete "${p.name}" from the Prop Bible?`))
-                    removeProp.mutate(p.id);
+                  if (confirm(`Delete "${p.name}" from the Prop Bible?`)) removeProp.mutate(p.id);
                 }}
               />
             ))}
@@ -194,7 +193,9 @@ function PropCard({
           src={prop.heroUrl}
           alt={prop.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          fallback={<GradientFill id={prop.id} label={prop.name} className="h-full w-full text-2xl" />}
+          fallback={
+            <GradientFill id={prop.id} label={prop.name} className="h-full w-full text-2xl" />
+          }
           label="Hero image"
         />
         <div className="absolute right-2 top-2 flex gap-1">
@@ -393,19 +394,35 @@ function PropSheet({
               </DnaSelect>
             </Field>
             <Field label="Story significance">
-              <Input value={draft.storySignificance} onChange={(e) => set("storySignificance", e.target.value)} placeholder="heirloom; the MacGuffin" />
+              <Input
+                value={draft.storySignificance}
+                onChange={(e) => set("storySignificance", e.target.value)}
+                placeholder="heirloom; the MacGuffin"
+              />
             </Field>
           </Section>
 
           <Section icon={<Ruler className="h-4 w-4 text-primary" />} title="Physical">
             <Field label="Materials">
-              <Input value={draft.materials} onChange={(e) => set("materials", e.target.value)} placeholder="weathered brass, oak grip" />
+              <Input
+                value={draft.materials}
+                onChange={(e) => set("materials", e.target.value)}
+                placeholder="weathered brass, oak grip"
+              />
             </Field>
             <Field label="Condition">
-              <Input value={draft.condition} onChange={(e) => set("condition", e.target.value)} placeholder="battle-worn, scratched" />
+              <Input
+                value={draft.condition}
+                onChange={(e) => set("condition", e.target.value)}
+                placeholder="battle-worn, scratched"
+              />
             </Field>
             <Field label="Dimensions / scale" full>
-              <Input value={draft.dimensions} onChange={(e) => set("dimensions", e.target.value)} placeholder="hand-sized; 30cm long" />
+              <Input
+                value={draft.dimensions}
+                onChange={(e) => set("dimensions", e.target.value)}
+                placeholder="hand-sized; 30cm long"
+              />
             </Field>
           </Section>
 

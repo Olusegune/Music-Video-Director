@@ -55,17 +55,11 @@ export function AudioDirector({
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <Field label="Casting / Voice">
-            <InlineInput
-              value={a.voiceover.voice}
-              onChange={(v) => setVoiceover({ voice: v })}
-            />
+            <InlineInput value={a.voiceover.voice} onChange={(v) => setVoiceover({ voice: v })} />
           </Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Tone">
-              <InlineInput
-                value={a.voiceover.tone}
-                onChange={(v) => setVoiceover({ tone: v })}
-              />
+              <InlineInput value={a.voiceover.tone} onChange={(v) => setVoiceover({ tone: v })} />
             </Field>
             <Field label="Pacing">
               <InlineInput
@@ -79,9 +73,7 @@ export function AudioDirector({
               {a.voiceover.lines.map((l, idx) => (
                 <div key={l.shot} className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-10 shrink-0 text-[11px] text-muted">
-                      Shot {l.shot}
-                    </span>
+                    <span className="w-10 shrink-0 text-[11px] text-muted">Shot {l.shot}</span>
                     <InlineInput
                       value={l.vo}
                       onChange={(v) =>
@@ -125,9 +117,7 @@ export function AudioDirector({
                 </div>
               ))}
               {renderVo.isError && (
-                <span className="text-[11px] text-danger">
-                  {(renderVo.error as Error).message}
-                </span>
+                <span className="text-[11px] text-danger">{(renderVo.error as Error).message}</span>
               )}
             </div>
           </Field>
@@ -161,10 +151,7 @@ export function AudioDirector({
             <InlineInput value={a.music.arc} onChange={(v) => setMusic({ arc: v })} />
           </Field>
           <Field label="References">
-            <InlineInput
-              value={a.music.references}
-              onChange={(v) => setMusic({ references: v })}
-            />
+            <InlineInput value={a.music.references} onChange={(v) => setMusic({ references: v })} />
           </Field>
         </CardContent>
       </Card>
@@ -187,9 +174,7 @@ export function AudioDirector({
                     ...p,
                     audio: {
                       ...p.audio,
-                      sfx: p.audio.sfx.map((x, i) =>
-                        i === idx ? { ...x, cue: v } : x
-                      ),
+                      sfx: p.audio.sfx.map((x, i) => (i === idx ? { ...x, cue: v } : x)),
                     },
                   }))
                 }
@@ -230,9 +215,7 @@ export function AudioDirector({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="px-1.5 text-[11px] uppercase tracking-wide text-muted">
-        {label}
-      </span>
+      <span className="px-1.5 text-[11px] uppercase tracking-wide text-muted">{label}</span>
       {children}
     </div>
   );

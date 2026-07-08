@@ -92,7 +92,10 @@ export function ImageStudio({
     if (model.manual) {
       try {
         await navigator.clipboard.writeText(prompt);
-        setNote({ kind: "ok", msg: "Prompt copied — generate it in Midjourney, then import the image." });
+        setNote({
+          kind: "ok",
+          msg: "Prompt copied — generate it in Midjourney, then import the image.",
+        });
       } catch {
         setNote({ kind: "err", msg: "Could not copy the prompt." });
       }
@@ -101,7 +104,15 @@ export function ImageStudio({
     setBusy(true);
     setNote(null);
     try {
-      const url = await api.generateImagePro(model.providerKey, prompt, size.width, size.height, undefined, undefined, model.apiModel);
+      const url = await api.generateImagePro(
+        model.providerKey,
+        prompt,
+        size.width,
+        size.height,
+        undefined,
+        undefined,
+        model.apiModel
+      );
       const asset = addAsset({
         entityId: entity.id,
         entityKind: kind,
@@ -156,7 +167,13 @@ export function ImageStudio({
           </div>
         </div>
         <Button onClick={generate} disabled={busy}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : model.manual ? <Clipboard className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : model.manual ? (
+            <Clipboard className="h-4 w-4" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
           {model.manual ? "Copy Prompt" : "Generate"}
         </Button>
       </header>
@@ -176,7 +193,9 @@ export function ImageStudio({
                     onClick={() => setModelId(m.id)}
                     className={cn(
                       "flex items-center justify-between gap-2 rounded-[var(--radius-button)] border px-3 py-2 text-left transition-colors",
-                      modelId === m.id ? "border-primary bg-primary/10" : "border-border hover:bg-elevated/60"
+                      modelId === m.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-elevated/60"
                     )}
                   >
                     <span className="min-w-0">
@@ -199,7 +218,9 @@ export function ImageStudio({
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
             >
               {templates.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
               ))}
             </select>
             <p className="text-[11px] text-muted">{template.desc}</p>
@@ -215,7 +236,9 @@ export function ImageStudio({
                   onClick={() => setAspect(a)}
                   className={cn(
                     "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                    aspect === a ? "border-primary bg-primary/12 text-foreground" : "border-border text-muted hover:bg-elevated/60"
+                    aspect === a
+                      ? "border-primary bg-primary/12 text-foreground"
+                      : "border-border text-muted hover:bg-elevated/60"
                   )}
                 >
                   {a}
@@ -233,17 +256,35 @@ export function ImageStudio({
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
             >
               {SIZE_PRESETS.map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
               ))}
             </select>
             {sizePreset.id === "custom" ? (
               <div className="flex items-center gap-2">
-                <Input type="number" value={customW} min={256} max={2048} onChange={(e) => setCustomW(+e.target.value)} aria-label="Custom width" />
+                <Input
+                  type="number"
+                  value={customW}
+                  min={256}
+                  max={2048}
+                  onChange={(e) => setCustomW(+e.target.value)}
+                  aria-label="Custom width"
+                />
                 <span className="text-muted">×</span>
-                <Input type="number" value={customH} min={256} max={2048} onChange={(e) => setCustomH(+e.target.value)} aria-label="Custom height" />
+                <Input
+                  type="number"
+                  value={customH}
+                  min={256}
+                  max={2048}
+                  onChange={(e) => setCustomH(+e.target.value)}
+                  aria-label="Custom height"
+                />
               </div>
             ) : (
-              <p className="text-[11px] text-muted">Output: {size.width} × {size.height} px</p>
+              <p className="text-[11px] text-muted">
+                Output: {size.width} × {size.height} px
+              </p>
             )}
           </div>
 
@@ -254,7 +295,10 @@ export function ImageStudio({
               <div className="flex items-center gap-1">
                 <button
                   className="flex items-center gap-1 text-[11px] text-muted hover:text-foreground"
-                  onClick={() => { setPrompt(buildSheetPrompt(kind, entity, templateId, aspect)); setDirty(false); }}
+                  onClick={() => {
+                    setPrompt(buildSheetPrompt(kind, entity, templateId, aspect));
+                    setDirty(false);
+                  }}
                   title="Reset to template"
                 >
                   <RotateCcw className="h-3 w-3" /> Reset
@@ -270,16 +314,23 @@ export function ImageStudio({
             </div>
             <textarea
               value={prompt}
-              onChange={(e) => { setPrompt(e.target.value); setDirty(true); }}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                setDirty(true);
+              }}
               className="min-h-40 w-full resize-y rounded-[var(--radius-input)] border border-border bg-surface p-3 font-mono text-[12px] leading-relaxed focus-visible:border-primary focus-visible:outline-none"
             />
           </div>
 
           {note && (
-            <p className={cn(
-              "flex items-start gap-1.5 rounded-md border px-3 py-2 text-[11px]",
-              note.kind === "ok" ? "border-success/30 bg-success/10 text-success" : "border-danger/30 bg-danger/10 text-danger"
-            )}>
+            <p
+              className={cn(
+                "flex items-start gap-1.5 rounded-md border px-3 py-2 text-[11px]",
+                note.kind === "ok"
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-danger/30 bg-danger/10 text-danger"
+              )}
+            >
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {note.msg}
             </p>
           )}
@@ -292,20 +343,28 @@ export function ImageStudio({
               <ImageIcon className="mb-3 h-8 w-8 text-muted" />
               <p className="text-sm font-medium">No sheets generated yet</p>
               <p className="mt-1 max-w-xs text-xs text-muted">
-                Pick a model, template, aspect ratio, and size — then Generate. Click any
-                result for a full-size preview, download, and Save to Bible.
+                Pick a model, template, aspect ratio, and size — then Generate. Click any result for
+                a full-size preview, download, and Save to Bible.
                 {!isTauri && " Browser preview uses placeholder images."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {gallery.map((a) => (
-                <div key={a.id} className="group overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card">
+                <div
+                  key={a.id}
+                  className="group overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card"
+                >
                   <button
                     onClick={() => setPreview(a)}
                     className="relative block aspect-[4/3] w-full overflow-hidden bg-elevated"
                   >
-                    <AssetImage src={a.url} alt={a.sheetType} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" label="Sheet" />
+                    <AssetImage
+                      src={a.url}
+                      alt={a.sheetType}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      label="Sheet"
+                    />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-xs font-medium text-white opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100">
                       Open preview
                     </span>
@@ -318,7 +377,11 @@ export function ImageStudio({
                         {a.savedTo.length > 0 && <Check className="h-3 w-3 text-success" />}
                       </div>
                     </div>
-                    <button onClick={() => removeAsset(a.id)} aria-label="Delete" className="text-muted hover:text-danger">
+                    <button
+                      onClick={() => removeAsset(a.id)}
+                      aria-label="Delete"
+                      className="text-muted hover:text-danger"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

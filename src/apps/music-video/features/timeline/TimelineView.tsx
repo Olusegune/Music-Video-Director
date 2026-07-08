@@ -1,7 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutList, Music, Clapperboard, Download, Film, Footprints, Quote, Play, Loader2, Magnet, Copy, Trash2, Clapperboard as ClapperboardIcon, CheckCircle2, Circle, ImageIcon } from "lucide-react";
-import { loadSongs, sectionColor, formatTime, type SongMap } from "@/apps/music-video/lib/songBrain";
+import {
+  LayoutList,
+  Music,
+  Clapperboard,
+  Download,
+  Film,
+  Footprints,
+  Quote,
+  Play,
+  Loader2,
+  Magnet,
+  Copy,
+  Trash2,
+  Clapperboard as ClapperboardIcon,
+  CheckCircle2,
+  Circle,
+  ImageIcon,
+} from "lucide-react";
+import {
+  loadSongs,
+  sectionColor,
+  formatTime,
+  type SongMap,
+} from "@/apps/music-video/lib/songBrain";
 import {
   getTreatment,
   saveTreatment,
@@ -156,39 +178,36 @@ export function TimelineView() {
 
   // Move shots to wherever they now land — reassigning each to the section that
   // contains its new start time (true cross-section dragging).
-  const commitMoves = useCallback(
-    (moves: { id: string; start: number; end: number }[]) => {
-      if (moves.length === 0) return;
-      const byId = new Map(moves.map((m) => [m.id, m]));
-      setTreatment((prev) => {
-        if (!prev) return prev;
-        // 1) collect + remove moved shots from their current sections
-        const moved: MvShot[] = [];
-        const sections = prev.sections.map((sec) => ({
-          ...sec,
-          shots: sec.shots.filter((sh) => {
-            const m = byId.get(sh.id);
-            if (!m) return true;
-            moved.push({ ...sh, start: m.start, end: m.end });
-            return false;
-          }),
-        }));
-        // 2) re-insert each into the section containing its new start
-        for (const sh of moved) {
-          let target =
-            sections.find((s) => sh.start >= s.start && sh.start < s.end) ??
-            sections.reduce((a, b) =>
-              Math.abs(b.start - sh.start) < Math.abs(a.start - sh.start) ? b : a
-            );
-          target.shots = [...target.shots, sh].sort((a, b) => a.start - b.start);
-        }
-        const next = { ...prev, sections };
-        saveTreatment(next);
-        return next;
-      });
-    },
-    []
-  );
+  const commitMoves = useCallback((moves: { id: string; start: number; end: number }[]) => {
+    if (moves.length === 0) return;
+    const byId = new Map(moves.map((m) => [m.id, m]));
+    setTreatment((prev) => {
+      if (!prev) return prev;
+      // 1) collect + remove moved shots from their current sections
+      const moved: MvShot[] = [];
+      const sections = prev.sections.map((sec) => ({
+        ...sec,
+        shots: sec.shots.filter((sh) => {
+          const m = byId.get(sh.id);
+          if (!m) return true;
+          moved.push({ ...sh, start: m.start, end: m.end });
+          return false;
+        }),
+      }));
+      // 2) re-insert each into the section containing its new start
+      for (const sh of moved) {
+        let target =
+          sections.find((s) => sh.start >= s.start && sh.start < s.end) ??
+          sections.reduce((a, b) =>
+            Math.abs(b.start - sh.start) < Math.abs(a.start - sh.start) ? b : a
+          );
+        target.shots = [...target.shots, sh].sort((a, b) => a.start - b.start);
+      }
+      const next = { ...prev, sections };
+      saveTreatment(next);
+      return next;
+    });
+  }, []);
 
   const patchShot = useCallback((sectionId: string, shotId: string, patch: Partial<MvShot>) => {
     setTreatment((prev) => {
@@ -197,7 +216,10 @@ export function TimelineView() {
         ...prev,
         sections: prev.sections.map((sec) =>
           sec.sectionId === sectionId
-            ? { ...sec, shots: sec.shots.map((sh) => (sh.id === shotId ? { ...sh, ...patch } : sh)) }
+            ? {
+                ...sec,
+                shots: sec.shots.map((sh) => (sh.id === shotId ? { ...sh, ...patch } : sh)),
+              }
             : sec
         ),
       };
@@ -358,9 +380,7 @@ export function TimelineView() {
           setSelected(new Set()); // a click on empty space clears selection
           return;
         }
-        const hit = new Set(
-          shots.filter((s) => s.start < t2 && s.end > t1).map((s) => s.id)
-        );
+        const hit = new Set(shots.filter((s) => s.start < t2 && s.end > t1).map((s) => s.id));
         setSelected(hit);
       };
       window.addEventListener("pointermove", onMove);
@@ -370,11 +390,19 @@ export function TimelineView() {
   );
 
   // --- choreography segment dragging (move + resize) ---------------------
-  const [choreoPreview, setChoreoPreview] = useState<{ id: string; start: number; end: number } | null>(null);
+  const [choreoPreview, setChoreoPreview] = useState<{
+    id: string;
+    start: number;
+    end: number;
+  } | null>(null);
   const choreoPreviewRef = useRef<{ id: string; start: number; end: number } | null>(null);
 
   const beginChoreoDrag = useCallback(
-    (e: React.PointerEvent, cs: { sectionId: string; start: number; end: number }, mode: "move" | "resize") => {
+    (
+      e: React.PointerEvent,
+      cs: { sectionId: string; start: number; end: number },
+      mode: "move" | "resize"
+    ) => {
       e.preventDefault();
       e.stopPropagation();
       const startX = e.clientX;
@@ -426,7 +454,8 @@ export function TimelineView() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable))
+        return;
       if ((e.key === "Delete" || e.key === "Backspace") && selected.size > 0) {
         e.preventDefault();
         deleteShots(selected);
@@ -451,9 +480,7 @@ export function TimelineView() {
           }))
           .filter((s) => s.src);
         if (segments.length === 0) {
-          throw new Error(
-            "Generate at least one frame or clip in the MV Director first."
-          );
+          throw new Error("Generate at least one frame or clip in the MV Director first.");
         }
         const voiceLayers = (song.audioTracks ?? [])
           .filter((t) => t.url)
@@ -483,7 +510,13 @@ export function TimelineView() {
   );
 
   if (!song) {
-    return <Empty onAction={openSong} label="Go to Song Studio" message="Import a track in Song Studio to assemble its timeline." />;
+    return (
+      <Empty
+        onAction={openSong}
+        label="Go to Song Studio"
+        message="Import a track in Song Studio to assemble its timeline."
+      />
+    );
   }
 
   if (!treatment) {
@@ -503,7 +536,6 @@ export function TimelineView() {
   const tickStep = dur > 180 ? 30 : dur > 90 ? 15 : dur > 40 ? 10 : 5;
   const ticks: number[] = [];
   for (let t = 0; t <= dur; t += tickStep) ticks.push(t);
-
 
   return (
     <div className="relative flex h-full min-h-0 flex-col">
@@ -581,11 +613,7 @@ export function TimelineView() {
             <Play className="h-4 w-4" />
             Preview animatic
           </Button>
-          <Button
-            variant="accent"
-            onClick={() => setShowSettings(true)}
-            disabled={rendering}
-          >
+          <Button variant="accent" onClick={() => setShowSettings(true)} disabled={rendering}>
             {rendering ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -615,9 +643,7 @@ export function TimelineView() {
         />
       )}
 
-      {animatic && (
-        <Animatic song={song} shots={shots} onClose={() => setAnimatic(false)} />
-      )}
+      {animatic && <Animatic song={song} shots={shots} onClose={() => setAnimatic(false)} />}
 
       {renderUrl && (
         <RenderResult
@@ -648,9 +674,7 @@ export function TimelineView() {
                 className="absolute top-0 flex h-full flex-col items-start"
                 style={{ left: xFor(t) }}
               >
-                <span className="text-[10px] tabular-nums text-muted">
-                  {formatTime(t)}
-                </span>
+                <span className="text-[10px] tabular-nums text-muted">{formatTime(t)}</span>
               </div>
             ))}
           </div>
@@ -764,7 +788,8 @@ export function TimelineView() {
               const left = xFor(live.start);
               const w = xFor(live.end) - left;
               const status = sh.videoUrl ? "clip" : sh.imageUrl ? "frame" : "none";
-              const color = status === "clip" ? "#16a34a" : status === "frame" ? "#d97706" : undefined;
+              const color =
+                status === "clip" ? "#16a34a" : status === "frame" ? "#d97706" : undefined;
               return (
                 <div
                   key={sh.id}
@@ -804,9 +829,7 @@ export function TimelineView() {
                 title={l.text}
               >
                 <span className="h-full w-px bg-accent/60" />
-                <span className="ml-1 truncate text-[10px] italic text-accent">
-                  {l.text}
-                </span>
+                <span className="ml-1 truncate text-[10px] italic text-accent">{l.text}</span>
               </div>
             ))}
           </Lane>
@@ -922,4 +945,3 @@ function Empty({
 // ---------------------------------------------------------------------------
 // Render settings — resolution / fps + the audio layers that will be muxed.
 // ---------------------------------------------------------------------------
-

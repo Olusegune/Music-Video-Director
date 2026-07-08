@@ -64,15 +64,19 @@ function templateIcon(t: MvTemplate): React.ReactNode {
   if (has("worship", "gospel", "praise", "spiritual")) return <Heart className={cls} />;
   if (has("k-pop", "kpop", "j-pop")) return <Star className={cls} />;
   if (has("pop")) return <Music className={cls} />;
-  if (has("electronic", "edm", "house", "techno", "dance floor", "club")) return <Disc3 className={cls} />;
+  if (has("electronic", "edm", "house", "techno", "dance floor", "club"))
+    return <Disc3 className={cls} />;
   if (has("dance", "choreo", "ballet")) return <Footprints className={cls} />;
   if (has("drum", "percussion", "marching")) return <Drum className={cls} />;
-  if (has("narrative", "story", "cinematic", "short film", "film noir")) return <Drama className={cls} />;
-  if (has("documentary", "performance", "concert", "live", "stage")) return <Mic2 className={cls} />;
+  if (has("narrative", "story", "cinematic", "short film", "film noir"))
+    return <Drama className={cls} />;
+  if (has("documentary", "performance", "concert", "live", "stage"))
+    return <Mic2 className={cls} />;
   if (has("sci-fi", "scifi", "space", "cyber", "futur")) return <Bot className={cls} />;
   if (has("retro", "vintage", "80s", "synthwave")) return <Radio className={cls} />;
   if (has("pixar", "animated", "cartoon", "anime", "3d")) return <Palette className={cls} />;
-  if (has("motion graphic", "kinetic", "typograph", "lyric")) return has("lyric") ? <Type className={cls} /> : <Shapes className={cls} />;
+  if (has("motion graphic", "kinetic", "typograph", "lyric"))
+    return has("lyric") ? <Type className={cls} /> : <Shapes className={cls} />;
   if (has("launch", "product", "tech", "ai")) return <Rocket className={cls} />;
   if (has("abstract", "art", "experimental")) return <Sparkles className={cls} />;
   // Fallback by category.
@@ -100,11 +104,9 @@ export function TemplatesView() {
     return allTemplates().filter((t) => {
       if (cat !== "All" && t.category !== cat) return false;
       if (!q) return true;
-      return (
-        `${t.name} ${t.tagline} ${t.mood} ${t.visualStyle} ${t.danceStyle ?? ""}`
-          .toLowerCase()
-          .includes(q)
-      );
+      return `${t.name} ${t.tagline} ${t.mood} ${t.visualStyle} ${t.danceStyle ?? ""}`
+        .toLowerCase()
+        .includes(q);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, cat, tick]);
@@ -163,8 +165,8 @@ export function TemplatesView() {
         <div className="mr-auto">
           <h1 className="text-lg font-semibold leading-tight">Templates</h1>
           <p className="text-xs text-muted">
-            Production blueprints by genre, style, and format — the Director Brain
-            adapts them to your song.
+            Production blueprints by genre, style, and format — the Director Brain adapts them to
+            your song.
           </p>
         </div>
         <div className="relative w-56 max-w-[36vw]">
@@ -235,9 +237,7 @@ export function TemplatesView() {
           ))}
         </div>
         {filtered.length === 0 && (
-          <p className="py-10 text-center text-sm text-muted">
-            No templates match “{query}”.
-          </p>
+          <p className="py-10 text-center text-sm text-muted">No templates match “{query}”.</p>
         )}
       </div>
 
@@ -300,7 +300,11 @@ function TemplateCard({
   onExport: () => void;
   onDelete: () => void;
 }) {
-  const moodTags = t.mood.split(",").map((m) => m.trim()).filter(Boolean).slice(0, 3);
+  const moodTags = t.mood
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean)
+    .slice(0, 3);
 
   return (
     <div
@@ -322,7 +326,9 @@ function TemplateCard({
               </span>
               {custom && (
                 <span className="absolute bottom-1.5 left-1.5">
-                  <Badge variant="accent" className="normal-case">Custom</Badge>
+                  <Badge variant="accent" className="normal-case">
+                    Custom
+                  </Badge>
                 </span>
               )}
             </>
@@ -351,7 +357,10 @@ function TemplateCard({
         <div className="mt-1 space-y-1 text-[11px] text-muted">
           <Attr icon={<Scissors className="h-3 w-3" />} value={t.editingRhythm} />
           {t.danceStyle && (
-            <Attr icon={<Footprints className="h-3 w-3" />} value={`${t.danceStyle} choreography`} />
+            <Attr
+              icon={<Footprints className="h-3 w-3" />}
+              value={`${t.danceStyle} choreography`}
+            />
           )}
         </div>
         <div className="mt-auto flex items-center gap-2 pt-2">
@@ -365,9 +374,17 @@ function TemplateCard({
         </div>
         {/* Manage actions: custom = full set; built-in = duplicate to customize. */}
         <div className="flex items-center gap-1 border-t border-border pt-2 text-muted">
-          <IconBtn title="Duplicate" onClick={onDuplicate}><Copy className="h-3.5 w-3.5" /></IconBtn>
-          {custom && <IconBtn title="Edit" onClick={onEdit}><LayoutTemplate className="h-3.5 w-3.5" /></IconBtn>}
-          <IconBtn title="Export (.json)" onClick={onExport}><Download className="h-3.5 w-3.5" /></IconBtn>
+          <IconBtn title="Duplicate" onClick={onDuplicate}>
+            <Copy className="h-3.5 w-3.5" />
+          </IconBtn>
+          {custom && (
+            <IconBtn title="Edit" onClick={onEdit}>
+              <LayoutTemplate className="h-3.5 w-3.5" />
+            </IconBtn>
+          )}
+          <IconBtn title="Export (.json)" onClick={onExport}>
+            <Download className="h-3.5 w-3.5" />
+          </IconBtn>
           {custom && (
             <IconBtn title="Delete" onClick={onDelete} danger>
               <Trash2 className="h-3.5 w-3.5" />
@@ -430,9 +447,15 @@ function TemplateDetail({
     { icon: <Camera className="h-4 w-4" />, label: "Camera language", value: t.cameraLanguage },
     { icon: <Sparkles className="h-4 w-4" />, label: "Lighting", value: t.lightingStyle },
     { icon: <Scissors className="h-4 w-4" />, label: "Editing rhythm", value: t.editingRhythm },
-    { icon: <LayoutTemplate className="h-4 w-4" />, label: "Shot structure", value: t.shotStructure },
+    {
+      icon: <LayoutTemplate className="h-4 w-4" />,
+      label: "Shot structure",
+      value: t.shotStructure,
+    },
     { icon: <Sparkles className="h-4 w-4" />, label: "Performance", value: t.performanceStyle },
-    ...(t.danceStyle ? [{ icon: <Footprints className="h-4 w-4" />, label: "Choreography", value: t.danceStyle }] : []),
+    ...(t.danceStyle
+      ? [{ icon: <Footprints className="h-4 w-4" />, label: "Choreography", value: t.danceStyle }]
+      : []),
     { icon: <Shirt className="h-4 w-4" />, label: "Wardrobe", value: t.wardrobe },
     { icon: <MapPin className="h-4 w-4" />, label: "Sets", value: t.setDirection },
     { icon: <Sparkles className="h-4 w-4" />, label: "Props", value: t.props },
@@ -446,11 +469,16 @@ function TemplateDetail({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">{t.name}</h2>
-              <Badge className="normal-case" style={{ backgroundColor: `${t.accent}1f`, color: t.accent }}>
+              <Badge
+                className="normal-case"
+                style={{ backgroundColor: `${t.accent}1f`, color: t.accent }}
+              >
                 {t.category}
               </Badge>
             </div>
-            <p className="text-xs text-muted">{t.tagline} · {t.mood}</p>
+            <p className="text-xs text-muted">
+              {t.tagline} · {t.mood}
+            </p>
           </div>
           <Swatches palette={t.palette} />
         </div>
@@ -470,8 +498,8 @@ function TemplateDetail({
             {t.recommendedProviders.join(" · ")}
           </div>
           <p className="pt-1 text-[11px] text-muted">
-            This is a blueprint, not a lock — the Director Brain adapts it to your
-            song's tempo, sections, and energy, and you can tweak everything after.
+            This is a blueprint, not a lock — the Director Brain adapts it to your song's tempo,
+            sections, and energy, and you can tweak everything after.
           </p>
         </div>
 
@@ -503,7 +531,11 @@ function TemplateEditor({
   const [t, setT] = useState<MvTemplate>(template);
   const set = (patch: Partial<MvTemplate>) => setT((cur) => ({ ...cur, ...patch }));
   const csv = (a: string[]) => a.join(", ");
-  const parse = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+  const parse = (s: string) =>
+    s
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur">
@@ -529,7 +561,9 @@ function TemplateEditor({
                 className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm focus-visible:border-primary focus-visible:outline-none"
               >
                 {TEMPLATE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </EF>
@@ -549,36 +583,64 @@ function TemplateEditor({
             <Input value={t.tagline} onChange={(e) => set({ tagline: e.target.value })} />
           </EF>
           <EF label="Visual style">
-            <Textarea value={t.visualStyle} onChange={(e) => set({ visualStyle: e.target.value })} className="min-h-14" />
+            <Textarea
+              value={t.visualStyle}
+              onChange={(e) => set({ visualStyle: e.target.value })}
+              className="min-h-14"
+            />
           </EF>
           <EF label="Palette (comma-separated hex)">
-            <Input value={csv(t.palette)} onChange={(e) => set({ palette: parse(e.target.value) })} />
+            <Input
+              value={csv(t.palette)}
+              onChange={(e) => set({ palette: parse(e.target.value) })}
+            />
           </EF>
           <div className="grid gap-3 sm:grid-cols-2">
             <EF label="Camera language">
-              <Input value={t.cameraLanguage} onChange={(e) => set({ cameraLanguage: e.target.value })} />
+              <Input
+                value={t.cameraLanguage}
+                onChange={(e) => set({ cameraLanguage: e.target.value })}
+              />
             </EF>
             <EF label="Lighting style">
-              <Input value={t.lightingStyle} onChange={(e) => set({ lightingStyle: e.target.value })} />
+              <Input
+                value={t.lightingStyle}
+                onChange={(e) => set({ lightingStyle: e.target.value })}
+              />
             </EF>
             <EF label="Editing rhythm">
-              <Input value={t.editingRhythm} onChange={(e) => set({ editingRhythm: e.target.value })} />
+              <Input
+                value={t.editingRhythm}
+                onChange={(e) => set({ editingRhythm: e.target.value })}
+              />
             </EF>
             <EF label="Dance style (optional)">
-              <Input value={t.danceStyle ?? ""} onChange={(e) => set({ danceStyle: e.target.value || undefined })} />
+              <Input
+                value={t.danceStyle ?? ""}
+                onChange={(e) => set({ danceStyle: e.target.value || undefined })}
+              />
             </EF>
             <EF label="Wardrobe direction">
               <Input value={t.wardrobe} onChange={(e) => set({ wardrobe: e.target.value })} />
             </EF>
             <EF label="Set direction">
-              <Input value={t.setDirection} onChange={(e) => set({ setDirection: e.target.value })} />
+              <Input
+                value={t.setDirection}
+                onChange={(e) => set({ setDirection: e.target.value })}
+              />
             </EF>
           </div>
           <EF label="Location pool (comma-separated)">
-            <Input value={csv(t.locations)} onChange={(e) => set({ locations: parse(e.target.value) })} />
+            <Input
+              value={csv(t.locations)}
+              onChange={(e) => set({ locations: parse(e.target.value) })}
+            />
           </EF>
           <EF label="Wardrobe pool (comma-separated)">
-            <Input value={csv(t.wardrobePool)} onChange={(e) => set({ wardrobePool: parse(e.target.value) })} />
+            <Input
+              value={csv(t.wardrobePool)}
+              onChange={(e) => set({ wardrobePool: parse(e.target.value) })}
+            />
           </EF>
           <div className="grid gap-3 sm:grid-cols-2">
             <EF label="Cut bias (1 = normal, <1 faster)">
@@ -604,7 +666,9 @@ function TemplateEditor({
         </div>
 
         <div className="flex shrink-0 justify-end gap-2 border-t border-border px-5 py-3">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={() => onSave(t)} disabled={!t.name.trim()}>
             <Check className="h-4 w-4" /> Save template
           </Button>

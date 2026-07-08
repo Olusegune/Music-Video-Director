@@ -9,7 +9,10 @@ function line(label: string, value: string): string {
 }
 
 function joinNonEmpty(parts: (string | undefined)[], sep = ", "): string {
-  return parts.map((p) => (p ?? "").trim()).filter(Boolean).join(sep);
+  return parts
+    .map((p) => (p ?? "").trim())
+    .filter(Boolean)
+    .join(sep);
 }
 
 export function buildBibleMarkdown(
@@ -26,7 +29,10 @@ export function buildBibleMarkdown(
     const role = joinNonEmpty([c.role, c.occupation], " · ");
     s += `### ${c.name}${role ? ` — ${role}` : ""}\n\n`;
     s += line("Identity", joinNonEmpty([c.age, c.gender], " "));
-    s += line("Face", joinNonEmpty([c.faceShape, c.eyeShape, c.eyeColor, c.skinTone, c.distinguishingFeatures]));
+    s += line(
+      "Face",
+      joinNonEmpty([c.faceShape, c.eyeShape, c.eyeColor, c.skinTone, c.distinguishingFeatures])
+    );
     s += line("Hair", joinNonEmpty([c.hairStyle, c.hairColor]));
     s += line("Body", c.bodyType);
     s += line("Wardrobe", joinNonEmpty([c.primaryOutfit, c.accessories], "; "));

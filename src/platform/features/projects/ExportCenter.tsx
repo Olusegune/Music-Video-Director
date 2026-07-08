@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  FileText,
-  FileJson,
-  FileType,
-  FileType2,
-  Loader2,
-  Check,
-  FolderDown,
-} from "lucide-react";
+import { FileText, FileJson, FileType, FileType2, Loader2, Check, FolderDown } from "lucide-react";
 import { api, isTauri, type ExportFormat } from "@/platform/lib/ipc";
 import {
   Card,
@@ -26,19 +18,35 @@ const FORMATS: {
   desc: string;
   desktopOnly?: boolean;
 }[] = [
-  { id: "markdown", label: "Markdown", icon: <FileText className="h-4 w-4" />, desc: "Editable .md document" },
-  { id: "json", label: "JSON", icon: <FileJson className="h-4 w-4" />, desc: "Machine-readable package" },
-  { id: "pdf", label: "PDF", icon: <FileType className="h-4 w-4" />, desc: "Production document", desktopOnly: true },
-  { id: "docx", label: "DOCX", icon: <FileType2 className="h-4 w-4" />, desc: "Word document", desktopOnly: true },
+  {
+    id: "markdown",
+    label: "Markdown",
+    icon: <FileText className="h-4 w-4" />,
+    desc: "Editable .md document",
+  },
+  {
+    id: "json",
+    label: "JSON",
+    icon: <FileJson className="h-4 w-4" />,
+    desc: "Machine-readable package",
+  },
+  {
+    id: "pdf",
+    label: "PDF",
+    icon: <FileType className="h-4 w-4" />,
+    desc: "Production document",
+    desktopOnly: true,
+  },
+  {
+    id: "docx",
+    label: "DOCX",
+    icon: <FileType2 className="h-4 w-4" />,
+    desc: "Word document",
+    desktopOnly: true,
+  },
 ];
 
-export function ExportCenter({
-  projectId,
-  hasPack,
-}: {
-  projectId: string;
-  hasPack: boolean;
-}) {
+export function ExportCenter({ projectId, hasPack }: { projectId: string; hasPack: boolean }) {
   const [busy, setBusy] = useState<ExportFormat | null>(null);
   const [results, setResults] = useState<{ format: string; msg: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +68,7 @@ export function ExportCenter({
     return (
       <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-16 text-center">
         <FolderDown className="mb-2 h-7 w-7 text-muted" />
-        <p className="text-sm text-muted">
-          Generate a Prompt Pack to enable exports.
-        </p>
+        <p className="text-sm text-muted">Generate a Prompt Pack to enable exports.</p>
       </div>
     );
   }
@@ -79,9 +85,7 @@ export function ExportCenter({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-primary">{f.icon}</span>
                   {f.label}
-                  {f.desktopOnly && !isTauri && (
-                    <Badge variant="warning">Desktop only</Badge>
-                  )}
+                  {f.desktopOnly && !isTauri && <Badge variant="warning">Desktop only</Badge>}
                 </CardTitle>
                 <CardDescription>{f.desc}</CardDescription>
               </CardHeader>

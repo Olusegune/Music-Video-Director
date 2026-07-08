@@ -1,8 +1,23 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, ImageOff, Users, Globe, Package, Film, Footprints, Download, Trash2 } from "lucide-react";
+import {
+  Search,
+  ImageOff,
+  Users,
+  Globe,
+  Package,
+  Film,
+  Footprints,
+  Download,
+  Trash2,
+} from "lucide-react";
 import { api } from "@/platform/lib/ipc";
-import { buildAssetRefs, isChoreographyCategory, type AssetKind, type AssetOrigin } from "@/platform/lib/assets";
+import {
+  buildAssetRefs,
+  isChoreographyCategory,
+  type AssetKind,
+  type AssetOrigin,
+} from "@/platform/lib/assets";
 import { loadMotionTests, deleteMotionTest } from "@/apps/music-video/lib/motionTest";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { Badge } from "@/platform/components/ui/badge";
@@ -52,7 +67,15 @@ const KIND_ORIGIN: Record<LibKind, AssetOrigin> = {
   Glam: "Glam Studio",
 };
 
-const TABS: ("All" | LibKind)[] = ["All", "Character", "Environment", "Prop", "Glam", "Choreography", "Motion test"];
+const TABS: ("All" | LibKind)[] = [
+  "All",
+  "Character",
+  "Environment",
+  "Prop",
+  "Glam",
+  "Choreography",
+  "Motion test",
+];
 
 export function AssetLibrary() {
   const openCharacters = useAppStore((s) => s.openCharacters);
@@ -61,8 +84,14 @@ export function AssetLibrary() {
   const openAnimation = useAppStore((s) => s.openAnimation);
   const openChoreography = useAppStore((s) => s.openChoreography);
 
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+  });
   const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
 
   const [query, setQuery] = useState("");
@@ -134,7 +163,17 @@ export function AssetLibrary() {
       }));
     return [...glam, ...refs, ...motion];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [characters, environments, props, openCharacters, openWorld, openProps, openAnimation, openChoreography, tick]);
+  }, [
+    characters,
+    environments,
+    props,
+    openCharacters,
+    openWorld,
+    openProps,
+    openAnimation,
+    openChoreography,
+    tick,
+  ]);
 
   const refreshAll = () => {
     qc.invalidateQueries({ queryKey: ["characters"] });
@@ -186,8 +225,8 @@ export function AssetLibrary() {
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-lg font-semibold">Production Library</h1>
         <p className="text-xs text-muted">
-          Every reusable asset — characters, sets, props, pose &amp; formation sheets,
-          and motion tests — searchable across the whole production.
+          Every reusable asset — characters, sets, props, pose &amp; formation sheets, and motion
+          tests — searchable across the whole production.
         </p>
       </header>
 
@@ -209,7 +248,9 @@ export function AssetLibrary() {
               onClick={() => setTab(t)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                tab === t ? "bg-primary/12 text-primary" : "text-muted hover:bg-elevated hover:text-foreground"
+                tab === t
+                  ? "bg-primary/12 text-primary"
+                  : "text-muted hover:bg-elevated hover:text-foreground"
               )}
             >
               {t !== "All" && KIND_ICON[t]}
@@ -251,12 +292,26 @@ export function AssetLibrary() {
                 key={item.id}
                 className="group relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface text-left shadow-card transition-colors hover:border-primary/50"
               >
-                <button onClick={item.open} className="block w-full" title={`${item.label} — ${item.category || item.kind} · from ${item.origin}`}>
+                <button
+                  onClick={item.open}
+                  className="block w-full"
+                  title={`${item.label} — ${item.category || item.kind} · from ${item.origin}`}
+                >
                   <div className="relative aspect-square bg-elevated">
                     {item.isVideo ? (
-                      <AssetVideo src={item.src} controls={false} className="h-full w-full object-cover" label="Clip" />
+                      <AssetVideo
+                        src={item.src}
+                        controls={false}
+                        className="h-full w-full object-cover"
+                        label="Clip"
+                      />
                     ) : (
-                      <AssetImage src={item.src} alt={item.label} className="h-full w-full object-cover" label="Asset" />
+                      <AssetImage
+                        src={item.src}
+                        alt={item.label}
+                        className="h-full w-full object-cover"
+                        label="Asset"
+                      />
                     )}
                     {/* Origin badge — which system this asset came from. */}
                     <span className="absolute left-1.5 top-1.5">
@@ -268,7 +323,9 @@ export function AssetLibrary() {
                   <div className="p-2.5">
                     <div className="truncate text-xs font-medium">{item.label}</div>
                     {/* What this asset is (its sub-type). */}
-                    <div className="truncate text-[11px] text-muted">{item.category || item.kind}</div>
+                    <div className="truncate text-[11px] text-muted">
+                      {item.category || item.kind}
+                    </div>
                   </div>
                 </button>
                 <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

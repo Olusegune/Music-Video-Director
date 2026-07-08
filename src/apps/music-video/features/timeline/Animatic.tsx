@@ -85,9 +85,7 @@ export function Animatic({
           {/* Lyric overlay */}
           {lyric && (
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 text-center">
-              <span className="text-lg font-semibold text-white drop-shadow">
-                {lyric.text}
-              </span>
+              <span className="text-lg font-semibold text-white drop-shadow">{lyric.text}</span>
             </div>
           )}
           {section && (
@@ -103,7 +101,12 @@ export function Animatic({
 
       {/* Transport */}
       <div className="flex items-center gap-3 border-t border-border px-6 py-3">
-        <Button variant="primary" size="icon" onClick={toggle} aria-label={playing ? "Pause" : "Play"}>
+        <Button
+          variant="primary"
+          size="icon"
+          onClick={toggle}
+          aria-label={playing ? "Pause" : "Play"}
+        >
           {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </Button>
         <span className="text-xs tabular-nums text-muted">
@@ -137,4 +140,3 @@ export function Animatic({
 // ---------------------------------------------------------------------------
 // Export — a full text rundown of the assembled video.
 // ---------------------------------------------------------------------------
-

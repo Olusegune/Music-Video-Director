@@ -1,12 +1,26 @@
 import type { CampaignConcept, CampaignStrategy } from "@/apps/campaign/lib/types";
 
-export function buildCampaignStrategy(product: string, description: string, audience: string, goal: string): CampaignStrategy {
+export function buildCampaignStrategy(
+  product: string,
+  description: string,
+  audience: string,
+  goal: string
+): CampaignStrategy {
   return {
     positioning: `${product} is the confident choice for ${audience} who want ${goal.toLowerCase()} without unnecessary friction.`,
     keyMessage: `${product} turns ${description || "a promising idea"} into a clear next move.`,
-    pillars: ["A distinct promise people understand", "Proof that makes the promise credible", "A consistent experience across every channel"],
+    pillars: [
+      "A distinct promise people understand",
+      "Proof that makes the promise credible",
+      "A consistent experience across every channel",
+    ],
     audienceInsight: `${audience} do not need more noise; they need a specific reason to believe and an obvious next step.`,
-    channelPlan: ["Lead with a visual hero", "Capture intent on a focused landing page", "Build repetition through social", "Convert with a concise email sequence"],
+    channelPlan: [
+      "Lead with a visual hero",
+      "Capture intent on a focused landing page",
+      "Build repetition through social",
+      "Convert with a concise email sequence",
+    ],
   };
 }
 

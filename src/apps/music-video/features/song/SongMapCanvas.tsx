@@ -4,9 +4,7 @@ import { barTimes, sectionColor, type SongMap } from "@/apps/music-video/lib/son
 
 function cssVar(name: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
-  const v = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
 
@@ -151,7 +149,10 @@ function hexWithAlpha(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
   const full =
     h.length === 3
-      ? h.split("").map((c) => c + c).join("")
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
       : h.padEnd(6, "0").slice(0, 6);
   const r = parseInt(full.slice(0, 2), 16);
   const g = parseInt(full.slice(2, 4), 16);

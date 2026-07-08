@@ -93,8 +93,7 @@ const STORYBOARD_TEMPLATES: {
 
 export function ProjectWorkspace() {
   const queryClient = useQueryClient();
-  const { activeProjectId, workspaceMode, setWorkspaceMode, toggleInspector } =
-    useAppStore();
+  const { activeProjectId, workspaceMode, setWorkspaceMode, toggleInspector } = useAppStore();
   const [brief, setBrief] = useState("");
 
   const { data: projects = [] } = useQuery({
@@ -103,9 +102,7 @@ export function ProjectWorkspace() {
   });
   const project = projects.find((p) => p.id === activeProjectId);
 
-  const { pack, saveStatus, replace, update } = usePromptPack(
-    activeProjectId ?? ""
-  );
+  const { pack, saveStatus, replace, update } = usePromptPack(activeProjectId ?? "");
 
   // Brand kit applied to generation, remembered per project.
   const { data: brandKits = [] } = useQuery({
@@ -179,9 +176,7 @@ export function ProjectWorkspace() {
     setMagicMsg(`Applied Style DNA "${dna.name}".`);
   }
   useEffect(() => {
-    setBrandKitId(
-      localStorage.getItem(`mf.project.brandkit.${activeProjectId}`) ?? ""
-    );
+    setBrandKitId(localStorage.getItem(`mf.project.brandkit.${activeProjectId}`) ?? "");
     setStyle(loadProjectStyle(activeProjectId ?? ""));
   }, [activeProjectId]);
   function chooseBrandKit(id: string) {
@@ -250,11 +245,7 @@ export function ProjectWorkspace() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            {generate.isPending
-              ? "Generating…"
-              : pack
-                ? "Regenerate"
-                : "Generate Pack"}
+            {generate.isPending ? "Generating…" : pack ? "Regenerate" : "Generate Pack"}
           </Button>
           <Button
             variant="ghost"
@@ -369,9 +360,7 @@ export function ProjectWorkspace() {
                   </button>
                 </span>
               )}
-              {parseNote && (
-                <span className="text-[11px] text-warning">{parseNote}</span>
-              )}
+              {parseNote && <span className="text-[11px] text-warning">{parseNote}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="flex items-center gap-2">
@@ -381,9 +370,7 @@ export function ProjectWorkspace() {
                 <select
                   id="style"
                   value={style.preset}
-                  onChange={(e) =>
-                    updateStyle({ ...style, preset: e.target.value })
-                  }
+                  onChange={(e) => updateStyle({ ...style, preset: e.target.value })}
                   className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                 >
                   <option value="">None</option>
@@ -402,9 +389,7 @@ export function ProjectWorkspace() {
                   <input
                     aria-label="Custom style description"
                     value={style.custom}
-                    onChange={(e) =>
-                      updateStyle({ ...style, custom: e.target.value })
-                    }
+                    onChange={(e) => updateStyle({ ...style, custom: e.target.value })}
                     placeholder="Describe your style…"
                     className="h-8 w-56 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                   />
@@ -452,9 +437,7 @@ export function ProjectWorkspace() {
                     max={12}
                     value={customPanels}
                     onChange={(e) =>
-                      setCustomPanels(
-                        Math.max(1, Math.min(12, Number(e.target.value) || 1))
-                      )
+                      setCustomPanels(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
                     }
                     className="h-8 w-16 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                   />
@@ -462,17 +445,15 @@ export function ProjectWorkspace() {
               </div>
             </div>
             <p className="text-xs text-muted">
-              Generates Creative Direction, Style, a timed Shot Breakdown, camera +
-              lighting, text locks, and prompts.{" "}
+              Generates Creative Direction, Style, a timed Shot Breakdown, camera + lighting, text
+              locks, and prompts.{" "}
               {loadRouterConfig().mode === "local" || !isTauri
                 ? "Running the local engine — no API key needed."
                 : "Using your configured provider (router: Auto)."}{" "}
               Everything below is editable and autosaves.
             </p>
             {generate.isError && (
-              <p className="text-xs text-danger">
-                {(generate.error as Error).message}
-              </p>
+              <p className="text-xs text-danger">{(generate.error as Error).message}</p>
             )}
           </CardContent>
         </Card>
@@ -482,9 +463,7 @@ export function ProjectWorkspace() {
         {pack && workspaceMode === "storyboard" && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] uppercase tracking-wide text-muted">
-                Magic:
-              </span>
+              <span className="text-[11px] uppercase tracking-wide text-muted">Magic:</span>
               <Button variant="secondary" size="sm" onClick={() => runMagic(makeItCinematic)}>
                 <Clapperboard className="h-4 w-4" /> Make it Cinematic
               </Button>
@@ -525,9 +504,7 @@ export function ProjectWorkspace() {
                   ))}
                 </select>
               )}
-              {magicMsg && (
-                <span className="text-xs text-success">{magicMsg}</span>
-              )}
+              {magicMsg && <span className="text-xs text-success">{magicMsg}</span>}
             </div>
             <CreativeDirectionPanel pack={pack} update={update} />
             <StoryboardEditor
@@ -538,19 +515,13 @@ export function ProjectWorkspace() {
             />
           </div>
         )}
-        {pack && workspaceMode === "camera" && (
-          <CameraDirector pack={pack} update={update} />
-        )}
-        {pack && workspaceMode === "lighting" && (
-          <LightingDirector pack={pack} update={update} />
-        )}
+        {pack && workspaceMode === "camera" && <CameraDirector pack={pack} update={update} />}
+        {pack && workspaceMode === "lighting" && <LightingDirector pack={pack} update={update} />}
         {pack && workspaceMode === "audio" && (
           <AudioDirector pack={pack} update={update} projectId={activeProjectId!} />
         )}
         {pack && workspaceMode === "moodboard" && <MoodboardPanel pack={pack} />}
-        {pack && workspaceMode === "prompt" && (
-          <PromptBuilder pack={pack} update={update} />
-        )}
+        {pack && workspaceMode === "prompt" && <PromptBuilder pack={pack} update={update} />}
         {workspaceMode === "exports" && (
           <ExportCenter projectId={activeProjectId!} hasPack={!!pack} />
         )}
@@ -581,9 +552,8 @@ function EmptyState() {
     <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-16 text-center">
       <Sparkles className="mb-2 h-7 w-7 text-muted" />
       <p className="text-sm text-muted">
-        Write a brief above and hit{" "}
-        <span className="text-foreground">Generate Pack</span> to populate the
-        storyboard.
+        Write a brief above and hit <span className="text-foreground">Generate Pack</span> to
+        populate the storyboard.
       </p>
     </div>
   );

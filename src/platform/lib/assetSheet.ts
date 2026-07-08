@@ -30,10 +30,26 @@ export function environmentSheetSections(_env: Environment): SheetSection[] {
       columns: 4,
       tall: false,
       cells: [
-        { key: "establishing", label: "Establishing", modifier: "wide cinematic establishing shot of the whole location" },
-        { key: "wide", label: "Wide Shot", modifier: "wide-angle shot showing the full space and depth" },
-        { key: "detail", label: "Detail Shot", modifier: "close-up detail of a key area, textures and set dressing" },
-        { key: "topdown", label: "Top-Down", modifier: "top-down bird's-eye layout view of the location" },
+        {
+          key: "establishing",
+          label: "Establishing",
+          modifier: "wide cinematic establishing shot of the whole location",
+        },
+        {
+          key: "wide",
+          label: "Wide Shot",
+          modifier: "wide-angle shot showing the full space and depth",
+        },
+        {
+          key: "detail",
+          label: "Detail Shot",
+          modifier: "close-up detail of a key area, textures and set dressing",
+        },
+        {
+          key: "topdown",
+          label: "Top-Down",
+          modifier: "top-down bird's-eye layout view of the location",
+        },
       ],
     },
     {
@@ -43,9 +59,17 @@ export function environmentSheetSections(_env: Environment): SheetSection[] {
       tall: false,
       cells: [
         { key: "day", label: "Day", modifier: "daytime, bright natural light" },
-        { key: "golden", label: "Golden Hour", modifier: "golden hour, warm low-angle sun, long shadows" },
+        {
+          key: "golden",
+          label: "Golden Hour",
+          modifier: "golden hour, warm low-angle sun, long shadows",
+        },
         { key: "night", label: "Night", modifier: "night, artificial light and moonlight" },
-        { key: "overcast", label: "Overcast", modifier: "overcast, soft diffuse light, muted tones" },
+        {
+          key: "overcast",
+          label: "Overcast",
+          modifier: "overcast, soft diffuse light, muted tones",
+        },
       ],
     },
   ];
@@ -64,7 +88,11 @@ export function propSheetSections(prop: Prop): SheetSection[] {
       columns: 4,
       tall: true,
       cells: [
-        { key: "front", label: "Front", modifier: "orthographic front view, neutral studio background" },
+        {
+          key: "front",
+          label: "Front",
+          modifier: "orthographic front view, neutral studio background",
+        },
         { key: "side", label: "Side", modifier: "orthographic side view" },
         { key: "back", label: "Back", modifier: "orthographic back view" },
         { key: "top", label: "Top", modifier: "orthographic top-down view" },
@@ -76,8 +104,16 @@ export function propSheetSections(prop: Prop): SheetSection[] {
       columns: 3,
       tall: true,
       cells: [
-        { key: "hero", label: "Hero Render", modifier: "hero beauty render, dramatic studio lighting" },
-        { key: "detail", label: "Detail Render", modifier: "macro detail render of materials, markings, and wear" },
+        {
+          key: "hero",
+          label: "Hero Render",
+          modifier: "hero beauty render, dramatic studio lighting",
+        },
+        {
+          key: "detail",
+          label: "Detail Render",
+          modifier: "macro detail render of materials, markings, and wear",
+        },
         { key: "inuse", label: "In Use", modifier: "shown in use / in scene context" },
       ],
     },

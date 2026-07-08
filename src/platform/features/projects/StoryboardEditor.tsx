@@ -59,9 +59,7 @@ export function StoryboardEditor({
     update((p) => ({ ...p, shots: renumber(fn(p.shots)) }));
 
   const editShot = (idx: number, patch: Partial<ShotBreakdown>) =>
-    setShots((shots) =>
-      shots.map((s, i) => (i === idx ? { ...s, ...patch } : s))
-    );
+    setShots((shots) => shots.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
 
   async function generateFrame(idx: number) {
     const shot = pack.shots[idx];
@@ -159,11 +157,9 @@ export function StoryboardEditor({
       ...shots.slice(idx + 1),
     ]);
 
-  const remove = (idx: number) =>
-    setShots((shots) => shots.filter((_, i) => i !== idx));
+  const remove = (idx: number) => setShots((shots) => shots.filter((_, i) => i !== idx));
 
-  const addShot = () =>
-    setShots((shots) => [...shots, emptyShot(shots.length + 1)]);
+  const addShot = () => setShots((shots) => [...shots, emptyShot(shots.length + 1)]);
 
   return (
     <div>
@@ -178,9 +174,7 @@ export function StoryboardEditor({
         }}
       />
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted">
-          Storyboard · {pack.shots.length} shots
-        </h2>
+        <h2 className="text-sm font-semibold text-muted">Storyboard · {pack.shots.length} shots</h2>
         <div className="flex items-center gap-2">
           <Button
             variant="accent"
@@ -209,10 +203,7 @@ export function StoryboardEditor({
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {pack.shots.map((shot, idx) => (
-          <Card
-            key={idx}
-            className={shot.locked ? "border-primary/40 opacity-90" : ""}
-          >
+          <Card key={idx} className={shot.locked ? "border-primary/40 opacity-90" : ""}>
             <div className="flex items-center justify-between border-b border-border px-3 py-2">
               <Badge variant="primary">Shot {shot.number}</Badge>
               <div className="flex items-center gap-0.5">
@@ -235,11 +226,7 @@ export function StoryboardEditor({
                 <IconBtn title="Duplicate" onClick={() => duplicate(idx)}>
                   <Copy className="h-4 w-4" />
                 </IconBtn>
-                <IconBtn
-                  title="Delete"
-                  onClick={() => remove(idx)}
-                  className="hover:text-danger"
-                >
+                <IconBtn title="Delete" onClick={() => remove(idx)} className="hover:text-danger">
                   <Trash2 className="h-4 w-4" />
                 </IconBtn>
               </div>
@@ -288,11 +275,7 @@ export function StoryboardEditor({
                   ) : (
                     <ImagePlus className="h-3.5 w-3.5" />
                   )}
-                  {busy[idx]
-                    ? "Generating…"
-                    : shot.imageUrl
-                      ? "Regenerate"
-                      : "Generate frame"}
+                  {busy[idx] ? "Generating…" : shot.imageUrl ? "Regenerate" : "Generate frame"}
                 </button>
                 <button
                   onClick={() => generateVideo(idx)}
@@ -306,11 +289,7 @@ export function StoryboardEditor({
                   ) : (
                     <Video className="h-3.5 w-3.5" />
                   )}
-                  {busyVideo[idx]
-                    ? "Rendering…"
-                    : shot.videoUrl
-                      ? "Regen video"
-                      : "Generate video"}
+                  {busyVideo[idx] ? "Rendering…" : shot.videoUrl ? "Regen video" : "Generate video"}
                 </button>
                 <button
                   onClick={() => setAssetPickerIdx(idx)}
@@ -328,9 +307,7 @@ export function StoryboardEditor({
             <CardContent className="flex flex-col gap-2 pt-3">
               {(shot.refImages?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wide text-muted">
-                    Refs
-                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted">Refs</span>
                   {shot.refImages!.map((src, ri) => (
                     <span key={ri} className="relative h-9 w-9">
                       <AssetImage
@@ -353,10 +330,7 @@ export function StoryboardEditor({
                   ))}
                 </div>
               )}
-              <fieldset
-                disabled={shot.locked}
-                className="flex flex-col gap-2 disabled:opacity-70"
-              >
+              <fieldset disabled={shot.locked} className="flex flex-col gap-2 disabled:opacity-70">
                 <div className="flex items-center gap-2">
                   <InlineInput
                     value={shot.name}
@@ -417,9 +391,7 @@ export function StoryboardEditor({
           onAdd={(srcs) => {
             const i = assetPickerIdx;
             editShot(i, {
-              refImages: Array.from(
-                new Set([...(pack.shots[i]?.refImages ?? []), ...srcs])
-              ),
+              refImages: Array.from(new Set([...(pack.shots[i]?.refImages ?? []), ...srcs])),
             });
           }}
           onClose={() => setAssetPickerIdx(null)}
@@ -452,18 +424,10 @@ function IconBtn({
   );
 }
 
-function Labeled({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="px-1.5 text-[10px] uppercase tracking-wide text-muted">
-        {label}
-      </span>
+      <span className="px-1.5 text-[10px] uppercase tracking-wide text-muted">{label}</span>
       {children}
     </div>
   );

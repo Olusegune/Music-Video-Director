@@ -21,9 +21,7 @@ export function ReviewGateStep({
   return (
     <div className="rounded-[var(--radius-card)] border border-border bg-elevated/40 p-4">
       <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">
-        {summary}
-      </p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">{summary}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Button onClick={onApprove}>
           <CheckCircle2 /> {approveLabel}

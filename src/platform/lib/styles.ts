@@ -130,7 +130,8 @@ export const STYLE_PRESETS: StylePreset[] = [
       "1930s rubberhose 2D character animation, bouncy noodle limbs, pie-cut eyes, rounded mitten hands, squash and stretch, clean vector colors, playful exaggerated poses",
     cameraHint: "playful 2D staging, bouncy follow, snappy pose-to-pose holds",
     lightingHint: "flat cheerful color, simple drop shadow, no realistic shading",
-    motionHint: "extreme squash and stretch, rubber-hose limb arcs, anticipation and overshoot, bounce on every settle",
+    motionHint:
+      "extreme squash and stretch, rubber-hose limb arcs, anticipation and overshoot, bounce on every settle",
     negative: "rigid joints, realistic anatomy, stiff motion, photoreal shading",
   },
   {
@@ -264,7 +265,8 @@ export const STYLE_PRESETS: StylePreset[] = [
       "rubberhose 3D character animation, flexible tubular limbs, toy-like rounded forms, glossy vinyl surfaces, elastic cartoon physics, soft studio lighting",
     cameraHint: "playful cinematic staging, bouncy follow, gentle orbit on settles",
     lightingHint: "soft studio key, gentle wraparound fill, colorful rim, friendly bounce",
-    motionHint: "elastic tubular limb stretch, exaggerated squash and stretch, cartoon overshoot, springy settle",
+    motionHint:
+      "elastic tubular limb stretch, exaggerated squash and stretch, cartoon overshoot, springy settle",
     negative: "rigid skeleton, realistic anatomy, stiff mechanical motion, harsh noir lighting",
   },
 ];

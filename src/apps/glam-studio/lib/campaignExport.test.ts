@@ -15,12 +15,8 @@ describe("Glam campaign formats and export", () => {
   beforeEach(() => toPng.mockClear());
 
   it("ships unique positive-dimension format presets", () => {
-    expect(new Set(GLAM_FORMATS.map((format) => format.id)).size).toBe(
-      GLAM_FORMATS.length
-    );
-    expect(
-      GLAM_FORMATS.every((format) => format.width > 0 && format.height > 0)
-    ).toBe(true);
+    expect(new Set(GLAM_FORMATS.map((format) => format.id)).size).toBe(GLAM_FORMATS.length);
+    expect(GLAM_FORMATS.every((format) => format.width > 0 && format.height > 0)).toBe(true);
   });
 
   it("keeps the safe centered crop and bottom-right copy default", () => {

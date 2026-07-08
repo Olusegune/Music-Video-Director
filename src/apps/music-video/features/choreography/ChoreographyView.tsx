@@ -25,7 +25,12 @@ import {
 } from "@/apps/music-video/lib/choreography";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { loadSongs, sectionColor, formatTime, type SongMap } from "@/apps/music-video/lib/songBrain";
+import {
+  loadSongs,
+  sectionColor,
+  formatTime,
+  type SongMap,
+} from "@/apps/music-video/lib/songBrain";
 import { loadCast, type Performer } from "@/apps/music-video/lib/cast";
 import { getTemplate } from "@/platform/lib/templates";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -34,7 +39,10 @@ import type { Character } from "@/platform/lib/types";
 import { composeCharacterDna } from "@/platform/lib/characterDna";
 import { importImageToLibrary } from "@/platform/lib/assets";
 import { addMotionTest } from "@/apps/music-video/lib/motionTest";
-import { GenerationPanel, type GenerateOpts } from "@/platform/components/generation/GenerationPanel";
+import {
+  GenerationPanel,
+  type GenerateOpts,
+} from "@/platform/components/generation/GenerationPanel";
 import { cn } from "@/platform/lib/utils";
 import { VIDEO_MODELS } from "@/platform/lib/videoGen";
 import { useAudioPlayer } from "@/apps/music-video/lib/audioPlayer";
@@ -88,7 +96,9 @@ function StylePicker({ value, onChange }: { value: string; onChange: (s: string)
                   }}
                   className={cn(
                     "flex flex-col items-start gap-1.5 rounded-[var(--radius-card)] border p-2.5 text-left transition-colors",
-                    active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                    active
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/40"
                   )}
                 >
                   <span
@@ -134,7 +144,11 @@ function posePrompt(section: ChoreoSection, c: Character | null): string {
 /** Compose a motion-test video prompt from a choreo section + chosen performer. */
 function motionPrompt(section: ChoreoSection, c: Character | null): string {
   const dna = c ? c.promptDna || composeCharacterDna(c).promptDna : "a dancer";
-  const moves = section.eightCounts.map((e) => e.phraseA).filter(Boolean).slice(0, 4).join(", ");
+  const moves = section.eightCounts
+    .map((e) => e.phraseA)
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(", ");
   const perf = perfOf(section);
   const cam = (section.cameraMoves ?? []).filter(Boolean).join(" → ");
   return [
@@ -148,7 +162,12 @@ function motionPrompt(section: ChoreoSection, c: Character | null): string {
 }
 
 /** Single key-pose still — one performer, one pose, camera + lighting for it. */
-function singlePosePrompt(section: ChoreoSection, c: Character | null, poseIndex: number, poseText: string): string {
+function singlePosePrompt(
+  section: ChoreoSection,
+  c: Character | null,
+  poseIndex: number,
+  poseText: string
+): string {
   const dna = c ? c.promptDna || composeCharacterDna(c).promptDna : "a dancer";
   const cam = (section.cameraMoves ?? [])[poseIndex];
   const light = (section.lightingMoves ?? [])[poseIndex];
@@ -165,7 +184,12 @@ function singlePosePrompt(section: ChoreoSection, c: Character | null, poseIndex
 }
 
 /** Single key-pose motion clip — performer moving into/through one pose. */
-function singlePoseMotionPrompt(section: ChoreoSection, c: Character | null, poseIndex: number, poseText: string): string {
+function singlePoseMotionPrompt(
+  section: ChoreoSection,
+  c: Character | null,
+  poseIndex: number,
+  poseText: string
+): string {
   const dna = c ? c.promptDna || composeCharacterDna(c).promptDna : "a dancer";
   const cam = (section.cameraMoves ?? [])[poseIndex];
   return [
@@ -206,9 +230,7 @@ export function ChoreographyView() {
     const dancer = cast.find((p) => p.danceStyle && CHOREO_STYLES.includes(p.danceStyle));
     if (dancer?.danceStyle) return dancer.danceStyle;
     const tmpl = getTemplate(activeTemplateId);
-    return tmpl?.danceStyle && CHOREO_STYLES.includes(tmpl.danceStyle)
-      ? tmpl.danceStyle
-      : "";
+    return tmpl?.danceStyle && CHOREO_STYLES.includes(tmpl.danceStyle) ? tmpl.danceStyle : "";
   }, [activeTemplateId]);
 
   const [plan, setPlan] = useState<ChoreoPlan | null>(null);
@@ -217,7 +239,10 @@ export function ChoreographyView() {
   // Director mode → guided view; Studio and Creator → professional view.
   const studioMode = useAppStore((s) => s.studioMode);
   const viewMode = studioMode === "director" ? "guided" : "professional";
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
   const [cast] = useState<Performer[]>(() => loadCast());
   // Clicking a PerformerCard focuses that performer across every section
   // below at once, instead of re-picking them per section. Keyed by
@@ -285,8 +310,8 @@ export function ChoreographyView() {
           </div>
           <h2 className="text-base font-semibold">No song to choreograph</h2>
           <p className="mt-1 text-sm text-muted">
-            Import a track in Song Studio first — choreography is built onto its
-            performance sections.
+            Import a track in Song Studio first — choreography is built onto its performance
+            sections.
           </p>
           <Button className="mt-4" onClick={openSong}>
             <Music className="h-4 w-4" />
@@ -340,7 +365,9 @@ export function ChoreographyView() {
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => setGen({ section: plan.sections[0], mode: "formation", character: null })}
+            onClick={() =>
+              setGen({ section: plan.sections[0], mode: "formation", character: null })
+            }
           >
             <Users className="h-3.5 w-3.5" /> Generate Formations
           </Button>
@@ -368,13 +395,10 @@ export function ChoreographyView() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl grad-primary">
                 <Footprints className="h-7 w-7 text-white" />
               </div>
-              <div className="text-base font-semibold">
-                Choreograph “{song.name}”
-              </div>
+              <div className="text-base font-semibold">Choreograph “{song.name}”</div>
               <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-                Pick what this song should feel like — the engine lays a routine onto
-                each performance section. Verses and intros stay free for natural
-                movement.
+                Pick what this song should feel like — the engine lays a routine onto each
+                performance section. Verses and intros stay free for natural movement.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {(
@@ -436,9 +460,7 @@ export function ChoreographyView() {
                 {plan.sections.length === 1 ? "" : "s"}
               </span>
               {plan.freeSections.length > 0 && (
-                <span className="text-muted">
-                  · free movement: {plan.freeSections.join(", ")}
-                </span>
+                <span className="text-muted">· free movement: {plan.freeSections.join(", ")}</span>
               )}
             </div>
 
@@ -499,9 +521,9 @@ export function ChoreographyView() {
             {plan.sections.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-sm text-muted">
-                  No high-energy performance sections were detected in this song,
-                  so there's nothing to set. Adjust section energy in Song Studio,
-                  or treat the whole video as free movement.
+                  No high-energy performance sections were detected in this song, so there's nothing
+                  to set. Adjust section energy in Song Studio, or treat the whole video as free
+                  movement.
                 </CardContent>
               </Card>
             ) : (
@@ -534,89 +556,116 @@ export function ChoreographyView() {
       </div>
 
       {/* Pose-sheet / motion-test / per-pose generation via the unified panel */}
-      {gen && (() => {
-        const who = gen.character?.name ?? "Dancer";
-        const p = gen.pose;
-        const isVideo = gen.mode === "motion";
-        const poseN = p ? p.index + 1 : 0;
-        const title = p
-          ? `${isVideo ? "Pose clip" : "Pose image"} ${poseN} — ${gen.section.label}`
-          : `${gen.mode === "pose" ? "Pose sheet" : gen.mode === "formation" ? "Formation sheet" : "Motion test"} — ${gen.section.label}`;
-        const prompt = p
-          ? isVideo
-            ? singlePoseMotionPrompt(gen.section, gen.character, p.index, p.text)
-            : singlePosePrompt(gen.section, gen.character, p.index, p.text)
-          : gen.mode === "pose"
-            ? posePrompt(gen.section, gen.character)
-            : gen.mode === "formation"
-              ? formationPrompt(gen.section, gen.character)
-              : motionPrompt(gen.section, gen.character);
-        const aspect = isVideo ? "16:9" : gen.mode === "formation" ? "1:1" : "4:5";
-        const useRefs = gen.mode !== "formation" && gen.character?.portraitUrl;
-        return (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
-          onClick={() => setGen(null)}
-        >
-          <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">
-                {title}{gen.character ? ` · ${gen.character.name}` : ""}
-              </h2>
-              <button onClick={() => setGen(null)} aria-label="Close">
-                <X className="h-4 w-4 text-muted hover:text-foreground" />
-              </button>
+      {gen &&
+        (() => {
+          const who = gen.character?.name ?? "Dancer";
+          const p = gen.pose;
+          const isVideo = gen.mode === "motion";
+          const poseN = p ? p.index + 1 : 0;
+          const title = p
+            ? `${isVideo ? "Pose clip" : "Pose image"} ${poseN} — ${gen.section.label}`
+            : `${gen.mode === "pose" ? "Pose sheet" : gen.mode === "formation" ? "Formation sheet" : "Motion test"} — ${gen.section.label}`;
+          const prompt = p
+            ? isVideo
+              ? singlePoseMotionPrompt(gen.section, gen.character, p.index, p.text)
+              : singlePosePrompt(gen.section, gen.character, p.index, p.text)
+            : gen.mode === "pose"
+              ? posePrompt(gen.section, gen.character)
+              : gen.mode === "formation"
+                ? formationPrompt(gen.section, gen.character)
+                : motionPrompt(gen.section, gen.character);
+          const aspect = isVideo ? "16:9" : gen.mode === "formation" ? "1:1" : "4:5";
+          const useRefs = gen.mode !== "formation" && gen.character?.portraitUrl;
+          return (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
+              onClick={() => setGen(null)}
+            >
+              <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">
+                    {title}
+                    {gen.character ? ` · ${gen.character.name}` : ""}
+                  </h2>
+                  <button onClick={() => setGen(null)} aria-label="Close">
+                    <X className="h-4 w-4 text-muted hover:text-foreground" />
+                  </button>
+                </div>
+                <GenerationPanel
+                  title={`Generate ${isVideo ? "clip" : "image"}`}
+                  mode={isVideo ? "video" : "image"}
+                  models={isVideo ? VIDEO_GEN_MODELS : undefined}
+                  initialPrompt={prompt}
+                  defaultAspect={aspect}
+                  references={useRefs ? [gen.character!.portraitUrl] : []}
+                  onGenerate={async (opts: GenerateOpts) => {
+                    const refs = opts.references.length
+                      ? opts.references
+                      : useRefs
+                        ? [gen.character!.portraitUrl]
+                        : undefined;
+                    if (opts.mode === "video") {
+                      const urls: string[] = [];
+                      for (let i = 0; i < opts.variations; i++)
+                        urls.push(
+                          await api.generateMvShotVideo(
+                            "choreo",
+                            crypto.randomUUID(),
+                            opts.prompt,
+                            opts.provider || undefined,
+                            refs,
+                            opts.apiModel
+                          )
+                        );
+                      return urls;
+                    }
+                    const urls: string[] = [];
+                    for (let i = 0; i < opts.variations; i++) {
+                      const s = opts.seed !== undefined ? opts.seed + i : undefined;
+                      urls.push(
+                        await api.generateImagePro(
+                          opts.provider,
+                          opts.prompt,
+                          opts.width,
+                          opts.height,
+                          refs,
+                          s,
+                          opts.apiModel
+                        )
+                      );
+                    }
+                    return urls;
+                  }}
+                  onPick={(url) => {
+                    const tag = p ? `Pose ${poseN}` : gen.mode === "pose" ? "poses" : "motion";
+                    if (isVideo) {
+                      addMotionTest({
+                        label: `${who} — ${gen.section.label} ${tag}`,
+                        characterName: who,
+                        motionLabel: `${gen.section.label} ${tag}`,
+                        prompt,
+                        url,
+                      });
+                    } else if (gen.mode === "formation") {
+                      void importImageToLibrary(
+                        "Formation sheet",
+                        `${gen.section.label} formation`,
+                        url
+                      );
+                    } else {
+                      void importImageToLibrary(
+                        "Pose sheet",
+                        `${who} — ${gen.section.label} ${tag}`,
+                        url
+                      );
+                    }
+                  }}
+                  pickLabel={isVideo ? "Save motion test" : "Save to library"}
+                />
+              </div>
             </div>
-            <GenerationPanel
-              title={`Generate ${isVideo ? "clip" : "image"}`}
-              mode={isVideo ? "video" : "image"}
-              models={isVideo ? VIDEO_GEN_MODELS : undefined}
-              initialPrompt={prompt}
-              defaultAspect={aspect}
-              references={useRefs ? [gen.character!.portraitUrl] : []}
-              onGenerate={async (opts: GenerateOpts) => {
-                const refs = opts.references.length
-                  ? opts.references
-                  : useRefs
-                    ? [gen.character!.portraitUrl]
-                    : undefined;
-                if (opts.mode === "video") {
-                  const urls: string[] = [];
-                  for (let i = 0; i < opts.variations; i++)
-                    urls.push(
-                      await api.generateMvShotVideo("choreo", crypto.randomUUID(), opts.prompt, opts.provider || undefined, refs, opts.apiModel)
-                    );
-                  return urls;
-                }
-                const urls: string[] = [];
-                for (let i = 0; i < opts.variations; i++) {
-                  const s = opts.seed !== undefined ? opts.seed + i : undefined;
-                  urls.push(await api.generateImagePro(opts.provider, opts.prompt, opts.width, opts.height, refs, s, opts.apiModel));
-                }
-                return urls;
-              }}
-              onPick={(url) => {
-                const tag = p ? `Pose ${poseN}` : gen.mode === "pose" ? "poses" : "motion";
-                if (isVideo) {
-                  addMotionTest({
-                    label: `${who} — ${gen.section.label} ${tag}`,
-                    characterName: who,
-                    motionLabel: `${gen.section.label} ${tag}`,
-                    prompt,
-                    url,
-                  });
-                } else if (gen.mode === "formation") {
-                  void importImageToLibrary("Formation sheet", `${gen.section.label} formation`, url);
-                } else {
-                  void importImageToLibrary("Pose sheet", `${who} — ${gen.section.label} ${tag}`, url);
-                }
-              }}
-              pickLabel={isVideo ? "Save motion test" : "Save to library"}
-            />
-          </div>
-        </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 }
@@ -654,7 +703,9 @@ function ChoreoTimeline({
 
   const Lane = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex items-center gap-2">
-      <span className="w-20 shrink-0 text-right text-[10px] uppercase tracking-wide text-muted">{label}</span>
+      <span className="w-20 shrink-0 text-right text-[10px] uppercase tracking-wide text-muted">
+        {label}
+      </span>
       <div className="relative h-7 flex-1 rounded bg-elevated/40">{children}</div>
     </div>
   );
@@ -672,7 +723,11 @@ function ChoreoTimeline({
                 <div
                   key={s.sectionId}
                   className="absolute top-0 flex h-full items-center justify-center overflow-hidden rounded px-1 text-[9px] font-medium text-white"
-                  style={{ left: pct(s.start), width: pct(s.end - s.start), backgroundColor: sectionColor(s.kind) }}
+                  style={{
+                    left: pct(s.start),
+                    width: pct(s.end - s.start),
+                    backgroundColor: sectionColor(s.kind),
+                  }}
                   title={`${s.label} · ${formatTime(s.start)}–${formatTime(s.end)}`}
                 >
                   {s.label}
@@ -702,35 +757,42 @@ function ChoreoTimeline({
               ))}
             </Lane>
             <Lane label="Camera">
-              {poseMarks.filter((m) => m.camera).map((m, i) => (
-                <span
-                  key={i}
-                  className="absolute top-1 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 text-[9px] text-muted"
-                  style={{ left: pct(m.t) }}
-                  title={`Camera: ${m.camera}`}
-                >
-                  {m.camera}
-                </span>
-              ))}
+              {poseMarks
+                .filter((m) => m.camera)
+                .map((m, i) => (
+                  <span
+                    key={i}
+                    className="absolute top-1 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 text-[9px] text-muted"
+                    style={{ left: pct(m.t) }}
+                    title={`Camera: ${m.camera}`}
+                  >
+                    {m.camera}
+                  </span>
+                ))}
             </Lane>
             <Lane label="Lighting">
-              {poseMarks.filter((m) => m.lighting).map((m, i) => (
-                <span
-                  key={i}
-                  className="absolute top-1 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 text-[9px] text-amber-300/90"
-                  style={{ left: pct(m.t) }}
-                  title={`Lighting: ${m.lighting}`}
-                >
-                  {m.lighting}
-                </span>
-              ))}
+              {poseMarks
+                .filter((m) => m.lighting)
+                .map((m, i) => (
+                  <span
+                    key={i}
+                    className="absolute top-1 -translate-x-1/2 whitespace-nowrap rounded bg-surface px-1 text-[9px] text-amber-300/90"
+                    style={{ left: pct(m.t) }}
+                    title={`Lighting: ${m.lighting}`}
+                  >
+                    {m.lighting}
+                  </span>
+                ))}
             </Lane>
             <Lane label="Performance">
               {plan.sections.map((s) => (
                 <span
                   key={s.sectionId}
                   className="absolute top-1 overflow-hidden whitespace-nowrap rounded px-1 text-[9px] text-foreground/80"
-                  style={{ left: pct(s.start + (s.end - s.start) / 2), transform: "translateX(-50%)" }}
+                  style={{
+                    left: pct(s.start + (s.end - s.start) / 2),
+                    transform: "translateX(-50%)",
+                  }}
                   title={`${s.label} emotion`}
                 >
                   {(s.performance ?? defaultPerformance(s.kind, s.energy)).emotion}

@@ -49,13 +49,7 @@ export type View =
   | "webstudio"
   | "campaignstudio";
 export type WorkspaceMode =
-  | "storyboard"
-  | "camera"
-  | "lighting"
-  | "audio"
-  | "moodboard"
-  | "prompt"
-  | "exports";
+  "storyboard" | "camera" | "lighting" | "audio" | "moodboard" | "prompt" | "exports";
 
 interface AppState {
   view: View;
@@ -195,9 +189,7 @@ export const useAppStore = create<AppState>((set) => ({
     set((s) => {
       const songs = loadBoundProductions();
       const target =
-        (s.activeSongId && songs.find((x) => x.id === s.activeSongId)?.id) ||
-        songs[0]?.id ||
-        null;
+        (s.activeSongId && songs.find((x) => x.id === s.activeSongId)?.id) || songs[0]?.id || null;
       if (target) {
         setActiveSongId(target);
         return {
@@ -211,8 +203,7 @@ export const useAppStore = create<AppState>((set) => ({
       // No song yet — guide the user to import one, then auto-continue.
       return { welcomeOpen: false, view: "song", pendingMagic: true };
     }),
-  openDirectorWizard: () =>
-    set({ directorOpen: true, welcomeOpen: false, wizardOpen: false }),
+  openDirectorWizard: () => set({ directorOpen: true, welcomeOpen: false, wizardOpen: false }),
   setDirectorOpen: (directorOpen) => set({ directorOpen }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   openDemoProject: () => {
@@ -268,8 +259,7 @@ export const useAppStore = create<AppState>((set) => ({
   openGlamStudio: () => set({ view: "glamstudio", activeProjectId: null }),
   openWebStudio: () => set({ view: "webstudio", activeProjectId: null }),
   openCampaignStudio: () => set({ view: "campaignstudio", activeProjectId: null }),
-  openProject: (id) =>
-    set({ view: "project", activeProjectId: id, workspaceMode: "storyboard" }),
+  openProject: (id) => set({ view: "project", activeProjectId: id, workspaceMode: "storyboard" }),
   setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
   toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),
 }));

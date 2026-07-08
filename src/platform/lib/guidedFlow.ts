@@ -2,9 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import { getStudioMode, type StudioMode } from "@/platform/lib/settings";
 
 export type GuidedFlowStatus = "draft" | "active" | "completed" | "abandoned";
-export type GuidedFlowPatch<TState> =
-  | Partial<TState>
-  | ((state: TState) => TState);
+export type GuidedFlowPatch<TState> = Partial<TState> | ((state: TState) => TState);
 
 export interface GuidedFlowSession<TState = unknown> {
   id: string;
@@ -49,10 +47,7 @@ export interface GuidedFlowDefinition<TState = unknown> {
   description?: string;
   initialState: TState;
   steps: GuidedFlowStep<TState>[];
-  onComplete?: (
-    state: TState,
-    session: GuidedFlowSession<TState>
-  ) => void | Promise<void>;
+  onComplete?: (state: TState, session: GuidedFlowSession<TState>) => void | Promise<void>;
   renderSummary?: (state: TState) => ReactNode;
 }
 
@@ -224,10 +219,7 @@ export function jumpGuidedFlowSession<TState>(
   session: GuidedFlowSession<TState>,
   stepIndex: number
 ): GuidedFlowSession<TState> {
-  const boundedIndex = Math.max(
-    0,
-    Math.min(stepIndex, definition.steps.length - 1)
-  );
+  const boundedIndex = Math.max(0, Math.min(stepIndex, definition.steps.length - 1));
   const requestedStep = definition.steps[boundedIndex];
   const canMoveBack = boundedIndex <= session.stepIndex;
   const canMoveForward =

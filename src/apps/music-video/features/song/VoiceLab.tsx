@@ -1,7 +1,14 @@
 // Voice & spoken audio lab + private AudioPlayer (extracted from SongStudio.tsx, Phase 2).
 import { useState } from "react";
 import { Loader2, Trash2, Mic2, Plus } from "lucide-react";
-import { AUDIO_TRACK_KINDS, defaultAudioAt, defaultAudioDuck, type SongMap, type AudioTrack, type AudioTrackKind } from "@/apps/music-video/lib/songBrain";
+import {
+  AUDIO_TRACK_KINDS,
+  defaultAudioAt,
+  defaultAudioDuck,
+  type SongMap,
+  type AudioTrack,
+  type AudioTrackKind,
+} from "@/apps/music-video/lib/songBrain";
 import { api } from "@/platform/lib/ipc";
 import { useProviderReadiness } from "@/platform/lib/providerReady";
 import { cn } from "@/platform/lib/utils";
@@ -18,13 +25,7 @@ import {
 } from "@/platform/components/ui/card";
 import { useAssetSrc } from "@/platform/components/ui/asset-image";
 
-export function VoiceLab({
-  song,
-  onChange,
-}: {
-  song: SongMap;
-  onChange: (next: SongMap) => void;
-}) {
+export function VoiceLab({ song, onChange }: { song: SongMap; onChange: (next: SongMap) => void }) {
   const [kind, setKind] = useState<AudioTrackKind>("Intro tag");
   const [text, setText] = useState("");
   const [voice, setVoice] = useState("");
@@ -81,8 +82,8 @@ export function VoiceLab({
           Voice & spoken audio
         </CardTitle>
         <CardDescription>
-          Generate spoken layers — intro tags, ad-libs, narration, spoken hooks —
-          with ElevenLabs. The master track stays your imported song.
+          Generate spoken layers — intro tags, ad-libs, narration, spoken hooks — with ElevenLabs.
+          The master track stays your imported song.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -126,11 +127,7 @@ export function VoiceLab({
           disabled={busy || !text.trim() || !audioReady}
           title={audioReady ? undefined : "No ElevenLabs key — add one in API Keys"}
         >
-          {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           Generate audio
         </Button>
 
@@ -178,15 +175,11 @@ export function VoiceLab({
                     max={2}
                     step={0.1}
                     value={t.volume ?? 1}
-                    onChange={(e) =>
-                      patchTrack(t.id, { volume: Number(e.target.value) })
-                    }
+                    onChange={(e) => patchTrack(t.id, { volume: Number(e.target.value) })}
                     className="h-1 w-16 accent-primary"
                     aria-label="Layer volume"
                   />
-                  <span className="w-8 tabular-nums">
-                    {Math.round((t.volume ?? 1) * 100)}%
-                  </span>
+                  <span className="w-8 tabular-nums">{Math.round((t.volume ?? 1) * 100)}%</span>
                 </label>
                 <button
                   onClick={() => patchTrack(t.id, { duck: !t.duck })}
@@ -223,4 +216,3 @@ function AudioPlayer({ src }: { src: string }) {
   if (!resolved) return null;
   return <audio src={resolved} controls className="mt-1 h-8 w-full max-w-sm" />;
 }
-

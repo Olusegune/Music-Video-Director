@@ -84,8 +84,7 @@ function sfxFor(shot: ShotBreakdown): string {
   const move = `${shot.cameraMovement} ${shot.transition}`.toLowerCase();
   if (move.includes("whip")) return "Whoosh on the whip pan";
   if (move.includes("match cut")) return "Sub-drop accent on the match cut";
-  if (move.includes("push") || move.includes("title"))
-    return "Rising tone into a soft impact";
+  if (move.includes("push") || move.includes("title")) return "Rising tone into a soft impact";
   if (move.includes("hold")) return "Final brand chime / resolve";
   return "Motivated transition whoosh; subtle UI ticks";
 }

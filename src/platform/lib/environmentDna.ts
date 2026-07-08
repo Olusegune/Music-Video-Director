@@ -40,7 +40,10 @@ export function newEnvironment(name = "New Environment"): Environment {
 }
 
 function clause(...parts: (string | undefined | null)[]): string {
-  return parts.map((p) => (p ?? "").trim()).filter(Boolean).join(", ");
+  return parts
+    .map((p) => (p ?? "").trim())
+    .filter(Boolean)
+    .join(", ");
 }
 
 export interface ComposedDna {
@@ -55,9 +58,7 @@ export interface ComposedDna {
  */
 export function composeEnvironmentDna(e: Environment): ComposedDna {
   const subject = e.name || "establishing location";
-  const palette = e.colorPalette.length
-    ? `color palette ${e.colorPalette.join(", ")}`
-    : "";
+  const palette = e.colorPalette.length ? `color palette ${e.colorPalette.join(", ")}` : "";
 
   const promptDna = clause(
     `${subject} establishing shot`,
@@ -76,13 +77,10 @@ export function composeEnvironmentDna(e: Environment): ComposedDna {
   const locks: string[] = [];
   if (e.architecture) locks.push(`Keep the architecture: ${e.architecture}.`);
   if (e.materials) locks.push(`Surfaces stay: ${e.materials}.`);
-  if (e.colorPalette.length)
-    locks.push(`Hold the palette: ${e.colorPalette.join(", ")}.`);
+  if (e.colorPalette.length) locks.push(`Hold the palette: ${e.colorPalette.join(", ")}.`);
   if (e.lightingStyle) locks.push(`Lighting style: ${e.lightingStyle}.`);
   if (e.environmentRules) locks.push(e.environmentRules);
-  locks.push(
-    "Do not change the layout, materials, or palette between shots; keep the same place."
-  );
+  locks.push("Do not change the layout, materials, or palette between shots; keep the same place.");
 
   const negatives = [
     "inconsistent location",
@@ -128,10 +126,7 @@ export function normalizeTimeOfDay(raw: string): string {
 }
 
 /** Build an Environment draft from an extracted location + optional time. */
-export function environmentFromLocation(
-  name: string,
-  timeOfDay = ""
-): Environment {
+export function environmentFromLocation(name: string, timeOfDay = ""): Environment {
   const e = newEnvironment(name.trim() || "Untitled Location");
   e.timeOfDay = normalizeTimeOfDay(timeOfDay);
   const dna = composeEnvironmentDna(e);
@@ -150,8 +145,16 @@ const MOOD_HINTS: [RegExp, string][] = [
 ];
 
 const TIME_TOKENS = [
-  "night", "day", "dawn", "dusk", "morning", "evening", "afternoon",
-  "sunset", "sunrise", "midnight",
+  "night",
+  "day",
+  "dawn",
+  "dusk",
+  "morning",
+  "evening",
+  "afternoon",
+  "sunset",
+  "sunrise",
+  "midnight",
 ];
 
 /** Parse one line into a best-effort Environment draft (offline). */

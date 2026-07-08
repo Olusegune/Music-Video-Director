@@ -57,8 +57,7 @@
   --c-border: #e4e7ec;
   --c-ring: #6d5dfc;
 
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06),
-    0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
   color-scheme: light;
 }
 
@@ -104,7 +103,9 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
   }
 
   *::-webkit-scrollbar {
@@ -153,30 +154,145 @@
 
   /* Creative-suite visual language. Each module owns an accent while retaining
      the same typography, component geometry, and semantic status colors. */
-  .studio-view { --module-accent: var(--color-primary); position: relative; isolation: isolate; }
-  .studio-view-song,.studio-view-mvdirector,.studio-view-cast,.studio-view-choreography,.studio-view-timeline { --module-accent: #8b7cff; }
-  .studio-view-motionstudio { --module-accent: #22d3ee; }
-  .studio-view-glamstudio { --module-accent: #f3c969; }
-  .studio-view-webstudio { --module-accent: #34d399; }
-  .studio-view-campaignstudio { --module-accent: #f472b6; }
-  .studio-view-dashboard { --module-accent: #a78bfa; }
-  .studio-view::before {
-    content: ""; position: absolute; inset: 0 0 auto; height: 180px; z-index: -1; pointer-events: none;
-    background: radial-gradient(70% 130% at 16% -30%, color-mix(in oklab, var(--module-accent) 13%, transparent), transparent 72%);
+  .studio-view {
+    --module-accent: var(--color-primary);
+    position: relative;
+    isolation: isolate;
   }
-  .studio-view > div { animation: studio-enter .28s cubic-bezier(.2,.75,.3,1) both; }
-  .studio-view > div > header { position: relative; background: color-mix(in oklab, var(--color-surface) 90%, transparent); backdrop-filter: blur(14px); }
-  .studio-view > div > header::after { content: ""; position: absolute; inset: auto 0 -1px; height: 1px; background: linear-gradient(90deg,var(--module-accent),transparent 35%); opacity: .55; }
-  .module-hero { position:relative; background:linear-gradient(120deg,color-mix(in oklab,var(--module-accent) 10%,var(--color-surface)),var(--color-surface) 58%); }
-  .module-hero::after { content:""; position:absolute; width:260px; height:260px; right:-90px; top:-150px; border-radius:999px; background:var(--module-accent); opacity:.08; filter:blur(2px); pointer-events:none; }
-  .studio-view [data-ui="card"] { transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
-  .studio-view [data-ui="card"]:hover { border-color: color-mix(in oklab, var(--module-accent) 25%, var(--color-border)); box-shadow: 0 10px 30px -24px color-mix(in oklab, var(--module-accent) 70%, transparent); }
-  .studio-view [data-ui="button"]:not(:disabled):hover { transform: translateY(-1px); }
-  .creative-grid { background-image: linear-gradient(color-mix(in oklab,var(--module-accent) 7%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in oklab,var(--module-accent) 7%,transparent) 1px,transparent 1px); background-size: 24px 24px; }
-  .creative-preview { position: relative; overflow: hidden; background: linear-gradient(145deg,color-mix(in oklab,var(--module-accent) 20%,var(--color-elevated)),var(--color-background)); }
-  .creative-preview::after { content:""; position:absolute; inset:0; background:linear-gradient(120deg,transparent 20%,color-mix(in oklab,var(--module-accent) 18%,transparent) 50%,transparent 80%); transform:translateX(-120%); transition:transform .65s ease; }
-  .group:hover .creative-preview::after { transform:translateX(120%); }
-  @keyframes studio-enter { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:none } }
+  .studio-view-song,
+  .studio-view-mvdirector,
+  .studio-view-cast,
+  .studio-view-choreography,
+  .studio-view-timeline {
+    --module-accent: #8b7cff;
+  }
+  .studio-view-motionstudio {
+    --module-accent: #22d3ee;
+  }
+  .studio-view-glamstudio {
+    --module-accent: #f3c969;
+  }
+  .studio-view-webstudio {
+    --module-accent: #34d399;
+  }
+  .studio-view-campaignstudio {
+    --module-accent: #f472b6;
+  }
+  .studio-view-dashboard {
+    --module-accent: #a78bfa;
+  }
+  .studio-view::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 180px;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      70% 130% at 16% -30%,
+      color-mix(in oklab, var(--module-accent) 13%, transparent),
+      transparent 72%
+    );
+  }
+  .studio-view > div {
+    animation: studio-enter 0.28s cubic-bezier(0.2, 0.75, 0.3, 1) both;
+  }
+  .studio-view > div > header {
+    position: relative;
+    background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+    backdrop-filter: blur(14px);
+  }
+  .studio-view > div > header::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--module-accent), transparent 35%);
+    opacity: 0.55;
+  }
+  .module-hero {
+    position: relative;
+    background: linear-gradient(
+      120deg,
+      color-mix(in oklab, var(--module-accent) 10%, var(--color-surface)),
+      var(--color-surface) 58%
+    );
+  }
+  .module-hero::after {
+    content: "";
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    right: -90px;
+    top: -150px;
+    border-radius: 999px;
+    background: var(--module-accent);
+    opacity: 0.08;
+    filter: blur(2px);
+    pointer-events: none;
+  }
+  .studio-view [data-ui="card"] {
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+  .studio-view [data-ui="card"]:hover {
+    border-color: color-mix(in oklab, var(--module-accent) 25%, var(--color-border));
+    box-shadow: 0 10px 30px -24px color-mix(in oklab, var(--module-accent) 70%, transparent);
+  }
+  .studio-view [data-ui="button"]:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+  .creative-grid {
+    background-image:
+      linear-gradient(
+        color-mix(in oklab, var(--module-accent) 7%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in oklab, var(--module-accent) 7%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 24px 24px;
+  }
+  .creative-preview {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+      145deg,
+      color-mix(in oklab, var(--module-accent) 20%, var(--color-elevated)),
+      var(--color-background)
+    );
+  }
+  .creative-preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      120deg,
+      transparent 20%,
+      color-mix(in oklab, var(--module-accent) 18%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.65s ease;
+  }
+  .group:hover .creative-preview::after {
+    transform: translateX(120%);
+  }
+  @keyframes studio-enter {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   /* The Magic Mode CTA — premium gold→violet, soft glow, sparkle, hover/press.
      Gold is the dominant, beginner-facing color; violet only warms the
@@ -184,7 +300,13 @@
      for Director Mode / advanced tools elsewhere in the app. */
   .magic-cta {
     position: relative;
-    background-image: linear-gradient(115deg, var(--color-gold) 0%, #ffcf66 45%, #f0c05a 70%, #9b8cff 130%);
+    background-image: linear-gradient(
+      115deg,
+      var(--color-gold) 0%,
+      #ffcf66 45%,
+      #f0c05a 70%,
+      #9b8cff 130%
+    );
     background-size: 180% 180%;
     color: var(--color-gold-foreground);
     border: 1px solid rgba(255, 255, 255, 0.35);
@@ -216,17 +338,39 @@
     animation: magic-pulse 3.4s ease-in-out infinite;
   }
   @keyframes magic-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
   }
   @keyframes magic-pulse {
-    0%, 100% { opacity: 0.4; transform: scale(0.98); }
-    50% { opacity: 0.7; transform: scale(1.04); }
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(0.98);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.04);
+    }
   }
   @keyframes magic-sparkle {
-    0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
-    40% { opacity: 1; transform: scale(1) rotate(20deg); }
-    70% { opacity: 0.4; transform: scale(0.9) rotate(-10deg); }
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.6) rotate(0deg);
+    }
+    40% {
+      opacity: 1;
+      transform: scale(1) rotate(20deg);
+    }
+    70% {
+      opacity: 0.4;
+      transform: scale(0.9) rotate(-10deg);
+    }
   }
   .magic-sparkle {
     animation: magic-sparkle 2.8s ease-in-out infinite;

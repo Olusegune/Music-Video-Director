@@ -3,7 +3,18 @@
 // (visual moments, formation stage, AI director panel) without the parent
 // file becoming unmanageable.
 import { useState } from "react";
-import { Users, Sparkles, LayoutGrid, Camera, Lightbulb, Drama, Music, Image as ImageIcon, Video, ChevronDown } from "lucide-react";
+import {
+  Users,
+  Sparkles,
+  LayoutGrid,
+  Camera,
+  Lightbulb,
+  Drama,
+  Music,
+  Image as ImageIcon,
+  Video,
+  ChevronDown,
+} from "lucide-react";
 import {
   CHOREO_CAMERA_MOVES,
   CHOREO_LIGHTING,
@@ -62,7 +73,10 @@ export function ChoreoCard({
   // Local selection normally follows the top-of-page focus; a direct click
   // on a card here overrides it until focus changes again (React's
   // "adjust state while rendering" pattern — no effect needed).
-  const [applySync, setApplySync] = useState({ focus: focusCharacterId, applyToId: focusCharacterId ?? "" });
+  const [applySync, setApplySync] = useState({
+    focus: focusCharacterId,
+    applyToId: focusCharacterId ?? "",
+  });
   if (applySync.focus !== focusCharacterId) {
     setApplySync({ focus: focusCharacterId, applyToId: focusCharacterId ?? "" });
   }
@@ -84,18 +98,20 @@ export function ChoreoCard({
   const setPerf = (key: keyof PerformanceBrief, v: string) =>
     onChange({ ...section, performance: { ...perf, [key]: v } });
   const cameraMoves =
-    section.cameraMoves ?? section.keyPoses.map((_, i) => CHOREO_CAMERA_MOVES[i % CHOREO_CAMERA_MOVES.length]);
+    section.cameraMoves ??
+    section.keyPoses.map((_, i) => CHOREO_CAMERA_MOVES[i % CHOREO_CAMERA_MOVES.length]);
   const setCamera = (i: number, v: string) =>
     onChange({
       ...section,
-      cameraMoves: section.keyPoses.map((_, j) => (j === i ? v : cameraMoves[j] ?? "")),
+      cameraMoves: section.keyPoses.map((_, j) => (j === i ? v : (cameraMoves[j] ?? ""))),
     });
   const lightingMoves =
-    section.lightingMoves ?? section.keyPoses.map((_, i) => CHOREO_LIGHTING[i % CHOREO_LIGHTING.length]);
+    section.lightingMoves ??
+    section.keyPoses.map((_, i) => CHOREO_LIGHTING[i % CHOREO_LIGHTING.length]);
   const setLighting = (i: number, v: string) =>
     onChange({
       ...section,
-      lightingMoves: section.keyPoses.map((_, j) => (j === i ? v : lightingMoves[j] ?? "")),
+      lightingMoves: section.keyPoses.map((_, j) => (j === i ? v : (lightingMoves[j] ?? ""))),
     });
   const setCount = (i: number, key: "phraseA" | "phraseB", v: string) =>
     onChange({
@@ -174,7 +190,12 @@ export function ChoreoCard({
                 )}
               >
                 {c.portraitUrl ? (
-                  <AssetImage src={c.portraitUrl} alt={c.name} className="h-8 w-8 rounded-full object-cover" label="Portrait" />
+                  <AssetImage
+                    src={c.portraitUrl}
+                    alt={c.name}
+                    className="h-8 w-8 rounded-full object-cover"
+                    label="Portrait"
+                  />
                 ) : (
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-elevated text-[11px] font-semibold uppercase">
                     {c.name.slice(0, 2)}
@@ -235,147 +256,158 @@ export function ChoreoCard({
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
+            <ChevronDown
+              className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")}
+            />
             {showAdvanced ? "Hide" : "Show"} pose sheet, counts &amp; performance sheet
           </button>
         )}
 
         {showAdvanced && (
-        <>
-        {/* Moments — visual choreography cards, not a bar-by-bar text table. */}
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            <Music className="h-3.5 w-3.5" /> Moments
-            <HelpHint
-              title="Moments"
-              body="Each card is one bar of the section (two counts of 4). Tap a card to open and edit the exact move text — the words here feed the pose-sheet and motion-test prompts."
-              example="'Sharp arm snap → clean freeze' becomes the move the AI draws and animates for that bar."
-            />
-          </div>
-          <p className="mb-2 text-[11px] text-muted">
-            Each card is one bar (two counts of 4) — tap to open and edit the move text directly; it feeds the pose sheet and motion test prompts below.
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {section.eightCounts.map((ec, i) => (
-              <MomentCard
-                key={i}
-                ec={ec}
-                intensity={section.intensity}
-                onChangePhrase={(key, v) => setCount(i, key, v)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Key poses */}
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            <LayoutGrid className="h-3.5 w-3.5" /> Key pose sheet
-            <HelpHint
-              title="Key pose sheet"
-              body="The signature freeze-frames of the section, each with its own camera angle and lighting. Generate a reference image or a short clip of any pose — this is what carries the look into the final shots."
-              example="Pose 2 with a low-angle 'hero' camera and hard key light = the shot that sells the drop."
-            />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {section.keyPoses.map((pose, i) => (
-              <div
-                key={i}
-                className="rounded-[var(--radius-button)] border border-dashed border-border bg-elevated/40 px-3 py-2 text-xs text-muted"
-              >
-                <span className="font-semibold text-foreground/70">Pose {i + 1}.</span>{" "}
-                <input
-                  defaultValue={pose}
-                  onChange={(e) => setPose(i, e.target.value)}
-                  aria-label={`Key pose ${i + 1}`}
-                  className="w-full rounded border border-transparent bg-transparent hover:border-border focus-visible:border-primary focus-visible:outline-none"
+          <>
+            {/* Moments — visual choreography cards, not a bar-by-bar text table. */}
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <Music className="h-3.5 w-3.5" /> Moments
+                <HelpHint
+                  title="Moments"
+                  body="Each card is one bar of the section (two counts of 4). Tap a card to open and edit the exact move text — the words here feed the pose-sheet and motion-test prompts."
+                  example="'Sharp arm snap → clean freeze' becomes the move the AI draws and animates for that bar."
                 />
-                <div className="mt-1.5 flex items-center gap-1">
-                  <Camera className="h-3 w-3 shrink-0 text-muted" />
-                  <select
-                    value={cameraMoves[i] ?? ""}
-                    onChange={(e) => setCamera(i, e.target.value)}
-                    aria-label={`Camera for pose ${i + 1}`}
-                    className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  >
-                    {CHOREO_CAMERA_MOVES.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mt-1 flex items-center gap-1">
-                  <Lightbulb className="h-3 w-3 shrink-0 text-muted" />
-                  <select
-                    value={lightingMoves[i] ?? ""}
-                    onChange={(e) => setLighting(i, e.target.value)}
-                    aria-label={`Lighting for pose ${i + 1}`}
-                    className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-                  >
-                    {CHOREO_LIGHTING.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                {/* Per-pose generation */}
-                <div className="mt-1.5 flex gap-1">
-                  <button
-                    onClick={() => onGenerate("pose", applyTo, { index: i, text: pose })}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
-                    title="Generate an image of this pose"
-                  >
-                    <ImageIcon className="h-3 w-3" /> Image
-                  </button>
-                  <button
-                    onClick={() => onGenerate("motion", applyTo, { index: i, text: pose })}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
-                    title="Generate a motion clip into this pose"
-                  >
-                    <Video className="h-3 w-3" /> Clip
-                  </button>
-                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <p className="mb-2 text-[11px] text-muted">
+                Each card is one bar (two counts of 4) — tap to open and edit the move text
+                directly; it feeds the pose sheet and motion test prompts below.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {section.eightCounts.map((ec, i) => (
+                  <MomentCard
+                    key={i}
+                    ec={ec}
+                    intensity={section.intensity}
+                    onChangePhrase={(key, v) => setCount(i, key, v)}
+                  />
+                ))}
+              </div>
+            </div>
 
-        {/* Motion preview — instant local stick-figure sketch of the movement,
-            next to (never instead of) the real AI "Motion test" above. */}
-        <MotionPreview poses={section.keyPoses} accent={color} />
-
-        {/* Performance / acting brief */}
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            <Drama className="h-3.5 w-3.5" /> Performance sheet
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {([
-              ["emotion", "Emotion"],
-              ["facialExpression", "Facial expression"],
-              ["intent", "Intent"],
-              ["subtext", "Subtext"],
-              ["energy", "Energy"],
-            ] as [keyof PerformanceBrief, string][]).map(([key, label]) => (
-              <label key={key} className="block">
-                <span className="mb-0.5 block text-[10px] uppercase tracking-wide text-muted">{label}</span>
-                <input
-                  value={perf[key]}
-                  onChange={(e) => setPerf(key, e.target.value)}
-                  aria-label={`${label} for ${section.label}`}
-                  className="h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+            {/* Key poses */}
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <LayoutGrid className="h-3.5 w-3.5" /> Key pose sheet
+                <HelpHint
+                  title="Key pose sheet"
+                  body="The signature freeze-frames of the section, each with its own camera angle and lighting. Generate a reference image or a short clip of any pose — this is what carries the look into the final shots."
+                  example="Pose 2 with a low-angle 'hero' camera and hard key light = the shot that sells the drop."
                 />
-              </label>
-            ))}
-          </div>
-        </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {section.keyPoses.map((pose, i) => (
+                  <div
+                    key={i}
+                    className="rounded-[var(--radius-button)] border border-dashed border-border bg-elevated/40 px-3 py-2 text-xs text-muted"
+                  >
+                    <span className="font-semibold text-foreground/70">Pose {i + 1}.</span>{" "}
+                    <input
+                      defaultValue={pose}
+                      onChange={(e) => setPose(i, e.target.value)}
+                      aria-label={`Key pose ${i + 1}`}
+                      className="w-full rounded border border-transparent bg-transparent hover:border-border focus-visible:border-primary focus-visible:outline-none"
+                    />
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <Camera className="h-3 w-3 shrink-0 text-muted" />
+                      <select
+                        value={cameraMoves[i] ?? ""}
+                        onChange={(e) => setCamera(i, e.target.value)}
+                        aria-label={`Camera for pose ${i + 1}`}
+                        className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
+                      >
+                        {CHOREO_CAMERA_MOVES.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      <Lightbulb className="h-3 w-3 shrink-0 text-muted" />
+                      <select
+                        value={lightingMoves[i] ?? ""}
+                        onChange={(e) => setLighting(i, e.target.value)}
+                        aria-label={`Lighting for pose ${i + 1}`}
+                        className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
+                      >
+                        {CHOREO_LIGHTING.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Per-pose generation */}
+                    <div className="mt-1.5 flex gap-1">
+                      <button
+                        onClick={() => onGenerate("pose", applyTo, { index: i, text: pose })}
+                        className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
+                        title="Generate an image of this pose"
+                      >
+                        <ImageIcon className="h-3 w-3" /> Image
+                      </button>
+                      <button
+                        onClick={() => onGenerate("motion", applyTo, { index: i, text: pose })}
+                        className="inline-flex flex-1 items-center justify-center gap-1 rounded bg-elevated px-1.5 py-1 text-[10px] font-medium text-foreground hover:bg-primary/15 hover:text-primary"
+                        title="Generate a motion clip into this pose"
+                      >
+                        <Video className="h-3 w-3" /> Clip
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        <textarea
-          defaultValue={section.continuity}
-          onChange={(e) => onChange({ ...section, continuity: e.target.value })}
-          aria-label="Continuity note"
-          rows={2}
-          className="w-full resize-y rounded-[var(--radius-input)] border border-transparent bg-transparent text-[11px] italic text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
-        />
-        </>
+            {/* Motion preview — instant local stick-figure sketch of the movement,
+            next to (never instead of) the real AI "Motion test" above. */}
+            <MotionPreview poses={section.keyPoses} accent={color} />
+
+            {/* Performance / acting brief */}
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <Drama className="h-3.5 w-3.5" /> Performance sheet
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    ["emotion", "Emotion"],
+                    ["facialExpression", "Facial expression"],
+                    ["intent", "Intent"],
+                    ["subtext", "Subtext"],
+                    ["energy", "Energy"],
+                  ] as [keyof PerformanceBrief, string][]
+                ).map(([key, label]) => (
+                  <label key={key} className="block">
+                    <span className="mb-0.5 block text-[10px] uppercase tracking-wide text-muted">
+                      {label}
+                    </span>
+                    <input
+                      value={perf[key]}
+                      onChange={(e) => setPerf(key, e.target.value)}
+                      aria-label={`${label} for ${section.label}`}
+                      className="h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              defaultValue={section.continuity}
+              onChange={(e) => onChange({ ...section, continuity: e.target.value })}
+              aria-label="Continuity note"
+              rows={2}
+              className="w-full resize-y rounded-[var(--radius-input)] border border-transparent bg-transparent text-[11px] italic text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
+            />
+          </>
         )}
       </CardContent>
     </Card>

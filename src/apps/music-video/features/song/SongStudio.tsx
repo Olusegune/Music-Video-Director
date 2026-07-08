@@ -9,7 +9,13 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 import { Music, Upload, Loader2, AudioLines } from "lucide-react";
-import { analyzeAudioFile, loadSongs, saveSong, deleteSong, type SongMap } from "@/apps/music-video/lib/songBrain";
+import {
+  analyzeAudioFile,
+  loadSongs,
+  saveSong,
+  deleteSong,
+  type SongMap,
+} from "@/apps/music-video/lib/songBrain";
 import { api, isTauri } from "@/platform/lib/ipc";
 import { OnboardingChecklist } from "@/apps/music-video/features/onboarding/OnboardingChecklist";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -62,11 +68,7 @@ export function SongStudio() {
         useAppStore.getState().setMagicSongId(song.id);
       }
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not analyze that file. Try a WAV or MP3."
-      );
+      setError(e instanceof Error ? e.message : "Could not analyze that file. Try a WAV or MP3.");
     } finally {
       setAnalyzing(false);
     }
@@ -116,9 +118,7 @@ export function SongStudio() {
         setSongs(loadSongs());
         useAudioPlayer.getState().load(cur.id, merged.name, URL.createObjectURL(file), true);
       } catch (e) {
-        setError(
-          e instanceof Error ? e.message : "Could not analyze that file. Try a WAV or MP3."
-        );
+        setError(e instanceof Error ? e.message : "Could not analyze that file. Try a WAV or MP3.");
       } finally {
         setAnalyzing(false);
       }
@@ -138,13 +138,10 @@ export function SongStudio() {
     if (file) void importFile(file);
   };
 
-  const updateActive = useCallback(
-    (next: SongMap) => {
-      saveSong(next);
-      setSongs(loadSongs());
-    },
-    []
-  );
+  const updateActive = useCallback((next: SongMap) => {
+    saveSong(next);
+    setSongs(loadSongs());
+  }, []);
 
   const removeSong = (id: string) => {
     const s = loadSongs().find((x) => x.id === id);
@@ -169,8 +166,7 @@ export function SongStudio() {
           <div>
             <h1 className="text-lg font-semibold leading-tight">Song Studio</h1>
             <p className="text-xs text-muted">
-              Import a track — the Song Brain maps tempo, sections, and lyrics. No
-              key needed.
+              Import a track — the Song Brain maps tempo, sections, and lyrics. No key needed.
             </p>
           </div>
         </div>
@@ -229,9 +225,7 @@ export function SongStudio() {
               >
                 <AudioLines className="h-4 w-4 shrink-0" />
                 <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="text-[10px] tabular-nums opacity-70">
-                  {s.bpm}
-                </span>
+                <span className="text-[10px] tabular-nums opacity-70">{s.bpm}</span>
               </button>
             ))}
           </div>
@@ -254,10 +248,7 @@ export function SongStudio() {
           )}
 
           {!active ? (
-            <EmptyState
-              onPick={() => fileInputRef.current?.click()}
-              analyzing={analyzing}
-            />
+            <EmptyState onPick={() => fileInputRef.current?.click()} analyzing={analyzing} />
           ) : (
             <SongView
               song={active}
@@ -281,13 +272,7 @@ export function SongStudio() {
   );
 }
 
-function EmptyState({
-  onPick,
-  analyzing,
-}: {
-  onPick: () => void;
-  analyzing: boolean;
-}) {
+function EmptyState({ onPick, analyzing }: { onPick: () => void; analyzing: boolean }) {
   return (
     <div className="flex h-full items-center justify-center p-10">
       <button
@@ -301,8 +286,8 @@ function EmptyState({
         <div>
           <div className="text-base font-semibold">Drop a track to begin</div>
           <p className="mt-1 text-sm text-muted">
-            MP3, WAV, M4A, FLAC. The Song Brain detects tempo, lays out the
-            sections, and gives you a song map to direct against — all locally.
+            MP3, WAV, M4A, FLAC. The Song Brain detects tempo, lays out the sections, and gives you
+            a song map to direct against — all locally.
           </p>
         </div>
         <span className="text-xs font-medium text-primary">
@@ -316,4 +301,3 @@ function EmptyState({
 // ---------------------------------------------------------------------------
 // Song view
 // ---------------------------------------------------------------------------
-

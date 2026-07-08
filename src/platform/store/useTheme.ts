@@ -9,9 +9,7 @@ function readInitial(): Theme {
   const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
   if (saved === "light" || saved === "dark") return saved;
   // Fall back to the OS preference, defaulting to dark (the product is dark-first).
-  return window.matchMedia?.("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
+  return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
 function apply(theme: Theme) {

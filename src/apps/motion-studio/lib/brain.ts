@@ -42,12 +42,18 @@ function sceneDuration(total: number, index: number, count: number): [number, nu
   return [start, end];
 }
 
-export function directStoryboard(draft: MotionProjectDraft, direction: CreativeDirection): MotionScene[] {
+export function directStoryboard(
+  draft: MotionProjectDraft,
+  direction: CreativeDirection
+): MotionScene[] {
   const type = productionType(draft.typeId);
   const style = visualStyle(draft.styleId);
   const source = `${draft.businessInput}\n${draft.marketingBrief}\n${draft.script}\n${draft.brief}`;
   const productLine = sentenceFrom(source, "Introduce the product and the result it creates.");
-  const promiseLine = sentenceFrom(draft.marketingBrief || draft.brief, "Show a clearer path from problem to outcome.");
+  const promiseLine = sentenceFrom(
+    draft.marketingBrief || draft.brief,
+    "Show a clearer path from problem to outcome."
+  );
   const scriptLine = sentenceFrom(draft.script, promiseLine);
   const roles = type.sceneRoles;
 
@@ -76,14 +82,28 @@ export function directStoryboard(draft: MotionProjectDraft, direction: CreativeD
         index === roles.length - 1
           ? "Close the story with a memorable brand/action moment."
           : `Clarify the ${role.toLowerCase()} beat without adding production clutter.`,
-      layout: index % 2 === 0 ? "Hero object left, proof or words right." : "Centered composition with layered supporting elements.",
+      layout:
+        index % 2 === 0
+          ? "Hero object left, proof or words right."
+          : "Centered composition with layered supporting elements.",
       motion,
       camera: direction.composition,
-      energy: Math.min(10, 5 + index + (draft.feeling === "bold" || draft.feeling === "playful" ? 1 : 0)),
+      energy: Math.min(
+        10,
+        5 + index + (draft.feeling === "bold" || draft.feeling === "playful" ? 1 : 0)
+      ),
       accent: direction.colorPalette[(index + 2) % direction.colorPalette.length],
-      transition: index === roles.length - 1 ? "final lockup" : style.motionVocab[index % style.motionVocab.length],
+      transition:
+        index === roles.length - 1
+          ? "final lockup"
+          : style.motionVocab[index % style.motionVocab.length],
       voiceover: `${role}. ${scriptLine}`,
-      audioCue: index === 0 ? "single clean impact, then bed begins" : index === roles.length - 1 ? "resolve with logo hit" : "light rhythmic marker",
+      audioCue:
+        index === 0
+          ? "single clean impact, then bed begins"
+          : index === roles.length - 1
+            ? "resolve with logo hit"
+            : "light rhythmic marker",
       score: 78 + ((index * 3) % 13),
     };
   });
@@ -91,14 +111,18 @@ export function directStoryboard(draft: MotionProjectDraft, direction: CreativeD
 
 export function critiqueScene(scene: MotionScene): string {
   if (scene.energy < 6) return "The beat is readable, but could use a stronger motion accent.";
-  if (scene.headline.length > 118) return "The headline is doing too much; tighten the scene to one idea.";
+  if (scene.headline.length > 118)
+    return "The headline is doing too much; tighten the scene to one idea.";
   return "The scene has a clear objective, visible motion, and a usable production note.";
 }
 
 export function improveScene(scene: MotionScene): MotionScene {
   return {
     ...scene,
-    headline: scene.headline.replace(/^([^:]+):\s*/, "$1: sharpen the main promise with one visual idea - "),
+    headline: scene.headline.replace(
+      /^([^:]+):\s*/,
+      "$1: sharpen the main promise with one visual idea - "
+    ),
     support: `${scene.support} Improve pass: reduce clutter, add a stronger first-frame silhouette, and keep continuity with the approved style.`,
     motion: `${scene.motion}, then a cleaner hold for readability`,
     energy: Math.min(10, scene.energy + 1),

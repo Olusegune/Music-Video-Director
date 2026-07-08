@@ -31,12 +31,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
-import {
-  ASPECT_RATIOS,
-  SIZE_PRESETS,
-  resolveSize,
-  IMAGE_MODELS,
-} from "@/platform/lib/imageGen";
+import { ASPECT_RATIOS, SIZE_PRESETS, resolveSize, IMAGE_MODELS } from "@/platform/lib/imageGen";
 import { controlsForProviderKey } from "@/platform/lib/modelRegistry";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
@@ -122,7 +117,8 @@ function diagnose(modelLabel: string, e: unknown): string {
     reason = "The provider rejected the API key.";
     action = "Add or fix the key in API Keys, then run Test Connection.";
   } else if (/needs (a|an) (image|reference|start frame)/.test(low)) {
-    reason = "This model needs a reference image, but none was provided (or none could be resolved).";
+    reason =
+      "This model needs a reference image, but none was provided (or none could be resolved).";
     action =
       'Select a Character/Environment/Prop with a locked image, add one via "Add reference," or turn on Auto-fallback above so a model that doesn\'t need one can pick up automatically.';
   } else if (/429|quota|rate limit|exceeded|insufficient|billing/.test(low)) {
@@ -254,7 +250,10 @@ export function GenerationPanel({
   const activeReadiness = activeModel ? readinessFor(activeModel) : "no-key";
   // Capability-driven UI: only show controls the selected model actually supports.
   const caps = useMemo(
-    () => new Set(controlsForProviderKey(activeModel?.providerKey ?? "custom", isVideo ? "video" : "image")),
+    () =>
+      new Set(
+        controlsForProviderKey(activeModel?.providerKey ?? "custom", isVideo ? "video" : "image")
+      ),
     [activeModel?.providerKey, isVideo]
   );
   const can = (c: string) => caps.has(c as never);
@@ -403,7 +402,14 @@ export function GenerationPanel({
           >
             {modelList.map((m) => {
               const r = readinessFor(m);
-              const marker = r === "ready" || r === "configured" ? "●" : r === "invalid" ? "✕" : r === "manual" ? "✎" : "○";
+              const marker =
+                r === "ready" || r === "configured"
+                  ? "●"
+                  : r === "invalid"
+                    ? "✕"
+                    : r === "manual"
+                      ? "✎"
+                      : "○";
               return (
                 <option key={m.id} value={m.id}>
                   {marker} {m.label}
@@ -417,13 +423,11 @@ export function GenerationPanel({
               {READY_META[activeReadiness].label}
             </span>
             {(activeReadiness === "no-key" || activeReadiness === "invalid") && (
-              <span className="text-muted">{" "}— add/fix the key in API Keys</span>
+              <span className="text-muted"> — add/fix the key in API Keys</span>
             )}
           </p>
           {!isManual && caps.size > 0 && (
-            <p className="mt-1 text-[10px] text-muted">
-              Supports: {[...caps].join(" · ")}
-            </p>
+            <p className="mt-1 text-[10px] text-muted">Supports: {[...caps].join(" · ")}</p>
           )}
           {!isManual && activeModel && (
             <label className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted">
@@ -449,9 +453,16 @@ export function GenerationPanel({
           {can("aspect") && (
             <label className="block">
               <Label>Aspect</Label>
-              <select value={aspect} onChange={(e) => setAspect(e.target.value)} className={selectCls} aria-label="Aspect ratio">
+              <select
+                value={aspect}
+                onChange={(e) => setAspect(e.target.value)}
+                className={selectCls}
+                aria-label="Aspect ratio"
+              >
                 {ASPECT_RATIOS.filter((a) => a !== "custom").map((a) => (
-                  <option key={a} value={a}>{a}</option>
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
                 ))}
               </select>
             </label>
@@ -459,9 +470,16 @@ export function GenerationPanel({
           {can("resolution") && (
             <label className="block">
               <Label>Size / quality</Label>
-              <select value={sizeId} onChange={(e) => setSizeId(e.target.value)} className={selectCls} aria-label="Image size">
+              <select
+                value={sizeId}
+                onChange={(e) => setSizeId(e.target.value)}
+                className={selectCls}
+                aria-label="Image size"
+              >
                 {SIZE_PRESETS.filter((s) => s.id !== "custom").map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -481,7 +499,9 @@ export function GenerationPanel({
                     min={1}
                     max={20}
                     value={duration}
-                    onChange={(e) => setDuration(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
+                    onChange={(e) =>
+                      setDuration(Math.max(1, Math.min(20, Number(e.target.value) || 5)))
+                    }
                     className={selectCls}
                     aria-label="Duration"
                   />
@@ -490,9 +510,16 @@ export function GenerationPanel({
               {can("fps") && (
                 <label className="block">
                   <Label>FPS</Label>
-                  <select value={fps} onChange={(e) => setFps(Number(e.target.value))} className={selectCls} aria-label="FPS">
+                  <select
+                    value={fps}
+                    onChange={(e) => setFps(Number(e.target.value))}
+                    className={selectCls}
+                    aria-label="FPS"
+                  >
                     {[12, 24, 30, 60].map((f) => (
-                      <option key={f} value={f}>{f}</option>
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -502,9 +529,16 @@ export function GenerationPanel({
           {can("camera") && (
             <label className="block">
               <Label>Camera movement</Label>
-              <select value={camera} onChange={(e) => setCamera(e.target.value)} className={selectCls} aria-label="Camera movement">
+              <select
+                value={camera}
+                onChange={(e) => setCamera(e.target.value)}
+                className={selectCls}
+                aria-label="Camera movement"
+              >
                 {CAMERA_MOVES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </label>
@@ -526,67 +560,68 @@ export function GenerationPanel({
         </>
       )}
 
-      {advanced && (can("seed") || can("variations") || can("negativePrompt") || can("referenceStrength")) && (
-        <>
-          {(can("seed") || can("variations")) && (
-            <div className="grid grid-cols-2 gap-2">
-              {can("seed") && (
-                <label className="block">
-                  <Label>Seed (consistency)</Label>
-                  <input
-                    value={seed}
-                    onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))}
-                    placeholder="random"
-                    inputMode="numeric"
-                    className={selectCls}
-                    aria-label="Seed"
-                  />
-                </label>
-              )}
-              {can("variations") && (
-                <label className="block">
-                  <Label>Variations ({variations})</Label>
-                  <input
-                    type="range"
-                    min={1}
-                    max={4}
-                    value={variations}
-                    onChange={(e) => setVariations(Number(e.target.value))}
-                    className="mt-2 w-full accent-[var(--color-primary)]"
-                    aria-label="Variations"
-                  />
-                </label>
-              )}
-            </div>
-          )}
-          {can("referenceStrength") && (
-            <label className="block">
-              <Label>Reference strength ({refStrength}%)</Label>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={refStrength}
-                onChange={(e) => setRefStrength(Number(e.target.value))}
-                className="mt-1 w-full accent-[var(--color-primary)]"
-                aria-label="Reference strength"
-              />
-            </label>
-          )}
-          {can("negativePrompt") && (
-            <label className="block">
-              <Label>Negative prompt</Label>
-              <Textarea
-                value={negativePrompt}
-                onChange={(e) => setNegativePrompt(e.target.value)}
-                placeholder="What to avoid…"
-                className="min-h-12 text-[13px]"
-                aria-label="Negative prompt"
-              />
-            </label>
-          )}
-        </>
-      )}
+      {advanced &&
+        (can("seed") || can("variations") || can("negativePrompt") || can("referenceStrength")) && (
+          <>
+            {(can("seed") || can("variations")) && (
+              <div className="grid grid-cols-2 gap-2">
+                {can("seed") && (
+                  <label className="block">
+                    <Label>Seed (consistency)</Label>
+                    <input
+                      value={seed}
+                      onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))}
+                      placeholder="random"
+                      inputMode="numeric"
+                      className={selectCls}
+                      aria-label="Seed"
+                    />
+                  </label>
+                )}
+                {can("variations") && (
+                  <label className="block">
+                    <Label>Variations ({variations})</Label>
+                    <input
+                      type="range"
+                      min={1}
+                      max={4}
+                      value={variations}
+                      onChange={(e) => setVariations(Number(e.target.value))}
+                      className="mt-2 w-full accent-[var(--color-primary)]"
+                      aria-label="Variations"
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+            {can("referenceStrength") && (
+              <label className="block">
+                <Label>Reference strength ({refStrength}%)</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={refStrength}
+                  onChange={(e) => setRefStrength(Number(e.target.value))}
+                  className="mt-1 w-full accent-[var(--color-primary)]"
+                  aria-label="Reference strength"
+                />
+              </label>
+            )}
+            {can("negativePrompt") && (
+              <label className="block">
+                <Label>Negative prompt</Label>
+                <Textarea
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  placeholder="What to avoid…"
+                  className="min-h-12 text-[13px]"
+                  aria-label="Negative prompt"
+                />
+              </label>
+            )}
+          </>
+        )}
 
       {/* Reference images — host-tracked + any asset pulled from the library */}
       <div>
@@ -604,7 +639,9 @@ export function GenerationPanel({
                 {(isLib || onRemoveReference) && (
                   <button
                     onClick={() =>
-                      isLib ? setLibRefs((r) => r.filter((x) => x !== src)) : onRemoveReference?.(src)
+                      isLib
+                        ? setLibRefs((r) => r.filter((x) => x !== src))
+                        : onRemoveReference?.(src)
                     }
                     className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-danger text-white group-hover:flex"
                     aria-label="Remove reference"
@@ -636,12 +673,7 @@ export function GenerationPanel({
         />
       )}
 
-      <Button
-        variant="gold"
-        onClick={run}
-        disabled={isBusy || !prompt.trim()}
-        className="w-full"
-      >
+      <Button variant="gold" onClick={run} disabled={isBusy || !prompt.trim()} className="w-full">
         {isManual ? (
           <Copy className="h-4 w-4" />
         ) : isBusy ? (
@@ -654,15 +686,15 @@ export function GenerationPanel({
         {isManual
           ? "Copy prompt for Midjourney"
           : isBusy
-            ? attemptNote ?? "Generating…"
+            ? (attemptNote ?? "Generating…")
             : results.length > 0
               ? "Regenerate"
               : "Generate"}
       </Button>
       {isManual && (
         <p className="mt-1 text-center text-[11px] text-muted">
-          Midjourney has no public API — copy the prompt, generate in Midjourney, then import
-          the image with “Add reference” or Upload.
+          Midjourney has no public API — copy the prompt, generate in Midjourney, then import the
+          image with “Add reference” or Upload.
         </p>
       )}
 
@@ -670,13 +702,18 @@ export function GenerationPanel({
         <div className="rounded-md border border-danger/40 bg-danger/10 px-2.5 py-2 text-[11px] text-danger">
           <p className="whitespace-pre-line">{error}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <button onClick={run} className="rounded bg-danger/15 px-2 py-0.5 font-medium hover:bg-danger/25">
+            <button
+              onClick={run}
+              className="rounded bg-danger/15 px-2 py-0.5 font-medium hover:bg-danger/25"
+            >
               Retry
             </button>
             <button
               onClick={() => {
                 const i = modelList.findIndex((m) => m.id === modelId);
-                const nextNonManual = [...modelList.slice(i + 1), ...modelList.slice(0, i)].find((m) => !m.manual);
+                const nextNonManual = [...modelList.slice(i + 1), ...modelList.slice(0, i)].find(
+                  (m) => !m.manual
+                );
                 if (nextNonManual) {
                   setModelId(nextNonManual.id);
                   setError(null);
@@ -709,9 +746,18 @@ export function GenerationPanel({
               )}
             >
               {isVideo ? (
-                <AssetVideo src={url} className="aspect-video w-full bg-black object-cover" label="Result" />
+                <AssetVideo
+                  src={url}
+                  className="aspect-video w-full bg-black object-cover"
+                  label="Result"
+                />
               ) : (
-                <AssetImage src={url} alt={`Result ${i + 1}`} className="aspect-square w-full object-cover" label="Result" />
+                <AssetImage
+                  src={url}
+                  alt={`Result ${i + 1}`}
+                  className="aspect-square w-full object-cover"
+                  label="Result"
+                />
               )}
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/55 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100">
                 {onPick && (

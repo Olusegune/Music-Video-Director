@@ -27,7 +27,12 @@ export function createLoopRun<T>(target: string, value: T, score = 78): LoopRun<
     approved: false,
     events: [
       createLoopEvent("generate", target, `Generated first ${target} draft.`, score),
-      createLoopEvent("critique", target, `Checked ${target} against the current creative direction.`, score),
+      createLoopEvent(
+        "critique",
+        target,
+        `Checked ${target} against the current creative direction.`,
+        score
+      ),
     ],
   };
 }
@@ -70,6 +75,9 @@ export function approveLoopRun<T>(run: LoopRun<T>): LoopRun<T> {
   return {
     ...run,
     approved: true,
-    events: [...run.events, createLoopEvent("approve", run.target, `Approved ${run.target}.`, run.score)],
+    events: [
+      ...run.events,
+      createLoopEvent("approve", run.target, `Approved ${run.target}.`, run.score),
+    ],
   };
 }

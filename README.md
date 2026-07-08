@@ -65,11 +65,11 @@ npm run tauri build    # produces the installers + the standalone exe
 
 `npm run tauri build` produces three artifacts:
 
-| Artifact | Path |
-|---|---|
-| Installer (`.exe`, NSIS) | `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_<ver>_x64-setup.exe` |
-| Installer (`.msi`) | `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_<ver>_x64_en-US.msi` |
-| Portable (standalone `.exe`) | `src-tauri/target/release/wheelbarrow-motionforge.exe` |
+| Artifact                     | Path                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| Installer (`.exe`, NSIS)     | `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_<ver>_x64-setup.exe` |
+| Installer (`.msi`)           | `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_<ver>_x64_en-US.msi`  |
+| Portable (standalone `.exe`) | `src-tauri/target/release/wheelbarrow-motionforge.exe`                             |
 
 ### Portable mode (USB-stick style)
 

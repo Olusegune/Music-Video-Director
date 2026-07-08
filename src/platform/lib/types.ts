@@ -72,12 +72,7 @@ export interface ProviderKeyStatus {
 }
 
 /** Outcome of a Test Connection probe (mirrors Rust ConnectionResult). */
-export type ConnectionStatus =
-  | "connected"
-  | "invalid"
-  | "offline"
-  | "untested"
-  | "not_configured";
+export type ConnectionStatus = "connected" | "invalid" | "offline" | "untested" | "not_configured";
 
 export interface ConnectionResult {
   status: ConnectionStatus;

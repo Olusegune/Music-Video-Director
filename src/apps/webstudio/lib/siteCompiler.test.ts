@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  compileCss,
-  compilePage,
-  compileSite,
-} from "@/apps/webstudio/lib/siteCompiler";
+import { compileCss, compilePage, compileSite } from "@/apps/webstudio/lib/siteCompiler";
 import type { WebProject } from "@/apps/webstudio/lib/types";
 
 const project: WebProject = {

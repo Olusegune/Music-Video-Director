@@ -54,8 +54,7 @@ export function CastView() {
     queryKey: ["characters"],
     queryFn: api.listCharacters,
   });
-  const refreshCharacters = () =>
-    queryClient.invalidateQueries({ queryKey: ["characters"] });
+  const refreshCharacters = () => queryClient.invalidateQueries({ queryKey: ["characters"] });
 
   const refresh = () => setCast(loadCast());
 
@@ -97,8 +96,8 @@ export function CastView() {
           <div>
             <h1 className="text-lg font-semibold leading-tight">Cast</h1>
             <p className="text-xs text-muted">
-              Your performers — singers, dancers, and featured artists. Link to
-              Character Bible DNA for visual consistency.
+              Your performers — singers, dancers, and featured artists. Link to Character Bible DNA
+              for visual consistency.
             </p>
           </div>
         </div>
@@ -157,8 +156,8 @@ function EmptyState({ onAdd }: { onAdd: (role?: PerformerRole) => void }) {
         </div>
         <h2 className="text-base font-semibold">No performers yet</h2>
         <p className="mt-1 text-sm text-muted">
-          Add the people in your video. The MV Director and Choreography engine
-          reference them by role and dance style.
+          Add the people in your video. The MV Director and Choreography engine reference them by
+          role and dance style.
         </p>
         <div className="mt-4 flex justify-center gap-2">
           <Button onClick={() => onAdd("Lead Singer")}>
@@ -230,10 +229,7 @@ function PerformerCard({
         className="flex items-center gap-2 px-4 py-2.5"
         style={{ backgroundColor: `${color}14`, borderBottom: `1px solid ${color}33` }}
       >
-        <span
-          className="h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
         <Badge className="normal-case" style={{ backgroundColor: `${color}1f`, color }}>
           {performer.role}
         </Badge>
@@ -361,8 +357,8 @@ function PerformerCard({
             </div>
             {linked && (
               <p className="text-[11px] text-muted">
-                Linked to <span className="text-foreground">{linked.name}</span> —
-                visual DNA{linked.locked ? " (locked)" : ""} carries into generation.
+                Linked to <span className="text-foreground">{linked.name}</span> — visual DNA
+                {linked.locked ? " (locked)" : ""} carries into generation.
               </p>
             )}
           </div>
@@ -396,9 +392,7 @@ function PerformerCard({
 
           {isDancerish && (
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">
-                Dance style
-              </span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">Dance style</span>
               <CardPicker
                 value={performer.danceStyle}
                 ariaLabel="Dance style"
@@ -434,9 +428,7 @@ function PerformerCard({
         {expanded && (
           <div className="space-y-3 border-t border-border pt-3">
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">
-                Wardrobe
-              </span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">Wardrobe</span>
               <Input
                 value={performer.wardrobe}
                 onChange={(e) => onChange({ ...performer, wardrobe: e.target.value })}
@@ -451,9 +443,7 @@ function PerformerCard({
               </span>
               <Textarea
                 value={performer.performanceNotes}
-                onChange={(e) =>
-                  onChange({ ...performer, performanceNotes: e.target.value })
-                }
+                onChange={(e) => onChange({ ...performer, performanceNotes: e.target.value })}
                 placeholder="Energy, attitude, signature moves, how they carry the camera…"
                 className="min-h-16"
                 aria-label="Performance notes"

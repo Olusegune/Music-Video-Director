@@ -45,8 +45,7 @@ export interface FfmpegStatus {
   managed: boolean;
 }
 
-export const isTauri =
-  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   const { invoke } = await import("@tauri-apps/api/core");
@@ -100,13 +99,8 @@ function browserDownload(content: string, filename: string, mime: string) {
 const ALL_PROVIDERS: ProviderId[] = PROVIDERS.map((p) => p.id);
 
 /** Build the args the local engine needs from whatever context we have. */
-function localPackFor(
-  projectId: string,
-  input: string,
-  ctx?: GenerateContext
-): PromptPack {
-  const project =
-    ctx?.project ?? mock.listProjects().find((p) => p.id === projectId) ?? null;
+function localPackFor(projectId: string, input: string, ctx?: GenerateContext): PromptPack {
+  const project = ctx?.project ?? mock.listProjects().find((p) => p.id === projectId) ?? null;
   const styleId = ctx?.styleId ?? loadProjectStyle(projectId).preset;
   const brief = (ctx?.brief ?? input).trim();
   return normalizePack(
@@ -197,7 +191,10 @@ const mock = {
     lsSet(LS_ENVIRONMENTS, all);
   },
   deleteEnvironment(id: string): void {
-    lsSet(LS_ENVIRONMENTS, mock.listEnvironments().filter((e) => e.id !== id));
+    lsSet(
+      LS_ENVIRONMENTS,
+      mock.listEnvironments().filter((e) => e.id !== id)
+    );
   },
   generateEnvironmentImage(environmentId: string): string {
     return `https://picsum.photos/seed/env-${environmentId}-${Date.now()}/768/432`;
@@ -214,7 +211,10 @@ const mock = {
     lsSet(LS_PROPS, all);
   },
   deleteProp(id: string): void {
-    lsSet(LS_PROPS, mock.listProps().filter((p) => p.id !== id));
+    lsSet(
+      LS_PROPS,
+      mock.listProps().filter((p) => p.id !== id)
+    );
   },
   generatePropImage(propId: string): string {
     return `https://picsum.photos/seed/prop-${propId}-${Date.now()}/512/512`;
@@ -270,8 +270,7 @@ const mock = {
   },
   testProviderConnection(provider: ProviderId): ConnectionResult {
     const keys = lsGet<Record<string, string>>(LS_KEYS, {});
-    if (!keys[provider])
-      return { status: "not_configured", message: "No key set." };
+    if (!keys[provider]) return { status: "not_configured", message: "No key set." };
     // Browser dev can't make authenticated provider calls — report the key as
     // present but unverified, matching the desktop app's "untested" outcome.
     return {
@@ -322,11 +321,7 @@ const mock = {
   savePack(projectId: string, pack: PromptPack): void {
     lsSet(`mf.pack.${projectId}`, pack);
   },
-  generatePromptPack(
-    projectId: string,
-    input: string,
-    ctx?: GenerateContext
-  ): PromptPack {
+  generatePromptPack(projectId: string, input: string, ctx?: GenerateContext): PromptPack {
     // Real offline generation via the local creative engine.
     const pack = localPackFor(projectId, input, ctx);
     lsSet(`mf.pack.${projectId}`, pack);
@@ -347,9 +342,7 @@ export const api = {
       : Promise.resolve(mock.createProject(input)),
 
   deleteProject: (id: string) =>
-    isTauri
-      ? invoke<void>("delete_project", { id })
-      : Promise.resolve(mock.deleteProject(id)),
+    isTauri ? invoke<void>("delete_project", { id }) : Promise.resolve(mock.deleteProject(id)),
 
   getProviderKeyStatuses: () =>
     isTauri
@@ -389,7 +382,11 @@ export const api = {
     return invoke<PromptPack>("generate_prompt_pack", { projectId, input });
   },
 
-  generateStructuredText: (provider: ProviderId, prompt: string, schema: string): Promise<string> =>
+  generateStructuredText: (
+    provider: ProviderId,
+    prompt: string,
+    schema: string
+  ): Promise<string> =>
     isTauri
       ? invoke<string>("generate_structured_text", { provider, prompt, schema })
       : Promise.reject(new Error("Provider-backed structured text runs in the desktop app.")),
@@ -475,9 +472,7 @@ export const api = {
       : Promise.resolve(mock.exportProject(projectId, format)),
 
   listCharacters: () =>
-    isTauri
-      ? invoke<Character[]>("list_characters")
-      : Promise.resolve(mock.listCharacters()),
+    isTauri ? invoke<Character[]>("list_characters") : Promise.resolve(mock.listCharacters()),
 
   saveCharacter: (character: Character) =>
     isTauri
@@ -485,14 +480,9 @@ export const api = {
       : Promise.resolve(mock.saveCharacter(character)),
 
   deleteCharacter: (id: string) =>
-    isTauri
-      ? invoke<void>("delete_character", { id })
-      : Promise.resolve(mock.deleteCharacter(id)),
+    isTauri ? invoke<void>("delete_character", { id }) : Promise.resolve(mock.deleteCharacter(id)),
 
-  generateCharacterPortrait: async (
-    characterId: string,
-    prompt: string
-  ): Promise<string> =>
+  generateCharacterPortrait: async (characterId: string, prompt: string): Promise<string> =>
     isTauri
       ? toAssetSrc(
           await invoke<string>("generate_character_portrait", {
@@ -503,9 +493,7 @@ export const api = {
       : mock.generateCharacterPortrait(characterId),
 
   listEnvironments: () =>
-    isTauri
-      ? invoke<Environment[]>("list_environments")
-      : Promise.resolve(mock.listEnvironments()),
+    isTauri ? invoke<Environment[]>("list_environments") : Promise.resolve(mock.listEnvironments()),
 
   saveEnvironment: (environment: Environment) =>
     isTauri
@@ -517,10 +505,7 @@ export const api = {
       ? invoke<void>("delete_environment", { id })
       : Promise.resolve(mock.deleteEnvironment(id)),
 
-  generateEnvironmentImage: async (
-    environmentId: string,
-    prompt: string
-  ): Promise<string> =>
+  generateEnvironmentImage: async (environmentId: string, prompt: string): Promise<string> =>
     isTauri
       ? toAssetSrc(
           await invoke<string>("generate_environment_image", {
@@ -530,24 +515,17 @@ export const api = {
         )
       : mock.generateEnvironmentImage(environmentId),
 
-  listProps: () =>
-    isTauri ? invoke<Prop[]>("list_props") : Promise.resolve(mock.listProps()),
+  listProps: () => (isTauri ? invoke<Prop[]>("list_props") : Promise.resolve(mock.listProps())),
 
   saveProp: (prop: Prop) =>
-    isTauri
-      ? invoke<void>("save_prop", { prop })
-      : Promise.resolve(mock.saveProp(prop)),
+    isTauri ? invoke<void>("save_prop", { prop }) : Promise.resolve(mock.saveProp(prop)),
 
   deleteProp: (id: string) =>
-    isTauri
-      ? invoke<void>("delete_prop", { id })
-      : Promise.resolve(mock.deleteProp(id)),
+    isTauri ? invoke<void>("delete_prop", { id }) : Promise.resolve(mock.deleteProp(id)),
 
   generatePropImage: async (propId: string, prompt: string): Promise<string> =>
     isTauri
-      ? toAssetSrc(
-          await invoke<string>("generate_prop_image", { propId, prompt })
-        )
+      ? toAssetSrc(await invoke<string>("generate_prop_image", { propId, prompt }))
       : mock.generatePropImage(propId),
 
   generateImagePro: async (
@@ -625,17 +603,11 @@ export const api = {
     provider?: string
   ): Promise<string> =>
     isTauri
-      ? toAssetSrc(
-          await invoke<string>("generate_mv_audio", { songId, text, voice, provider })
-        )
+      ? toAssetSrc(await invoke<string>("generate_mv_audio", { songId, text, voice, provider }))
       : mock.generateVoiceover(),
 
   /** Persist imported song audio to disk (Tauri only). Returns its file path. */
-  importSongAudio: async (
-    songId: string,
-    dataBase64: string,
-    ext: string
-  ): Promise<string> =>
+  importSongAudio: async (songId: string, dataBase64: string, ext: string): Promise<string> =>
     isTauri
       ? invoke<string>("import_song_audio", { songId, dataBase64, ext })
       : Promise.resolve(""),
@@ -689,22 +661,14 @@ export const api = {
 
   /** Resolve a stored local file path to a displayable data: URL (Tauri only). */
   assetDataUrl: (path: string) =>
-    isTauri
-      ? invoke<string>("read_asset_data_url", { path })
-      : Promise.resolve(path),
+    isTauri ? invoke<string>("read_asset_data_url", { path }) : Promise.resolve(path),
 
   listBrandKits: () =>
-    isTauri
-      ? invoke<BrandKit[]>("list_brand_kits")
-      : Promise.resolve(mock.listBrandKits()),
+    isTauri ? invoke<BrandKit[]>("list_brand_kits") : Promise.resolve(mock.listBrandKits()),
 
   saveBrandKit: (kit: BrandKit) =>
-    isTauri
-      ? invoke<void>("save_brand_kit", { kit })
-      : Promise.resolve(mock.saveBrandKit(kit)),
+    isTauri ? invoke<void>("save_brand_kit", { kit }) : Promise.resolve(mock.saveBrandKit(kit)),
 
   deleteBrandKit: (id: string) =>
-    isTauri
-      ? invoke<void>("delete_brand_kit", { id })
-      : Promise.resolve(mock.deleteBrandKit(id)),
+    isTauri ? invoke<void>("delete_brand_kit", { id }) : Promise.resolve(mock.deleteBrandKit(id)),
 };

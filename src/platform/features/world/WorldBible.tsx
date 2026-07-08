@@ -137,8 +137,8 @@ export function WorldBible() {
             </div>
             <p className="text-sm font-medium">Build your world here</p>
             <p className="mt-1 max-w-sm text-xs text-muted">
-              Conjure a location from a line, or start blank. Locations imported
-              from Script Studio land here automatically.
+              Conjure a location from a line, or start blank. Locations imported from Script Studio
+              land here automatically.
             </p>
           </div>
         ) : (
@@ -149,8 +149,7 @@ export function WorldBible() {
                 env={e}
                 onClick={() => setSelectedId(e.id)}
                 onDelete={() => {
-                  if (confirm(`Delete "${e.name}" from the World Bible?`))
-                    removeEnv.mutate(e.id);
+                  if (confirm(`Delete "${e.name}" from the World Bible?`)) removeEnv.mutate(e.id);
                 }}
               />
             ))}
@@ -170,8 +169,7 @@ function EnvCard({
   onClick: () => void;
   onDelete: () => void;
 }) {
-  const subtitle =
-    [env.timeOfDay, env.mood].filter(Boolean).join(" · ") || "Undefined mood";
+  const subtitle = [env.timeOfDay, env.mood].filter(Boolean).join(" · ") || "Undefined mood";
   return (
     <div
       onClick={onClick}
@@ -185,7 +183,9 @@ function EnvCard({
           src={env.establishingUrl}
           alt={env.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          fallback={<GradientFill id={env.id} label={env.name} className="h-full w-full text-2xl" />}
+          fallback={
+            <GradientFill id={env.id} label={env.name} className="h-full w-full text-2xl" />
+          }
           label="Establishing shot"
         />
         <div className="absolute right-2 top-2">
@@ -375,27 +375,54 @@ function EnvironmentSheet({
             </Field>
           </Section>
 
-          <Section icon={<Building2 className="h-4 w-4 text-primary" />} title="Architecture & Materials">
+          <Section
+            icon={<Building2 className="h-4 w-4 text-primary" />}
+            title="Architecture & Materials"
+          >
             <Field label="Architecture">
-              <Input value={draft.architecture} onChange={(e) => set("architecture", e.target.value)} placeholder="brutalist concrete, fire escapes" />
+              <Input
+                value={draft.architecture}
+                onChange={(e) => set("architecture", e.target.value)}
+                placeholder="brutalist concrete, fire escapes"
+              />
             </Field>
             <Field label="Materials">
-              <Input value={draft.materials} onChange={(e) => set("materials", e.target.value)} placeholder="wet asphalt, rusted steel, glass" />
+              <Input
+                value={draft.materials}
+                onChange={(e) => set("materials", e.target.value)}
+                placeholder="wet asphalt, rusted steel, glass"
+              />
             </Field>
             <Field label="Key props / set dressing" full>
-              <Input value={draft.keyProps} onChange={(e) => set("keyProps", e.target.value)} placeholder="neon signage, dumpsters, puddles, steam vents" />
+              <Input
+                value={draft.keyProps}
+                onChange={(e) => set("keyProps", e.target.value)}
+                placeholder="neon signage, dumpsters, puddles, steam vents"
+              />
             </Field>
           </Section>
 
           <Section icon={<CloudSun className="h-4 w-4 text-primary" />} title="Atmosphere">
             <Field label="Time of day">
-              <Input value={draft.timeOfDay} onChange={(e) => set("timeOfDay", e.target.value)} placeholder="night" />
+              <Input
+                value={draft.timeOfDay}
+                onChange={(e) => set("timeOfDay", e.target.value)}
+                placeholder="night"
+              />
             </Field>
             <Field label="Lighting style">
-              <Input value={draft.lightingStyle} onChange={(e) => set("lightingStyle", e.target.value)} placeholder="neon glow, high contrast, wet reflections" />
+              <Input
+                value={draft.lightingStyle}
+                onChange={(e) => set("lightingStyle", e.target.value)}
+                placeholder="neon glow, high contrast, wet reflections"
+              />
             </Field>
             <Field label="Mood" full>
-              <Input value={draft.mood} onChange={(e) => set("mood", e.target.value)} placeholder="gritty, lonely, cinematic" />
+              <Input
+                value={draft.mood}
+                onChange={(e) => set("mood", e.target.value)}
+                placeholder="gritty, lonely, cinematic"
+              />
             </Field>
           </Section>
 
@@ -405,7 +432,10 @@ function EnvironmentSheet({
             </Field>
           </Section>
 
-          <Section icon={<ScrollText className="h-4 w-4 text-primary" />} title="World rules & style">
+          <Section
+            icon={<ScrollText className="h-4 w-4 text-primary" />}
+            title="World rules & style"
+          >
             <Field label="Environment rules" full>
               <Textarea
                 value={draft.environmentRules}

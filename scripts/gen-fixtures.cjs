@@ -13,7 +13,8 @@ fs.writeFileSync(
 );
 
 // --- PDF (hand-built with a correct xref table) ---
-const content = "BT /F1 18 Tf 72 700 Td (Aurora Notes PDF brief. Trusted by 12000 teams. Sign up free today.) Tj ET";
+const content =
+  "BT /F1 18 Tf 72 700 Td (Aurora Notes PDF brief. Trusted by 12000 teams. Sign up free today.) Tj ET";
 const objs = [
   "<< /Type /Catalog /Pages 2 0 R >>",
   "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

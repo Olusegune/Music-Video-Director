@@ -67,7 +67,9 @@ export function CardPicker({
                   }}
                   className={cn(
                     "flex flex-col items-start gap-1.5 rounded-[var(--radius-card)] border p-2.5 text-left transition-colors",
-                    active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                    active
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/40"
                   )}
                 >
                   {o.icon && (

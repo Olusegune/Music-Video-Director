@@ -116,19 +116,14 @@ export function MagicDirect() {
             <Sparkles className="h-5 w-5 text-white" />
           </span>
           <div>
-            <h2 className="text-base font-semibold leading-tight">
-              Directing your music video
-            </h2>
-            <p className="text-xs text-muted">
-              Reading the song and building a full treatment…
-            </p>
+            <h2 className="text-base font-semibold leading-tight">Directing your music video</h2>
+            <p className="text-xs text-muted">Reading the song and building a full treatment…</p>
           </div>
         </div>
 
         <div className="space-y-1.5 p-6">
           {all.map((s, i) => {
-            const state =
-              done || i < stepIndex ? "done" : i === stepIndex ? "active" : "todo";
+            const state = done || i < stepIndex ? "done" : i === stepIndex ? "active" : "todo";
             return (
               <div
                 key={s.label}
@@ -144,11 +139,7 @@ export function MagicDirect() {
                   )}
                 </span>
                 <span
-                  className={
-                    state === "todo"
-                      ? "text-sm text-muted"
-                      : "text-sm text-foreground"
-                  }
+                  className={state === "todo" ? "text-sm text-muted" : "text-sm text-foreground"}
                 >
                   {s.label}
                 </span>

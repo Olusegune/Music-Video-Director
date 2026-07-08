@@ -71,7 +71,9 @@ export function validateProduction(
   if (cast.length === 0) {
     issues.push({ level: "warning", message: "No performers in the cast." });
   } else {
-    const orphan = cast.filter((p) => p.characterId && !characters.some((c) => c.id === p.characterId));
+    const orphan = cast.filter(
+      (p) => p.characterId && !characters.some((c) => c.id === p.characterId)
+    );
     if (orphan.length > 0)
       issues.push({
         level: "error",
@@ -80,16 +82,24 @@ export function validateProduction(
   }
 
   // --- bible references -----------------------------------------------------
-  const charNoImg = characters.filter((c) => !c.portraitUrl && (c.referenceImages?.length ?? 0) === 0).length;
+  const charNoImg = characters.filter(
+    (c) => !c.portraitUrl && (c.referenceImages?.length ?? 0) === 0
+  ).length;
   if (charNoImg > 0)
-    issues.push({ level: "warning", message: `${charNoImg} character${charNoImg === 1 ? " has" : "s have"} no portrait or reference image.` });
+    issues.push({
+      level: "warning",
+      message: `${charNoImg} character${charNoImg === 1 ? " has" : "s have"} no portrait or reference image.`,
+    });
 
   const noDna =
     characters.filter((c) => !c.promptDna?.trim()).length +
     environments.filter((e) => !e.promptDna?.trim()).length +
     props.filter((p) => !p.promptDna?.trim()).length;
   if (noDna > 0)
-    issues.push({ level: "warning", message: `${noDna} bible entr${noDna === 1 ? "y has" : "ies have"} no Prompt DNA composed.` });
+    issues.push({
+      level: "warning",
+      message: `${noDna} bible entr${noDna === 1 ? "y has" : "ies have"} no Prompt DNA composed.`,
+    });
 
   return issues;
 }

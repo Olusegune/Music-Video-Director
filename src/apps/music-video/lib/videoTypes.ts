@@ -6,12 +6,7 @@
 
 import type { MvTemplate, PerformanceLean } from "@/platform/lib/templates";
 
-export type VideoTypeKey =
-  | "performance"
-  | "narrative"
-  | "dance"
-  | "animated"
-  | "visual-album";
+export type VideoTypeKey = "performance" | "narrative" | "dance" | "animated" | "visual-album";
 
 export interface VideoTypeDef {
   key: VideoTypeKey;

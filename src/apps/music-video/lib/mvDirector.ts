@@ -149,12 +149,7 @@ const MOVE_MID = [
   "Slow, deliberate push",
   "Gentle crane up",
 ];
-const MOVE_LOW = [
-  "Slow creep-in",
-  "Static lock-off",
-  "Drifting float",
-  "Subtle parallax only",
-];
+const MOVE_LOW = ["Slow creep-in", "Static lock-off", "Drifting float", "Subtle parallax only"];
 
 const LIGHT_HIGH = [
   "Saturated colored wash, hard backlight, heavy haze",
@@ -250,8 +245,7 @@ function shotPoolFor(approach: ShotApproach): string[] {
 /** Target seconds-per-cut from energy — high energy cuts faster. `bias` scales
  *  the whole curve (a template's editing rhythm: <1 faster, >1 slower). */
 function cutLengthFor(energy: number, bias = 1): number {
-  const base =
-    energy >= 0.8 ? 1.4 : energy >= 0.6 ? 2.2 : energy >= 0.4 ? 3.4 : 4.8;
+  const base = energy >= 0.8 ? 1.4 : energy >= 0.6 ? 2.2 : energy >= 0.4 ? 3.4 : 4.8;
   return Math.max(0.8, base * bias);
 }
 
@@ -327,17 +321,10 @@ function nearestBeat(beats: number[], t: number): number {
 }
 
 /** Even shot boundaries within [start,end], snapped to beats, kept monotonic. */
-function shotBoundaries(
-  start: number,
-  end: number,
-  count: number,
-  beats: number[]
-): number[] {
+function shotBoundaries(start: number, end: number, count: number, beats: number[]): number[] {
   const raw: number[] = [];
   for (let k = 0; k <= count; k++) raw.push(start + ((end - start) * k) / count);
-  const snapped = raw.map((t, k) =>
-    k === 0 ? start : k === count ? end : nearestBeat(beats, t)
-  );
+  const snapped = raw.map((t, k) => (k === 0 ? start : k === count ? end : nearestBeat(beats, t)));
   // Enforce strictly increasing boundaries; if a snap collapsed a slot, fall
   // back to the raw (unsnapped) value.
   for (let k = 1; k < snapped.length; k++) {
@@ -395,7 +382,8 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
 
     const avgCut = dur / count;
     const band = bandFor(section.energy);
-    const paceWord = band === "high" ? "Fast cutting" : band === "mid" ? "Steady cutting" : "Slow, held shots";
+    const paceWord =
+      band === "high" ? "Fast cutting" : band === "mid" ? "Steady cutting" : "Slow, held shots";
 
     return {
       sectionId: section.id,
@@ -451,9 +439,10 @@ function moodWord(energy: number): string {
 
 function buildLogline(song: SongMap, template?: MvTemplate | null): string {
   const choruses = song.sections.filter((s) => s.kind === "Chorus" || s.kind === "Drop").length;
-  const hook = choruses > 0
-    ? `built around ${choruses} full-performance chorus${choruses === 1 ? "" : "es"}`
-    : "carried by a single evolving performance";
+  const hook =
+    choruses > 0
+      ? `built around ${choruses} full-performance chorus${choruses === 1 ? "" : "es"}`
+      : "carried by a single evolving performance";
   const style = template
     ? `A ${template.name} music video (${template.mood.toLowerCase()})`
     : `A ${tempoWord(song.bpm)}, ${moodWord(avgEnergy(song.sections))} music video`;
@@ -522,10 +511,7 @@ const sameSlot = (t: MvTreatment, songId: string, templateId?: string | null) =>
 
 /** A treatment is scoped to a (song, template) pair, so each template keeps its
  *  own shot list and generated frames — switching templates never bleeds across. */
-export function getTreatment(
-  songId: string,
-  templateId?: string | null
-): MvTreatment | null {
+export function getTreatment(songId: string, templateId?: string | null): MvTreatment | null {
   return loadAll().find((t) => sameSlot(t, songId, templateId)) ?? null;
 }
 

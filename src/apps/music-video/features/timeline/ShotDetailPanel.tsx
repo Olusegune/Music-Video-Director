@@ -38,8 +38,16 @@ export function ShotDetailPanel({
   const status: { label: string; icon: React.ReactNode; color: string } = shot.videoUrl
     ? { label: "Clip rendered", icon: <CheckCircle2 className="h-3.5 w-3.5" />, color: "#16a34a" }
     : shot.imageUrl
-      ? { label: "Frame only — no clip yet", icon: <Circle className="h-3.5 w-3.5 fill-current" />, color: "#d97706" }
-      : { label: "Nothing generated yet", icon: <Circle className="h-3.5 w-3.5" />, color: "var(--color-muted)" };
+      ? {
+          label: "Frame only — no clip yet",
+          icon: <Circle className="h-3.5 w-3.5 fill-current" />,
+          color: "#d97706",
+        }
+      : {
+          label: "Nothing generated yet",
+          icon: <Circle className="h-3.5 w-3.5" />,
+          color: "var(--color-muted)",
+        };
 
   return (
     <div
@@ -64,7 +72,12 @@ export function ShotDetailPanel({
             {shot.videoUrl ? (
               <AssetVideo src={shot.videoUrl} className="h-full w-full object-cover" controls />
             ) : shot.imageUrl ? (
-              <AssetImage src={shot.imageUrl} alt="" className="h-full w-full object-cover" label="Frame" />
+              <AssetImage
+                src={shot.imageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                label="Frame"
+              />
             ) : (
               <div className="flex h-full items-center justify-center text-muted">
                 <ImageIcon className="h-6 w-6" />
@@ -119,4 +132,3 @@ function DetailField({
     </div>
   );
 }
-

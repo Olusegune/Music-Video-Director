@@ -1,7 +1,12 @@
 // Studio/Creator treatment: TreatmentView + SectionCard + Field/EditableText (extracted, Phase 2).
 import { useEffect, useState } from "react";
 import { Film, MapPin, Shirt, Scissors } from "lucide-react";
-import { approachColor, type MvTreatment, type MvSectionPlan, type MvShot } from "@/apps/music-video/lib/mvDirector";
+import {
+  approachColor,
+  type MvTreatment,
+  type MvSectionPlan,
+  type MvShot,
+} from "@/apps/music-video/lib/mvDirector";
 import { sectionColor, formatTime } from "@/apps/music-video/lib/songBrain";
 import { cn } from "@/platform/lib/utils";
 import { Badge } from "@/platform/components/ui/badge";
@@ -93,9 +98,7 @@ export function TreatmentView({
               />
             </Field>
             <Field label="Energy arc">
-              <p className="text-sm leading-relaxed text-muted">
-                {treatment.energyArc}
-              </p>
+              <p className="text-sm leading-relaxed text-muted">{treatment.energyArc}</p>
             </Field>
           </div>
         </CardContent>
@@ -142,7 +145,6 @@ export function TreatmentView({
 // treatment data as Director/Expert; "Edit Scene" opens the same fine-tune
 // panel those tiers use inline, so nothing here is a dead end.
 // ---------------------------------------------------------------------------
-
 
 function SectionCard({
   section,
@@ -205,10 +207,7 @@ function SectionCard({
         <span className="text-xs tabular-nums text-muted">
           {formatTime(section.start)} – {formatTime(section.end)}
         </span>
-        <Badge
-          className="normal-case"
-          style={{ backgroundColor: `${aColor}1f`, color: aColor }}
-        >
+        <Badge className="normal-case" style={{ backgroundColor: `${aColor}1f`, color: aColor }}>
           {section.approach}
         </Badge>
         <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-muted">

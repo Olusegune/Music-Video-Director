@@ -67,7 +67,8 @@ export function ChoreographyPreviewStrip({
         />
       </div>
       <p className="mb-2 text-[11px] text-muted">
-        Every key pose across the song, in order — drag to reorder within a section, click a card to jump to it.
+        Every key pose across the song, in order — drag to reorder within a section, click a card to
+        jump to it.
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {items.map((it) => {

@@ -1,8 +1,25 @@
 // Section list row + per-section editor (extracted from SongStudio.tsx, Phase 2).
 import { useState } from "react";
-import { Play, Trash2, AlignLeft, Mic2, ChevronDown, ChevronRight, SlidersHorizontal } from "lucide-react";
-import { formatTime, sectionColor, SECTION_KINDS, type SongSection, type SectionKind } from "@/apps/music-video/lib/songBrain";
-import { detectSectionPerformer, SECTION_PERFORMER_ROLES } from "@/apps/music-video/lib/performerDetect";
+import {
+  Play,
+  Trash2,
+  AlignLeft,
+  Mic2,
+  ChevronDown,
+  ChevronRight,
+  SlidersHorizontal,
+} from "lucide-react";
+import {
+  formatTime,
+  sectionColor,
+  SECTION_KINDS,
+  type SongSection,
+  type SectionKind,
+} from "@/apps/music-video/lib/songBrain";
+import {
+  detectSectionPerformer,
+  SECTION_PERFORMER_ROLES,
+} from "@/apps/music-video/lib/performerDetect";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
@@ -68,9 +85,7 @@ export function SectionRow({
             ...section,
             kind,
             // keep a custom label, otherwise track the kind
-            label: SECTION_KINDS.includes(section.label as SectionKind)
-              ? kind
-              : section.label,
+            label: SECTION_KINDS.includes(section.label as SectionKind) ? kind : section.label,
           });
         }}
         className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
@@ -131,7 +146,12 @@ export function SectionEditor({
   }) => (
     <label className="block">
       <span className="mb-1 block text-[11px] font-medium text-muted">{label}</span>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-8 text-sm" />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-8 text-sm"
+      />
     </label>
   );
 
@@ -141,7 +161,10 @@ export function SectionEditor({
         className="flex items-center gap-2 px-4 py-2.5"
         style={{ backgroundColor: `${color}14`, borderBottom: `1px solid ${color}33` }}
       >
-        <span className="flex h-6 items-center rounded-md px-2 text-xs font-semibold text-white" style={{ backgroundColor: color }}>
+        <span
+          className="flex h-6 items-center rounded-md px-2 text-xs font-semibold text-white"
+          style={{ backgroundColor: color }}
+        >
           {section.label}
         </span>
         <span className="text-[11px] tabular-nums text-muted">
@@ -180,9 +203,7 @@ export function SectionEditor({
                   <span
                     className={cn(
                       "ml-1 rounded px-1.5 py-0.5 text-[10px]",
-                      det.confident
-                        ? "bg-primary/12 text-primary"
-                        : "bg-warning/15 text-warning"
+                      det.confident ? "bg-primary/12 text-primary" : "bg-warning/15 text-warning"
                     )}
                   >
                     {det.confident ? `Suggested: ${det.role}` : `Unclear — ${det.why}`}
@@ -199,7 +220,9 @@ export function SectionEditor({
                   {det.confident ? `Use suggestion (${det.role})` : "— choose performer —"}
                 </option>
                 {SECTION_PERFORMER_ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
               </select>
             </label>
@@ -222,15 +245,47 @@ export function SectionEditor({
         {showAdvanced && (
           <>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Field label="Lead vocalist(s)" value={section.lead ?? ""} onChange={(v) => onPatch({ lead: v })} placeholder="e.g. Neo Dude" />
-              <Field label="Backup / dancers" value={section.backup ?? ""} onChange={(v) => onPatch({ backup: v })} placeholder="e.g. 8 dancers" />
-              <Field label="Mood / emotion" value={section.mood ?? ""} onChange={(v) => onPatch({ mood: v })} placeholder="e.g. Curious" />
-              <Field label="Visual style" value={section.visualStyle ?? ""} onChange={(v) => onPatch({ visualStyle: v })} placeholder="e.g. neon, hazy" />
-              <Field label="Camera" value={section.cameraNote ?? ""} onChange={(v) => onPatch({ cameraNote: v })} placeholder="e.g. slow push-in" />
-              <Field label="Choreography" value={section.choreoNote ?? ""} onChange={(v) => onPatch({ choreoNote: v })} placeholder="e.g. full routine" />
+              <Field
+                label="Lead vocalist(s)"
+                value={section.lead ?? ""}
+                onChange={(v) => onPatch({ lead: v })}
+                placeholder="e.g. Neo Dude"
+              />
+              <Field
+                label="Backup / dancers"
+                value={section.backup ?? ""}
+                onChange={(v) => onPatch({ backup: v })}
+                placeholder="e.g. 8 dancers"
+              />
+              <Field
+                label="Mood / emotion"
+                value={section.mood ?? ""}
+                onChange={(v) => onPatch({ mood: v })}
+                placeholder="e.g. Curious"
+              />
+              <Field
+                label="Visual style"
+                value={section.visualStyle ?? ""}
+                onChange={(v) => onPatch({ visualStyle: v })}
+                placeholder="e.g. neon, hazy"
+              />
+              <Field
+                label="Camera"
+                value={section.cameraNote ?? ""}
+                onChange={(v) => onPatch({ cameraNote: v })}
+                placeholder="e.g. slow push-in"
+              />
+              <Field
+                label="Choreography"
+                value={section.choreoNote ?? ""}
+                onChange={(v) => onPatch({ choreoNote: v })}
+                placeholder="e.g. full routine"
+              />
             </div>
             <label className="block">
-              <span className="mb-1 block text-[11px] font-medium text-muted">Story / performance notes</span>
+              <span className="mb-1 block text-[11px] font-medium text-muted">
+                Story / performance notes
+              </span>
               <Textarea
                 value={section.storyNote ?? ""}
                 onChange={(e) => onPatch({ storyNote: e.target.value })}
@@ -264,4 +319,3 @@ export function SectionEditor({
 // ---------------------------------------------------------------------------
 // Canvas: waveform + section bands + beat grid + playhead
 // ---------------------------------------------------------------------------
-

@@ -1,12 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Sparkles,
-  Download,
-  Loader2,
-  ImagePlus,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Loader2, ImagePlus, RefreshCw } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
 import {
@@ -133,9 +126,7 @@ export function CharacterSheetView({
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold">
-              {character.name} — Character Sheet
-            </h1>
+            <h1 className="truncate text-lg font-semibold">{character.name} — Character Sheet</h1>
             <p className="text-xs text-muted">
               {generatedCount}/{total} panels generated
               {character.locked ? " · Canon DNA locked" : " · DNA not locked yet"}
@@ -207,7 +198,10 @@ export function CharacterSheetView({
                 </p>
               </div>
 
-              <ProfileRow label="Identity" value={[character.age, character.gender].filter(Boolean).join(", ")} />
+              <ProfileRow
+                label="Identity"
+                value={[character.age, character.gender].filter(Boolean).join(", ")}
+              />
               <ProfileRow label="Personality" value={character.traits} />
               <ProfileRow label="Motivations" value={character.motivations} />
               <ProfileRow label="Goals" value={character.goals} />
@@ -380,8 +374,6 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
 
 function SideHead({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-      {children}
-    </span>
+    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">{children}</span>
   );
 }

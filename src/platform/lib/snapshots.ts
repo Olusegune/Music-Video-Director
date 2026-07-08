@@ -10,12 +10,7 @@ const LS_SESSION_OPEN = "mf.sessionOpen";
 const MAX_SNAPSHOTS = 12;
 
 // Keys that are NOT production data (don't snapshot/restore these).
-const EXCLUDED = new Set([
-  LS_SNAPSHOTS,
-  LS_SESSION_OPEN,
-  "mf.theme",
-  "mf.showWelcome",
-]);
+const EXCLUDED = new Set([LS_SNAPSHOTS, LS_SESSION_OPEN, "mf.theme", "mf.showWelcome"]);
 
 export interface Snapshot {
   id: string;
@@ -77,9 +72,15 @@ export function snapshot(reason: string, now: number): Snapshot | null {
   const data = captureState();
   if (Object.keys(data).length === 0) return null;
   const list = loadSnapshots();
-  const sig = Object.keys(data).sort().map((k) => `${k}:${data[k].length}`).join("|");
+  const sig = Object.keys(data)
+    .sort()
+    .map((k) => `${k}:${data[k].length}`)
+    .join("|");
   const lastSig = list[0]
-    ? Object.keys(list[0].data).sort().map((k) => `${k}:${list[0].data[k].length}`).join("|")
+    ? Object.keys(list[0].data)
+        .sort()
+        .map((k) => `${k}:${list[0].data[k].length}`)
+        .join("|")
     : "";
   if (sig === lastSig) return null;
   const snap: Snapshot = {

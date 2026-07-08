@@ -25,15 +25,43 @@ const FORMATS: {
   icon: React.ReactNode;
   desktopOnly?: boolean;
 }[] = [
-  { id: "markdown", label: "Markdown", desc: "Readable .md — great for Notion / GitHub", icon: <FileText className="h-5 w-5" /> },
-  { id: "json", label: "JSON", desc: "Structured data — re-import or pipe into tools", icon: <FileJson className="h-5 w-5" /> },
-  { id: "pdf", label: "PDF", desc: "Print-ready production document", icon: <FileType className="h-5 w-5" />, desktopOnly: true },
-  { id: "docx", label: "Word (DOCX)", desc: "Editable document for handoff", icon: <FileCode className="h-5 w-5" />, desktopOnly: true },
+  {
+    id: "markdown",
+    label: "Markdown",
+    desc: "Readable .md — great for Notion / GitHub",
+    icon: <FileText className="h-5 w-5" />,
+  },
+  {
+    id: "json",
+    label: "JSON",
+    desc: "Structured data — re-import or pipe into tools",
+    icon: <FileJson className="h-5 w-5" />,
+  },
+  {
+    id: "pdf",
+    label: "PDF",
+    desc: "Print-ready production document",
+    icon: <FileType className="h-5 w-5" />,
+    desktopOnly: true,
+  },
+  {
+    id: "docx",
+    label: "Word (DOCX)",
+    desc: "Editable document for handoff",
+    icon: <FileCode className="h-5 w-5" />,
+    desktopOnly: true,
+  },
 ];
 
 export function BibleExport() {
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+  });
   const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
 
   const [busy, setBusy] = useState<ExportFormat | null>(null);
@@ -71,9 +99,21 @@ export function BibleExport() {
       <div className="max-w-3xl space-y-6 p-8">
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
-          <Stat icon={<Users className="h-4 w-4 text-primary" />} label="Characters" value={characters.length} />
-          <Stat icon={<Globe className="h-4 w-4 text-primary" />} label="Environments" value={environments.length} />
-          <Stat icon={<Package className="h-4 w-4 text-primary" />} label="Props & Vehicles" value={props.length} />
+          <Stat
+            icon={<Users className="h-4 w-4 text-primary" />}
+            label="Characters"
+            value={characters.length}
+          />
+          <Stat
+            icon={<Globe className="h-4 w-4 text-primary" />}
+            label="Environments"
+            value={environments.length}
+          />
+          <Stat
+            icon={<Package className="h-4 w-4 text-primary" />}
+            label="Props & Vehicles"
+            value={props.length}
+          />
         </div>
 
         {total === 0 && (

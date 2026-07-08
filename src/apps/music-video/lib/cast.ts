@@ -90,10 +90,7 @@ export function savePerformer(performer: Performer): void {
 }
 
 export function deletePerformer(id: string): void {
-  localStorage.setItem(
-    LS_CAST,
-    JSON.stringify(loadCast().filter((p) => p.id !== id))
-  );
+  localStorage.setItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
 }
 
 // ---------------------------------------------------------------------------

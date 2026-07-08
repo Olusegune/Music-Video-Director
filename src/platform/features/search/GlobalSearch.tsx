@@ -54,9 +54,21 @@ export function GlobalSearch() {
   const openWebStudio = useAppStore((s) => s.openWebStudio);
   const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
 
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters, enabled: open });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments, enabled: open });
-  const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps, enabled: open });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+    enabled: open,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+    enabled: open,
+  });
+  const { data: props = [] } = useQuery({
+    queryKey: ["props"],
+    queryFn: api.listProps,
+    enabled: open,
+  });
 
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -80,41 +92,138 @@ export function GlobalSearch() {
     if (!open) return [];
     const hits: Hit[] = [];
     hits.push(
-      { type: "Studio", icon: <Music className="h-4 w-4" />, label: "Music Video Director", sub: "Direct a complete music video", go: openSong },
-      { type: "Studio", icon: <Boxes className="h-4 w-4" />, label: "Motion Studio", sub: "Motion concepts and production prompts", go: openMotionStudio },
-      { type: "Studio", icon: <Sparkles className="h-4 w-4" />, label: "Glam Studio", sub: "Luxury campaign looks and hero assets", go: openGlamStudio },
-      { type: "Studio", icon: <Globe className="h-4 w-4" />, label: "Web Studio", sub: "Responsive campaign sites", go: openWebStudio },
-      { type: "Studio", icon: <Megaphone className="h-4 w-4" />, label: "Campaign Studio", sub: "Cross-channel launch orchestration", go: openCampaignStudio },
+      {
+        type: "Studio",
+        icon: <Music className="h-4 w-4" />,
+        label: "Music Video Director",
+        sub: "Direct a complete music video",
+        go: openSong,
+      },
+      {
+        type: "Studio",
+        icon: <Boxes className="h-4 w-4" />,
+        label: "Motion Studio",
+        sub: "Motion concepts and production prompts",
+        go: openMotionStudio,
+      },
+      {
+        type: "Studio",
+        icon: <Sparkles className="h-4 w-4" />,
+        label: "Glam Studio",
+        sub: "Luxury campaign looks and hero assets",
+        go: openGlamStudio,
+      },
+      {
+        type: "Studio",
+        icon: <Globe className="h-4 w-4" />,
+        label: "Web Studio",
+        sub: "Responsive campaign sites",
+        go: openWebStudio,
+      },
+      {
+        type: "Studio",
+        icon: <Megaphone className="h-4 w-4" />,
+        label: "Campaign Studio",
+        sub: "Cross-channel launch orchestration",
+        go: openCampaignStudio,
+      }
     );
     const songs = loadSongs();
-    const goSong = (id: string, mv = false) => () => {
-      setActiveSong(id);
-      mv ? openMvDirector() : openSong();
-    };
+    const goSong =
+      (id: string, mv = false) =>
+      () => {
+        setActiveSong(id);
+        mv ? openMvDirector() : openSong();
+      };
     for (const s of songs) {
-      hits.push({ type: "Song", icon: <Music className="h-4 w-4" />, label: s.name, sub: `${s.bpm} BPM · ${s.sections.length} sections`, go: goSong(s.id) });
+      hits.push({
+        type: "Song",
+        icon: <Music className="h-4 w-4" />,
+        label: s.name,
+        sub: `${s.bpm} BPM · ${s.sections.length} sections`,
+        go: goSong(s.id),
+      });
       for (const sec of s.sections) {
-        hits.push({ type: "Section", icon: <Radio className="h-4 w-4" />, label: sec.label, sub: `${s.name}${sec.performerRole ? ` · ${sec.performerRole}` : ""}`, go: goSong(s.id) });
+        hits.push({
+          type: "Section",
+          icon: <Radio className="h-4 w-4" />,
+          label: sec.label,
+          sub: `${s.name}${sec.performerRole ? ` · ${sec.performerRole}` : ""}`,
+          go: goSong(s.id),
+        });
       }
     }
     for (const c of characters)
-      hits.push({ type: "Character", icon: <Users className="h-4 w-4" />, label: c.name, sub: c.role || "Character", go: openCharacters });
+      hits.push({
+        type: "Character",
+        icon: <Users className="h-4 w-4" />,
+        label: c.name,
+        sub: c.role || "Character",
+        go: openCharacters,
+      });
     for (const e of environments)
-      hits.push({ type: "Set", icon: <Globe className="h-4 w-4" />, label: e.name, sub: e.mood || "Environment", go: openWorld });
+      hits.push({
+        type: "Set",
+        icon: <Globe className="h-4 w-4" />,
+        label: e.name,
+        sub: e.mood || "Environment",
+        go: openWorld,
+      });
     for (const p of props)
-      hits.push({ type: p.category || "Prop", icon: <Package className="h-4 w-4" />, label: p.name, sub: p.category || "Prop", go: openProps });
+      hits.push({
+        type: p.category || "Prop",
+        icon: <Package className="h-4 w-4" />,
+        label: p.name,
+        sub: p.category || "Prop",
+        go: openProps,
+      });
     for (const t of loadMotionTests())
-      hits.push({ type: "Motion test", icon: <Film className="h-4 w-4" />, label: t.label, sub: t.motionLabel || "motion", go: openAnimation });
+      hits.push({
+        type: "Motion test",
+        icon: <Film className="h-4 w-4" />,
+        label: t.label,
+        sub: t.motionLabel || "motion",
+        go: openAnimation,
+      });
     for (const tr of loadAllTreatments()) {
       const song = songs.find((s) => s.id === tr.songId);
       for (const sec of tr.sections)
         for (const shot of sec.shots)
-          hits.push({ type: "Shot", icon: <Clapperboard className="h-4 w-4" />, label: shot.idea, sub: `${song?.name ?? "Treatment"} · ${sec.label}`, go: goSong(tr.songId, true) });
+          hits.push({
+            type: "Shot",
+            icon: <Clapperboard className="h-4 w-4" />,
+            label: shot.idea,
+            sub: `${song?.name ?? "Treatment"} · ${sec.label}`,
+            go: goSong(tr.songId, true),
+          });
     }
     for (const t of allTemplates())
-      hits.push({ type: "Template", icon: <LayoutTemplate className="h-4 w-4" />, label: t.name, sub: t.tagline || t.category, go: openTemplates });
+      hits.push({
+        type: "Template",
+        icon: <LayoutTemplate className="h-4 w-4" />,
+        label: t.name,
+        sub: t.tagline || t.category,
+        go: openTemplates,
+      });
     return hits;
-  }, [open, characters, environments, props, setActiveSong, openSong, openMvDirector, openCharacters, openWorld, openProps, openAnimation, openTemplates, openMotionStudio, openGlamStudio, openWebStudio, openCampaignStudio]);
+  }, [
+    open,
+    characters,
+    environments,
+    props,
+    setActiveSong,
+    openSong,
+    openMvDirector,
+    openCharacters,
+    openWorld,
+    openProps,
+    openAnimation,
+    openTemplates,
+    openMotionStudio,
+    openGlamStudio,
+    openWebStudio,
+    openCampaignStudio,
+  ]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -180,12 +289,16 @@ export function GlobalSearch() {
                   i === active ? "bg-primary/12" : "hover:bg-elevated/60"
                 )}
               >
-                <span className={cn("shrink-0", i === active ? "text-primary" : "text-muted")}>{h.icon}</span>
+                <span className={cn("shrink-0", i === active ? "text-primary" : "text-muted")}>
+                  {h.icon}
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">{h.label}</span>
                   <span className="block truncate text-[11px] text-muted">{h.sub}</span>
                 </span>
-                <span className="shrink-0 rounded bg-elevated px-1.5 py-0.5 text-[10px] text-muted">{h.type}</span>
+                <span className="shrink-0 rounded bg-elevated px-1.5 py-0.5 text-[10px] text-muted">
+                  {h.type}
+                </span>
                 {i === active && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-muted" />}
               </button>
             ))

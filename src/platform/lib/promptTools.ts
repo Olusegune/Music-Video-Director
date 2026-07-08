@@ -135,9 +135,7 @@ export function directorMode(pack: PromptPack): MagicResult {
 
 /** "Fix Bad AI Text" — find on-screen words and lock them so models keep them sharp. */
 export function fixBadAIText(pack: PromptPack): MagicResult {
-  const existing = new Set(
-    (pack.textLocks ?? []).map((l) => l.text.trim().toLowerCase())
-  );
+  const existing = new Set((pack.textLocks ?? []).map((l) => l.text.trim().toLowerCase()));
   const found: TextLockItem[] = [];
 
   // Quoted strings inside shot visuals are almost always on-screen text.
@@ -153,9 +151,7 @@ export function fixBadAIText(pack: PromptPack): MagicResult {
     }
   }
 
-  const hasSafetyQc = pack.qcChecklist.some((q) =>
-    q.label.toLowerCase().includes("text safety")
-  );
+  const hasSafetyQc = pack.qcChecklist.some((q) => q.label.toLowerCase().includes("text safety"));
   const qcChecklist = hasSafetyQc
     ? pack.qcChecklist
     : [
@@ -174,8 +170,7 @@ export function fixBadAIText(pack: PromptPack): MagicResult {
 
 /** "Splash Screen Mode" — turn the final shot into a brand-locked final-frame hold. */
 export function splashScreenMode(pack: PromptPack): MagicResult {
-  if (pack.shots.length === 0)
-    return { pack, summary: "Splash Screen: no shots to convert." };
+  if (pack.shots.length === 0) return { pack, summary: "Splash Screen: no shots to convert." };
 
   const lastIdx = pack.shots.length - 1;
   const shots = pack.shots.map((s, i) => {
@@ -222,8 +217,7 @@ export function promptSurgeon(pack: PromptPack): MagicResult {
       pack.style.visualLanguage.split(",").slice(0, 2).join(",").trim(),
       [s.camera.shotType, s.camera.lens, s.camera.movement].filter(Boolean).join(", "),
       [s.lighting.keyLight, s.lighting.colorTemperature].filter(Boolean).join(", "),
-      pack.creativeDirection.aspectRatio &&
-        `${pack.creativeDirection.aspectRatio}, high detail`,
+      pack.creativeDirection.aspectRatio && `${pack.creativeDirection.aspectRatio}, high detail`,
     ]
       .filter(Boolean)
       .join(" — ");

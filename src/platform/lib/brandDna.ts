@@ -71,9 +71,7 @@ export function createBrandDna(input: {
   return saveBrandDna({
     id: crypto.randomUUID(),
     name: input.name || "Untitled Brand",
-    palette: input.palette?.length
-      ? input.palette
-      : ["#111827", "#F8FAFC", "#C084FC", "#F59E0B"],
+    palette: input.palette?.length ? input.palette : ["#111827", "#F8FAFC", "#C084FC", "#F59E0B"],
     fonts: {
       heading: "Editorial display",
       body: "Clean sans",

@@ -135,41 +135,161 @@ export function Sidebar() {
       {/* Grouped nav — reads as a director's production flow, top to bottom. */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
         <NavGroup label="Director Studio apps">
-          <NavItem tone="violet" icon={<Music className="h-4 w-4" />} label="Music Video Director" active={view === "song" || view === "mvdirector"} onClick={openSong} />
-          <NavItem tone="cyan" icon={<Boxes className="h-4 w-4" />} label="Motion Studio" active={view === "motionstudio"} onClick={openMotionStudio} />
-          <NavItem tone="gold" icon={<Sparkles className="h-4 w-4" />} label="Glam Studio" active={view === "glamstudio"} onClick={openGlamStudio} />
-          <NavItem tone="green" icon={<Globe className="h-4 w-4" />} label="Web Studio" active={view === "webstudio"} onClick={openWebStudio} />
-          <NavItem tone="pink" icon={<Megaphone className="h-4 w-4" />} label="Campaign Studio" active={view === "campaignstudio"} onClick={openCampaignStudio} />
+          <NavItem
+            tone="violet"
+            icon={<Music className="h-4 w-4" />}
+            label="Music Video Director"
+            active={view === "song" || view === "mvdirector"}
+            onClick={openSong}
+          />
+          <NavItem
+            tone="cyan"
+            icon={<Boxes className="h-4 w-4" />}
+            label="Motion Studio"
+            active={view === "motionstudio"}
+            onClick={openMotionStudio}
+          />
+          <NavItem
+            tone="gold"
+            icon={<Sparkles className="h-4 w-4" />}
+            label="Glam Studio"
+            active={view === "glamstudio"}
+            onClick={openGlamStudio}
+          />
+          <NavItem
+            tone="green"
+            icon={<Globe className="h-4 w-4" />}
+            label="Web Studio"
+            active={view === "webstudio"}
+            onClick={openWebStudio}
+          />
+          <NavItem
+            tone="pink"
+            icon={<Megaphone className="h-4 w-4" />}
+            label="Campaign Studio"
+            active={view === "campaignstudio"}
+            onClick={openCampaignStudio}
+          />
         </NavGroup>
 
         <NavGroup label="Director Mode / Advanced">
-          <NavItem icon={<LayoutTemplate className="h-4 w-4" />} label="Templates" active={view === "templates"} onClick={openTemplates} />
-          <NavItem icon={<Music className="h-4 w-4" />} label="Song Studio" active={view === "song"} onClick={openSong} />
-          <NavItem icon={<Video className="h-4 w-4" />} label="MV Director" active={view === "mvdirector"} onClick={openMvDirector} />
-          <NavItem icon={<UsersRound className="h-4 w-4" />} label="Cast" active={view === "cast"} onClick={openCast} />
-          <NavItem icon={<Footprints className="h-4 w-4" />} label="Choreography" active={view === "choreography"} onClick={openChoreography} />
-          <NavItem icon={<LayoutList className="h-4 w-4" />} label="Timeline" active={view === "timeline"} onClick={openTimeline} />
+          <NavItem
+            icon={<LayoutTemplate className="h-4 w-4" />}
+            label="Templates"
+            active={view === "templates"}
+            onClick={openTemplates}
+          />
+          <NavItem
+            icon={<Music className="h-4 w-4" />}
+            label="Song Studio"
+            active={view === "song"}
+            onClick={openSong}
+          />
+          <NavItem
+            icon={<Video className="h-4 w-4" />}
+            label="MV Director"
+            active={view === "mvdirector"}
+            onClick={openMvDirector}
+          />
+          <NavItem
+            icon={<UsersRound className="h-4 w-4" />}
+            label="Cast"
+            active={view === "cast"}
+            onClick={openCast}
+          />
+          <NavItem
+            icon={<Footprints className="h-4 w-4" />}
+            label="Choreography"
+            active={view === "choreography"}
+            onClick={openChoreography}
+          />
+          <NavItem
+            icon={<LayoutList className="h-4 w-4" />}
+            label="Timeline"
+            active={view === "timeline"}
+            onClick={openTimeline}
+          />
         </NavGroup>
 
         <NavGroup label="Production library">
-          <NavItem icon={<Users className="h-4 w-4" />} label="Character Bible" active={view === "characters"} onClick={openCharacters} />
-          <NavItem icon={<Globe className="h-4 w-4" />} label="World Bible" active={view === "world"} onClick={openWorld} />
-          <NavItem icon={<Package className="h-4 w-4" />} label="Props & Vehicles" active={view === "props"} onClick={openProps} />
-          <NavItem icon={<Library className="h-4 w-4" />} label="Asset Library" active={view === "assets"} onClick={openAssets} />
-          <NavItem icon={<Palette className="h-4 w-4" />} label="Brand Kits" active={view === "brandkits"} onClick={openBrandKits} />
+          <NavItem
+            icon={<Users className="h-4 w-4" />}
+            label="Character Bible"
+            active={view === "characters"}
+            onClick={openCharacters}
+          />
+          <NavItem
+            icon={<Globe className="h-4 w-4" />}
+            label="World Bible"
+            active={view === "world"}
+            onClick={openWorld}
+          />
+          <NavItem
+            icon={<Package className="h-4 w-4" />}
+            label="Props & Vehicles"
+            active={view === "props"}
+            onClick={openProps}
+          />
+          <NavItem
+            icon={<Library className="h-4 w-4" />}
+            label="Asset Library"
+            active={view === "assets"}
+            onClick={openAssets}
+          />
+          <NavItem
+            icon={<Palette className="h-4 w-4" />}
+            label="Brand Kits"
+            active={view === "brandkits"}
+            onClick={openBrandKits}
+          />
         </NavGroup>
 
         <NavGroup label="Tools">
-          <NavItem icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" active={view === "dashboard"} onClick={openDashboard} />
-          <NavItem icon={<FileText className="h-4 w-4" />} label="Script Studio" active={view === "scripts"} onClick={openScripts} />
-          <NavItem icon={<Clapperboard className="h-4 w-4" />} label="Animation Lab" active={view === "animation"} onClick={openAnimation} />
-          <NavItem icon={<BookMarked className="h-4 w-4" />} label="Export Center" active={view === "export"} onClick={openExport} />
+          <NavItem
+            icon={<LayoutDashboard className="h-4 w-4" />}
+            label="Dashboard"
+            active={view === "dashboard"}
+            onClick={openDashboard}
+          />
+          <NavItem
+            icon={<FileText className="h-4 w-4" />}
+            label="Script Studio"
+            active={view === "scripts"}
+            onClick={openScripts}
+          />
+          <NavItem
+            icon={<Clapperboard className="h-4 w-4" />}
+            label="Animation Lab"
+            active={view === "animation"}
+            onClick={openAnimation}
+          />
+          <NavItem
+            icon={<BookMarked className="h-4 w-4" />}
+            label="Export Center"
+            active={view === "export"}
+            onClick={openExport}
+          />
         </NavGroup>
 
         <NavGroup label="System">
-          <NavItem icon={<KeyRound className="h-4 w-4" />} label="API Keys" active={view === "apikeys"} onClick={openApiKeys} />
-          <NavItem icon={<Boxes className="h-4 w-4" />} label="AI Models" active={view === "models"} onClick={openModels} />
-          <NavItem icon={<Settings className="h-4 w-4" />} label="Settings" active={view === "settings"} onClick={openSettings} />
+          <NavItem
+            icon={<KeyRound className="h-4 w-4" />}
+            label="API Keys"
+            active={view === "apikeys"}
+            onClick={openApiKeys}
+          />
+          <NavItem
+            icon={<Boxes className="h-4 w-4" />}
+            label="AI Models"
+            active={view === "models"}
+            onClick={openModels}
+          />
+          <NavItem
+            icon={<Settings className="h-4 w-4" />}
+            label="Settings"
+            active={view === "settings"}
+            onClick={openSettings}
+          />
         </NavGroup>
 
         {projects.length > 0 && (
@@ -208,7 +328,10 @@ export function Sidebar() {
           <Sparkles className="h-3.5 w-3.5 text-accent" />
           <span>{engineLabel()}</span>
         </div>
-        <div className="flex items-center gap-1.5 px-1 text-[11px] text-muted" title="Your work autosaves continuously">
+        <div
+          className="flex items-center gap-1.5 px-1 text-[11px] text-muted"
+          title="Your work autosaves continuously"
+        >
           <Check className="h-3 w-3 text-success" />
           {lastSavedAt ? (
             <span>
@@ -234,13 +357,7 @@ function engineLabel(): string {
   return `Router · ${label}`;
 }
 
-function NavGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-1.5 mt-3 first:mt-1">
       <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
@@ -264,20 +381,39 @@ function NavItem({
   onClick?: () => void;
   tone?: "violet" | "cyan" | "gold" | "green" | "pink";
 }) {
-  const activeTone = { violet: "bg-violet-500/12 text-violet-400", cyan: "bg-cyan-500/12 text-cyan-400", gold: "bg-amber-500/12 text-amber-400", green: "bg-emerald-500/12 text-emerald-400", pink: "bg-fuchsia-500/12 text-fuchsia-400" };
-  const barTone = { violet: "bg-violet-400", cyan: "bg-cyan-400", gold: "bg-amber-400", green: "bg-emerald-400", pink: "bg-fuchsia-400" };
+  const activeTone = {
+    violet: "bg-violet-500/12 text-violet-400",
+    cyan: "bg-cyan-500/12 text-cyan-400",
+    gold: "bg-amber-500/12 text-amber-400",
+    green: "bg-emerald-500/12 text-emerald-400",
+    pink: "bg-fuchsia-500/12 text-fuchsia-400",
+  };
+  const barTone = {
+    violet: "bg-violet-400",
+    cyan: "bg-cyan-400",
+    gold: "bg-amber-400",
+    green: "bg-emerald-400",
+    pink: "bg-fuchsia-400",
+  };
   return (
     <button
       onClick={onClick}
       className={cn(
         "group relative flex w-full items-center gap-2.5 rounded-[var(--radius-button)] px-2.5 py-1.5 text-sm transition-colors",
         active
-          ? tone ? activeTone[tone] : "bg-primary/12 text-primary"
+          ? tone
+            ? activeTone[tone]
+            : "bg-primary/12 text-primary"
           : "text-muted hover:bg-elevated/60 hover:text-foreground"
       )}
     >
       {active && (
-        <span className={cn("absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full", tone ? barTone[tone] : "bg-primary")} />
+        <span
+          className={cn(
+            "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full",
+            tone ? barTone[tone] : "bg-primary"
+          )}
+        />
       )}
       <span className={cn("shrink-0", active && !tone && "text-primary")}>{icon}</span>
       <span className="truncate">{label}</span>

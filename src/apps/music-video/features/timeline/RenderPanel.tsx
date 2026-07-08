@@ -94,10 +94,8 @@ export function RenderSettings({
               <ul className="mt-1 space-y-0.5 text-muted">
                 {voices.map((t) => (
                   <li key={t.id}>
-                    + {t.kind} @ {formatTime(t.atSec ?? 0)} ·{" "}
-                    {Math.round((t.volume ?? 1) * 100)}%
-                    {t.duck ? " · ducks music" : ""} —{" "}
-                    <span className="italic">{t.text}</span>
+                    + {t.kind} @ {formatTime(t.atSec ?? 0)} · {Math.round((t.volume ?? 1) * 100)}%
+                    {t.duck ? " · ducks music" : ""} — <span className="italic">{t.text}</span>
                   </li>
                 ))}
               </ul>
@@ -123,8 +121,8 @@ export function RenderSettings({
           )}
 
           <p className="text-[11px] text-muted">
-            {shotCount} shot{shotCount === 1 ? "" : "s"} → one MP4. Needs FFmpeg on
-            the desktop app; the browser shows a sample.
+            {shotCount} shot{shotCount === 1 ? "" : "s"} → one MP4. Needs FFmpeg on the desktop app;
+            the browser shows a sample.
           </p>
 
           <div className="flex justify-end gap-2">
@@ -183,12 +181,7 @@ export function RenderResult({
 // Animatic — play the generated frames across the song timeline (silent).
 // ---------------------------------------------------------------------------
 
-
-export function exportRundown(
-  song: SongMap,
-  treatment: MvTreatment,
-  choreo: ChoreoPlan | null
-) {
+export function exportRundown(song: SongMap, treatment: MvTreatment, choreo: ChoreoPlan | null) {
   const lines: string[] = [];
   lines.push(`# ${song.name} — Music Video Rundown`);
   lines.push("");
@@ -214,12 +207,8 @@ export function exportRundown(
     lines.push("");
     for (let i = 0; i < sec.shots.length; i++) {
       const sh = sec.shots[i];
-      lines.push(
-        `${i + 1}. **[${formatTime(sh.start)}]** ${sh.idea}`
-      );
-      lines.push(
-        `   - ${sh.shotType} · ${sh.movement} · ${sh.lighting} · ${sh.transition}`
-      );
+      lines.push(`${i + 1}. **[${formatTime(sh.start)}]** ${sh.idea}`);
+      lines.push(`   - ${sh.shotType} · ${sh.movement} · ${sh.lighting} · ${sh.transition}`);
       lines.push(`   - _${sh.performanceNote}_`);
     }
   }
@@ -232,7 +221,9 @@ export function exportRundown(
       lines.push(`### ${c.label} · ${c.formation}`);
       lines.push(`${c.intensity}`);
       for (const ec of c.eightCounts) {
-        lines.push(`- **Bar ${ec.bar}** (${formatTime(ec.startSec)}) — 1-4: ${ec.phraseA}; 5-8: ${ec.phraseB}`);
+        lines.push(
+          `- **Bar ${ec.bar}** (${formatTime(ec.startSec)}) — 1-4: ${ec.phraseA}; 5-8: ${ec.phraseB}`
+        );
       }
       lines.push(`- Key poses: ${c.keyPoses.join(" / ")}`);
     }

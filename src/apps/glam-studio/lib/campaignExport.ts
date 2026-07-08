@@ -38,13 +38,17 @@ export const GLAM_FORMATS: GlamFormatPreset[] = [
 ];
 
 function safeText(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  })[character] ?? character);
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character] ?? character
+  );
 }
 
 function dataUrlToBytes(dataUrl: string): Uint8Array {
@@ -53,15 +57,19 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
-
-export async function renderGlamFormat(format: GlamFormatPreset, input: GlamRenderInput): Promise<Uint8Array> {
+export async function renderGlamFormat(
+  format: GlamFormatPreset,
+  input: GlamRenderInput
+): Promise<Uint8Array> {
   const node = document.createElement("div");
   const horizontal = format.width > format.height;
   const layout = input.layout ?? DEFAULT_GLAM_LAYOUT;
   const copyTop = layout.copyPosition.startsWith("top");
   const copyRight = layout.copyPosition.endsWith("right");
   const padding = Math.round(Math.min(format.width, format.height) * 0.075);
-  const headlineSize = Math.round(Math.min(format.width, format.height) * (horizontal ? 0.07 : 0.09));
+  const headlineSize = Math.round(
+    Math.min(format.width, format.height) * (horizontal ? 0.07 : 0.09)
+  );
   const background = `linear-gradient(135deg, ${input.palette[0] ?? "#050509"}, ${input.palette[1] ?? "#1f2937"} 48%, ${input.palette[2] ?? "#d4af37"})`;
   node.style.cssText = `position:fixed;left:-10000px;top:0;width:${format.width}px;height:${format.height}px;overflow:hidden;background:${background};font-family:Inter,Arial,sans-serif;color:white;`;
   node.innerHTML = `
@@ -74,7 +82,12 @@ export async function renderGlamFormat(format: GlamFormatPreset, input: GlamRend
     </div>`;
   document.body.appendChild(node);
   try {
-    const dataUrl = await toPng(node, { width: format.width, height: format.height, pixelRatio: 1, cacheBust: true });
+    const dataUrl = await toPng(node, {
+      width: format.width,
+      height: format.height,
+      pixelRatio: 1,
+      cacheBust: true,
+    });
     return dataUrlToBytes(dataUrl);
   } finally {
     node.remove();

@@ -8,12 +8,7 @@ interface SummaryStepProps {
   onAction?: () => void;
 }
 
-export function SummaryStep({
-  title,
-  items,
-  actionLabel = "Finish",
-  onAction,
-}: SummaryStepProps) {
+export function SummaryStep({ title, items, actionLabel = "Finish", onAction }: SummaryStepProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold">{title}</h3>

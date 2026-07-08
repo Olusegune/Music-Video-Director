@@ -1,8 +1,20 @@
 import { patternById } from "@/apps/webstudio/lib/patterns";
-import type { DesignTokens, SectionInstance, WebPage, WebProject } from "@/apps/webstudio/lib/types";
+import type {
+  DesignTokens,
+  SectionInstance,
+  WebPage,
+  WebProject,
+} from "@/apps/webstudio/lib/types";
 
-const esc = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ?? character);
-const list = (items: string[], className = "cards") => `<div class="${className}">${items.map((item) => `<article><span class="mark" aria-hidden="true"></span><p>${esc(item)}</p></article>`).join("")}</div>`;
+const esc = (value: string) =>
+  value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] ??
+      character
+  );
+const list = (items: string[], className = "cards") =>
+  `<div class="${className}">${items.map((item) => `<article><span class="mark" aria-hidden="true"></span><p>${esc(item)}</p></article>`).join("")}</div>`;
 
 function sectionHtml(section: SectionInstance, primaryHeading = false) {
   const copy = section.copy;
@@ -12,18 +24,30 @@ function sectionHtml(section: SectionInstance, primaryHeading = false) {
   const heroIntro = intro;
   const cta = copy.ctaLabel ? `<a class="button" href="#contact">${esc(copy.ctaLabel)}</a>` : "";
   switch (pattern.id) {
-    case "hero-split": return `<section class="hero split"><div>${heroIntro}${cta}</div><div class="visual" role="img" aria-label="Brand campaign image">${section.mediaUrl ? `<img src="${esc(section.mediaUrl)}" alt="${esc(copy.heading)}">` : `<span>${esc(copy.items[0] ?? "Your story, art directed")}</span>`}</div></section>`;
-    case "hero-centered": return `<section class="hero centered">${heroIntro}${cta}<div class="proofline">${copy.items.map(esc).join(" · ")}</div></section>`;
-    case "hero-editorial": return `<section class="hero editorial"><p class="eyebrow">${esc(copy.eyebrow)}</p><${headingTag}>${esc(copy.heading)}</${headingTag}><div class="editorial-row"><p>${esc(copy.body)}</p>${cta}</div></section>`;
-    case "feature-alternating": return `<section>${intro}<ol class="steps">${copy.items.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${esc(item)}</span></li>`).join("")}</ol></section>`;
-    case "stats-band": return `<section class="band">${intro}${list(copy.items, "stats")}</section>`;
-    case "testimonials-grid": return `<section>${intro}<div class="quotes">${copy.items.map((item) => `<blockquote>“${esc(item)}”</blockquote>`).join("")}</div></section>`;
-    case "logo-cloud": return `<section class="compact">${intro}<div class="logos">${copy.items.map((item) => `<span>${esc(item)}</span>`).join("")}</div></section>`;
-    case "case-study": return `<section class="case">${intro}<aside>${list(copy.items)}</aside></section>`;
-    case "pricing-simple": return `<section class="offer">${intro}<div class="offer-card">${list(copy.items)}${cta}</div></section>`;
-    case "faq-stack": return `<section>${intro}<div class="faq">${copy.items.map((item) => `<details><summary>${esc(item)}</summary><p>${esc(copy.body)}</p></details>`).join("")}</div></section>`;
-    case "cta-banner": return `<section id="contact" class="cta">${intro}${cta}</section>`;
-    default: return `<section>${intro}${list(copy.items)}${cta}</section>`;
+    case "hero-split":
+      return `<section class="hero split"><div>${heroIntro}${cta}</div><div class="visual" role="img" aria-label="Brand campaign image">${section.mediaUrl ? `<img src="${esc(section.mediaUrl)}" alt="${esc(copy.heading)}">` : `<span>${esc(copy.items[0] ?? "Your story, art directed")}</span>`}</div></section>`;
+    case "hero-centered":
+      return `<section class="hero centered">${heroIntro}${cta}<div class="proofline">${copy.items.map(esc).join(" · ")}</div></section>`;
+    case "hero-editorial":
+      return `<section class="hero editorial"><p class="eyebrow">${esc(copy.eyebrow)}</p><${headingTag}>${esc(copy.heading)}</${headingTag}><div class="editorial-row"><p>${esc(copy.body)}</p>${cta}</div></section>`;
+    case "feature-alternating":
+      return `<section>${intro}<ol class="steps">${copy.items.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${esc(item)}</span></li>`).join("")}</ol></section>`;
+    case "stats-band":
+      return `<section class="band">${intro}${list(copy.items, "stats")}</section>`;
+    case "testimonials-grid":
+      return `<section>${intro}<div class="quotes">${copy.items.map((item) => `<blockquote>“${esc(item)}”</blockquote>`).join("")}</div></section>`;
+    case "logo-cloud":
+      return `<section class="compact">${intro}<div class="logos">${copy.items.map((item) => `<span>${esc(item)}</span>`).join("")}</div></section>`;
+    case "case-study":
+      return `<section class="case">${intro}<aside>${list(copy.items)}</aside></section>`;
+    case "pricing-simple":
+      return `<section class="offer">${intro}<div class="offer-card">${list(copy.items)}${cta}</div></section>`;
+    case "faq-stack":
+      return `<section>${intro}<div class="faq">${copy.items.map((item) => `<details><summary>${esc(item)}</summary><p>${esc(copy.body)}</p></details>`).join("")}</div></section>`;
+    case "cta-banner":
+      return `<section id="contact" class="cta">${intro}${cta}</section>`;
+    default:
+      return `<section>${intro}${list(copy.items)}${cta}</section>`;
   }
 }
 
@@ -33,20 +57,41 @@ export function compileCss(tokens: DesignTokens) {
 
 export function compileSite(project: WebProject, inlineCss = true) {
   const css = compileCss(project.tokens);
-  const sections = project.sections.map((section, index) => sectionHtml(section, index === 0)).join("\n");
+  const sections = project.sections
+    .map((section, index) => sectionHtml(section, index === 0))
+    .join("\n");
   const description = project.positioning.promise || project.businessDescription;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${esc(description)}"><meta name="theme-color" content="${esc(project.tokens.background)}"><meta property="og:title" content="${esc(project.businessName)} — ${esc(project.positioning.offer)}"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><title>${esc(project.businessName)} — ${esc(project.positioning.offer)}</title>${inlineCss ? `<style>${css}</style>` : `<link rel="stylesheet" href="styles.css">`}</head><body><header><strong>${esc(project.businessName)}</strong><nav aria-label="Primary navigation"><a href="#contact">${esc(project.positioning.cta)}</a></nav></header><main>${sections}</main><footer>© ${new Date().getFullYear()} ${esc(project.businessName)}. Built with Director Studio.</footer></body></html>`;
 }
 
 export function compilePage(project: WebProject, page: WebPage, inlineCss = true) {
   const base = compileSite({ ...project, sections: page.sections }, inlineCss);
-  const title = (project.seo?.titleTemplate || `%s — ${project.businessName}`).replace("%s", page.title);
+  const title = (project.seo?.titleTemplate || `%s — ${project.businessName}`).replace(
+    "%s",
+    page.title
+  );
   const navPages = project.pages?.length ? project.pages : [page];
-  const nav = navPages.map((item) => `<a href="${item.slug === "index" ? "index.html" : `${esc(item.slug)}.html`}">${esc(item.title)}</a>`).join(" ");
-  const canonical = project.seo?.siteUrl ? `${project.seo.siteUrl.replace(/\/$/, "")}/${page.slug === "index" ? "" : `${page.slug}.html`}` : "";
+  const nav = navPages
+    .map(
+      (item) =>
+        `<a href="${item.slug === "index" ? "index.html" : `${esc(item.slug)}.html`}">${esc(item.title)}</a>`
+    )
+    .join(" ");
+  const canonical = project.seo?.siteUrl
+    ? `${project.seo.siteUrl.replace(/\/$/, "")}/${page.slug === "index" ? "" : `${page.slug}.html`}`
+    : "";
   return base
     .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
-    .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(page.description || project.positioning.promise)}">`)
-    .replace(/<nav aria-label="Primary navigation">.*?<\/nav>/, `<nav aria-label="Primary navigation">${nav}</nav>`)
-    .replace("</head>", `${project.seo?.indexable === false ? '<meta name="robots" content="noindex,nofollow">' : ""}${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}${project.seo?.socialImage ? `<meta property="og:image" content="${esc(project.seo.socialImage)}">` : ""}</head>`);
+    .replace(
+      /<meta name="description" content="[^"]*">/,
+      `<meta name="description" content="${esc(page.description || project.positioning.promise)}">`
+    )
+    .replace(
+      /<nav aria-label="Primary navigation">.*?<\/nav>/,
+      `<nav aria-label="Primary navigation">${nav}</nav>`
+    )
+    .replace(
+      "</head>",
+      `${project.seo?.indexable === false ? '<meta name="robots" content="noindex,nofollow">' : ""}${canonical ? `<link rel="canonical" href="${esc(canonical)}">` : ""}${project.seo?.socialImage ? `<meta property="og:image" content="${esc(project.seo.socialImage)}">` : ""}</head>`
+    );
 }

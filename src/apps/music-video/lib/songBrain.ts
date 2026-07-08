@@ -46,12 +46,7 @@ export interface LyricLine {
   sectionId?: string;
 }
 
-export type AudioTrackKind =
-  | "Intro tag"
-  | "Ad-lib"
-  | "Narration"
-  | "Spoken hook"
-  | "Outro tag";
+export type AudioTrackKind = "Intro tag" | "Ad-lib" | "Narration" | "Spoken hook" | "Outro tag";
 
 export const AUDIO_TRACK_KINDS: AudioTrackKind[] = [
   "Intro tag",
@@ -139,8 +134,7 @@ export interface SongMap {
 function getAudioContext(): AudioContext {
   const Ctor =
     window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext })
-      .webkitAudioContext;
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   if (!Ctor) throw new Error("Web Audio API is not available in this environment.");
   return new Ctor();
 }
@@ -241,11 +235,7 @@ function estimateTempo(onset: Float32Array, frameRate: number): number {
   return Math.round(bpm);
 }
 
-function estimateBeatOffset(
-  onset: Float32Array,
-  frameRate: number,
-  bpm: number
-): number {
+function estimateBeatOffset(onset: Float32Array, frameRate: number, bpm: number): number {
   const period = Math.max(1, Math.round((frameRate * 60) / bpm));
   let bestOffset = 0;
   let bestScore = -Infinity;
@@ -295,8 +285,8 @@ function barEnergies(
   const out: number[] = [];
   let max = 0;
   for (let b = 0; b < bars; b++) {
-    const startF = Math.floor((b * barDur) * frameRate);
-    const endF = Math.min(energy.length, Math.floor(((b + 1) * barDur) * frameRate));
+    const startF = Math.floor(b * barDur * frameRate);
+    const endF = Math.min(energy.length, Math.floor((b + 1) * barDur * frameRate));
     let sum = 0;
     let n = 0;
     for (let i = startF; i < endF; i++) {
@@ -329,11 +319,7 @@ interface RawSegment {
  * Segment the bar-energy curve into contiguous runs of similar energy level,
  * enforcing a musical minimum length, then label each run by energy + position.
  */
-function segmentSections(
-  bars: number[],
-  barDur: number,
-  duration: number
-): SongSection[] {
+function segmentSections(bars: number[], barDur: number, duration: number): SongSection[] {
   if (bars.length === 0) {
     return [makeSection("Verse", 0, duration, 0.5)];
   }
@@ -387,11 +373,7 @@ function segmentSections(
   return labelSegments(merged, barDur, duration);
 }
 
-function labelSegments(
-  runs: RawSegment[],
-  barDur: number,
-  duration: number
-): SongSection[] {
+function labelSegments(runs: RawSegment[], barDur: number, duration: number): SongSection[] {
   const n = runs.length;
   let chorusCount = 0;
   let verseCount = 0;
@@ -546,9 +528,7 @@ export function distributeLyrics(text: string, sections: SongSection[]): LyricLi
   if (lines.length === 0) return [];
 
   const vocal = sections.filter((s) => !NON_VOCAL.includes(s.kind));
-  const pool = (vocal.length > 0 ? vocal : sections)
-    .slice()
-    .sort((a, b) => a.start - b.start);
+  const pool = (vocal.length > 0 ? vocal : sections).slice().sort((a, b) => a.start - b.start);
   if (pool.length === 0) return [];
 
   const totalDur = pool.reduce((a, s) => a + (s.end - s.start), 0) || 1;
@@ -616,10 +596,7 @@ export function saveSong(song: SongMap): void {
 }
 
 export function deleteSong(id: string): void {
-  localStorage.setItem(
-    LS_SONGS,
-    JSON.stringify(loadSongs().filter((s) => s.id !== id))
-  );
+  localStorage.setItem(LS_SONGS, JSON.stringify(loadSongs().filter((s) => s.id !== id)));
 }
 
 // ---------------------------------------------------------------------------

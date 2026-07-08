@@ -10,9 +10,7 @@ const LS_DISMISSED = "mf.onboardingDismissed";
 
 /** First-run checklist that walks a new user from a song → keys → first video. */
 export function OnboardingChecklist({ hasSongs }: { hasSongs: boolean }) {
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(LS_DISMISSED) === "1"
-  );
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(LS_DISMISSED) === "1");
   const { isConfigured } = useProviderReadiness();
   const openMvDirector = useAppStore((s) => s.openMvDirector);
   const openApiKeys = useAppStore((s) => s.openApiKeys);
@@ -83,16 +81,10 @@ export function OnboardingChecklist({ hasSongs }: { hasSongs: boolean }) {
               <span
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-full",
-                  step.done
-                    ? "bg-success/15 text-success"
-                    : "bg-elevated text-muted"
+                  step.done ? "bg-success/15 text-success" : "bg-elevated text-muted"
                 )}
               >
-                {step.done ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  <Circle className="h-3 w-3" />
-                )}
+                {step.done ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-3 w-3" />}
               </span>
               <span className="flex items-center gap-1.5 text-sm font-medium">
                 {step.icon}

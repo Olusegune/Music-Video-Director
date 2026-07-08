@@ -1,11 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Wand2, RefreshCw, Music, ImageIcon, Loader2, Sparkles, Video, LayoutTemplate, Users, X, HelpCircle } from "lucide-react";
-import { directSong, getTreatment, saveTreatment, type MvTreatment, type MvSectionPlan, type MvShot } from "@/apps/music-video/lib/mvDirector";
+import {
+  Clapperboard,
+  Wand2,
+  RefreshCw,
+  Music,
+  ImageIcon,
+  Loader2,
+  Sparkles,
+  Video,
+  LayoutTemplate,
+  Users,
+  X,
+  HelpCircle,
+} from "lucide-react";
+import {
+  directSong,
+  getTreatment,
+  saveTreatment,
+  type MvTreatment,
+  type MvSectionPlan,
+  type MvShot,
+} from "@/apps/music-video/lib/mvDirector";
 import { loadSongs, type SongMap } from "@/apps/music-video/lib/songBrain";
 import { loadCast, productionReferenceImages } from "@/apps/music-video/lib/cast";
 import { getAutoProductionRefs, setAutoProductionRefs } from "@/platform/lib/settings";
-import { buildShotImagePrompt, buildShotVideoPrompt, choreoHintForTime } from "@/apps/music-video/lib/mvGen";
+import {
+  buildShotImagePrompt,
+  buildShotVideoPrompt,
+  choreoHintForTime,
+} from "@/apps/music-video/lib/mvGen";
 import { getChoreo } from "@/apps/music-video/lib/choreography";
 import { importImageToLibrary } from "@/platform/lib/assets";
 import { detectSectionPerformer } from "@/apps/music-video/lib/performerDetect";
@@ -15,7 +39,10 @@ import { useProviderReadiness } from "@/platform/lib/providerReady";
 import { getTemplate } from "@/platform/lib/templates";
 import { api } from "@/platform/lib/ipc";
 import { useAppStore } from "@/platform/store/useAppStore";
-import { GenerationPanel, type GenerateOpts } from "@/platform/components/generation/GenerationPanel";
+import {
+  GenerationPanel,
+  type GenerateOpts,
+} from "@/platform/components/generation/GenerationPanel";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
@@ -33,9 +60,16 @@ function briefForSection(song: SongMap | null, sectionId: string) {
   // Use the assigned performer, or the confident auto-detection.
   const det = detectSectionPerformer(s);
   const performerRole = s.performerRole || (det.confident ? det.role : undefined);
-  if (
-    !(lead || backup || mood || cameraNote || choreoNote || storyNote || visualStyle || performerRole)
-  )
+  if (!(
+    lead ||
+    backup ||
+    mood ||
+    cameraNote ||
+    choreoNote ||
+    storyNote ||
+    visualStyle ||
+    performerRole
+  ))
     return undefined;
   return { lead, backup, mood, cameraNote, choreoNote, storyNote, visualStyle, performerRole };
 }
@@ -92,7 +126,8 @@ export function MvDirector() {
   // Director → big cards, one action per scene; Studio → full creative
   // controls; Creator → + prompt/model panels open by default.
   const studioMode = useAppStore((s) => s.studioMode);
-  const viewMode = studioMode === "director" ? "simple" : studioMode === "studio" ? "director" : "expert";
+  const viewMode =
+    studioMode === "director" ? "simple" : studioMode === "studio" ? "director" : "expert";
   // Advanced generation controls (seed/variations/fps/…) are exactly the
   // Creator-mode surface — visible there, tucked away otherwise.
   const advanced = studioMode === "creator";
@@ -111,10 +146,7 @@ export function MvDirector() {
 
   // Production memory: the cast's linked Character portraits, auto-applied to
   // performance shots so the director never re-selects them.
-  const prodRefs = useMemo(
-    () => productionReferenceImages(cast, characters),
-    [cast, characters]
-  );
+  const prodRefs = useMemo(() => productionReferenceImages(cast, characters), [cast, characters]);
 
   // Performers available for choreography assignment: the cast + Character Bible.
   const performers = useMemo<PerformerOption[]>(() => {
@@ -164,10 +196,7 @@ export function MvDirector() {
    *  shots — deduped. This is what actually guides the shot's generation. */
   const mergeProductionRefs = useCallback(
     (shot: MvShot, section: MvSectionPlan): string[] => {
-      const auto =
-        autoRefs && section.approach !== "Abstract"
-          ? prodRefs.map((r) => r.src)
-          : [];
+      const auto = autoRefs && section.approach !== "Abstract" ? prodRefs.map((r) => r.src) : [];
       return Array.from(new Set([...(shot.refImages ?? []), ...auto]));
     },
     [autoRefs, prodRefs]
@@ -247,12 +276,32 @@ export function MvDirector() {
       for (let i = 0; i < n; i++) {
         const s = baseSeed !== undefined ? baseSeed + i : undefined;
         urls.push(
-          await api.generateImagePro(model.providerKey, prompt, width, height, refs, s, model.apiModel)
+          await api.generateImagePro(
+            model.providerKey,
+            prompt,
+            width,
+            height,
+            refs,
+            s,
+            model.apiModel
+          )
         );
       }
       setShotImage(section.sectionId, shot.id, urls[0], urls.length > 1 ? urls : undefined);
     },
-    [song, treatment, cast, characters, aspect, sizeId, modelId, seed, variations, mergeProductionRefs, setShotImage]
+    [
+      song,
+      treatment,
+      cast,
+      characters,
+      aspect,
+      sizeId,
+      modelId,
+      seed,
+      variations,
+      mergeProductionRefs,
+      setShotImage,
+    ]
   );
 
   const generateOne = useCallback(
@@ -262,7 +311,9 @@ export function MvDirector() {
       try {
         await genFrame(section, shot);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed.");
+        setGenError(
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed."
+        );
       } finally {
         setGenShotId(null);
       }
@@ -272,45 +323,40 @@ export function MvDirector() {
 
   const generateAll = useCallback(async () => {
     if (!treatment) return;
-    const jobs = treatment.sections.flatMap((s) =>
-      s.shots.map((sh) => ({ section: s, shot: sh }))
-    );
+    const jobs = treatment.sections.flatMap((s) => s.shots.map((sh) => ({ section: s, shot: sh })));
     setGenError(null);
     setBatch({ done: 0, total: jobs.length });
     for (let i = 0; i < jobs.length; i++) {
       try {
         await genFrame(jobs[i].section, jobs[i].shot);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed.");
+        setGenError(
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Generation failed."
+        );
       }
       setBatch({ done: i + 1, total: jobs.length });
     }
     setBatch(null);
   }, [treatment, genFrame]);
 
-  const setShotVideo = useCallback(
-    (sectionId: string, shotId: string, url: string) => {
-      setTreatment((prev) => {
-        if (!prev) return prev;
-        const next: MvTreatment = {
-          ...prev,
-          sections: prev.sections.map((s) =>
-            s.sectionId === sectionId
-              ? {
-                  ...s,
-                  shots: s.shots.map((sh) =>
-                    sh.id === shotId ? { ...sh, videoUrl: url } : sh
-                  ),
-                }
-              : s
-          ),
-        };
-        saveTreatment(next);
-        return next;
-      });
-    },
-    []
-  );
+  const setShotVideo = useCallback((sectionId: string, shotId: string, url: string) => {
+    setTreatment((prev) => {
+      if (!prev) return prev;
+      const next: MvTreatment = {
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.sectionId === sectionId
+            ? {
+                ...s,
+                shots: s.shots.map((sh) => (sh.id === shotId ? { ...sh, videoUrl: url } : sh)),
+              }
+            : s
+        ),
+      };
+      saveTreatment(next);
+      return next;
+    });
+  }, []);
 
   // Patch arbitrary fields on one shot (e.g. a per-shot model override) —
   // used by the Tune modal's video-model select.
@@ -390,12 +436,30 @@ export function MvDirector() {
         );
         setShotVideo(section.sectionId, shot.id, url);
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed.");
+        setGenError(
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed."
+        );
       } finally {
         setGenClipId(null);
       }
     },
-    [song, treatment, cast, characters, aspect, videoModelId, motion, fps, duration, resolution, audioDialogue, audioSfx, audioMusic, mergeProductionRefs, setShotVideo]
+    [
+      song,
+      treatment,
+      cast,
+      characters,
+      aspect,
+      videoModelId,
+      motion,
+      fps,
+      duration,
+      resolution,
+      audioDialogue,
+      audioSfx,
+      audioMusic,
+      mergeProductionRefs,
+      setShotVideo,
+    ]
   );
 
   // Generate a pose / model sheet for the shot's assigned performer + moves, and
@@ -433,7 +497,13 @@ export function MvDirector() {
         await importImageToLibrary("Pose sheet", `${who} — ${section.label} poses`, url);
         await qc.invalidateQueries({ queryKey: ["props"] });
       } catch (e) {
-        setGenError(e instanceof Error ? e.message : typeof e === "string" ? e : "Pose sheet generation failed.");
+        setGenError(
+          e instanceof Error
+            ? e.message
+            : typeof e === "string"
+              ? e
+              : "Pose sheet generation failed."
+        );
       } finally {
         setGenPoseId(null);
       }
@@ -450,8 +520,8 @@ export function MvDirector() {
           </div>
           <h2 className="text-base font-semibold">No song to direct yet</h2>
           <p className="mt-1 text-sm text-muted">
-            Import and analyze a track in Song Studio first — the MV Director
-            builds the video around its structure and energy.
+            Import and analyze a track in Song Studio first — the MV Director builds the video
+            around its structure and energy.
           </p>
           <Button className="mt-4" onClick={openSong}>
             <Music className="h-4 w-4" />
@@ -493,7 +563,9 @@ export function MvDirector() {
         .slice(0, idx)
         .some((x) => (x.shot.choreo ?? []).some((a) => (a.characterId || a.performer) === who));
       if (!earlier) {
-        firstAppearance = (shot.choreo ?? []).find((a) => (a.characterId || a.performer) === who)?.performer;
+        firstAppearance = (shot.choreo ?? []).find(
+          (a) => (a.characterId || a.performer) === who
+        )?.performer;
         break;
       }
     }
@@ -527,8 +599,8 @@ export function MvDirector() {
           <div>
             <h1 className="text-lg font-semibold leading-tight">MV Director</h1>
             <p className="text-xs text-muted">
-              Directing <span className="text-foreground">{song.name}</span> ·{" "}
-              {song.bpm} BPM · {song.sections.length} sections
+              Directing <span className="text-foreground">{song.name}</span> · {song.bpm} BPM ·{" "}
+              {song.sections.length} sections
             </p>
           </div>
           <button
@@ -553,9 +625,7 @@ export function MvDirector() {
               }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                autoRefs
-                  ? "bg-success/15 text-success"
-                  : "text-muted hover:bg-elevated"
+                autoRefs ? "bg-success/15 text-success" : "text-muted hover:bg-elevated"
               )}
               title={
                 autoRefs
@@ -744,9 +814,7 @@ export function MvDirector() {
                 onClick={generateAll}
                 disabled={batch !== null || !imageReady}
                 title={
-                  imageReady
-                    ? undefined
-                    : `No key for ${imageModel.label} — add one in API Keys`
+                  imageReady ? undefined : `No key for ${imageModel.label} — add one in API Keys`
                 }
               >
                 {batch ? (
@@ -754,18 +822,12 @@ export function MvDirector() {
                 ) : (
                   <Sparkles className="h-4 w-4" />
                 )}
-                {batch
-                  ? `Generating ${batch.done}/${batch.total}`
-                  : "Generate all frames"}
+                {batch ? `Generating ${batch.done}/${batch.total}` : "Generate all frames"}
               </Button>
             </>
           )}
           <Button variant="primary" onClick={direct} disabled={batch !== null}>
-            {treatment ? (
-              <RefreshCw className="h-4 w-4" />
-            ) : (
-              <Wand2 className="h-4 w-4" />
-            )}
+            {treatment ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
             {treatment ? "Re-direct" : "Direct this video"}
           </Button>
         </div>
@@ -804,18 +866,14 @@ export function MvDirector() {
                 <Clapperboard className="h-7 w-7 text-white" />
               </div>
               <div>
-                <div className="text-base font-semibold">
-                  Direct “{song.name}”
-                </div>
+                <div className="text-base font-semibold">Direct “{song.name}”</div>
                 <p className="mt-1 text-sm text-muted">
-                  The Director Brain lays a section-aware shot list onto the song —
-                  fast performance cuts in the choruses, narrative in the verses,
-                  texture in the intro and bridge. Beat-synced. Fully editable.
+                  The Director Brain lays a section-aware shot list onto the song — fast performance
+                  cuts in the choruses, narrative in the verses, texture in the intro and bridge.
+                  Beat-synced. Fully editable.
                 </p>
               </div>
-              <span className="text-xs font-medium text-primary">
-                Generate the treatment
-              </span>
+              <span className="text-xs font-medium text-primary">Generate the treatment</span>
             </button>
           </div>
         ) : viewMode === "simple" ? (
@@ -859,156 +917,184 @@ export function MvDirector() {
       {/* Per-shot fine-tune — the full shot interface: preview, versions,
           frame prompt/model, and clip/video model, all in one roomy modal
           instead of a cramped popup. */}
-      {tune && treatment && (() => {
-        // Re-read the shot from live treatment state so the preview/version
-        // strip never goes stale after a generation inside this same modal.
-        const liveSection = treatment.sections.find((s) => s.sectionId === tune.section.sectionId) ?? tune.section;
-        const liveShot = liveSection.shots.find((sh) => sh.id === tune.shot.id) ?? tune.shot;
-        return (
-          <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
-            onClick={() => setTune(null)}
-          >
+      {tune &&
+        treatment &&
+        (() => {
+          // Re-read the shot from live treatment state so the preview/version
+          // strip never goes stale after a generation inside this same modal.
+          const liveSection =
+            treatment.sections.find((s) => s.sectionId === tune.section.sectionId) ?? tune.section;
+          const liveShot = liveSection.shots.find((sh) => sh.id === tune.shot.id) ?? tune.shot;
+          return (
             <div
-              className="flex max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-6 backdrop-blur"
+              onClick={() => setTune(null)}
             >
-              {/* Left — live preview, version compare, clip controls */}
-              <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border bg-elevated/20 p-4">
-                <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
-                  {liveShot.videoUrl ? (
-                    <AssetVideo src={liveShot.videoUrl} controls className="h-full w-full object-cover" label="Clip" />
-                  ) : liveShot.imageUrl ? (
-                    <AssetImage src={liveShot.imageUrl} alt="" className="h-full w-full object-cover" label="Frame" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-muted">
-                      <ImageIcon className="h-6 w-6" />
+              <div
+                className="flex max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[var(--radius-modal)] border border-border bg-surface shadow-card"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Left — live preview, version compare, clip controls */}
+                <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border bg-elevated/20 p-4">
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
+                    {liveShot.videoUrl ? (
+                      <AssetVideo
+                        src={liveShot.videoUrl}
+                        controls
+                        className="h-full w-full object-cover"
+                        label="Clip"
+                      />
+                    ) : liveShot.imageUrl ? (
+                      <AssetImage
+                        src={liveShot.imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        label="Frame"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted">
+                        <ImageIcon className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+
+                  {(liveShot.imageCandidates?.length ?? 0) > 1 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+                        Versions
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {liveShot.imageCandidates!.map((c, i) => (
+                          <button
+                            key={i}
+                            onClick={() =>
+                              setShotImage(
+                                liveSection.sectionId,
+                                liveShot.id,
+                                c,
+                                liveShot.imageCandidates
+                              )
+                            }
+                            className={cn(
+                              "aspect-square overflow-hidden rounded border",
+                              c === liveShot.imageUrl
+                                ? "border-primary ring-1 ring-primary"
+                                : "border-border"
+                            )}
+                            title={`Use version ${i + 1}`}
+                          >
+                            <AssetImage
+                              src={c}
+                              alt={`Version ${i + 1}`}
+                              className="h-full w-full object-cover"
+                              label="Version"
+                            />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {(liveShot.imageCandidates?.length ?? 0) > 1 && (
-                  <div>
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
-                      Versions
+                  <div className="space-y-2 border-t border-border pt-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted">
+                      Video / clip
                     </p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {liveShot.imageCandidates!.map((c, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setShotImage(liveSection.sectionId, liveShot.id, c, liveShot.imageCandidates)}
-                          className={cn(
-                            "aspect-square overflow-hidden rounded border",
-                            c === liveShot.imageUrl ? "border-primary ring-1 ring-primary" : "border-border"
-                          )}
-                          title={`Use version ${i + 1}`}
-                        >
-                          <AssetImage src={c} alt={`Version ${i + 1}`} className="h-full w-full object-cover" label="Version" />
-                        </button>
+                    <select
+                      value={liveShot.videoProvider ?? ""}
+                      onChange={(e) =>
+                        patchShot(liveSection.sectionId, liveShot.id, {
+                          videoProvider: e.target.value || undefined,
+                        })
+                      }
+                      className="h-8 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
+                      aria-label="Clip model"
+                      title="Override the video provider for this shot"
+                    >
+                      <option value="">Clip model: inherit</option>
+                      {VIDEO_MODELS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
                       ))}
-                    </div>
+                    </select>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full"
+                      disabled={genClipId === liveShot.id || !liveShot.imageUrl}
+                      onClick={() => generateClip(liveSection, liveShot)}
+                      title={
+                        liveShot.imageUrl
+                          ? undefined
+                          : "Generate a frame first — clips are driven from the shot's frame"
+                      }
+                    >
+                      {genClipId === liveShot.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Video className="h-3.5 w-3.5" />
+                      )}
+                      {liveShot.videoUrl ? "Regenerate clip" : "Generate clip"}
+                    </Button>
                   </div>
-                )}
-
-                <div className="space-y-2 border-t border-border pt-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted">
-                    Video / clip
-                  </p>
-                  <select
-                    value={liveShot.videoProvider ?? ""}
-                    onChange={(e) =>
-                      patchShot(liveSection.sectionId, liveShot.id, { videoProvider: e.target.value || undefined })
-                    }
-                    className="h-8 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
-                    aria-label="Clip model"
-                    title="Override the video provider for this shot"
-                  >
-                    <option value="">Clip model: inherit</option>
-                    {VIDEO_MODELS.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-full"
-                    disabled={genClipId === liveShot.id || !liveShot.imageUrl}
-                    onClick={() => generateClip(liveSection, liveShot)}
-                    title={liveShot.imageUrl ? undefined : "Generate a frame first — clips are driven from the shot's frame"}
-                  >
-                    {genClipId === liveShot.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Video className="h-3.5 w-3.5" />
-                    )}
-                    {liveShot.videoUrl ? "Regenerate clip" : "Generate clip"}
-                  </Button>
                 </div>
-              </div>
 
-              {/* Right — frame prompt/model, full GenerationPanel power */}
-              <div className="min-w-0 flex-1 overflow-y-auto p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">
-                    Tune shot — {liveSection.label}
-                  </h2>
-                  <button onClick={() => setTune(null)} aria-label="Close tune">
-                    <X className="h-4 w-4 text-muted hover:text-foreground" />
-                  </button>
-                </div>
-                <GenerationPanel
-                  title="Tune frame"
-                  initialPrompt={buildShotImagePrompt({
-                    shot: liveShot,
-                    section: liveSection,
-                    treatment,
-                    cast,
-                    characters,
-                    aspect,
-                    choreoHint: song
-                      ? choreoHintForTime(getChoreo(song.id), liveShot.start)
-                      : undefined,
-                    brief: briefForSection(song, liveSection.sectionId),
-                  })}
-                  defaultAspect="16:9"
-                  references={mergeProductionRefs(liveShot, liveSection)}
-                  onGenerate={async (opts: GenerateOpts) => {
-                    // opts.references = shot/production refs + any pulled from the library.
-                    const refs = await collectRefs(
-                      opts.references.length
-                        ? opts.references
-                        : mergeProductionRefs(liveShot, liveSection)
-                    );
-                    const urls: string[] = [];
-                    for (let i = 0; i < opts.variations; i++) {
-                      const s = opts.seed !== undefined ? opts.seed + i : undefined;
-                      urls.push(
-                        await api.generateImagePro(
-                          opts.provider,
-                          opts.prompt,
-                          opts.width,
-                          opts.height,
-                          refs,
-                          s,
-                          opts.apiModel
-                        )
+                {/* Right — frame prompt/model, full GenerationPanel power */}
+                <div className="min-w-0 flex-1 overflow-y-auto p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold">Tune shot — {liveSection.label}</h2>
+                    <button onClick={() => setTune(null)} aria-label="Close tune">
+                      <X className="h-4 w-4 text-muted hover:text-foreground" />
+                    </button>
+                  </div>
+                  <GenerationPanel
+                    title="Tune frame"
+                    initialPrompt={buildShotImagePrompt({
+                      shot: liveShot,
+                      section: liveSection,
+                      treatment,
+                      cast,
+                      characters,
+                      aspect,
+                      choreoHint: song
+                        ? choreoHintForTime(getChoreo(song.id), liveShot.start)
+                        : undefined,
+                      brief: briefForSection(song, liveSection.sectionId),
+                    })}
+                    defaultAspect="16:9"
+                    references={mergeProductionRefs(liveShot, liveSection)}
+                    onGenerate={async (opts: GenerateOpts) => {
+                      // opts.references = shot/production refs + any pulled from the library.
+                      const refs = await collectRefs(
+                        opts.references.length
+                          ? opts.references
+                          : mergeProductionRefs(liveShot, liveSection)
                       );
-                    }
-                    return urls;
-                  }}
-                  onPick={(url) =>
-                    setShotImage(liveSection.sectionId, liveShot.id, url)
-                  }
-                  pickLabel="Use as frame"
-                />
+                      const urls: string[] = [];
+                      for (let i = 0; i < opts.variations; i++) {
+                        const s = opts.seed !== undefined ? opts.seed + i : undefined;
+                        urls.push(
+                          await api.generateImagePro(
+                            opts.provider,
+                            opts.prompt,
+                            opts.width,
+                            opts.height,
+                            refs,
+                            s,
+                            opts.apiModel
+                          )
+                        );
+                      }
+                      return urls;
+                    }}
+                    onPick={(url) => setShotImage(liveSection.sectionId, liveShot.id, url)}
+                    pickLabel="Use as frame"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 }
-

@@ -1,6 +1,10 @@
 // Director-mode storyboard cards: SimpleTreatmentView + SimpleShotCard (extracted, Phase 2).
 import { Film, Scissors, ImageIcon, Loader2, Sparkles, Video, Users } from "lucide-react";
-import { type MvTreatment, type MvSectionPlan, type MvShot } from "@/apps/music-video/lib/mvDirector";
+import {
+  type MvTreatment,
+  type MvSectionPlan,
+  type MvShot,
+} from "@/apps/music-video/lib/mvDirector";
 import { sectionColor, formatTime } from "@/apps/music-video/lib/songBrain";
 import { Button } from "@/platform/components/ui/button";
 import { Badge } from "@/platform/components/ui/badge";
@@ -85,7 +89,6 @@ export function SimpleTreatmentView({
     </div>
   );
 }
-
 
 function SimpleShotCard({
   shot,
@@ -194,4 +197,3 @@ function SimpleShotCard({
     </div>
   );
 }
-

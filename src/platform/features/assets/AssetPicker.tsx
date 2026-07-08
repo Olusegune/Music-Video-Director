@@ -33,8 +33,14 @@ export function AssetPicker({
   allowUpload?: boolean;
 }) {
   const qc = useQueryClient();
-  const { data: characters = [] } = useQuery({ queryKey: ["characters"], queryFn: api.listCharacters });
-  const { data: environments = [] } = useQuery({ queryKey: ["environments"], queryFn: api.listEnvironments });
+  const { data: characters = [] } = useQuery({
+    queryKey: ["characters"],
+    queryFn: api.listCharacters,
+  });
+  const { data: environments = [] } = useQuery({
+    queryKey: ["environments"],
+    queryFn: api.listEnvironments,
+  });
   const { data: props = [] } = useQuery({ queryKey: ["props"], queryFn: api.listProps });
 
   const all = useMemo(
@@ -143,7 +149,9 @@ export function AssetPicker({
               onClick={() => setKind(t)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                kind === t ? "bg-primary/12 text-primary" : "text-muted hover:bg-elevated hover:text-foreground"
+                kind === t
+                  ? "bg-primary/12 text-primary"
+                  : "text-muted hover:bg-elevated hover:text-foreground"
               )}
             >
               {t !== "All" && KIND_ICON[t as AssetKind]}
@@ -158,7 +166,14 @@ export function AssetPicker({
               <Upload className="h-3.5 w-3.5" /> Upload
             </button>
           )}
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={onUpload} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={onUpload}
+          />
         </div>
 
         {/* Pending uploads → choose a category before saving to a Bible */}
@@ -175,7 +190,8 @@ export function AssetPicker({
               ))}
             </div>
             <span className="text-xs text-muted">
-              {pending.length} upload{pending.length === 1 ? "" : "s"} ready to use ✓ — optionally also save to:
+              {pending.length} upload{pending.length === 1 ? "" : "s"} ready to use ✓ — optionally
+              also save to:
             </span>
             <select
               value={uploadCat}
@@ -190,7 +206,11 @@ export function AssetPicker({
               ))}
             </select>
             <Button size="sm" variant="secondary" onClick={confirmUpload} disabled={saving}>
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
               Save to library
             </Button>
             <Button
@@ -240,7 +260,9 @@ export function AssetPicker({
                     }
                     className={cn(
                       "group relative overflow-hidden rounded-[var(--radius-card)] border bg-elevated/40 text-left transition-all",
-                      on ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"
+                      on
+                        ? "border-primary ring-2 ring-primary/40"
+                        : "border-border hover:border-primary/40"
                     )}
                   >
                     <div className="aspect-square w-full overflow-hidden bg-elevated">
@@ -269,7 +291,9 @@ export function AssetPicker({
                     onClick={() => toggle(a)}
                     className={cn(
                       "group relative overflow-hidden rounded-[var(--radius-card)] border bg-elevated/40 text-left transition-all",
-                      on ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/40"
+                      on
+                        ? "border-primary ring-2 ring-primary/40"
+                        : "border-border hover:border-primary/40"
                     )}
                   >
                     <div className="aspect-square w-full overflow-hidden bg-elevated">
@@ -286,7 +310,11 @@ export function AssetPicker({
                       </span>
                     )}
                     <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded bg-background/70 px-1.5 py-0.5 text-[9px] font-medium text-foreground">
-                      {a.kind !== "Prop" || a.sub !== "upload" ? KIND_ICON[a.kind] : <Upload className="h-3 w-3" />}
+                      {a.kind !== "Prop" || a.sub !== "upload" ? (
+                        KIND_ICON[a.kind]
+                      ) : (
+                        <Upload className="h-3 w-3" />
+                      )}
                       {a.sub === "upload" ? "Upload" : a.kind}
                     </span>
                     <div className="p-2">

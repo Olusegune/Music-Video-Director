@@ -70,17 +70,15 @@ export function SettingsView() {
     saveRouterConfig(next);
   }
 
-  const configured = new Set(
-    statuses.filter((s) => s.configured).map((s) => s.provider)
-  );
+  const configured = new Set(statuses.filter((s) => s.configured).map((s) => s.provider));
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="border-b border-border px-8 py-5">
         <h1 className="text-lg font-semibold">Settings</h1>
         <p className="text-xs text-muted">
-          Provider keys & the model router. Calls are made from the Rust core —
-          keys never reach the frontend.
+          Provider keys & the model router. Calls are made from the Rust core — keys never reach the
+          frontend.
         </p>
       </header>
 
@@ -89,9 +87,8 @@ export function SettingsView() {
           <div className="flex items-start gap-2 rounded-[var(--radius-card)] border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              Running in the browser (dev). Keys are stored in localStorage as a
-              mock and generation uses the local engine. In the packaged Windows
-              app, keys live in the OS keychain.
+              Running in the browser (dev). Keys are stored in localStorage as a mock and generation
+              uses the local engine. In the packaged Windows app, keys live in the OS keychain.
             </span>
           </div>
         )}
@@ -156,9 +153,7 @@ export function SettingsView() {
             <CardTitle className="flex items-center gap-2">
               <Route className="h-4 w-4 text-primary" /> Provider Router
             </CardTitle>
-            <CardDescription>
-              How the app picks a model for each task.
-            </CardDescription>
+            <CardDescription>How the app picks a model for each task.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -215,9 +210,8 @@ export function SettingsView() {
 
             {router.mode === "local" && (
               <p className="rounded-md bg-accent/10 px-3 py-2 text-[11px] text-accent">
-                Local prompt-only mode: the full production pack is generated
-                offline with no API calls. Add keys and switch modes to render
-                images, video, and audio.
+                Local prompt-only mode: the full production pack is generated offline with no API
+                calls. Add keys and switch modes to render images, video, and audio.
               </p>
             )}
           </CardContent>
@@ -248,11 +242,8 @@ export function SettingsView() {
                     }
                   />
                 ))}
-              {providersFor(cap).filter((p) => p.capabilities[0] === cap)
-                .length === 0 && (
-                <p className="text-xs text-muted">
-                  Covered by multi-capability providers above.
-                </p>
+              {providersFor(cap).filter((p) => p.capabilities[0] === cap).length === 0 && (
+                <p className="text-xs text-muted">Covered by multi-capability providers above.</p>
               )}
             </CardContent>
           </Card>
@@ -261,9 +252,8 @@ export function SettingsView() {
         <p className="text-[11px] text-muted">
           {PROVIDERS.length} providers in the catalog ·{" "}
           {PROVIDERS.filter((p) => p.status === "wired").length} wired today ·{" "}
-          {PROVIDERS.filter((p) => p.status === "manual").length} manual /
-          prompt-export · {PROVIDERS.filter((p) => p.status === "planned").length}{" "}
-          adapters planned.
+          {PROVIDERS.filter((p) => p.status === "manual").length} manual / prompt-export ·{" "}
+          {PROVIDERS.filter((p) => p.status === "planned").length} adapters planned.
         </p>
       </div>
     </div>
@@ -271,8 +261,7 @@ export function SettingsView() {
 }
 
 function StatusBadge({ status }: { status: ProviderInfo["status"] }) {
-  if (status === "wired")
-    return <Badge variant="success">Wired</Badge>;
+  if (status === "wired") return <Badge variant="success">Wired</Badge>;
   if (status === "manual") return <Badge variant="primary">Manual</Badge>;
   return <Badge>Planned</Badge>;
 }
@@ -319,8 +308,7 @@ function ProviderRow({
             )}
           </div>
           <span className="text-[11px] text-muted">
-            {provider.capabilities.map((c) => CAPABILITY_LABEL[c]).join(" · ")} ·{" "}
-            {provider.hint}
+            {provider.capabilities.map((c) => CAPABILITY_LABEL[c]).join(" · ")} · {provider.hint}
           </span>
         </div>
       </div>
@@ -385,15 +373,15 @@ function AboutCard() {
         <div className="rounded-[var(--radius-card)] border border-border bg-elevated/40 p-3 text-[11px] text-muted">
           <p className="mb-1 font-medium text-foreground">Updates</p>
           <p>
-            This build updates manually: download the latest installer and run it over your
-            current install — your productions, bibles, and settings are preserved. Automatic
-            updates require a code-signed release channel (a signing certificate and an update
-            host), which isn't configured for this build.
+            This build updates manually: download the latest installer and run it over your current
+            install — your productions, bibles, and settings are preserved. Automatic updates
+            require a code-signed release channel (a signing certificate and an update host), which
+            isn't configured for this build.
           </p>
         </div>
         <p className="text-[11px] text-muted">
-          Local-first: all planning runs on your machine; provider keys live in the OS keychain
-          and never reach the frontend.
+          Local-first: all planning runs on your machine; provider keys live in the OS keychain and
+          never reach the frontend.
         </p>
       </CardContent>
     </Card>
@@ -427,15 +415,13 @@ function SnapshotsCard() {
           <History className="h-4 w-4 text-primary" /> Session snapshots
         </CardTitle>
         <CardDescription>
-          Your work autosaves continuously. These restore points are captured
-          automatically — roll back to any of them if something goes wrong.
+          Your work autosaves continuously. These restore points are captured automatically — roll
+          back to any of them if something goes wrong.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         {snaps.length === 0 ? (
-          <p className="text-xs text-muted">
-            No snapshots yet — they appear here as you work.
-          </p>
+          <p className="text-xs text-muted">No snapshots yet — they appear here as you work.</p>
         ) : (
           snaps.map((s) => (
             <div

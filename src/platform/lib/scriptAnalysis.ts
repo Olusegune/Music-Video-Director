@@ -7,10 +7,7 @@
 // characters convert straight into Character DNA records via characterDna.ts.
 
 import type { Character } from "@/platform/lib/types";
-import {
-  composeCharacterDna,
-  draftCharacterFromLine,
-} from "@/platform/lib/characterDna";
+import { composeCharacterDna, draftCharacterFromLine } from "@/platform/lib/characterDna";
 
 export interface ExtractedCharacter {
   name: string;
@@ -50,55 +47,254 @@ export interface ScriptAnalysis {
 // --- lexicons --------------------------------------------------------------
 
 const VEHICLE_WORDS = [
-  "car", "truck", "van", "motorcycle", "bike", "bicycle", "spaceship", "ship",
-  "boat", "plane", "airplane", "jet", "helicopter", "train", "bus", "tank",
-  "submarine", "carriage", "wagon", "horse", "chariot", "rover", "shuttle",
-  "speeder", "freighter", "cruiser",
+  "car",
+  "truck",
+  "van",
+  "motorcycle",
+  "bike",
+  "bicycle",
+  "spaceship",
+  "ship",
+  "boat",
+  "plane",
+  "airplane",
+  "jet",
+  "helicopter",
+  "train",
+  "bus",
+  "tank",
+  "submarine",
+  "carriage",
+  "wagon",
+  "horse",
+  "chariot",
+  "rover",
+  "shuttle",
+  "speeder",
+  "freighter",
+  "cruiser",
 ];
 
 const CREATURE_WORDS = [
-  "dragon", "wolf", "beast", "monster", "creature", "alien", "demon", "ghost",
-  "zombie", "vampire", "werewolf", "troll", "ogre", "goblin", "serpent",
-  "kraken", "phoenix", "griffin", "wraith", "mutant", "robot", "android",
-  "drone", "golem", "spider", "shark",
+  "dragon",
+  "wolf",
+  "beast",
+  "monster",
+  "creature",
+  "alien",
+  "demon",
+  "ghost",
+  "zombie",
+  "vampire",
+  "werewolf",
+  "troll",
+  "ogre",
+  "goblin",
+  "serpent",
+  "kraken",
+  "phoenix",
+  "griffin",
+  "wraith",
+  "mutant",
+  "robot",
+  "android",
+  "drone",
+  "golem",
+  "spider",
+  "shark",
 ];
 
 const PROP_WORDS = [
-  "gun", "pistol", "rifle", "revolver", "blaster", "sword", "knife", "dagger",
-  "blade", "axe", "bow", "shield", "briefcase", "suitcase", "phone",
-  "letter", "envelope", "key", "map", "ring", "book", "journal", "diary",
-  "bottle", "glass", "cup", "watch", "necklace", "amulet", "crown", "mask",
-  "lantern", "torch", "candle", "photograph", "photo", "painting", "mirror",
-  "box", "chest", "bag", "backpack", "laptop", "camera", "radio", "gem",
-  "crystal", "coin", "scroll", "wand", "staff", "helmet", "compass",
+  "gun",
+  "pistol",
+  "rifle",
+  "revolver",
+  "blaster",
+  "sword",
+  "knife",
+  "dagger",
+  "blade",
+  "axe",
+  "bow",
+  "shield",
+  "briefcase",
+  "suitcase",
+  "phone",
+  "letter",
+  "envelope",
+  "key",
+  "map",
+  "ring",
+  "book",
+  "journal",
+  "diary",
+  "bottle",
+  "glass",
+  "cup",
+  "watch",
+  "necklace",
+  "amulet",
+  "crown",
+  "mask",
+  "lantern",
+  "torch",
+  "candle",
+  "photograph",
+  "photo",
+  "painting",
+  "mirror",
+  "box",
+  "chest",
+  "bag",
+  "backpack",
+  "laptop",
+  "camera",
+  "radio",
+  "gem",
+  "crystal",
+  "coin",
+  "scroll",
+  "wand",
+  "staff",
+  "helmet",
+  "compass",
 ];
 
 // Natural-language location nouns (prose / treatment / lyric extraction, where
 // there are no INT./EXT. scene headings).
 const LOCATION_WORDS = [
-  "street", "alley", "alleyway", "rooftop", "roof", "club", "nightclub",
-  "stage", "beach", "warehouse", "city", "downtown", "bedroom", "studio",
-  "desert", "forest", "woods", "bar", "diner", "kitchen", "office", "hallway",
-  "garage", "highway", "road", "bridge", "park", "field", "mountain", "river",
-  "lake", "ocean", "sea", "pool", "mansion", "penthouse", "apartment", "house",
-  "church", "temple", "subway", "airport", "courtyard", "ballroom", "gallery",
-  "runway", "arena", "stadium", "tunnel", "skyline", "market", "rooftop pool",
+  "street",
+  "alley",
+  "alleyway",
+  "rooftop",
+  "roof",
+  "club",
+  "nightclub",
+  "stage",
+  "beach",
+  "warehouse",
+  "city",
+  "downtown",
+  "bedroom",
+  "studio",
+  "desert",
+  "forest",
+  "woods",
+  "bar",
+  "diner",
+  "kitchen",
+  "office",
+  "hallway",
+  "garage",
+  "highway",
+  "road",
+  "bridge",
+  "park",
+  "field",
+  "mountain",
+  "river",
+  "lake",
+  "ocean",
+  "sea",
+  "pool",
+  "mansion",
+  "penthouse",
+  "apartment",
+  "house",
+  "church",
+  "temple",
+  "subway",
+  "airport",
+  "courtyard",
+  "ballroom",
+  "gallery",
+  "runway",
+  "arena",
+  "stadium",
+  "tunnel",
+  "skyline",
+  "market",
+  "rooftop pool",
 ];
 
 const WARDROBE_WORDS = [
-  "jacket", "coat", "dress", "gown", "suit", "shirt", "hoodie", "jeans",
-  "pants", "skirt", "boots", "sneakers", "heels", "hat", "cap", "scarf",
-  "gloves", "mask", "sunglasses", "chain", "chains", "necklace", "earrings",
-  "ring", "bracelet", "crown", "veil", "cape", "robe", "uniform", "armor",
-  "leather", "silk", "satin", "denim", "velvet", "sequins", "fur", "lace",
+  "jacket",
+  "coat",
+  "dress",
+  "gown",
+  "suit",
+  "shirt",
+  "hoodie",
+  "jeans",
+  "pants",
+  "skirt",
+  "boots",
+  "sneakers",
+  "heels",
+  "hat",
+  "cap",
+  "scarf",
+  "gloves",
+  "mask",
+  "sunglasses",
+  "chain",
+  "chains",
+  "necklace",
+  "earrings",
+  "ring",
+  "bracelet",
+  "crown",
+  "veil",
+  "cape",
+  "robe",
+  "uniform",
+  "armor",
+  "leather",
+  "silk",
+  "satin",
+  "denim",
+  "velvet",
+  "sequins",
+  "fur",
+  "lace",
 ];
 
 const MOTIF_WORDS = [
-  "rain", "storm", "fire", "smoke", "neon", "shadow", "shadows", "blood",
-  "mirror", "light", "darkness", "fog", "mist", "snow", "ice", "ocean", "sea",
-  "desert", "forest", "moon", "stars", "sun", "gold", "rust", "glass",
-  "chrome", "steel", "dust", "ash", "water", "wind", "thunder", "lightning",
-  "flowers", "candles",
+  "rain",
+  "storm",
+  "fire",
+  "smoke",
+  "neon",
+  "shadow",
+  "shadows",
+  "blood",
+  "mirror",
+  "light",
+  "darkness",
+  "fog",
+  "mist",
+  "snow",
+  "ice",
+  "ocean",
+  "sea",
+  "desert",
+  "forest",
+  "moon",
+  "stars",
+  "sun",
+  "gold",
+  "rust",
+  "glass",
+  "chrome",
+  "steel",
+  "dust",
+  "ash",
+  "water",
+  "wind",
+  "thunder",
+  "lightning",
+  "flowers",
+  "candles",
 ];
 
 const TONE_MAP: [RegExp, string][] = [
@@ -114,10 +310,28 @@ const TONE_MAP: [RegExp, string][] = [
 
 // Common all-caps lines that are NOT character cues.
 const NON_CUES = new Set([
-  "FADE IN", "FADE OUT", "FADE TO BLACK", "CUT TO", "SMASH CUT", "MATCH CUT",
-  "DISSOLVE TO", "THE END", "CONTINUED", "MONTAGE", "INTERCUT", "BEGIN",
-  "END", "TITLE", "SUPER", "INSERT", "BACK TO", "LATER", "MOMENTS LATER",
-  "PRELAP", "BLACK", "OMITTED",
+  "FADE IN",
+  "FADE OUT",
+  "FADE TO BLACK",
+  "CUT TO",
+  "SMASH CUT",
+  "MATCH CUT",
+  "DISSOLVE TO",
+  "THE END",
+  "CONTINUED",
+  "MONTAGE",
+  "INTERCUT",
+  "BEGIN",
+  "END",
+  "TITLE",
+  "SUPER",
+  "INSERT",
+  "BACK TO",
+  "LATER",
+  "MOMENTS LATER",
+  "PRELAP",
+  "BLACK",
+  "OMITTED",
 ]);
 
 // --- helpers ---------------------------------------------------------------
@@ -174,11 +388,7 @@ function firstContext(sents: string[], word: string): string {
   return hit ? hit.slice(0, 160) : "";
 }
 
-function scanLexicon(
-  text: string,
-  sents: string[],
-  lexicon: string[]
-): ExtractedEntity[] {
+function scanLexicon(text: string, sents: string[], lexicon: string[]): ExtractedEntity[] {
   return lexicon
     .map((w) => ({ name: titleCase(w), mentions: countWord(text, w), context: "" }))
     .filter((e) => e.mentions > 0)
@@ -284,8 +494,7 @@ function introLine(sents: string[], name: string): string {
     let sc = 0;
     if (new RegExp(`\\b${esc}\\b\\s*\\(`, "i").test(s)) sc += 4; // NAME (40s)
     if (new RegExp(`^\\s*${esc}\\b`, "i").test(s)) sc += 2; // sentence subject
-    if (/\(\d{1,2}s?\)|\d{1,2}s\b|years old|wearing|dressed|tall|eyes|hair|beard/i.test(s))
-      sc += 2;
+    if (/\(\d{1,2}s?\)|\d{1,2}s\b|years old|wearing|dressed|tall|eyes|hair|beard/i.test(s)) sc += 2;
     if (new RegExp(`,\\s*${esc}\\s*[.!?]?$`, "i").test(s)) sc -= 4; // vocative
     return sc;
   };
@@ -315,20 +524,76 @@ function detectMotifs(text: string): string[] {
 // Title-case words that are almost never character names.
 const NAME_STOPLIST = new Set(
   [
-    "The", "A", "An", "And", "But", "Or", "So", "Then", "When", "While",
-    "Her", "His", "Their", "She", "He", "They", "We", "You", "It", "This",
-    "That", "There", "Here", "Now", "Today", "Tonight", "Verse", "Chorus",
-    "Bridge", "Intro", "Outro", "Hook", "Pre", "Scene", "Cut", "Int", "Ext",
-    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-    "Sunday", "January", "February", "March", "April", "May", "June", "July",
-    "August", "September", "October", "November", "December", "God", "Lord",
+    "The",
+    "A",
+    "An",
+    "And",
+    "But",
+    "Or",
+    "So",
+    "Then",
+    "When",
+    "While",
+    "Her",
+    "His",
+    "Their",
+    "She",
+    "He",
+    "They",
+    "We",
+    "You",
+    "It",
+    "This",
+    "That",
+    "There",
+    "Here",
+    "Now",
+    "Today",
+    "Tonight",
+    "Verse",
+    "Chorus",
+    "Bridge",
+    "Intro",
+    "Outro",
+    "Hook",
+    "Pre",
+    "Scene",
+    "Cut",
+    "Int",
+    "Ext",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "God",
+    "Lord",
   ].map((w) => w)
 );
 
 const LEXICON_NAMES = new Set(
-  [...LOCATION_WORDS, ...PROP_WORDS, ...VEHICLE_WORDS, ...CREATURE_WORDS, ...WARDROBE_WORDS, ...MOTIF_WORDS].map(
-    (w) => titleCase(w)
-  )
+  [
+    ...LOCATION_WORDS,
+    ...PROP_WORDS,
+    ...VEHICLE_WORDS,
+    ...CREATURE_WORDS,
+    ...WARDROBE_WORDS,
+    ...MOTIF_WORDS,
+  ].map((w) => titleCase(w))
 );
 
 /**
@@ -417,8 +682,7 @@ export function analyzeScript(text: string): ScriptAnalysis {
 
 function dedupeLocations(scenes: ExtractedScene[]): ExtractedEntity[] {
   const counts = new Map<string, number>();
-  for (const s of scenes)
-    counts.set(s.location, (counts.get(s.location) ?? 0) + 1);
+  for (const s of scenes) counts.set(s.location, (counts.get(s.location) ?? 0) + 1);
   return [...counts.entries()]
     .map(([name, mentions]) => ({ name, mentions, context: "" }))
     .sort((a, b) => b.mentions - a.mentions);
@@ -428,9 +692,7 @@ function dedupeLocations(scenes: ExtractedScene[]): ExtractedEntity[] {
 
 /** Convert an extracted character into a full Character DNA draft. */
 export function extractedToCharacter(ec: ExtractedCharacter): Character {
-  const seed = ec.descriptionLine.trim()
-    ? ec.descriptionLine
-    : ec.name;
+  const seed = ec.descriptionLine.trim() ? ec.descriptionLine : ec.name;
   const c = draftCharacterFromLine(seed);
   c.name = ec.name; // trust the cue name over the parsed leading token
   if (ec.relationships.length)

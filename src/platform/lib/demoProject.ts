@@ -25,29 +25,95 @@ export const DEMO_SONG_ID = "demo-space-learned";
 
 const SECTIONS: Array<[string, string, number, number, number, string, string]> = [
   // [kind, label, start, end, energy, performerRole, lyrics]
-  ["Intro", "Intro", 0, 18, 0.25, "Spoken narrator", "Before there were stars…\nbefore there was a 'before'…"],
-  ["Verse", "Verse 1", 18, 52, 0.5, "Rapper", "I got Schrödinger in the cockpit, two opinions at once\nback past the distance, back when the Milky Way wasn't a thought yet"],
-  ["Chorus", "Chorus 1", 52, 82, 0.96, "Lead vocal", "It wasn't a bomb, it was space opening wide\nturning energy and time into a cosmic ride"],
-  ["Verse", "Verse 2", 82, 116, 0.55, "Rapper", "First came the fire, the pressure, the heat\nphysics writing rhythms with a newborn beat"],
-  ["Chorus", "Chorus 2", 116, 146, 0.97, "Lead vocal", "It wasn't a bomb, it was space opening wide\nturning energy and time into a cosmic ride"],
-  ["Bridge", "Bridge", 146, 168, 0.6, "Choir", "The iron in your blood, the calcium in your bones\nyou are not separate from cosmic history"],
-  ["Chorus", "Chorus 3", 168, 196, 0.98, "Lead vocal", "Stretch, stretch, stretch — the universe began to grow"],
-  ["Outro", "Outro", 196, 212, 0.35, "Spoken narrator", "The Big Bang isn't just where the universe began.\nIt's where your story began too."],
+  [
+    "Intro",
+    "Intro",
+    0,
+    18,
+    0.25,
+    "Spoken narrator",
+    "Before there were stars…\nbefore there was a 'before'…",
+  ],
+  [
+    "Verse",
+    "Verse 1",
+    18,
+    52,
+    0.5,
+    "Rapper",
+    "I got Schrödinger in the cockpit, two opinions at once\nback past the distance, back when the Milky Way wasn't a thought yet",
+  ],
+  [
+    "Chorus",
+    "Chorus 1",
+    52,
+    82,
+    0.96,
+    "Lead vocal",
+    "It wasn't a bomb, it was space opening wide\nturning energy and time into a cosmic ride",
+  ],
+  [
+    "Verse",
+    "Verse 2",
+    82,
+    116,
+    0.55,
+    "Rapper",
+    "First came the fire, the pressure, the heat\nphysics writing rhythms with a newborn beat",
+  ],
+  [
+    "Chorus",
+    "Chorus 2",
+    116,
+    146,
+    0.97,
+    "Lead vocal",
+    "It wasn't a bomb, it was space opening wide\nturning energy and time into a cosmic ride",
+  ],
+  [
+    "Bridge",
+    "Bridge",
+    146,
+    168,
+    0.6,
+    "Choir",
+    "The iron in your blood, the calcium in your bones\nyou are not separate from cosmic history",
+  ],
+  [
+    "Chorus",
+    "Chorus 3",
+    168,
+    196,
+    0.98,
+    "Lead vocal",
+    "Stretch, stretch, stretch — the universe began to grow",
+  ],
+  [
+    "Outro",
+    "Outro",
+    196,
+    212,
+    0.35,
+    "Spoken narrator",
+    "The Big Bang isn't just where the universe began.\nIt's where your story began too.",
+  ],
 ];
 
 function buildSong(): SongMap {
   const now = new Date().toISOString();
-  const sections: SongSection[] = SECTIONS.map(([kind, label, start, end, energy, role, lyrics], i) => ({
-    id: `demo-sec-${i}`,
-    kind: kind as SongSection["kind"],
-    label,
-    start,
-    end,
-    energy,
-    lyricsText: lyrics,
-    performerRole: role,
-    mood: energy > 0.9 ? "Euphoric" : energy < 0.4 ? "Reverent" : "Driven",
-  }));
+  const sections: SongSection[] = SECTIONS.map(
+    ([kind, label, start, end, energy, role, lyrics], i) => ({
+      id: `demo-sec-${i}`,
+      kind: kind as SongSection["kind"],
+      label,
+      start,
+      end,
+      energy,
+      lyricsText: lyrics,
+      performerRole: role,
+      mood: energy > 0.9 ? "Euphoric" : energy < 0.4 ? "Reverent" : "Driven",
+    })
+  );
   // Synthetic waveform/energy so the overview + lanes look alive.
   const peaks = Array.from({ length: 1400 }, (_, i) => {
     const t = (i / 1400) * 212;
@@ -59,7 +125,12 @@ function buildSong(): SongMap {
     const lines = (s.lyricsText ?? "").split("\n").filter(Boolean);
     const span = Math.max(1, s.end - s.start);
     lines.forEach((text, k) =>
-      lyrics.push({ id: `${s.id}-${k}`, text, start: s.start + ((k + 0.5) / lines.length) * span, sectionId: s.id })
+      lyrics.push({
+        id: `${s.id}-${k}`,
+        text,
+        start: s.start + ((k + 0.5) / lines.length) * span,
+        sectionId: s.id,
+      })
     );
   }
   return {
@@ -118,8 +189,18 @@ export async function loadDemoProject(): Promise<string> {
 
   // Cast — fixed ids so re-loading the demo replaces rather than duplicates.
   const cast = [
-    { ...newPerformer("Lead Singer"), id: "demo-perf-lead", name: "Neo Dude", characterId: "demo-char-neo" },
-    { ...newPerformer("Rapper"), id: "demo-perf-rap", name: "Neo Dude (verses)", characterId: "demo-char-neo" },
+    {
+      ...newPerformer("Lead Singer"),
+      id: "demo-perf-lead",
+      name: "Neo Dude",
+      characterId: "demo-char-neo",
+    },
+    {
+      ...newPerformer("Rapper"),
+      id: "demo-perf-rap",
+      name: "Neo Dude (verses)",
+      characterId: "demo-char-neo",
+    },
     { ...newPerformer("Backing Singer"), id: "demo-perf-choir", name: "The Cosmos Choir" },
     { ...newPerformer("Dancer"), id: "demo-perf-dance", name: "Zero-G Dance Crew" },
   ];

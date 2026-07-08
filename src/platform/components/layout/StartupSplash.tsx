@@ -45,7 +45,12 @@ export function StartupSplash() {
       )}
       aria-label="Director Studio startup splash"
     >
-      <div className={cn("relative h-full w-full transition duration-300", exiting ? "opacity-0" : "opacity-100")}>
+      <div
+        className={cn(
+          "relative h-full w-full transition duration-300",
+          exiting ? "opacity-0" : "opacity-100"
+        )}
+      >
         <img
           src={splashArt}
           alt="Director Studio creative ecosystem"
@@ -55,7 +60,9 @@ export function StartupSplash() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/45" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
           <div className="rounded-2xl border border-white/10 bg-black/35 px-10 py-7 shadow-2xl backdrop-blur-md">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/55">Wheelbarrow</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/55">
+              Wheelbarrow
+            </p>
             <p className="mt-2 text-4xl font-black tracking-[0.08em]">DIRECTOR</p>
             <p className="text-sm font-semibold tracking-[0.5em] text-primary">STUDIO</p>
             <p className="mt-4 text-sm text-white/65">Every idea. Every style. One vision.</p>

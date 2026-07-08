@@ -28,10 +28,7 @@ export function Inspector() {
             <Field label="Aspect Ratio" value={project.aspectRatio} />
             <Field label="Duration" value={project.duration} />
             <Field label="Status" value={project.status} />
-            <Field
-              label="Created"
-              value={new Date(project.createdAt).toLocaleDateString()}
-            />
+            <Field label="Created" value={new Date(project.createdAt).toLocaleDateString()} />
           </div>
         )}
       </div>
@@ -39,18 +36,10 @@ export function Inspector() {
   );
 }
 
-function Field({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] uppercase tracking-wide text-muted">
-        {label}
-      </span>
+      <span className="text-[11px] uppercase tracking-wide text-muted">{label}</span>
       <span className="text-sm text-foreground">{value}</span>
     </div>
   );

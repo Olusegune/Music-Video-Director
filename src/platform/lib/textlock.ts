@@ -7,12 +7,7 @@
 // correctly spelled, and behaving exactly as the director intends.
 
 export type TextLockState =
-  | "locked"
-  | "animated"
-  | "optional"
-  | "final-frame"
-  | "hidden-motion"
-  | "visible-final";
+  "locked" | "animated" | "optional" | "final-frame" | "hidden-motion" | "visible-final";
 
 export interface TextLockItem {
   id: string;
@@ -92,9 +87,7 @@ export function lockInstructionFor(items: TextLockItem[]): string {
     );
   }
 
-  const finalOnly = clean.filter(
-    (i) => i.state === "final-frame" || i.state === "visible-final"
-  );
+  const finalOnly = clean.filter((i) => i.state === "final-frame" || i.state === "visible-final");
   if (finalOnly.length) {
     lines.push(
       `Show only on the final still frame (absent during motion): ${finalOnly
@@ -105,11 +98,7 @@ export function lockInstructionFor(items: TextLockItem[]): string {
 
   const hidden = clean.filter((i) => i.state === "hidden-motion");
   if (hidden.length) {
-    lines.push(
-      `Keep hidden while motion plays: ${hidden
-        .map((i) => `"${i.text}"`)
-        .join(", ")}.`
-    );
+    lines.push(`Keep hidden while motion plays: ${hidden.map((i) => `"${i.text}"`).join(", ")}.`);
   }
 
   const animated = clean.filter((i) => i.state === "animated");

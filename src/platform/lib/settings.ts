@@ -60,9 +60,17 @@ const LS_LEGACY_MV_MODE = "mf.mvViewMode";
 const LS_LEGACY_CHOREO_MODE = "mf.choreoViewMode";
 
 export const STUDIO_MODES: { id: StudioMode; label: string; hint: string }[] = [
-  { id: "director", label: "Director", hint: "Guided and visual — direct the production, no AI jargon" },
+  {
+    id: "director",
+    label: "Director",
+    hint: "Guided and visual — direct the production, no AI jargon",
+  },
   { id: "studio", label: "Studio", hint: "Full professional creative controls on every surface" },
-  { id: "creator", label: "Creator", hint: "The complete engine — prompts, models, providers, debugging" },
+  {
+    id: "creator",
+    label: "Creator",
+    hint: "The complete engine — prompts, models, providers, debugging",
+  },
 ];
 
 /** One-time migration from the pre-Director-Studio per-surface flags. */

@@ -113,8 +113,7 @@ export function ImagePreviewModal({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       ctx.drawImage(img, 0, 0);
-      const mime =
-        format === "png" ? "image/png" : format === "jpg" ? "image/jpeg" : "image/webp";
+      const mime = format === "png" ? "image/png" : format === "jpg" ? "image/jpeg" : "image/webp";
       const dataUrl = canvas.toDataURL(mime, 0.95);
       triggerDownload(dataUrl, filename);
     } catch {
@@ -152,32 +151,58 @@ export function ImagePreviewModal({
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Zoom */}
           <div className="flex items-center gap-0.5 rounded-md bg-white/10 p-0.5">
-            <IconBtn title="Zoom out" onClick={() => { setFit(false); setScale((s) => Math.max(0.1, s - 0.25)); }}>
+            <IconBtn
+              title="Zoom out"
+              onClick={() => {
+                setFit(false);
+                setScale((s) => Math.max(0.1, s - 0.25));
+              }}
+            >
               <ZoomOut className="h-4 w-4" />
             </IconBtn>
             <span className="w-10 text-center text-[11px] text-white/70">
               {fit ? "Fit" : `${Math.round(scale * 100)}%`}
             </span>
-            <IconBtn title="Zoom in" onClick={() => { setFit(false); setScale((s) => Math.min(5, s + 0.25)); }}>
+            <IconBtn
+              title="Zoom in"
+              onClick={() => {
+                setFit(false);
+                setScale((s) => Math.min(5, s + 0.25));
+              }}
+            >
               <ZoomIn className="h-4 w-4" />
             </IconBtn>
             <IconBtn title="Fit to screen" onClick={() => setFit(true)}>
               <Maximize2 className="h-4 w-4" />
             </IconBtn>
-            <IconBtn title="Actual size" onClick={() => { setFit(false); setScale(1); }}>
+            <IconBtn
+              title="Actual size"
+              onClick={() => {
+                setFit(false);
+                setScale(1);
+              }}
+            >
               <Scan className="h-4 w-4" />
             </IconBtn>
           </div>
 
           <Button size="sm" variant="secondary" onClick={onRegenerate} disabled={regenerating}>
-            {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {regenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Regenerate
           </Button>
 
           {/* Download menu */}
           <div className="flex items-center gap-0.5 rounded-md bg-white/10 p-0.5 text-white">
             <span className="pl-1.5 text-[11px] text-white/60">
-              {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {downloading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
             </span>
             {(["png", "jpg", "webp"] as DownloadFormat[]).map((f) => (
               <button
@@ -246,7 +271,11 @@ export function ImagePreviewModal({
               style={
                 fit
                   ? undefined
-                  : { width: `${(asset.width || 1024) * scale}px`, height: "auto", maxWidth: "none" }
+                  : {
+                      width: `${(asset.width || 1024) * scale}px`,
+                      height: "auto",
+                      maxWidth: "none",
+                    }
               }
             />
           ) : (
