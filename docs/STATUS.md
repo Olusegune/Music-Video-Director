@@ -7,6 +7,7 @@ Last updated: 2026-07-07
 
 ## Shipped (recent → older)
 
+- **Glam Studio guided skeleton**: added `src/apps/glam-studio/GlamStudio.tsx` as the first Remaining Modules app after Motion Studio. It uses the platform `GuidedFlowShell`, global StudioMode, shared UI/theme, provider-router settings display, new platform Brand DNA registry, deliverable registry, and loop engine. The flow covers product intake, product type, Brand DNA, luxury look, campaign concept, format pack, and export approval, then saves a local Glam project with planned deliverables.
 - **Music Video Guided Flow V2**: wrapped Magic Mode in a platform `GuidedFlowDefinition` at `src/apps/music-video/features/director/MusicVideoGuidedFlow.tsx`. The V2 flow reuses the shared `GuidedFlowShell`, delegates song analysis/cast/story/style setup to existing Music Video Director internals, hands the approved production to the existing `MagicDirect` local directing pipeline, adds StudioMode-gated creative/technical panels, and is now the default via `mf.guidedFlowV2` while Settings can opt back to the legacy wizard.
 - **Guided Flow platform prep + splash refinement**: imported the Remaining Modules and Guided Flow addendum specs into `docs/DIRECTOR-STUDIO-MODULES-SPEC.md` and `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`; added platform Guided Flow contracts/session storage in `src/platform/lib/guidedFlow.ts`; added shared flow shell/step primitives in `src/platform/components/flow/`; added `src/platform/lib/studioMode.ts` as the reusable StudioMode behavior map; added the off-by-default `mf.guidedFlowV2` migration flag; and replaced the startup splash's full-screen cropped image with a compact contained Director Studio loading card that dismisses on readiness with a short fallback.
 - **Director Studio branding pass**: integrated the generated Director Studio Windows icon and splashscreen. The Tauri icon set was regenerated from `src/assets/director-studio-icon.png`; the old music-video-focused splash asset was replaced by `src/assets/director-studio-splash.png`; app shell, browser title, native window title, settings/about copy, welcome splash, and dashboard hero now use Director Studio as the broad product identity.
@@ -65,6 +66,12 @@ Latest Director Studio branding verification:
 - Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`; NSIS setup has an associated icon resource; MSI ProductName is `Director Studio`.
 
 
+Latest Glam Studio verification:
+- Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-glam-studio-20260707-210941`
+- Platform prep added: `src/platform/lib/brandDna.ts`, `src/platform/lib/deliverables.ts`, `src/platform/lib/loopEngine.ts`.
+- Typecheck/build: `npx tsc --noEmit` and `npm run build` passed.
+- Windows package: `npm run tauri build -- --bundles msi,nsis` passed; release executable smoke launch passed with window title `Director Studio`.
+
 Latest Music Video Guided Flow V2 verification:
 - Backup: `C:\Users\eduni\Documents\Wheelbarrow MotionForge AI-backup-guided-flow-v2-20260707-205217`
 - Safe default proof: `npx tsc --noEmit`, `npm run build`, and `npm run tauri build -- --bundles msi,nsis` passed while `mf.guidedFlowV2` still defaulted off.
@@ -101,6 +108,6 @@ Latest Motion Studio integration verification:
 
 ## Roadmap
 
-- **Next** - wrap the existing Music Video Magic/Director flow in a `GuidedFlowDefinition` behind `mf.guidedFlowV2`, QA it in all StudioMode tiers, then flip the flag only after packaged Windows verification.
-- After Guided Flow V2 is verified, start Glam Studio using the platform flow shell/primitives rather than a module-local wizard.
+- **Next** - harden Glam Studio into MVP P1/P2: richer product profile extraction, saved look/concept libraries, prompt-pack export, and asset-library writes.
+- Then build Web Studio on the same Brand DNA, deliverables, and Guided Flow platform primitives.
 - Continuous: branding pass once named; QA + installer rebuild per phase.

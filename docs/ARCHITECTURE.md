@@ -59,6 +59,7 @@ The physical split is now in place: reusable systems live under
 | Style Library | `lib/templates.ts`, `features/templates/`, `components/templates/TemplateCard.tsx` |
 | Project Memory | `lib/snapshots.ts`, `lib/undo.ts`, `lib/settings.ts`, `lib/scriptStore.ts` |
 | Guided Flow / Magic Flow | `lib/guidedFlow.ts`, `components/flow/GuidedFlowShell.tsx`, `components/flow/steps/*`, `lib/studioMode.ts` |
+| Brand DNA / deliverables | `lib/brandDna.ts`, `lib/deliverables.ts`, `lib/loopEngine.ts` |
 | Persistence facade | `lib/ipc.ts` + the Rust core |
 | Shared UI kit | `components/ui/*` (CardPicker, HelpHint, AssetImage/AssetVideo with broken-state recourse, buttons, inputs), `components/layout/` |
 | Export | `lib/bibleExport.ts`, `lib/pack.ts`, `features/export/` |
@@ -80,6 +81,15 @@ The physical split is now in place: reusable systems live under
 | Timeline / render | `features/timeline/`, render pipeline calls in the Rust core |
 | Motion tests | `lib/motionTest.ts`, `features/animation/` |
 
+
+### Glam Studio (app-specific)
+
+| System | Modules |
+|---|---|
+| App workflow | `apps/glam-studio/GlamStudio.tsx` |
+| Shared systems consumed | `platform/components/flow`, `platform/lib/brandDna`, `platform/lib/deliverables`, `platform/lib/loopEngine`, `platform/store/useAppStore`, shared UI/theme, provider-router settings |
+
+Glam Studio is a guided luxury product campaign module. It owns product/category/look/concept heuristics locally for now, while Brand DNA, deliverable records, loop events, StudioMode, and UI shell remain platform-owned so Web and Campaign can reuse them.
 ### Motion Studio (app-specific)
 
 | System | Modules |

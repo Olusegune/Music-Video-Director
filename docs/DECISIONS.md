@@ -3,6 +3,11 @@
 > Append-only. Each entry: what changed, why it is better, risks, benefits,
 > future impact. Newest first.
 
+## D9 - 2026-07-07 - Glam Studio starts on platform Guided Flow, Brand DNA, and deliverables
+
+**What:** Added Glam Studio as a Director Studio module with a guided luxury campaign workflow. The module creates local Glam projects, writes Brand DNA through `platform/lib/brandDna.ts`, writes planned format assets through `platform/lib/deliverables.ts`, and tracks hero prompt iterations through `platform/lib/loopEngine.ts`. App shell routing and sidebar navigation now expose Glam Studio beside Music Video Director and Motion Studio.
+
+**Why better:** Glam is the first new Remaining Modules app to validate the platform primitives before Web and Campaign depend on them. It does not fork settings, theme, provider routing, or UI. Risk: this is a skeleton/P1 foundation, not the full image-generation/product-fidelity MVP; prompt-pack export, real asset-library writes, and provider-backed hero generation come next.
 ## D8 - 2026-07-07 - Music Video Magic Mode runs on platform Guided Flow V2 by default
 
 **What:** Added `MusicVideoGuidedFlow.tsx`, a Music Video app wrapper that registers a platform `GuidedFlowDefinition` for the existing Magic Mode sequence: song import, lyrics/script, performers, video type, story, style, and direct. It reuses Music Video Director internals for song analysis, lyric distribution, auto-casting, story beats, template/style selection, and hands approved projects to the existing `MagicDirect` pipeline. `mf.guidedFlowV2` is now default-on after packaged verification, with Settings exposing an opt-back toggle for the legacy wizard.

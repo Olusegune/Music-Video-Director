@@ -44,7 +44,8 @@ export type View =
   | "export"
   | "apikeys"
   | "models"
-  | "motionstudio";
+  | "motionstudio"
+  | "glamstudio";
 export type WorkspaceMode =
   | "storyboard"
   | "camera"
@@ -134,6 +135,7 @@ interface AppState {
   openApiKeys: () => void;
   openModels: () => void;
   openMotionStudio: () => void;
+  openGlamStudio: () => void;
   openProject: (id: string) => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
@@ -259,6 +261,7 @@ export const useAppStore = create<AppState>((set) => ({
   openApiKeys: () => set({ view: "apikeys" }),
   openModels: () => set({ view: "models" }),
   openMotionStudio: () => set({ view: "motionstudio", activeProjectId: null }),
+  openGlamStudio: () => set({ view: "glamstudio", activeProjectId: null }),
   openProject: (id) =>
     set({ view: "project", activeProjectId: id, workspaceMode: "storyboard" }),
   setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
