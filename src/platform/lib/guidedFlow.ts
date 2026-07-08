@@ -219,6 +219,38 @@ export function retreatGuidedFlowSession<TState>(
   });
 }
 
+export function jumpGuidedFlowSession<TState>(
+  definition: GuidedFlowDefinition<TState>,
+  session: GuidedFlowSession<TState>,
+  stepIndex: number
+): GuidedFlowSession<TState> {
+  const boundedIndex = Math.max(
+    0,
+    Math.min(stepIndex, definition.steps.length - 1)
+  );
+  const requestedStep = definition.steps[boundedIndex];
+  const canMoveBack = boundedIndex <= session.stepIndex;
+  const canMoveForward =
+    requestedStep != null &&
+    definition.steps
+      .slice(0, boundedIndex)
+      .every((step) => session.completedStepIds.includes(step.id));
+
+  if (!canMoveBack && !canMoveForward) return session;
+
+  return saveGuidedFlowSession({
+    ...session,
+    stepIndex: boundedIndex,
+    status: "active",
+  });
+}
+
+export function saveGuidedFlowDraft<TState>(
+  session: GuidedFlowSession<TState>
+): GuidedFlowSession<TState> {
+  return saveGuidedFlowSession({ ...session, status: "draft" });
+}
+
 export function abandonGuidedFlowSession<TState>(
   session: GuidedFlowSession<TState>
 ): GuidedFlowSession<TState> {
@@ -251,6 +283,14 @@ export function createGuidedFlowStore<TState>(
     },
     back() {
       session = retreatGuidedFlowSession(session);
+      return session;
+    },
+    jump(stepIndex: number) {
+      session = jumpGuidedFlowSession(definition, session, stepIndex);
+      return session;
+    },
+    saveDraft() {
+      session = saveGuidedFlowDraft(session);
       return session;
     },
     abandon() {

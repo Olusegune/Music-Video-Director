@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run test",
     "test:web-export": "esbuild scripts/web-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/web-export-smoke.mjs && node C:/tmp/web-export-smoke.mjs",
     "test:campaign-export": "esbuild scripts/campaign-export-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/campaign-export-smoke.mjs && node C:/tmp/campaign-export-smoke.mjs",
     "test:glam-film": "esbuild scripts/glam-film-smoke.ts --bundle --platform=node --format=esm --outfile=C:/tmp/glam-film-smoke.mjs && node C:/tmp/glam-film-smoke.mjs",
@@ -35,8 +38,11 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.4",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }
