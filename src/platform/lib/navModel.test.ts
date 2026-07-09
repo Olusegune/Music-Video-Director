@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NAV_MODEL, VIEW_MODULE } from "@/platform/lib/navModel";
+import { MODULE_MANIFESTS } from "@/platform/lib/moduleManifest";
 import type { View } from "@/platform/store/useAppStore";
 
 const ALL_VIEWS: View[] = [
@@ -61,6 +62,19 @@ describe("navigation model", () => {
     expect(topLevelViews).not.toContain("cast");
     expect(topLevelViews).not.toContain("choreography");
     expect(topLevelViews).not.toContain("timeline");
+  });
+
+  it("derives the studio nav doors from the module manifests", () => {
+    const studios = NAV_MODEL.find((section) => section.id === "studios");
+    const doorIds = studios?.items.map((item) => item.id) ?? [];
+    // Every manifest has exactly one studio door, in manifest order.
+    expect(doorIds).toEqual(MODULE_MANIFESTS.map((m) => m.id));
+    for (const manifest of MODULE_MANIFESTS) {
+      const door = studios?.items.find((item) => item.id === manifest.id);
+      expect(door?.view).toBe(manifest.homeView);
+      expect(door?.label).toBe(manifest.label);
+      expect(door?.moduleId).toBe(manifest.id);
+    }
   });
 
   it("places Script Studio in Production Library, not Tools", () => {

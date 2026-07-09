@@ -70,6 +70,11 @@ export interface NavSectionModel {
   items: NavItemModel[];
 }
 
+// The Director Studio section mirrors the module manifests (MODULE_MANIFESTS):
+// id / label / view / icon / tone per studio door, in the same order. The
+// navModel test enforces that parity, so the manifest stays the source of truth
+// without a runtime import cycle (moduleManifest imports nav *types*). A new
+// module therefore needs a manifest entry plus a door here.
 export const NAV_MODEL: NavSectionModel[] = [
   {
     id: "studios",
@@ -92,38 +97,10 @@ export const NAV_MODEL: NavSectionModel[] = [
           { id: "animation", label: "Animation Lab", view: "animation", icon: "clapperboard" },
         ],
       },
-      {
-        id: "motion",
-        label: "Motion Studio",
-        view: "motionstudio",
-        icon: "motion",
-        moduleId: "motion",
-        tone: "cyan",
-      },
-      {
-        id: "glam",
-        label: "Glam Studio",
-        view: "glamstudio",
-        icon: "sparkles",
-        moduleId: "glam",
-        tone: "gold",
-      },
-      {
-        id: "web",
-        label: "Web Studio",
-        view: "webstudio",
-        icon: "globe",
-        moduleId: "web",
-        tone: "green",
-      },
-      {
-        id: "campaign",
-        label: "Campaign Studio",
-        view: "campaignstudio",
-        icon: "megaphone",
-        moduleId: "campaign",
-        tone: "pink",
-      },
+      { id: "motion", label: "Motion Studio", view: "motionstudio", icon: "motion", moduleId: "motion", tone: "cyan" },
+      { id: "glam", label: "Glam Studio", view: "glamstudio", icon: "sparkles", moduleId: "glam", tone: "gold" },
+      { id: "web", label: "Web Studio", view: "webstudio", icon: "globe", moduleId: "web", tone: "green" },
+      { id: "campaign", label: "Campaign Studio", view: "campaignstudio", icon: "megaphone", moduleId: "campaign", tone: "pink" },
     ],
   },
   {

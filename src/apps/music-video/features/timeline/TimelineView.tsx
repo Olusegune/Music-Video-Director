@@ -35,6 +35,7 @@ import { loadCast, type Performer } from "@/apps/music-video/lib/cast";
 import type { Character } from "@/platform/lib/types";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { api } from "@/platform/lib/ipc";
+import { createDeliverable } from "@/platform/lib/deliverables";
 import { Button } from "@/platform/components/ui/button";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { cn } from "@/platform/lib/utils";
@@ -500,6 +501,24 @@ export function TimelineView() {
           fps
         );
         setRenderUrl(url);
+        // Register the finished render in the shared deliverable registry so
+        // Music Video's outputs appear alongside the other studios' (Dashboard,
+        // Export Center, Campaign orchestration).
+        try {
+          const posterFrame = segments.find((s) => /^(data:image|https?:|asset:|file:)/.test(s.src));
+          createDeliverable({
+            moduleId: "musicvideo",
+            projectId: song.id,
+            kind: "video",
+            format: "mp4",
+            status: "approved",
+            title: `${song.name || "Untitled"} — Music Video`,
+            thumbUrl: posterFrame?.src,
+            assetRefs: [url],
+          });
+        } catch {
+          /* deliverable registration is best-effort — never block the render */
+        }
       } catch (e) {
         setRenderError(e instanceof Error ? e.message : "Render failed.");
       } finally {

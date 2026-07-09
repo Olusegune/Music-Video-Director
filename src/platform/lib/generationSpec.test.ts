@@ -5,6 +5,7 @@ import { routeProviderChain } from "@/platform/lib/providers";
 import {
   canUseNetworkForSpec,
   resolveGenerationCandidates,
+  runWithProviderFallback,
   unsupportedGenerationParams,
   type GenerationSpec,
 } from "@/platform/lib/generationSpec";
@@ -114,4 +115,58 @@ describe("GenerationSpec routing contract", () => {
       }
     }
   );
+});
+
+describe("runWithProviderFallback", () => {
+  const recoverable = () => true;
+
+  it("returns the first provider's result when it succeeds", async () => {
+    const seen: ProviderId[] = [];
+    const result = await runWithProviderFallback<string>(
+      ["kie", "wavespeed", "fal"],
+      async (p) => {
+        seen.push(p);
+        return `ok:${p}`;
+      },
+      { isRecoverable: recoverable }
+    );
+    expect(result).toBe("ok:kie");
+    expect(seen).toEqual(["kie"]);
+  });
+
+  it("advances to the next provider on a recoverable failure and announces it", async () => {
+    const hops: Array<[ProviderId, ProviderId]> = [];
+    const result = await runWithProviderFallback<string>(
+      ["kie", "wavespeed", "fal"],
+      async (p) => {
+        if (p === "kie") throw new Error("429 rate limit");
+        return `ok:${p}`;
+      },
+      { isRecoverable: recoverable, onFallback: (from, to) => hops.push([from, to]) }
+    );
+    expect(result).toBe("ok:wavespeed");
+    expect(hops).toEqual([["kie", "wavespeed"]]);
+  });
+
+  it("does not advance on a non-recoverable failure", async () => {
+    await expect(
+      runWithProviderFallback<string>(["kie", "fal"], async () => {
+        throw new Error("bad prompt");
+      }, { isRecoverable: () => false })
+    ).rejects.toThrow("bad prompt");
+  });
+
+  it("throws the last error when the whole chain fails", async () => {
+    await expect(
+      runWithProviderFallback<string>(["kie", "fal"], async (p) => {
+        throw new Error(`500 ${p}`);
+      }, { isRecoverable: recoverable })
+    ).rejects.toThrow("500 fal");
+  });
+
+  it("throws when no providers are supplied", async () => {
+    await expect(
+      runWithProviderFallback<string>([], async () => "x")
+    ).rejects.toThrow(/no configured provider/i);
+  });
 });

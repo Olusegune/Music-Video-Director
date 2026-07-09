@@ -1,5 +1,6 @@
 import type { ProviderId } from "@/platform/lib/types";
 import {
+  isRecoverableProviderFailure,
   providerInfo,
   providersFor,
   routeProviderChain,
@@ -124,6 +125,42 @@ export function candidateLabels(candidates: GenerationCandidate[]): string[] {
       ? `${candidate.providerName} (${candidate.modelHint})`
       : candidate.providerName
   );
+}
+
+/**
+ * Run a generation against an ordered provider chain, auto-advancing to the next
+ * provider when one fails recoverably (auth / quota / rate-limit / 5xx / network)
+ * and announcing each hop via `onFallback`. Throws the last error when the chain
+ * is exhausted or the failure is not recoverable. Pure over its injected `run`,
+ * so it is unit-tested without touching the network.
+ */
+export async function runWithProviderFallback<T>(
+  providers: ProviderId[],
+  run: (provider: ProviderId) => Promise<T>,
+  opts: {
+    onFallback?: (from: ProviderId, to: ProviderId) => void;
+    isRecoverable?: (error: unknown) => boolean;
+  } = {}
+): Promise<T> {
+  if (providers.length === 0) {
+    throw new Error("No configured provider is available for this generation.");
+  }
+  const recoverable = opts.isRecoverable ?? isRecoverableProviderFailure;
+  let lastError: unknown;
+  for (let i = 0; i < providers.length; i += 1) {
+    try {
+      return await run(providers[i]);
+    } catch (error) {
+      lastError = error;
+      const next = providers[i + 1];
+      if (next && recoverable(error)) {
+        opts.onFallback?.(providers[i], next);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError ?? new Error("No configured provider is available for this generation.");
 }
 
 export function canUseNetworkForSpec(

@@ -21,9 +21,13 @@ import { packToMarkdown, normalizePack } from "@/platform/lib/pack";
 import { buildBibleMarkdown, buildBibleJson } from "@/platform/lib/bibleExport";
 import { generateLocalPack } from "@/platform/lib/localEngine";
 import { loadProjectStyle } from "@/platform/lib/styles";
-import { loadRouterConfig, routeProviderChain } from "@/platform/lib/providers";
+import {
+  loadRouterConfig,
+  notifyGenerationFallback,
+  routeProviderChain,
+} from "@/platform/lib/providers";
 import { PROVIDERS } from "@/platform/lib/providers";
-import type { GenerationSpec } from "@/platform/lib/generationSpec";
+import { runWithProviderFallback, type GenerationSpec } from "@/platform/lib/generationSpec";
 
 /** Context the local engine needs; passed by the workspace so it works in Tauri too. */
 export interface GenerateContext {
@@ -587,12 +591,12 @@ export const api = {
     const configured = new Set(
       statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
     );
-    const provider =
-      routeProviderChain("image", loadRouterConfig(), configured, {
-        providerPref: spec.providerPref,
-        modelHint: spec.modelHint,
-      })[0] ?? spec.providerPref;
-    if (!provider) {
+    const chain = routeProviderChain("image", loadRouterConfig(), configured, {
+      providerPref: spec.providerPref,
+      modelHint: spec.modelHint,
+    });
+    const providers = chain.length ? chain : spec.providerPref ? [spec.providerPref] : [];
+    if (providers.length === 0) {
       if (!isTauri) {
         return mock.generateImagePro(
           "local",
@@ -602,14 +606,19 @@ export const api = {
       }
       throw new Error("Local router mode is active or no image provider is configured.");
     }
-    return api.generateImagePro(
-      provider,
-      spec.prompt,
-      spec.resolution?.width ?? 1024,
-      spec.resolution?.height ?? 1024,
-      spec.references?.map((reference) => reference.url),
-      spec.seed,
-      spec.modelHint
+    return runWithProviderFallback(
+      providers,
+      (provider) =>
+        api.generateImagePro(
+          provider,
+          spec.prompt,
+          spec.resolution?.width ?? 1024,
+          spec.resolution?.height ?? 1024,
+          spec.references?.map((reference) => reference.url),
+          spec.seed,
+          spec.modelHint
+        ),
+      { onFallback: notifyGenerationFallback }
     );
   },
 
@@ -679,23 +688,28 @@ export const api = {
     const configured = new Set(
       statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
     );
-    const provider =
-      routeProviderChain("video", loadRouterConfig(), configured, {
-        providerPref: spec.providerPref,
-        modelHint: spec.modelHint,
-      })[0] ?? spec.providerPref;
-    if (!provider) {
+    const chain = routeProviderChain("video", loadRouterConfig(), configured, {
+      providerPref: spec.providerPref,
+      modelHint: spec.modelHint,
+    });
+    const providers = chain.length ? chain : spec.providerPref ? [spec.providerPref] : [];
+    if (providers.length === 0) {
       if (!isTauri) return mock.generateShotVideo();
       throw new Error("Local router mode is active or no video provider is configured.");
     }
-    return api.generateMvShotVideo(
-      songId,
-      shotId,
-      spec.prompt,
-      provider,
-      spec.references?.map((reference) => reference.url),
-      spec.modelHint,
-      { ...extras, resolution: extras?.resolution ?? spec.resolution?.label }
+    return runWithProviderFallback(
+      providers,
+      (provider) =>
+        api.generateMvShotVideo(
+          songId,
+          shotId,
+          spec.prompt,
+          provider,
+          spec.references?.map((reference) => reference.url),
+          spec.modelHint,
+          { ...extras, resolution: extras?.resolution ?? spec.resolution?.label }
+        ),
+      { onFallback: notifyGenerationFallback }
     );
   },
 
