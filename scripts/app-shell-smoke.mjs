@@ -37,7 +37,7 @@ for (const label of [
   if (!welcome.includes(label) || !router.includes(label))
     throw new Error(`${label} missing from suite onboarding`);
 }
-if (!welcome.includes("Start with Director") || !welcome.includes("Director Engine"))
+if (!welcome.includes("Start with Director") || !welcome.includes("Connected by Director Studio"))
   throw new Error("Director Studio platform identity is incomplete");
 if (sidebar.includes("> Magic Mode") || dashboard.includes("MagicFlowButton"))
   throw new Error("Music Video Magic Mode leaked into the global suite shell");
