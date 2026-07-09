@@ -250,9 +250,11 @@ pub async fn generate_image_pro(
     refs: Option<Vec<String>>,
     seed: Option<i64>,
     model: Option<String>,
+    negative_prompt: Option<String>,
 ) -> Result<String, String> {
     let get = |id: &str| secrets::get_key(id).map_err(err);
     let model = model.filter(|s| !s.is_empty());
+    let negative_prompt = negative_prompt.filter(|s| !s.trim().is_empty());
 
     // Decode any reference images (base64, no data: prefix) once.
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -287,6 +289,7 @@ pub async fn generate_image_pro(
             FalImageProvider::new(key)
                 .with_seed(seed)
                 .with_model(model.clone())
+                .with_negative(negative_prompt.clone())
                 .generate_image_ref(&prompt, width, height, r)
                 .await
                 .map_err(err)?
@@ -311,6 +314,7 @@ pub async fn generate_image_pro(
             let key = get("stability")?.ok_or("Add a Stability key in the API Key Dashboard.")?;
             StabilityImageProvider::new(key)
                 .with_seed(seed)
+                .with_negative(negative_prompt.clone())
                 .generate_image_ref(&prompt, width, height, r)
                 .await
                 .map_err(err)?
@@ -335,13 +339,13 @@ pub async fn generate_image_pro(
         // "custom" / anything else → first configured provider.
         _ => {
             if let Some(key) = get("fal")? {
-                FalImageProvider::new(key).with_seed(seed).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
+                FalImageProvider::new(key).with_seed(seed).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else if let Some(key) = get("openai")?.or(get("gpt_image")?) {
                 OpenAiImageProvider::new(key).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else if let Some(key) = get("google_imagen")? {
                 GoogleImagenProvider::new(key).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else if let Some(key) = get("stability")? {
-                StabilityImageProvider::new(key).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
+                StabilityImageProvider::new(key).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else {
                 return Err("No image provider key set. Add one in the API Key Dashboard.".into());
             }

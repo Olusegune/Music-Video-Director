@@ -129,11 +129,12 @@ pub struct FalImageProvider {
     api_key: String,
     seed: Option<i64>,
     model: Option<String>,
+    negative: Option<String>,
 }
 
 impl FalImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, seed: None, model: None }
+        Self { api_key, seed: None, model: None, negative: None }
     }
     pub fn with_seed(mut self, seed: Option<i64>) -> Self {
         self.seed = seed;
@@ -142,6 +143,13 @@ impl FalImageProvider {
     /// Route a specific fal image model (e.g. "fal-ai/flux-pro/v1.1-ultra").
     pub fn with_model(mut self, model: Option<String>) -> Self {
         self.model = model.filter(|s| !s.is_empty());
+        self
+    }
+    /// Only the Stable Diffusion fal models accept a `negative_prompt` field;
+    /// FLUX / Recraft / Ideogram schemas do not, so the caller-supplied value is
+    /// applied selectively in the request body.
+    pub fn with_negative(mut self, negative: Option<String>) -> Self {
+        self.negative = negative.filter(|s| !s.trim().is_empty());
         self
     }
 }
@@ -168,6 +176,12 @@ impl ImageProvider for FalImageProvider {
             body["image_size"] = json!(fal_size_preset(width, height));
         } else {
             body["image_size"] = json!({ "width": w, "height": h });
+        }
+        if let Some(neg) = self.negative.as_deref() {
+            // Only Stable Diffusion fal endpoints accept negative_prompt.
+            if model.contains("stable-diffusion") {
+                body["negative_prompt"] = json!(neg);
+            }
         }
         if let Some(s) = self.seed {
             body["seed"] = json!(s);
@@ -472,14 +486,20 @@ impl ImageProvider for OpenAiImageProvider {
 pub struct StabilityImageProvider {
     api_key: String,
     seed: Option<i64>,
+    negative: Option<String>,
 }
 
 impl StabilityImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, seed: None }
+        Self { api_key, seed: None, negative: None }
     }
     pub fn with_seed(mut self, seed: Option<i64>) -> Self {
         self.seed = seed;
+        self
+    }
+    /// Stability's v1 API takes negatives as a weighted `text_prompts` entry.
+    pub fn with_negative(mut self, negative: Option<String>) -> Self {
+        self.negative = negative.filter(|s| !s.trim().is_empty());
         self
     }
 }
@@ -499,6 +519,11 @@ impl ImageProvider for StabilityImageProvider {
             "samples": 1,
             "steps": 30
         });
+        if let Some(neg) = self.negative.as_deref() {
+            if let Some(arr) = body["text_prompts"].as_array_mut() {
+                arr.push(json!({ "text": neg, "weight": -1.0 }));
+            }
+        }
         if let Some(s) = self.seed {
             body["seed"] = json!(s.max(0));
         }

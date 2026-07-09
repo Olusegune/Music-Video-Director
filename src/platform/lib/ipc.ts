@@ -565,7 +565,8 @@ export const api = {
     height: number,
     refs?: string[],
     seed?: number,
-    model?: string
+    model?: string,
+    negativePrompt?: string
   ): Promise<string> =>
     isTauri
       ? toAssetSrc(
@@ -577,6 +578,7 @@ export const api = {
             refs,
             seed,
             model,
+            negativePrompt,
           })
         )
       : mock.generateImagePro(provider, width, height),
@@ -616,7 +618,8 @@ export const api = {
           spec.resolution?.height ?? 1024,
           spec.references?.map((reference) => reference.url),
           spec.seed,
-          spec.modelHint
+          spec.modelHint,
+          spec.negativePrompt
         ),
       { onFallback: notifyGenerationFallback }
     );
