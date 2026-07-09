@@ -30,6 +30,8 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { ProjectCard } from "@/platform/components/visual";
+import type { VisualModule } from "@/platform/components/visual/visualTheme";
+import { recentProjects, type HubModuleId } from "@/platform/lib/projectHub";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -58,6 +60,29 @@ export function Dashboard() {
   const openGlamStudio = useAppStore((s) => s.openGlamStudio);
   const openWebStudio = useAppStore((s) => s.openWebStudio);
   const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
+
+  const recent = recentProjects(6);
+  const HUB_TO_VISUAL: Record<HubModuleId, VisualModule> = {
+    musicvideo: "music-video",
+    motion: "motionstudio",
+    glam: "glam-studio",
+    web: "webstudio",
+    campaign: "campaignstudio",
+  };
+  const HUB_LABEL: Record<HubModuleId, string> = {
+    musicvideo: "Music Video Director",
+    motion: "Motion Studio",
+    glam: "Glam Studio",
+    web: "Web Studio",
+    campaign: "Campaign Studio",
+  };
+  const openModuleHome: Record<HubModuleId, () => void> = {
+    musicvideo: openSong,
+    motion: openMotionStudio,
+    glam: openGlamStudio,
+    web: openWebStudio,
+    campaign: openCampaignStudio,
+  };
 
   const openDirectorMode = () => {
     setActiveTemplate(null);
@@ -190,6 +215,27 @@ export function Dashboard() {
             />
           </div>
         </section>
+
+        {/* Recent across every studio — the cross-module Project Hub surface. */}
+        {recent.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted">
+              Recent across studios
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {recent.map((project) => (
+                <ProjectCard
+                  key={`${project.moduleId}:${project.id}`}
+                  module={HUB_TO_VISUAL[project.moduleId]}
+                  title={project.name}
+                  subtitle={HUB_LABEL[project.moduleId]}
+                  thumbUrl={project.thumbUrl}
+                  onResume={() => openModuleHome[project.moduleId]()}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Quick start */}
         <section>

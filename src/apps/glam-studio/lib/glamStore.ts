@@ -86,3 +86,11 @@ export function glamReadStored<T>(key: string): T[] {
     return [];
   }
 }
+
+/** localStorage key for saved Glam projects (shared with the workspace). */
+export const LS_GLAM_PROJECTS = "mf.glam.projects";
+
+/** All saved Glam projects (used by the workspace and the platform Project Hub). */
+export function listGlamProjects(): GlamProject[] {
+  return glamReadStored<GlamProject>(LS_GLAM_PROJECTS);
+}

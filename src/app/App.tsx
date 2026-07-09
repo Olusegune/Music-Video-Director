@@ -22,6 +22,7 @@ import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
 import { installUndo } from "@/platform/lib/undo";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { installMusicVideoBindings } from "@/apps/music-video/musicVideoBindings";
+import { installProjectAdapters } from "@/app/projectAdapters";
 import { hydrateStartupStores, markAppShellMounted } from "@/platform/lib/startupReadiness";
 
 const MotionStudio = lazy(() =>
@@ -111,6 +112,7 @@ const HelpCenter = lazy(() =>
 );
 
 installMusicVideoBindings();
+installProjectAdapters();
 
 function StudioLoading() {
   return (
