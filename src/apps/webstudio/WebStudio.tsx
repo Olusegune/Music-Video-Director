@@ -45,6 +45,7 @@ import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
 import { api } from "@/platform/lib/ipc";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
+import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
 import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioning";
@@ -942,6 +943,10 @@ export function WebStudio() {
     () => Boolean(campaignSeed) || listWebProjects().length === 0
   );
   const active = projects.find((project) => project.id === activeId) ?? projects[0] ?? null;
+  usePendingProjectOpen("web", (id) => {
+    setActiveId(id);
+    setFlowOpen(false);
+  });
   const routerLabel = ROUTER_MODES.find((mode) => mode.id === router.mode)?.label ?? "Auto";
   const definition = useMemo<GuidedFlowDefinition<WebFlowState>>(
     () => ({

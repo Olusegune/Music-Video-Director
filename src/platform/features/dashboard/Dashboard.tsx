@@ -76,13 +76,7 @@ export function Dashboard() {
     web: "Web Studio",
     campaign: "Campaign Studio",
   };
-  const openModuleHome: Record<HubModuleId, () => void> = {
-    musicvideo: openSong,
-    motion: openMotionStudio,
-    glam: openGlamStudio,
-    web: openWebStudio,
-    campaign: openCampaignStudio,
-  };
+  const openModuleProject = useAppStore((s) => s.openModuleProject);
 
   const openDirectorMode = () => {
     setActiveTemplate(null);
@@ -230,7 +224,7 @@ export function Dashboard() {
                   title={project.name}
                   subtitle={HUB_LABEL[project.moduleId]}
                   thumbUrl={project.thumbUrl}
-                  onResume={() => openModuleHome[project.moduleId]()}
+                  onResume={() => openModuleProject(project.moduleId, project.id)}
                 />
               ))}
             </div>

@@ -40,6 +40,7 @@ import { STUDIO_MODES } from "@/platform/lib/settings";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { STYLE_PRESETS } from "@/platform/lib/styles";
 import { cn } from "@/platform/lib/utils";
+import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { critiqueScene, directStoryboard, improveScene } from "./lib/brain";
 import { establishDirection } from "./lib/direction";
@@ -210,6 +211,7 @@ export function MotionStudio() {
   const [activeProjectId, setActiveProjectId] = useState<string>(
     () => listMotionProjects()[0]?.id ?? ""
   );
+  usePendingProjectOpen("motion", (id) => setActiveProjectId(id));
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const platformProjects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
 

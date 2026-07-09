@@ -61,6 +61,7 @@ import {
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
+import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
@@ -894,6 +895,10 @@ export function GlamStudioWorkspace() {
   const [flowOpen, setFlowOpen] = useState(
     () => Boolean(campaignSeed) || readProjects().length === 0
   );
+  usePendingProjectOpen("glam", (id) => {
+    setActiveProjectId(id);
+    setFlowOpen(false);
+  });
   const [generating, setGenerating] = useState(false);
   const [generationNote, setGenerationNote] = useState("");
   const [exportingCampaign, setExportingCampaign] = useState(false);

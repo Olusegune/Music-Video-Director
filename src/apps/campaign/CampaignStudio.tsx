@@ -45,6 +45,7 @@ import { setSeedContext, type SeedTarget } from "@/platform/lib/seedContext";
 import { api } from "@/platform/lib/ipc";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
+import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { deleteCampaign, listCampaigns, saveCampaign } from "@/apps/campaign/lib/campaignStore";
 import { buildCampaignConcept, buildCampaignStrategy } from "@/apps/campaign/lib/strategy";
@@ -763,6 +764,10 @@ export function CampaignStudio() {
   const [projects, setProjects] = useState(() => listCampaigns());
   const [activeId, setActiveId] = useState(() => listCampaigns()[0]?.id ?? "");
   const [flowOpen, setFlowOpen] = useState(() => listCampaigns().length === 0);
+  usePendingProjectOpen("campaign", (id) => {
+    setActiveId(id);
+    setFlowOpen(false);
+  });
   const active = projects.find((project) => project.id === activeId) ?? projects[0] ?? null;
   const definition = useMemo<GuidedFlowDefinition<CampaignFlowState>>(
     () => ({

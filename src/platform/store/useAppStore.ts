@@ -131,15 +131,32 @@ interface AppState {
   openWebStudio: () => void;
   openCampaignStudio: () => void;
   openProject: (id: string) => void;
+  /** Deep-open a specific project in its owning studio (from Recent / Project Hub). */
+  openModuleProject: (moduleId: OpenableModuleId, projectId: string) => void;
+  /** A module reads this on mount to select the project a deep-open requested. */
+  pendingProjectOpen: { moduleId: OpenableModuleId; projectId: string } | null;
+  consumePendingProjectOpen: (moduleId: OpenableModuleId) => string | null;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
 }
 
 const initialSongId = getActiveSongId();
 
-export const useAppStore = create<AppState>((set) => ({
+/** Modules whose projects can be deep-opened from the Project Hub / Recent. */
+export type OpenableModuleId = "musicvideo" | "motion" | "glam" | "web" | "campaign";
+
+const MODULE_HOME_VIEW: Record<OpenableModuleId, View> = {
+  musicvideo: "song",
+  motion: "motionstudio",
+  glam: "glamstudio",
+  web: "webstudio",
+  campaign: "campaignstudio",
+};
+
+export const useAppStore = create<AppState>((set, get) => ({
   view: "dashboard",
   activeProjectId: null,
+  pendingProjectOpen: null,
   activeSongId: initialSongId,
   activeTemplateId: templateForSong(initialSongId),
   workspaceMode: "storyboard",
@@ -161,6 +178,23 @@ export const useAppStore = create<AppState>((set) => ({
   },
 
   openSong: () => set({ view: "song", activeProjectId: null }),
+  openModuleProject: (moduleId, projectId) => {
+    if (moduleId === "musicvideo") {
+      // MV selects its project through the global active song, not a pending signal.
+      setActiveSongId(projectId);
+      set({ view: "song", activeSongId: projectId, activeProjectId: null, pendingProjectOpen: null });
+      return;
+    }
+    set({ view: MODULE_HOME_VIEW[moduleId], pendingProjectOpen: { moduleId, projectId } });
+  },
+  consumePendingProjectOpen: (moduleId) => {
+    const pending = get().pendingProjectOpen;
+    if (pending && pending.moduleId === moduleId) {
+      set({ pendingProjectOpen: null });
+      return pending.projectId;
+    }
+    return null;
+  },
   openMvDirector: () => set({ view: "mvdirector" }),
   openMagicOutput: () => set({ view: "magicoutput" }),
   openCast: () => set({ view: "cast" }),
