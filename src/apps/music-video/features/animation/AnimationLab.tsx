@@ -120,13 +120,19 @@ export function AnimationLab() {
 
     const urls: string[] = [];
     for (let i = 0; i < opts.variations; i++) {
-      const url = await api.generateMvShotVideo(
+      const shotId = crypto.randomUUID();
+      const url = await api.generateVideoFromSpec(
+        {
+          ...opts.spec,
+          prompt: fullPrompt,
+          references: allRefs.map((url) => ({ url, category: "asset", strength: 0.75 })),
+          providerPref: opts.provider as never,
+          modelHint: opts.apiModel ?? opts.modelId,
+          moduleId: "musicvideo",
+          projectRef: { moduleId: "musicvideo", projectId: "animlab", entityId: shotId },
+        },
         "animlab",
-        crypto.randomUUID(),
-        fullPrompt,
-        opts.provider || undefined,
-        allRefs.length ? allRefs : undefined,
-        opts.apiModel
+        shotId
       );
       urls.push(url);
     }

@@ -276,15 +276,19 @@ export function MvDirector() {
       for (let i = 0; i < n; i++) {
         const s = baseSeed !== undefined ? baseSeed + i : undefined;
         urls.push(
-          await api.generateImagePro(
-            model.providerKey,
+          await api.generateImageFromSpec({
+            capability: "image",
             prompt,
-            width,
-            height,
-            refs,
-            s,
-            model.apiModel
-          )
+            seed: s,
+            batch: 1,
+            aspect,
+            resolution: { width, height },
+            references: refs.map((url) => ({ url, category: "scene", strength: 0.75 })),
+            providerPref: model.providerKey as never,
+            modelHint: model.apiModel ?? model.id,
+            moduleId: "musicvideo",
+            projectRef: { moduleId: "musicvideo", projectId: song.id, entityId: shot.id },
+          })
         );
       }
       setShotImage(section.sectionId, shot.id, urls[0], urls.length > 1 ? urls : undefined);
@@ -418,13 +422,18 @@ export function MvDirector() {
           collectRefs(shot.refAudio),
           collectRefs(shot.refVideo),
         ]);
-        const url = await api.generateMvShotVideo(
+        const url = await api.generateVideoFromSpec(
+          {
+            capability: "video",
+            prompt,
+            references: refs.map((url) => ({ url, category: "scene", strength: 0.85 })),
+            providerPref: vModel.providerKey as never,
+            modelHint: vModel.apiModel ?? vModel.id,
+            moduleId: "musicvideo",
+            projectRef: { moduleId: "musicvideo", projectId: song.id, entityId: shot.id },
+          },
           song.id,
           shot.id,
-          prompt,
-          vModel.providerKey,
-          refs,
-          vModel.apiModel,
           {
             endFrame: endFrameArr[0],
             audioRefs: audioRefs.length ? audioRefs : undefined,
@@ -485,15 +494,17 @@ export function MvDirector() {
         if (ch?.portraitUrl) refSrcs.unshift(ch.portraitUrl);
         const refs = await collectRefs(refSrcs);
         const model = findModel(shot.imageProvider ?? modelId);
-        const url = await api.generateImagePro(
-          model.providerKey,
+        const url = await api.generateImageFromSpec({
+          capability: "image",
           prompt,
-          1024,
-          1280,
-          refs.length ? refs : undefined,
-          undefined,
-          model.apiModel
-        );
+          aspect: "4:5",
+          resolution: { width: 1024, height: 1280, label: "1024x1280" },
+          references: refs.map((url) => ({ url, category: "pose", strength: 0.8 })),
+          providerPref: model.providerKey as never,
+          modelHint: model.apiModel ?? model.id,
+          moduleId: "musicvideo",
+          projectRef: { moduleId: "musicvideo", projectId: song.id, entityId: shot.id },
+        });
         await importImageToLibrary("Pose sheet", `${who} — ${section.label} poses`, url);
         await qc.invalidateQueries({ queryKey: ["props"] });
       } catch (e) {
@@ -1074,15 +1085,24 @@ export function MvDirector() {
                       for (let i = 0; i < opts.variations; i++) {
                         const s = opts.seed !== undefined ? opts.seed + i : undefined;
                         urls.push(
-                          await api.generateImagePro(
-                            opts.provider,
-                            opts.prompt,
-                            opts.width,
-                            opts.height,
-                            refs,
-                            s,
-                            opts.apiModel
-                          )
+                          await api.generateImageFromSpec({
+                            ...opts.spec,
+                            seed: s,
+                            batch: 1,
+                            references: refs.map((url) => ({
+                              url,
+                              category: "scene",
+                              strength: 0.75,
+                            })),
+                            providerPref: opts.provider as never,
+                            modelHint: opts.apiModel ?? opts.modelId,
+                            moduleId: "musicvideo",
+                            projectRef: {
+                              moduleId: "musicvideo",
+                              projectId: song?.id,
+                              entityId: liveShot.id,
+                            },
+                          })
                         );
                       }
                       return urls;

@@ -660,7 +660,15 @@ export const api = {
   generateVideoFromSpec: async (
     spec: GenerationSpec,
     songId = spec.projectRef?.projectId ?? "generation-spec",
-    shotId = spec.projectRef?.entityId ?? `shot-${Date.now()}`
+    shotId = spec.projectRef?.entityId ?? `shot-${Date.now()}`,
+    extras?: {
+      endFrame?: string;
+      audioRefs?: string[];
+      videoRefs?: string[];
+      duration?: number;
+      resolution?: string;
+      generateAudio?: boolean;
+    }
   ): Promise<string> => {
     if (spec.capability !== "video") {
       throw new Error(
@@ -687,7 +695,7 @@ export const api = {
       provider,
       spec.references?.map((reference) => reference.url),
       spec.modelHint,
-      { resolution: spec.resolution?.label }
+      { ...extras, resolution: extras?.resolution ?? spec.resolution?.label }
     );
   },
 

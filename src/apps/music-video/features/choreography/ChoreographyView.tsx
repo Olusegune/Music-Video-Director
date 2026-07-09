@@ -608,13 +608,24 @@ export function ChoreographyView() {
                       const urls: string[] = [];
                       for (let i = 0; i < opts.variations; i++)
                         urls.push(
-                          await api.generateMvShotVideo(
-                            "choreo",
-                            crypto.randomUUID(),
-                            opts.prompt,
-                            opts.provider || undefined,
-                            refs,
-                            opts.apiModel
+                          await api.generateVideoFromSpec(
+                            {
+                              ...opts.spec,
+                              references: (refs ?? []).map((url) => ({
+                                url,
+                                category: "character",
+                                strength: 0.75,
+                              })),
+                              providerPref: opts.provider as never,
+                              modelHint: opts.apiModel ?? opts.modelId,
+                              moduleId: "musicvideo",
+                              projectRef: {
+                                moduleId: "musicvideo",
+                                projectId: "choreo",
+                                entityId: crypto.randomUUID(),
+                              },
+                            },
+                            "choreo"
                           )
                         );
                       return urls;
@@ -623,15 +634,20 @@ export function ChoreographyView() {
                     for (let i = 0; i < opts.variations; i++) {
                       const s = opts.seed !== undefined ? opts.seed + i : undefined;
                       urls.push(
-                        await api.generateImagePro(
-                          opts.provider,
-                          opts.prompt,
-                          opts.width,
-                          opts.height,
-                          refs,
-                          s,
-                          opts.apiModel
-                        )
+                        await api.generateImageFromSpec({
+                          ...opts.spec,
+                          seed: s,
+                          batch: 1,
+                          references: (refs ?? []).map((url) => ({
+                            url,
+                            category: "character",
+                            strength: 0.75,
+                          })),
+                          providerPref: opts.provider as never,
+                          modelHint: opts.apiModel ?? opts.modelId,
+                          moduleId: "musicvideo",
+                          projectRef: { moduleId: "musicvideo", projectId: "choreo" },
+                        })
                       );
                     }
                     return urls;
