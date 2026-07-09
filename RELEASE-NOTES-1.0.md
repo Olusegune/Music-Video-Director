@@ -26,7 +26,7 @@ This build is unsigned unless a signing certificate is supplied at package time.
 
 ## Identity decision
 
-The user-visible product name is Director Studio. The Windows bundle identifier remains `ai.wheelbarrow.motionforge` in 1.0.0 to preserve existing WebView2/localStorage user data.
+The user-visible product name is Director Studio. The Windows bundle identifier is `ai.wheelbarrow.directorstudio` in 1.0.0. Windows treats this as a distinct app identity from earlier MotionForge builds, so prior WebView2/localStorage data is not automatically reused by this release.
 
 ## Known issues
 

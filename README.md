@@ -67,6 +67,6 @@ Director Studio supports portable mode. Place `portable.txt` beside the executab
 
 ## Release policy
 
-The Windows bundle identifier is intentionally preserved as `ai.wheelbarrow.motionforge` for 1.0.0 to protect existing WebView2/localStorage user data. User-visible product naming is Director Studio.
+The Windows bundle identifier for 1.0.0 is `ai.wheelbarrow.directorstudio`. Windows treats this as a distinct app identity from earlier MotionForge builds, so prior WebView2/localStorage data is not automatically reused by this release.
 
 Unless a signed release channel is configured, Windows SmartScreen may show an “unrecognized app” warning on first launch. See the 1.0 release notes for the current signing status.
