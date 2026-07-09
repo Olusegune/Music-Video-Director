@@ -7,5 +7,9 @@ Director Studio 1.1.0 starts the post-1.0 platform program with a shared generat
 - Added model capability flags so unsupported seed/negative/batch/resolution/reference parameters can be surfaced instead of silently dropped.
 - Added shared `ModelSelector` and `GenerateBar` components for StudioMode-aware generation controls.
 - Added a module manifest registry for Music Video Director, Motion Studio, Glam Studio, Web Studio, and Campaign Studio.
+- Routed Glam hero generation, Web Studio structured site copy, and Campaign structured plan/copy generation through `GenerationSpec`.
+- Routed Character Bible, World Bible, Props & Vehicles, Image Studio, and Music Video Director media generation through `GenerationSpec`.
+- Preserved existing provider behavior by keeping low-level image/video provider calls inside the platform IPC facade; app-level generation surfaces now call spec-based helpers.
+- Motion Studio remains deterministic/local for this slice because no provider-backed media generation path existed there to migrate yet.
 
 Packaging artifacts for 1.1.0 are not emitted yet in this implementation slice; source checks run before handoff.
