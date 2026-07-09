@@ -21,8 +21,9 @@ import { packToMarkdown, normalizePack } from "@/platform/lib/pack";
 import { buildBibleMarkdown, buildBibleJson } from "@/platform/lib/bibleExport";
 import { generateLocalPack } from "@/platform/lib/localEngine";
 import { loadProjectStyle } from "@/platform/lib/styles";
-import { loadRouterConfig } from "@/platform/lib/providers";
+import { loadRouterConfig, routeProviderChain } from "@/platform/lib/providers";
 import { PROVIDERS } from "@/platform/lib/providers";
+import type { GenerationSpec } from "@/platform/lib/generationSpec";
 
 /** Context the local engine needs; passed by the workspace so it works in Tauri too. */
 export interface GenerateContext {
@@ -552,6 +553,42 @@ export const api = {
         )
       : mock.generateImagePro(provider, width, height),
 
+  generateImageFromSpec: async (spec: GenerationSpec): Promise<string> => {
+    if (spec.capability !== "image") {
+      throw new Error(
+        `generateImageFromSpec expected image capability, received ${spec.capability}`
+      );
+    }
+    const statuses = await api.getProviderKeyStatuses();
+    const configured = new Set(
+      statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
+    );
+    const provider =
+      routeProviderChain("image", loadRouterConfig(), configured, {
+        providerPref: spec.providerPref,
+        modelHint: spec.modelHint,
+      })[0] ?? spec.providerPref;
+    if (!provider) {
+      if (!isTauri) {
+        return mock.generateImagePro(
+          "local",
+          spec.resolution?.width ?? 1024,
+          spec.resolution?.height ?? 1024
+        );
+      }
+      throw new Error("Local router mode is active or no image provider is configured.");
+    }
+    return api.generateImagePro(
+      provider,
+      spec.prompt,
+      spec.resolution?.width ?? 1024,
+      spec.resolution?.height ?? 1024,
+      spec.references?.map((reference) => reference.url),
+      spec.seed,
+      spec.modelHint
+    );
+  },
+
   generateMotionTest: async (prompt: string): Promise<string> =>
     isTauri
       ? toAssetSrc(await invoke<string>("generate_motion_test", { prompt }))
@@ -595,6 +632,40 @@ export const api = {
           })
         )
       : mock.generateShotVideo(),
+
+  generateVideoFromSpec: async (
+    spec: GenerationSpec,
+    songId = spec.projectRef?.projectId ?? "generation-spec",
+    shotId = spec.projectRef?.entityId ?? `shot-${Date.now()}`
+  ): Promise<string> => {
+    if (spec.capability !== "video") {
+      throw new Error(
+        `generateVideoFromSpec expected video capability, received ${spec.capability}`
+      );
+    }
+    const statuses = await api.getProviderKeyStatuses();
+    const configured = new Set(
+      statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
+    );
+    const provider =
+      routeProviderChain("video", loadRouterConfig(), configured, {
+        providerPref: spec.providerPref,
+        modelHint: spec.modelHint,
+      })[0] ?? spec.providerPref;
+    if (!provider) {
+      if (!isTauri) return mock.generateShotVideo();
+      throw new Error("Local router mode is active or no video provider is configured.");
+    }
+    return api.generateMvShotVideo(
+      songId,
+      shotId,
+      spec.prompt,
+      provider,
+      spec.references?.map((reference) => reference.url),
+      spec.modelHint,
+      { resolution: spec.resolution?.label }
+    );
+  },
 
   /** Generate a spoken/vocal audio layer (intro tags, ad-libs, narration). */
   generateMvAudio: async (

@@ -1043,13 +1043,21 @@ export function GlamStudioWorkspace() {
             ? `${providerInfo(provider)?.name ?? provider} cannot consume product references; generating an explicitly labeled look-alike hero…`
             : `Generating through ${providerInfo(provider)?.name ?? provider}…`
       );
-      const url = await api.generateImagePro(
-        provider,
-        activeProject.heroLoop.value,
-        1536,
-        1024,
-        usesReferences ? references : undefined
-      );
+      const url = await api.generateImageFromSpec({
+        capability: "image",
+        prompt: activeProject.heroLoop.value,
+        negativePrompt: "misspelled labels, distorted packaging, fake text, extra logos",
+        batch: 1,
+        aspect: "3:2",
+        resolution: { width: 1536, height: 1024, label: "1536x1024" },
+        references: usesReferences
+          ? references.map((url) => ({ url, category: "product", strength: 0.85 }))
+          : [],
+        providerPref: provider,
+        modelHint: "glam-hero",
+        moduleId: "glam",
+        projectRef: { moduleId: "glam", projectId: activeProject.id },
+      });
       const asset = addAsset({
         entityId: activeProject.id,
         entityKind: "glam",
