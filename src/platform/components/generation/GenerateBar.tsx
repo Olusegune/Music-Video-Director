@@ -5,6 +5,7 @@ import type { StudioMode } from "@/platform/lib/settings";
 
 export function GenerateBar({
   label = "Generate",
+  busyLabel = "Generating...",
   busy,
   disabledReason,
   mode = "studio",
@@ -13,6 +14,7 @@ export function GenerateBar({
   onGenerate,
 }: {
   label?: string;
+  busyLabel?: string;
   busy?: boolean;
   disabledReason?: string;
   mode?: StudioMode;
@@ -22,6 +24,7 @@ export function GenerateBar({
 }) {
   const disabled = busy || !!disabledReason;
   const showReason = mode !== "director" && disabledReason;
+  const normalizedBusyLabel = busyLabel.includes("Ã") ? "Generating..." : busyLabel;
   return (
     <div
       className={cn(
@@ -31,7 +34,7 @@ export function GenerateBar({
     >
       <Button variant="gold" onClick={onGenerate} disabled={disabled} className="w-full">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {busy ? "Generating..." : label}
+        {busy ? normalizedBusyLabel : label}
       </Button>
       {showReason ? (
         <p className="mt-1 flex items-center justify-center gap-1 text-[11px] text-muted">

@@ -14,20 +14,17 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
-  Loader2,
   Download,
   Check,
   RefreshCw,
   SlidersHorizontal,
   ImagePlus,
-  Copy,
   X,
 } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import { api } from "@/platform/lib/ipc";
 import type { ProviderId } from "@/platform/lib/types";
 import { getMeta } from "@/platform/lib/providerMeta";
-import { Button } from "@/platform/components/ui/button";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
@@ -35,6 +32,7 @@ import { ASPECT_RATIOS, SIZE_PRESETS, resolveSize, IMAGE_MODELS } from "@/platfo
 import { controlsForProviderKey } from "@/platform/lib/modelRegistry";
 import type { GenerationSpec } from "@/platform/lib/generationSpec";
 import { isRecoverableProviderFailure, notifyGenerationFallback } from "@/platform/lib/providers";
+import { GenerateBar } from "@/platform/components/generation/GenerateBar";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
 type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
@@ -697,24 +695,15 @@ export function GenerationPanel({
         />
       )}
 
-      <Button variant="gold" onClick={run} disabled={isBusy || !prompt.trim()} className="w-full">
-        {isManual ? (
-          <Copy className="h-4 w-4" />
-        ) : isBusy ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : results.length > 0 ? (
-          <RefreshCw className="h-4 w-4" />
-        ) : (
-          <Sparkles className="h-4 w-4" />
-        )}
-        {isManual
-          ? "Copy prompt for Midjourney"
-          : isBusy
-            ? (attemptNote ?? "Generating…")
-            : results.length > 0
-              ? "Regenerate"
-              : "Generate"}
-      </Button>
+      <GenerateBar
+        label={
+          isManual ? "Copy prompt for Midjourney" : results.length > 0 ? "Regenerate" : "Generate"
+        }
+        busy={isBusy}
+        busyLabel={attemptNote ?? "Generating..."}
+        disabledReason={!prompt.trim() ? "Enter a prompt before generating." : undefined}
+        onGenerate={run}
+      />
       {isManual && (
         <p className="mt-1 text-center text-[11px] text-muted">
           Midjourney has no public API — copy the prompt, generate in Midjourney, then import the
