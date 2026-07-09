@@ -104,15 +104,17 @@ export function ImageStudio({
     setBusy(true);
     setNote(null);
     try {
-      const url = await api.generateImagePro(
-        model.providerKey,
+      const url = await api.generateImageFromSpec({
+        capability: "image",
         prompt,
-        size.width,
-        size.height,
-        undefined,
-        undefined,
-        model.apiModel
-      );
+        aspect,
+        resolution: { width: size.width, height: size.height, label: sizePreset.label },
+        references: [],
+        providerPref: model.providerKey as never,
+        modelHint: model.apiModel ?? model.id,
+        moduleId: "musicvideo",
+        projectRef: { moduleId: "musicvideo", entityId: entity.id },
+      });
       const asset = addAsset({
         entityId: entity.id,
         entityKind: kind,

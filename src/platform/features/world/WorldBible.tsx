@@ -256,15 +256,15 @@ function EnvironmentSheet({
     for (let i = 0; i < opts.variations; i++) {
       const s = opts.seed !== undefined ? opts.seed + i : undefined;
       urls.push(
-        await api.generateImagePro(
-          opts.provider,
-          opts.prompt,
-          opts.width,
-          opts.height,
-          opts.references,
-          s,
-          opts.apiModel
-        )
+        await api.generateImageFromSpec({
+          ...opts.spec,
+          seed: s,
+          batch: 1,
+          providerPref: opts.provider as never,
+          modelHint: opts.apiModel ?? opts.modelId,
+          moduleId: "musicvideo",
+          projectRef: { moduleId: "musicvideo", entityId: draft.id },
+        })
       );
     }
     setDraft((d) => ({ ...d, promptDna: opts.prompt }));
