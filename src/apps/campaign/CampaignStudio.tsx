@@ -43,8 +43,6 @@ import {
 } from "@/platform/lib/deliverables";
 import { setSeedContext, type SeedTarget } from "@/platform/lib/seedContext";
 import { api } from "@/platform/lib/ipc";
-import { loadRouterConfig, routeProvider } from "@/platform/lib/providers";
-import type { ProviderId } from "@/platform/lib/types";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -109,14 +107,16 @@ const slug = (value: string) =>
     .replace(/^-|-$/g, "") || "campaign";
 
 async function generateStructured(prompt: string, schema: string) {
-  const config = loadRouterConfig();
-  if (config.mode === "local") return null;
-  const statuses = await api.getProviderKeyStatuses();
-  const configured = new Set<ProviderId>(
-    statuses.filter((status) => status.configured).map((status) => status.provider)
+  return api.generateStructuredTextFromSpec(
+    {
+      capability: "text",
+      prompt,
+      modelHint: "campaign-structured-strategy",
+      providerPref: "gemini",
+      moduleId: "campaign",
+    },
+    schema
   );
-  const provider = routeProvider("text", config, configured);
-  return provider === "gemini" ? api.generateStructuredText(provider, prompt, schema) : null;
 }
 
 function ProductStep({ state, patch }: GuidedFlowStepComponentProps<CampaignFlowState>) {

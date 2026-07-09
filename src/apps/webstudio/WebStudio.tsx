@@ -42,9 +42,7 @@ import {
 import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
-import { routeProvider } from "@/platform/lib/providers";
 import { api } from "@/platform/lib/ipc";
-import type { ProviderId } from "@/platform/lib/types";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -124,15 +122,16 @@ function positioningFor(state: WebFlowState) {
 }
 
 async function generateStructured(prompt: string, schema: string): Promise<string | null> {
-  const config = loadRouterConfig();
-  if (config.mode === "local") return null;
-  const statuses = await api.getProviderKeyStatuses();
-  const configured = new Set<ProviderId>(
-    statuses.filter((status) => status.configured).map((status) => status.provider)
+  return api.generateStructuredTextFromSpec(
+    {
+      capability: "text",
+      prompt,
+      modelHint: "web-structured-copy",
+      providerPref: "gemini",
+      moduleId: "web",
+    },
+    schema
   );
-  const provider = routeProvider("text", config, configured);
-  if (provider !== "gemini") return null;
-  return api.generateStructuredText(provider, prompt, schema);
 }
 
 function BusinessStep({ state, patch }: GuidedFlowStepComponentProps<WebFlowState>) {

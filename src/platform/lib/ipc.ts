@@ -393,6 +393,30 @@ export const api = {
       ? invoke<string>("generate_structured_text", { provider, prompt, schema })
       : Promise.reject(new Error("Provider-backed structured text runs in the desktop app.")),
 
+  generateStructuredTextFromSpec: async (
+    spec: GenerationSpec,
+    schema: string
+  ): Promise<string | null> => {
+    if (spec.capability !== "text") {
+      throw new Error(
+        `generateStructuredTextFromSpec expected text capability, received ${spec.capability}`
+      );
+    }
+    const router = loadRouterConfig();
+    if (router.mode === "local") return null;
+    const statuses = await api.getProviderKeyStatuses();
+    const configured = new Set(
+      statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
+    );
+    const provider =
+      routeProviderChain("text", router, configured, {
+        providerPref: spec.providerPref,
+        modelHint: spec.modelHint,
+      })[0] ?? spec.providerPref;
+    if (provider !== "gemini") return null;
+    return api.generateStructuredText(provider, spec.prompt, schema);
+  },
+
   getLatestPack: (projectId: string) =>
     isTauri
       ? invoke<PromptPack | null>("get_latest_pack", { projectId })
