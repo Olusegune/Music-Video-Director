@@ -7,6 +7,7 @@
 // provider. That is what makes the output look like a real character sheet.
 
 import type { Character, Environment, Prop } from "@/platform/lib/types";
+import type { GenerationSpec } from "@/platform/lib/generationSpec";
 import { composeCharacterDna, identityAnchor } from "@/platform/lib/characterDna";
 import { composeEnvironmentDna } from "@/platform/lib/environmentDna";
 import { composePropDna } from "@/platform/lib/propDna";
@@ -175,6 +176,25 @@ export const IMAGE_MODELS: ImageModel[] = [
 
 export function findModel(id: string): ImageModel {
   return IMAGE_MODELS.find((m) => m.id === id) ?? IMAGE_MODELS[0];
+}
+
+export function imageSpecModel(spec: GenerationSpec): ImageModel {
+  if (spec.capability !== "image") {
+    throw new Error(
+      `Image generation requires an image GenerationSpec, received ${spec.capability}.`
+    );
+  }
+  return spec.modelHint ? findModel(spec.modelHint) : IMAGE_MODELS[0];
+}
+
+export function imageSpecSize(spec: GenerationSpec): { width: number; height: number } {
+  if (spec.capability !== "image") {
+    throw new Error(`Image sizing requires an image GenerationSpec, received ${spec.capability}.`);
+  }
+  if (spec.resolution) {
+    return { width: spec.resolution.width, height: spec.resolution.height };
+  }
+  return resolveSize(spec.aspect ?? "1:1", "medium");
 }
 
 /** Models offered in the generation pickers — all, including manual (Midjourney). */

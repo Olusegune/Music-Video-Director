@@ -3,7 +3,9 @@
 > Living document: what shipped, known issues, next steps. Update at every
 > phase boundary so any agent/session can resume cold.
 
-Last updated: 2026-07-07
+Last updated: 2026-07-09
+
+- **Director Studio 1.1.0 GenerationSpec core**: started the post-1.0 platform program on branch `post-1.0-platform-program`. Added the shared `GenerationSpec` contract, router fallback chains with recoverable-failure notification hooks, per-model preferred aggregators, model capability support flags for seed/negative/batch/resolution/reference handling, StudioMode-aware `ModelSelector` and `GenerateBar` components, and a five-module manifest registry. The existing `GenerationPanel` now emits a `GenerationSpec` alongside its previous payload so Music Video and Bible surfaces retain behavior while joining the platform contract. Added table-driven Vitest coverage proving local mode produces no network candidates and manual mode stays routable for all five modules.
 
 ## Shipped (recent → older)
 

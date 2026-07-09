@@ -33,6 +33,8 @@ import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
 import { ASPECT_RATIOS, SIZE_PRESETS, resolveSize, IMAGE_MODELS } from "@/platform/lib/imageGen";
 import { controlsForProviderKey } from "@/platform/lib/modelRegistry";
+import type { GenerationSpec } from "@/platform/lib/generationSpec";
+import { isRecoverableProviderFailure, notifyGenerationFallback } from "@/platform/lib/providers";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
 type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
@@ -87,6 +89,7 @@ export const CAMERA_MOVES = [
 ] as const;
 
 export interface GenerateOpts {
+  spec: GenerationSpec;
   mode: GenMode;
   prompt: string;
   negativePrompt?: string;
@@ -308,6 +311,23 @@ export function GenerationPanel({
         if (i > 0) setAttemptNote(`${chain[i - 1].label} failed — trying ${model.label}…`);
         try {
           const urls = await onGenerate({
+            spec: {
+              capability: isVideo ? "video" : "image",
+              prompt: prompt.trim(),
+              negativePrompt: negativePrompt.trim() || undefined,
+              seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
+              batch: Math.max(1, Math.min(4, variations)),
+              aspect,
+              resolution: { width, height },
+              references: allRefs.map((url) => ({
+                url,
+                category: "asset",
+                strength: refStrength / 100,
+              })),
+              modelHint: model.id,
+              providerPref: model.providerKey as never,
+              moduleId: "musicvideo",
+            },
             mode,
             prompt: prompt.trim(),
             negativePrompt: negativePrompt.trim() || undefined,
@@ -333,6 +353,10 @@ export function GenerationPanel({
           return;
         } catch (e) {
           failures.push({ label: model.label, reason: e instanceof Error ? e.message : String(e) });
+          const next = chain[i + 1];
+          if (next && isRecoverableProviderFailure(e)) {
+            notifyGenerationFallback(model.providerKey as never, next.providerKey as never);
+          }
         }
       }
       // Every model in the chain failed — show what was tried, not just the last error.

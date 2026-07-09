@@ -4,6 +4,8 @@
 // `generate_mv_shot_video` command routes on; an empty key = "auto" (first
 // configured video provider). Only providers with a wired Rust adapter today.
 
+import type { GenerationSpec } from "@/platform/lib/generationSpec";
+
 export interface VideoModel {
   id: string;
   label: string;
@@ -176,4 +178,13 @@ export const VIDEO_MODELS: VideoModel[] = [
 
 export function findVideoModel(id: string): VideoModel {
   return VIDEO_MODELS.find((m) => m.id === id) ?? VIDEO_MODELS[0];
+}
+
+export function videoSpecModel(spec: GenerationSpec): VideoModel {
+  if (spec.capability !== "video") {
+    throw new Error(
+      `Video generation requires a video GenerationSpec, received ${spec.capability}.`
+    );
+  }
+  return spec.modelHint ? findVideoModel(spec.modelHint) : VIDEO_MODELS[0];
 }

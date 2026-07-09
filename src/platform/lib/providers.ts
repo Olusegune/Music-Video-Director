@@ -327,6 +327,8 @@ export interface RouterConfig {
   mode: RouterMode;
   /** Manual-mode per-capability overrides. */
   manual: Partial<Record<Capability, ProviderId>>;
+  /** Per-model preferred adapter/aggregator, e.g. GPT Image via Kie vs OpenAI. */
+  preferredAggregators?: Record<string, ProviderId>;
 }
 
 const LS_ROUTER = "mf.router";
@@ -334,15 +336,96 @@ const LS_ROUTER = "mf.router";
 export function loadRouterConfig(): RouterConfig {
   try {
     const raw = localStorage.getItem(LS_ROUTER);
-    if (raw) return JSON.parse(raw) as RouterConfig;
+    if (raw) {
+      const parsed = JSON.parse(raw) as RouterConfig;
+      return {
+        mode: parsed.mode ?? "auto",
+        manual: parsed.manual ?? {},
+        preferredAggregators: parsed.preferredAggregators ?? {},
+      };
+    }
   } catch {
     /* fall through */
   }
-  return { mode: "auto", manual: {} };
+  return { mode: "auto", manual: {}, preferredAggregators: {} };
 }
 
 export function saveRouterConfig(cfg: RouterConfig) {
-  localStorage.setItem(LS_ROUTER, JSON.stringify(cfg));
+  localStorage.setItem(
+    LS_ROUTER,
+    JSON.stringify({ ...cfg, preferredAggregators: cfg.preferredAggregators ?? {} })
+  );
+}
+
+export function savePreferredAggregator(modelHint: string, provider: ProviderId): RouterConfig {
+  const cfg = loadRouterConfig();
+  const next: RouterConfig = {
+    ...cfg,
+    preferredAggregators: { ...(cfg.preferredAggregators ?? {}), [modelHint]: provider },
+  };
+  saveRouterConfig(next);
+  return next;
+}
+
+function scoreProviderForMode(mode: RouterMode, provider: ProviderInfo): number {
+  return mode === "quality"
+    ? provider.quality
+    : mode === "speed"
+      ? provider.speed
+      : mode === "cost"
+        ? provider.cheap
+        : provider.quality + provider.speed + provider.cheap;
+}
+
+export function routeProviderChain(
+  cap: Capability,
+  cfg: RouterConfig,
+  configured: Set<ProviderId>,
+  opts?: { providerPref?: ProviderId; modelHint?: string; includeManual?: boolean }
+): ProviderId[] {
+  if (cfg.mode === "local") return [];
+
+  const candidates = providersFor(cap).filter(
+    (p) => (opts?.includeManual || p.status !== "manual") && configured.has(p.id)
+  );
+  if (candidates.length === 0) return [];
+
+  const weighted = [...candidates].sort(
+    (a, b) => scoreProviderForMode(cfg.mode, b) - scoreProviderForMode(cfg.mode, a)
+  );
+
+  const preferred = [
+    opts?.providerPref,
+    opts?.modelHint ? cfg.preferredAggregators?.[opts.modelHint] : undefined,
+    cfg.mode === "manual" ? cfg.manual[cap] : undefined,
+  ].filter(Boolean) as ProviderId[];
+
+  const ordered: ProviderId[] = [];
+  for (const pick of preferred) {
+    if (configured.has(pick) && candidates.some((candidate) => candidate.id === pick)) {
+      ordered.push(pick);
+    }
+  }
+  for (const provider of weighted) ordered.push(provider.id);
+  return [...new Set(ordered)];
+}
+
+export function isRecoverableProviderFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /401|403|429|quota|rate limit|5\d\d|timeout|timed out|network|unavailable|billing|credits/i.test(
+    message
+  );
+}
+
+export function notifyGenerationFallback(from: ProviderId, to: ProviderId): void {
+  if (typeof window === "undefined") return;
+  const fromName = providerInfo(from)?.name ?? from;
+  const toName = providerInfo(to)?.name ?? to;
+  window.dispatchEvent(
+    new CustomEvent("mf-toast", {
+      detail: `${fromName} could not complete the generation. Trying ${toName} instead.`,
+    })
+  );
 }
 
 /**
@@ -355,27 +438,7 @@ export function routeProvider(
   cfg: RouterConfig,
   configured: Set<ProviderId>
 ): ProviderId | null {
-  if (cfg.mode === "local") return null;
-
-  const candidates = providersFor(cap).filter((p) => p.status !== "manual" && configured.has(p.id));
-  if (candidates.length === 0) return null;
-
-  if (cfg.mode === "manual") {
-    const pick = cfg.manual[cap];
-    if (pick && configured.has(pick)) return pick;
-    return candidates[0].id;
-  }
-
-  const score = (p: ProviderInfo) =>
-    cfg.mode === "quality"
-      ? p.quality
-      : cfg.mode === "speed"
-        ? p.speed
-        : cfg.mode === "cost"
-          ? p.cheap
-          : p.quality + p.speed + p.cheap; // auto = balanced
-
-  return [...candidates].sort((a, b) => score(b) - score(a))[0].id;
+  return routeProviderChain(cap, cfg, configured)[0] ?? null;
 }
 
 /** Prefer an adapter that actually consumes image references; null means honest prompt-only/look-alike fallback. */

@@ -68,7 +68,19 @@ export interface ModelVariant {
   manual?: boolean;
   /** Wired to a working adapter today (vs registered/planned scaffold). */
   available: boolean;
+  /** Machine-readable support for GenerationSpec parameters. */
+  generation?: GenerationParamSupport;
   notes?: string;
+}
+
+export type ReferenceSupport = "none" | "single" | "multi" | "omni";
+
+export interface GenerationParamSupport {
+  negativePrompt: boolean;
+  seed: boolean;
+  batch: boolean;
+  resolution: boolean;
+  references: ReferenceSupport;
 }
 
 const IMG_BASE: ControlKey[] = [
@@ -91,6 +103,16 @@ const VID_BASE: ControlKey[] = [
   "referenceImages",
 ];
 
+export function generationSupportFromControls(controls: ControlKey[]): GenerationParamSupport {
+  return {
+    negativePrompt: controls.includes("negativePrompt"),
+    seed: controls.includes("seed"),
+    batch: controls.includes("variations"),
+    resolution: controls.includes("resolution"),
+    references: controls.includes("referenceImages") ? "multi" : "none",
+  };
+}
+
 const v = (
   p: Partial<ModelVariant> &
     Pick<ModelVariant, "id" | "provider" | "providerKey" | "family" | "variant" | "kind">
@@ -101,6 +123,9 @@ const v = (
   capabilities: [],
   available: false,
   ...p,
+  generation:
+    p.generation ??
+    generationSupportFromControls(p.controls ?? (p.kind === "image" ? IMG_BASE : VID_BASE)),
 });
 
 // ---------------------------------------------------------------------------
@@ -590,6 +615,17 @@ export function controlsForProviderKey(providerKey: string, kind: MediaKind): Co
   const matches = MODEL_REGISTRY.filter((m) => m.providerKey === providerKey && m.kind === kind);
   const pick = matches.find((m) => m.available) ?? matches[0];
   return pick ? pick.controls : kind === "image" ? IMG_BASE : VID_BASE;
+}
+
+export function generationSupportForProviderKey(
+  providerKey: string,
+  kind: MediaKind
+): GenerationParamSupport {
+  const matches = MODEL_REGISTRY.filter((m) => m.providerKey === providerKey && m.kind === kind);
+  const pick = matches.find((m) => m.available) ?? matches[0];
+  return (
+    pick?.generation ?? generationSupportFromControls(controlsForProviderKey(providerKey, kind))
+  );
 }
 
 export function supportsControl(id: string, c: ControlKey): boolean {

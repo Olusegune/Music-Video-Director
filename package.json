@@ -1,7 +1,7 @@
 {
   "name": "director-studio",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Director Studio — local-first AI creative-production studio",
   "scripts": {
