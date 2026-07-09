@@ -1,7 +1,7 @@
 {
-  "name": "wheelbarrow-motionforge",
+  "name": "director-studio",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Director Studio — local-first AI creative-production studio",
   "scripts": {

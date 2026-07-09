@@ -1,136 +1,72 @@
-# Wheelbarrow AI Director
+# Director Studio
 
-Local-first **AI music-video director** for Windows. Import a song and the app
-maps its tempo, sections, and lyrics, then directs a complete production:
+Director Studio is a local-first creative production suite for Windows. It brings five specialist studios into one cohesive desktop app:
 
-> **Song Studio** (tempo / sections / lyric map) → **MV Director** (beat-synced,
-> section-aware treatment) → **Cast** (performers linked to Character DNA) →
-> **Choreography** (8-counts + pose sheets) → **Timeline** (frames, clips, voice
-> layers) → **Render** (resolution-aware MP4 with a real audio mix).
+- Music Video Director — song-aware treatments, cast, choreography, timeline, and export.
+- Motion Studio — explainers, commercials, product reveals, UI animation, and motion templates.
+- Glam Studio — luxury campaign planning, product hero generation, format packs, and export.
+- Web Studio — responsive site planning, page compilation, SEO, and export.
+- Campaign Studio — launch strategy, channel planning, production handoffs, calendars, and campaign packages.
 
-Hybrid by design: **all planning runs locally with no API key** (Song Brain, MV
-Director, Cast, Choreography, Timeline, animatic). Cloud providers are used only
-for the generative pixels/audio — frames, clips, and voices — with keys stored in
-the OS keychain and routed through the Rust core. The original motion-graphics
-pre-production tools (Character/World/Prop Bibles, Script Studio, Image Studio,
-Camera/Lighting/Audio directors, export) ship alongside.
-
-Final render uses **FFmpeg** (must be on `PATH`, or set the `MOTIONFORGE_FFMPEG`
-env var to its full path) to concat the per-shot stills/clips and mux the song
-audio plus delayed, volume-adjustable, optionally auto-ducking voice layers.
-
-See [`MOTIONFORGE_PLAN.md`](./MOTIONFORGE_PLAN.md) for the architecture and roadmap.
+Shared libraries — Character Bible, World Bible, Props & Vehicles, Asset Library, Brand Kits, and Script Studio — keep production DNA reusable across the whole Director Studio ecosystem.
 
 ## Stack
 
-- **Tauri 2** (Rust shell) → ships as a Windows `.msi` / `.exe`
-- **Vite + React 19 + TypeScript** frontend
-- **Tailwind v4 + shadcn-style** UI (dark-first)
-- **SQLite** (rusqlite) for local storage · **OS keychain** for API keys
-- **Provider layer in Rust** — Gemini (text), fal.ai / kie.ai / Google (image/video)
+- Tauri 2 desktop shell
+- Vite + React 19 + TypeScript
+- Tailwind 4 design system
+- Zustand + React Query
+- Rust provider and file-system bridge
+- Local-first planning with optional provider-backed generation
 
-> All provider calls go through Rust. API keys never reach the frontend.
-
-## Run it
-
-### Frontend only (no Rust needed) — works today
+## Development
 
 ```bash
 npm install
-npm run dev        # http://localhost:1420
+npm run dev
+npm run check
+npm run build
+npm run tauri dev
 ```
 
-In the browser the app runs against a localStorage-backed mock: you can create
-projects, manage (mock) keys, and see a sample Prompt Pack. This is the "web app"
-view of the exact same codebase.
+The Vite dev server runs at:
 
-### Full Windows desktop app — needs the Rust toolchain
+```text
+http://localhost:1420
+```
 
-Prerequisites (one-time):
-
-1. **Rust** — install via <https://rustup.rs>
-2. **MSVC C++ build tools** — "Desktop development with C++" workload from the
-   Visual Studio Build Tools installer
-3. **WebView2** — preinstalled on Windows 11; otherwise from Microsoft
-
-Then:
+## Windows build
 
 ```bash
-npm install
-npm run tauri dev      # launches the native window with the live Rust backend
-npm run tauri build    # produces the installers + the standalone exe
+npm run tauri build
 ```
 
-### Build outputs
+Primary build outputs are produced under:
 
-`npm run tauri build` produces three artifacts:
-
-| Artifact                     | Path                                                                               |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| Installer (`.exe`, NSIS)     | `src-tauri/target/release/bundle/nsis/Wheelbarrow MotionForge_<ver>_x64-setup.exe` |
-| Installer (`.msi`)           | `src-tauri/target/release/bundle/msi/Wheelbarrow MotionForge_<ver>_x64_en-US.msi`  |
-| Portable (standalone `.exe`) | `src-tauri/target/release/wheelbarrow-motionforge.exe`                             |
-
-### Portable mode (USB-stick style)
-
-The standalone exe normally stores its DB/assets/exports under `%APPDATA%`. To make
-it **fully self-contained** — all data written next to the exe — drop an empty file
-named **`portable.txt`** beside `wheelbarrow-motionforge.exe`. On launch the app
-detects the marker and uses `<exe folder>\data\` for the SQLite DB, generated
-assets, and exports. Remove the marker to revert to the per-user `%APPDATA%` store.
-
-> Note: API keys are stored in the **Windows Credential Manager** (machine-bound),
-> so they do **not** travel with the portable folder — re-enter keys on each
-> machine, or run in **Local prompt-only** mode (no keys needed).
-
-When running under Tauri, the IPC layer (`src/lib/ipc.ts`) automatically switches
-from the mock to real Rust commands — SQLite persistence, keychain-stored keys,
-and live Gemini calls.
-
-## Project layout
-
-```
-src/                 React frontend
-  app/               shell + view switching
-  components/         layout (Sidebar, Inspector) + ui primitives
-  features/           dashboard, projects, settings
-  lib/                ipc bridge, types, utils
-  store/              Zustand app state
-src-tauri/           Rust core
-  src/               commands, db (SQLite), secrets (keychain), providers/
-docs/                original specs (reference)
+```text
+C:\Users\eduni\Documents\Wheelbarrow MotionForge AI\src-tauri\target\release\
 ```
 
-## Status
+Release-ready 1.0.0 artifacts are assembled under:
 
-- **Phase 0 (scaffold)** — ✅ complete
-- **Phase 1 (Prompt Pack vertical slice)** — ✅ generate → persist (SQLite/keychain
-  via Rust) → fully editable, autosaving UI (Creative Direction, Style, editable
-  storyboard with add/move/duplicate/lock/delete, QC checklist). To exercise live
-  Gemini output, add a Gemini key in **Settings** and run the Tauri app.
-- **Phase 2 (Camera & Lighting Directors)** — ✅ per-shot, fully editable camera
-  plans (shot type, lens, height, angle, movement, composition, emotional/editorial
-  purpose, notes) and lighting plans (intent, strategy, key/fill/rim, color temp,
-  contrast, atmosphere, depth separation, continuity). Generated by Gemini and
-  rendered in dedicated Camera/Lighting workspace tabs. UI supports light & dark.
-- **Phase 3 (Image generation)** — ✅ per-shot storyboard frame generation via the
-  Rust provider layer (fal.ai FLUX, with Google Imagen fallback). Images download to
-  the app's assets dir and display via Tauri's asset protocol; prompts are composed
-  from each shot's visual/camera/lighting context. Per-shot "Generate frame" +
-  "Generate Frames" (batch), with persisted thumbnails.
-- **Phase 4 (Video generation)** — ✅ per-shot text-to-video via the async job model
-  (submit → poll → download) in the Rust provider layer: fal.ai queue (FLUX/LTX) with
-  a best-effort Google Veo fallback. Videos persist to the assets dir and play inline
-  in the shot card (with the generated frame as poster). Per-shot Generate Video.
-- **Phase 5 (Export engine)** — ✅ Markdown / JSON / PDF (printpdf) / DOCX (docx-rs)
-  from a shared document model, written to the app's exports dir. Export Center tab
-  with per-format buttons + recent-exports list; browser falls back to MD/JSON Blob
-  downloads. Renderers covered by a Rust unit test.
-- **Phase 6 (Polish)** — ✅ Brand Kits (Rust-backed, applied to generation),
-  dashboard Templates, global Asset Library, accessibility pass (aria-labels, nav
-  landmarks), and a release installer (`npm run tauri build` → `.msi`/`.exe`).
-  Installer signing is the remaining production step (needs a code-signing cert).
+```text
+C:\Users\eduni\Documents\DirectorStudio-Release-1.0.0\
+```
 
-All core phases (0–6) complete — full pipeline: idea → Prompt Pack → camera/lighting
-→ image → video → export, with brand kits, asset library, light/dark, and a Windows
-installer. See `QA_CHECKLIST.md` for the testing pass.
+Expected release folders:
+
+| Artifact group | Path                                                                                            |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| Installers     | `C:\Users\eduni\Documents\DirectorStudio-Release-1.0.0\Installers\`                             |
+| Portable build | `C:\Users\eduni\Documents\DirectorStudio-Release-1.0.0\Portable\DirectorStudio-1.0.0-Portable\` |
+| Checksums      | `C:\Users\eduni\Documents\DirectorStudio-Release-1.0.0\Checksums\`                              |
+
+## Portable mode
+
+Director Studio supports portable mode. Place `portable.txt` beside the executable and the app will use a local `data\` folder beside the executable for user data.
+
+## Release policy
+
+The Windows bundle identifier is intentionally preserved as `ai.wheelbarrow.motionforge` for 1.0.0 to protect existing WebView2/localStorage user data. User-visible product naming is Director Studio.
+
+Unless a signed release channel is configured, Windows SmartScreen may show an “unrecognized app” warning on first launch. See the 1.0 release notes for the current signing status.

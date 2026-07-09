@@ -319,8 +319,6 @@ function ProviderRow({
   );
 }
 
-const APP_VERSION = "0.1.0";
-
 /** About + version info, with an honest note on updates. */
 function AboutCard() {
   return (
@@ -339,7 +337,7 @@ function AboutCard() {
           <div>
             <div className="text-sm font-semibold">Director Studio</div>
             <div className="text-xs text-muted">
-              Version {APP_VERSION} · {isTauri ? "Desktop (Tauri)" : "Browser preview"}
+              Version {__APP_VERSION__} · {isTauri ? "Desktop (Tauri)" : "Browser preview"}
             </div>
           </div>
         </div>
