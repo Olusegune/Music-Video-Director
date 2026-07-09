@@ -59,7 +59,7 @@ import {
   type GlamFormatLayout,
 } from "@/apps/glam-studio/lib/campaignExport";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
-import { STUDIO_MODES } from "@/platform/lib/settings";
+import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
@@ -1310,16 +1310,7 @@ export function GlamStudioWorkspace() {
               <CardDescription>Progressive controls</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {STUDIO_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={studioMode === mode.id ? "primary" : "secondary"}
-                  className="w-full justify-start"
-                  onClick={() => setStudioMode(mode.id)}
-                >
-                  {mode.label}
-                </Button>
-              ))}
+              <ModeCards mode={studioMode} onModeChange={setStudioMode} />
               <Button variant="ghost" className="w-full justify-start" onClick={openSettings}>
                 Settings
               </Button>

@@ -37,6 +37,7 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { api } from "@/platform/lib/ipc";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
 import { STUDIO_MODES } from "@/platform/lib/settings";
+import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { STYLE_PRESETS } from "@/platform/lib/styles";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -812,18 +813,9 @@ export function MotionStudio() {
         </div>
       </section>
 
-      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-4">
+      <section className="space-y-3 rounded-xl border border-border bg-surface p-4">
         <span className="text-xs font-semibold uppercase text-muted">Mode depth</span>
-        {STUDIO_MODES.map((mode) => (
-          <Button
-            key={mode.id}
-            variant={studioMode === mode.id ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setStudioMode(mode.id)}
-          >
-            {mode.label}
-          </Button>
-        ))}
+        <ModeCards mode={studioMode} onModeChange={setStudioMode} layout="row" />
       </section>
     </div>
   );

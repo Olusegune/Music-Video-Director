@@ -43,7 +43,7 @@ import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
 import { api } from "@/platform/lib/ipc";
-import { STUDIO_MODES } from "@/platform/lib/settings";
+import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
@@ -1092,16 +1092,7 @@ export function WebStudio() {
               <CardTitle>Mode</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {STUDIO_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={studioMode === mode.id ? "primary" : "secondary"}
-                  className="w-full justify-start"
-                  onClick={() => setStudioMode(mode.id)}
-                >
-                  {mode.label}
-                </Button>
-              ))}
+              <ModeCards mode={studioMode} onModeChange={setStudioMode} />
             </CardContent>
           </Card>
           {active ? (

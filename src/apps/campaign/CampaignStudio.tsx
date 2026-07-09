@@ -43,7 +43,7 @@ import {
 } from "@/platform/lib/deliverables";
 import { setSeedContext, type SeedTarget } from "@/platform/lib/seedContext";
 import { api } from "@/platform/lib/ipc";
-import { STUDIO_MODES } from "@/platform/lib/settings";
+import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { deleteCampaign, listCampaigns, saveCampaign } from "@/apps/campaign/lib/campaignStore";
@@ -894,16 +894,7 @@ export function CampaignStudio() {
               <CardTitle>Mode</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {STUDIO_MODES.map((mode) => (
-                <Button
-                  key={mode.id}
-                  variant={studioMode === mode.id ? "primary" : "secondary"}
-                  className="w-full justify-start"
-                  onClick={() => setStudioMode(mode.id)}
-                >
-                  {mode.label}
-                </Button>
-              ))}
+              <ModeCards mode={studioMode} onModeChange={setStudioMode} />
             </CardContent>
           </Card>
           {active ? (
