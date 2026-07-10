@@ -32,7 +32,8 @@ import {
 import { ProjectCard } from "@/platform/components/visual";
 import { ProjectActionsMenu } from "@/platform/components/visual/ProjectActionsMenu";
 import type { VisualModule } from "@/platform/components/visual/visualTheme";
-import { recentProjects, type HubModuleId } from "@/platform/lib/projectHub";
+import { recentProjects, type HubModuleId, type HubProject } from "@/platform/lib/projectHub";
+import { umbrellaFor } from "@/platform/lib/directorProject";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -65,6 +66,13 @@ export function Dashboard() {
   // Bumped after a hub mutation (Save as a copy / Rename / Delete) so Recent re-reads.
   const [hubVersion, setHubVersion] = useState(0);
   const recent = useMemo(() => recentProjects(6), [hubVersion]);
+
+  // A project inside a campaign says so, rather than just naming its studio.
+  const subtitleFor = (project: HubProject) => {
+    const umbrella = umbrellaFor(project.moduleId, project.id);
+    const studio = HUB_LABEL[project.moduleId];
+    return umbrella && umbrella.id !== project.id ? `${studio} · part of ${umbrella.name}` : studio;
+  };
   const HUB_TO_VISUAL: Record<HubModuleId, VisualModule> = {
     musicvideo: "music-video",
     motion: "motionstudio",
@@ -225,7 +233,7 @@ export function Dashboard() {
                   key={`${project.moduleId}:${project.id}`}
                   module={HUB_TO_VISUAL[project.moduleId]}
                   title={project.name}
-                  subtitle={HUB_LABEL[project.moduleId]}
+                  subtitle={subtitleFor(project)}
                   thumbUrl={project.thumbUrl}
                   onResume={() => openModuleProject(project.moduleId, project.id)}
                   actions={

@@ -46,6 +46,7 @@ import { api } from "@/platform/lib/ipc";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
+import { addMember } from "@/platform/lib/directorProject";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
 import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioning";
@@ -450,12 +451,14 @@ function createProject(state: WebFlowState): WebProject {
     const source = listDeliverables().find(
       (deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId
     );
-    if (source)
-      saveDeliverable({
-        ...source,
-        status: "draft",
-        assetRefs: [...source.assetRefs, `web-project:${project.id}`],
-      });
+    if (source) saveDeliverable({ ...source, status: "draft" });
+    // Real containment: this site is now a member of the campaign's umbrella
+    // (replaces the write-only `web-project:<id>` assetRef).
+    addMember(state.campaignSeed.campaignId, {
+      moduleId: "web",
+      projectId: project.id,
+      role: "landing-page",
+    });
   }
   return project;
 }

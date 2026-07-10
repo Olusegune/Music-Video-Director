@@ -42,6 +42,7 @@ import {
   saveDeliverable,
 } from "@/platform/lib/deliverables";
 import { setSeedContext, type SeedTarget } from "@/platform/lib/seedContext";
+import { ensureDirectorProject } from "@/platform/lib/directorProject";
 import { api } from "@/platform/lib/ipc";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
@@ -362,7 +363,7 @@ function createCampaign(state: CampaignFlowState): CampaignProject {
     palette: concept.palette,
   });
   const now = new Date().toISOString();
-  return saveCampaign({
+  const campaign = saveCampaign({
     id,
     name: state.name || `${state.product} Launch`,
     product: state.product,
@@ -378,6 +379,15 @@ function createCampaign(state: CampaignFlowState): CampaignProject {
     createdAt: now,
     updatedAt: now,
   });
+  // A campaign IS a DirectorProject: the umbrella that will hold the Glam,
+  // Web, and Motion projects its plan spawns. Same id, so the two never drift.
+  ensureDirectorProject({
+    id: campaign.id,
+    name: campaign.name,
+    brandDnaId: campaign.brand.id,
+    members: [{ moduleId: "campaign", projectId: campaign.id, role: "orchestrator" }],
+  });
+  return campaign;
 }
 
 const CHANNEL_META: Record<CampaignChannel, { label: string; icon: React.ReactNode }> = {

@@ -15,6 +15,7 @@ import {
   saveVersion,
   type ProjectVersion,
 } from "@/platform/lib/projectVersions";
+import { detachProject } from "@/platform/lib/directorProject";
 
 export type { ProjectVersion };
 
@@ -213,8 +214,9 @@ export function deleteProject(moduleId: HubModuleId, id: string): boolean {
   if (!adapter?.remove) return false;
   try {
     adapter.remove(id);
-    // A deleted project must not leave orphaned history behind.
+    // A deleted project must not leave orphaned history or membership behind.
     if (genericVersioning(adapter)) deleteAllVersions(moduleId, id);
+    detachProject(moduleId, id);
     return true;
   } catch {
     return false;

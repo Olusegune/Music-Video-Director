@@ -62,6 +62,7 @@ import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platf
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
+import { addMember } from "@/platform/lib/directorProject";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
@@ -486,12 +487,14 @@ function createProjectFromState(state: GlamFlowState): GlamProject {
     const source = listDeliverables().find(
       (deliverable) => deliverable.id === state.campaignSeed?.sourceDeliverableId
     );
-    if (source)
-      saveDeliverable({
-        ...source,
-        status: "draft",
-        assetRefs: [...source.assetRefs, `glam-project:${project.id}`],
-      });
+    if (source) saveDeliverable({ ...source, status: "draft" });
+    // Real containment: this Glam project is now a member of the campaign's
+    // DirectorProject (replaces the write-only `glam-project:<id>` assetRef).
+    addMember(state.campaignSeed.campaignId, {
+      moduleId: "glam",
+      projectId: project.id,
+      role: "hero",
+    });
   }
   return project;
 }
