@@ -46,12 +46,14 @@ import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
+import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
 
 export function CharacterBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
 
   const { data: characters = [] } = useQuery({
@@ -75,6 +77,7 @@ export function CharacterBible() {
 
   const sheetChar = characters.find((c) => c.id === sheetId) ?? null;
   const cardChar = characters.find((c) => c.id === cardId) ?? null;
+  const profileChar = characters.find((c) => c.id === profileId) ?? null;
   const selected = characters.find((c) => c.id === selectedId) ?? null;
 
   if (cardChar) {
@@ -95,12 +98,33 @@ export function CharacterBible() {
                 current.map((item) => (item.id === next.id ? next : item))
               );
               setCardId(null);
-              setSelectedId(next.id);
+              setProfileId(next.id);
             });
           }}
           onSkip={() => {
             setCardId(null);
             setSelectedId(cardChar.id);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (profileChar) {
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <CharacterProfile
+          key={profileChar.id}
+          character={profileChar}
+          onDone={(saved) => {
+            if (saved) {
+              queryClient.setQueryData<Character[]>(["characters"], (current = []) =>
+                current.map((item) => (item.id === saved.id ? saved : item))
+              );
+              void api.saveCharacter(saved);
+            }
+            setProfileId(null);
+            setSelectedId(profileChar.id);
           }}
         />
       </div>
@@ -207,6 +231,53 @@ export function CharacterBible() {
 }
 
 // --- gradient avatar fallback ----------------------------------------------
+
+/** The Profile stage bound to a Character: local edits, saved on continue. */
+function CharacterProfile({
+  character,
+  onDone,
+}: {
+  character: Character;
+  onDone: (saved: Character | null) => void;
+}) {
+  const [draft, setDraft] = useState<Character>(character);
+  const set = (key: string, value: string) =>
+    setDraft((d) => ({ ...d, [key]: value }) as Character);
+
+  const sections = [
+    {
+      title: "Identity",
+      fields: [
+        { key: "role", label: "Role", value: draft.role },
+        { key: "occupation", label: "Occupation", value: draft.occupation },
+        { key: "age", label: "Age", value: draft.age },
+        { key: "gender", label: "Gender", value: draft.gender },
+      ],
+    },
+    {
+      title: "Personality",
+      fields: [
+        { key: "traits", label: "Traits", value: draft.traits, multiline: true },
+        { key: "motivations", label: "Motivations", value: draft.motivations },
+        { key: "fears", label: "Fears", value: draft.fears },
+        { key: "goals", label: "Goals", value: draft.goals },
+      ],
+    },
+  ];
+
+  return (
+    <BibleProfileStage
+      entityLabel="Character"
+      entityName={draft.name}
+      portraitUrl={draft.portraitUrl}
+      sections={sections}
+      onField={set}
+      onContinue={() => onDone(draft)}
+      onSkip={() => onDone(null)}
+      enhanceHint="Add a text provider key in API Keys to draft personality automatically."
+    />
+  );
+}
 
 function initials(name: string): string {
   return (
