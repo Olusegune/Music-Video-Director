@@ -136,7 +136,12 @@ export function WorldBible() {
         {environments.length === 0 ? (
           <BibleCreationFlow
             entityLabel="World"
-            onSpark={(value) => create.mutate(draftEnvironmentFromLine(value))}
+            onSpark={(value) =>
+              create.mutate(draftEnvironmentFromLine(value), {
+                // Visual-first, like the Character Bible: open the image sheet first.
+                onSuccess: (environment) => setSheetId(environment.id),
+              })
+            }
             onBlank={() => create.mutate(newEnvironment())}
           />
         ) : (

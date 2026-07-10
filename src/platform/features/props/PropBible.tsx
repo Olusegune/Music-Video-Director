@@ -18,7 +18,13 @@ import { api, isTauri } from "@/platform/lib/ipc";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import type { Prop } from "@/platform/lib/types";
-import { composePropDna, isPropDnaStale, newProp, PROP_CATEGORIES } from "@/platform/lib/propDna";
+import {
+  composePropDna,
+  draftPropFromLine,
+  isPropDnaStale,
+  newProp,
+  PROP_CATEGORIES,
+} from "@/platform/lib/propDna";
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
 import { AssetImage } from "@/platform/components/ui/asset-image";
@@ -81,10 +87,11 @@ export function PropBible() {
     },
   });
   const createFromSpark = (value: string) => {
-    const p = newProp(value, "Prop");
+    const p = draftPropFromLine(value);
     void api.saveProp(p).then(() => {
       queryClient.invalidateQueries({ queryKey: ["props"] });
-      setSelectedId(p.id);
+      // Visual-first, like the Character Bible: open the image sheet, not the form.
+      setSheetId(p.id);
     });
   };
 

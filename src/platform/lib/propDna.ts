@@ -110,6 +110,34 @@ export function isPropDnaStale(p: Prop): boolean {
 }
 
 /** Build a Prop draft from an extracted entity name + category + context. */
+// Words that reveal which kind of "prop" a spark line describes, so a spark of
+// "a battered muscle car" lands in the Vehicle category, not generic Prop.
+const CATEGORY_HINTS: [RegExp, (typeof PROP_CATEGORIES)[number]][] = [
+  [/\b(car|truck|bike|motorcycle|ship|jet|plane|mech|tank|rover|speeder|craft)\b/i, "Vehicle"],
+  [/\b(beast|dragon|monster|creature|alien|drone-?pet|familiar)\b/i, "Creature"],
+  [/\b(sword|blade|gun|rifle|pistol|axe|bow|cannon|dagger|weapon)\b/i, "Weapon"],
+  [/\b(coat|cloak|armor|armour|dress|helmet|mask|costume|garb|robe)\b/i, "Wardrobe"],
+  [/\b(throne|banner|lantern|furniture|crate|barrel|signage|set piece)\b/i, "Set Dressing"],
+];
+
+function detectPropCategory(text: string): (typeof PROP_CATEGORIES)[number] {
+  for (const [re, category] of CATEGORY_HINTS) if (re.test(text)) return category;
+  return "Prop";
+}
+
+/** Parse a spark line into a drafted prop, mirroring draft*FromLine for the
+ *  other Bibles: name from the head of the line, category inferred, DNA composed. */
+export function draftPropFromLine(line: string): Prop {
+  const text = line.trim();
+  const category = detectPropCategory(text);
+  const p = newProp(text.slice(0, 48) || "Untitled", category);
+  p.usage = text;
+  const dna = composePropDna(p);
+  p.promptDna = dna.promptDna;
+  p.consistencyRules = dna.consistencyRules;
+  return p;
+}
+
 export function propFromEntity(name: string, category = "Prop", context = ""): Prop {
   const p = newProp(name.trim() || "Untitled", category);
   if (context.trim()) p.usage = context.trim().slice(0, 160);
