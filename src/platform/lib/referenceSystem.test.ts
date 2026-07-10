@@ -5,6 +5,7 @@ import {
   resolveReferences,
 } from "@/platform/lib/referenceSystem";
 import type { GenerationReference } from "@/platform/lib/generationSpec";
+import { generationSupportFromControls } from "@/platform/lib/modelRegistry";
 
 const ref = (url: string, strength?: number): GenerationReference => ({
   url,
@@ -90,5 +91,25 @@ describe("resolveReferences", () => {
     expect(describeReferenceSupport("none")).toMatch(/not supported/i);
     expect(describeReferenceSupport("single")).toMatch(/one reference/i);
     expect(describeReferenceSupport("omni")).toMatch(/strength/i);
+  });
+});
+
+describe("registry controls map to reference support", () => {
+  it("no reference control means the model ignores references", () => {
+    expect(generationSupportFromControls(["seed"]).references).toBe("none");
+  });
+
+  it("accepting references is 'multi'", () => {
+    expect(generationSupportFromControls(["referenceImages"]).references).toBe("multi");
+  });
+
+  it("weighting references is 'omni' — the only tier that honors strength", () => {
+    const support = generationSupportFromControls(["referenceImages", "referenceStrength"]);
+    expect(support.references).toBe("omni");
+    expect(resolveReferences([ref("a", 0.4)], support.references).strengthHonored).toBe(true);
+  });
+
+  it("declaring strength without references is still 'none'", () => {
+    expect(generationSupportFromControls(["referenceStrength"]).references).toBe("none");
   });
 });

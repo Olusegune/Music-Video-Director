@@ -12,15 +12,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Sparkles,
-  Download,
-  Check,
-  RefreshCw,
-  SlidersHorizontal,
-  ImagePlus,
-  X,
-} from "lucide-react";
+import { Sparkles, Download, Check, RefreshCw, SlidersHorizontal, ImagePlus } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import { api } from "@/platform/lib/ipc";
 import type { ProviderId } from "@/platform/lib/types";
@@ -34,9 +26,14 @@ import {
   generationSupportForProviderKey,
 } from "@/platform/lib/modelRegistry";
 import { describeReferenceSupport, resolveReferences } from "@/platform/lib/referenceSystem";
-import type { GenerationSpec } from "@/platform/lib/generationSpec";
+import type {
+  GenerationSpec,
+  GenerationReference,
+  GenerationReferenceCategory,
+} from "@/platform/lib/generationSpec";
 import { isRecoverableProviderFailure, notifyGenerationFallback } from "@/platform/lib/providers";
 import { GenerateBar } from "@/platform/components/generation/GenerateBar";
+import { ReferenceTray } from "@/platform/components/generation/ReferenceTray";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
 type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
@@ -273,14 +270,25 @@ export function GenerationPanel({
       ).references,
     [activeModel?.providerKey, isVideo]
   );
-  const refPreview = useMemo(
+  // Per-reference category + strength, keyed by url, so the host keeps handing
+  // us a plain string[] and never has to know about any of this.
+  const [refMeta, setRefMeta] = useState<
+    Record<string, { category?: GenerationReferenceCategory; strength?: number }>
+  >({});
+  const patchRefMeta = (url: string, patch: Partial<GenerationReference>) =>
+    setRefMeta((prev) => ({ ...prev, [url]: { ...prev[url], ...patch } }));
+
+  const richRefs: GenerationReference[] = useMemo(
     () =>
-      resolveReferences(
-        allRefs.map((url) => ({ url })),
-        refSupport
-      ),
-    [allRefs, refSupport]
+      allRefs.map((url) => ({
+        url,
+        category: refMeta[url]?.category ?? "asset",
+        strength: refMeta[url]?.strength ?? refStrength / 100,
+      })),
+    [allRefs, refMeta, refStrength]
   );
+
+  const refPreview = useMemo(() => resolveReferences(richRefs, refSupport), [richRefs, refSupport]);
 
   // Manual providers (Midjourney) have no API — copy the prompt for the user.
   const copyForManual = async () => {
@@ -340,11 +348,7 @@ export function GenerationPanel({
               batch: Math.max(1, Math.min(4, variations)),
               aspect,
               resolution: { width, height },
-              references: allRefs.map((url) => ({
-                url,
-                category: "asset",
-                strength: refStrength / 100,
-              })),
+              references: richRefs,
               modelHint: model.id,
               providerPref: model.providerKey as never,
               moduleId: "musicvideo",
@@ -687,41 +691,31 @@ export function GenerationPanel({
         {refPreview.notice ? (
           <p className="mb-1.5 text-[11px] leading-snug text-warning">{refPreview.notice}</p>
         ) : null}
-        <div className="flex flex-wrap gap-2">
-          {allRefs.map((src, i) => {
-            const isLib = libRefs.includes(src) && !references.includes(src);
-            return (
-              <div key={i} className="group relative">
-                <AssetImage
-                  src={src}
-                  alt={`Reference ${i + 1}`}
-                  className="h-12 w-12 rounded-md border border-border object-cover"
-                />
-                {(isLib || onRemoveReference) && (
-                  <button
-                    onClick={() =>
-                      isLib
-                        ? setLibRefs((r) => r.filter((x) => x !== src))
-                        : onRemoveReference?.(src)
-                    }
-                    className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-danger text-white group-hover:flex"
-                    aria-label="Remove reference"
-                  >
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <button
-            onClick={() => (onAddReferences ? onAddReferences() : setPickerOpen(true))}
-            className="flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-border text-muted hover:border-primary/50 hover:text-foreground"
-            aria-label="Add reference from library"
-            title="Add a reference from the Production Library"
-          >
-            <ImagePlus className="h-4 w-4" />
-          </button>
-        </div>
+        <ReferenceTray
+          references={richRefs}
+          support={refSupport}
+          showControls={can("referenceStrength") || allRefs.length > 1}
+          onChange={patchRefMeta}
+          onRemove={(src: string) => {
+            if (libRefs.includes(src) && !references.includes(src)) {
+              setLibRefs((r) => r.filter((x) => x !== src));
+            } else {
+              onRemoveReference?.(src);
+            }
+            setRefMeta(({ [src]: _dropped, ...rest }) => rest);
+          }}
+        />
+        <button
+          onClick={() => (onAddReferences ? onAddReferences() : setPickerOpen(true))}
+          className={cn(
+            "flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border text-[11px] text-muted transition hover:border-primary/50 hover:text-foreground",
+            allRefs.length > 0 && "mt-2"
+          )}
+          aria-label="Add reference from library"
+          title="Add a reference from the Production Library"
+        >
+          <ImagePlus className="h-3.5 w-3.5" /> Add reference
+        </button>
       </div>
 
       {pickerOpen && (

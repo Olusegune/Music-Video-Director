@@ -104,12 +104,20 @@ const VID_BASE: ControlKey[] = [
 ];
 
 export function generationSupportFromControls(controls: ControlKey[]): GenerationParamSupport {
+  const takesReferences = controls.includes("referenceImages");
   return {
     negativePrompt: controls.includes("negativePrompt"),
     seed: controls.includes("seed"),
     batch: controls.includes("variations"),
     resolution: controls.includes("resolution"),
-    references: controls.includes("referenceImages") ? "multi" : "none",
+    // A model that weights its references does more than accept them: that is
+    // what "omni" means here, and it is the only tier where per-reference
+    // strength is honored.
+    references: takesReferences
+      ? controls.includes("referenceStrength")
+        ? "omni"
+        : "multi"
+      : "none",
   };
 }
 
