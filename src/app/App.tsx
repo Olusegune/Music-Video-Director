@@ -20,6 +20,7 @@ import { MiniPlayer } from "@/apps/music-video/components/magic/MiniPlayer";
 import { MusicVideoGuidedFlow } from "@/apps/music-video/features/director/MusicVideoGuidedFlow";
 import { Toast } from "@/platform/components/ui/toast";
 import { NotificationCenter } from "@/platform/components/layout/NotificationCenter";
+import { ShortcutSheet } from "@/platform/components/layout/ShortcutSheet";
 import { GlobalSearch } from "@/platform/features/search/GlobalSearch";
 import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
 import { installUndo } from "@/platform/lib/undo";
@@ -194,6 +195,7 @@ export default function App() {
       <GlobalSearch />
       <Toast />
       <NotificationCenter />
+      <ShortcutSheet />
       <StartupSplash />
     </div>
   );

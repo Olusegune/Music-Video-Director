@@ -36,8 +36,15 @@ export function useGlobalShortcuts(): void {
 
       if (isTyping(e.target)) return;
 
-      // Help: F1 or "?"
-      if (e.key === "F1" || (e.key === "?" && !e.ctrlKey && !e.metaKey)) {
+      // "?" — the quick keyboard-shortcut reference sheet.
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        window.dispatchEvent(new Event("mf-open-shortcuts"));
+        return;
+      }
+
+      // F1 — the full Help & learning center.
+      if (e.key === "F1") {
         e.preventDefault();
         s.openHelp();
         return;
