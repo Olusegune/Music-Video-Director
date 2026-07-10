@@ -1,19 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Copy, History, MoreVertical, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import {
   deleteProject,
   duplicateProject,
+  listProjectVersions,
   projectCapabilities,
   renameProject,
+  restoreProjectVersion,
+  snapshotProject,
   type HubModuleId,
+  type ProjectVersion,
 } from "@/platform/lib/projectHub";
 
-// Save As / Rename / Delete for any studio's project, driven entirely by the
-// Project Hub adapters. Rename and delete confirm in place — no window.prompt,
-// no browser confirm() — so the card keeps the app's own visual language.
+// Save As / Rename / Delete / Version history for any studio's project, driven
+// entirely by the Project Hub adapters. Rename, delete, and restore confirm in
+// place — no window.prompt, no browser confirm() — so the card keeps the app's
+// own visual language.
 
-type Panel = "menu" | "rename" | "confirmDelete";
+type Panel = "menu" | "rename" | "confirmDelete" | "versions";
+
+function formatWhen(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+}
 
 export function ProjectActionsMenu({
   moduleId,
@@ -25,11 +35,12 @@ export function ProjectActionsMenu({
   projectId: string;
   projectName: string;
   /** Called after any mutation so the caller can refresh its list. */
-  onChanged: (result: { duplicatedId?: string; deleted?: boolean }) => void;
+  onChanged: (result: { duplicatedId?: string; deleted?: boolean; restored?: boolean }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>("menu");
   const [draftName, setDraftName] = useState(projectName);
+  const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const rootRef = useRef<HTMLDivElement>(null);
   const caps = projectCapabilities(moduleId);
 
@@ -49,12 +60,29 @@ export function ProjectActionsMenu({
     };
   }, [open]);
 
-  if (!caps.duplicate && !caps.rename && !caps.remove) return null;
+  if (!caps.duplicate && !caps.rename && !caps.remove && !caps.versioning) return null;
 
   function close() {
     setOpen(false);
     setPanel("menu");
   }
+
+  const openVersions = () => {
+    setVersions(listProjectVersions(moduleId, projectId));
+    setPanel("versions");
+  };
+
+  const snapshotNow = () => {
+    snapshotProject(moduleId, projectId, `Snapshot ${new Date().toLocaleString()}`);
+    setVersions(listProjectVersions(moduleId, projectId));
+    onChanged({});
+  };
+
+  const restore = (versionId: string) => {
+    const ok = restoreProjectVersion(moduleId, projectId, versionId);
+    close();
+    if (ok) onChanged({ restored: true });
+  };
 
   const saveAs = () => {
     const newId = duplicateProject(moduleId, projectId);
@@ -101,7 +129,10 @@ export function ProjectActionsMenu({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-9 w-52 rounded-lg border border-border bg-surface p-1 shadow-xl"
+          className={cn(
+            "absolute right-0 top-9 rounded-lg border border-border bg-surface p-1 shadow-xl",
+            panel === "versions" ? "w-72" : "w-52"
+          )}
         >
           {panel === "menu" ? (
             <>
@@ -120,6 +151,11 @@ export function ProjectActionsMenu({
                   <Pencil className="h-3.5 w-3.5" /> Rename
                 </button>
               ) : null}
+              {caps.versioning ? (
+                <button type="button" role="menuitem" className={item} onClick={openVersions}>
+                  <History className="h-3.5 w-3.5" /> Version history
+                </button>
+              ) : null}
               {caps.remove ? (
                 <button
                   type="button"
@@ -131,6 +167,59 @@ export function ProjectActionsMenu({
                 </button>
               ) : null}
             </>
+          ) : null}
+
+          {panel === "versions" ? (
+            <div className="p-1.5">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted">
+                  Version history
+                </span>
+                <button
+                  type="button"
+                  onClick={snapshotNow}
+                  className="shrink-0 whitespace-nowrap rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground"
+                >
+                  Snapshot now
+                </button>
+              </div>
+              {versions.length === 0 ? (
+                <p className="px-1 py-2 text-[11px] text-muted">
+                  No versions yet. Snapshot before a big change so you can roll back.
+                </p>
+              ) : (
+                <ul className="max-h-56 space-y-0.5 overflow-y-auto">
+                  {versions.map((version) => (
+                    <li key={version.id}>
+                      <button
+                        type="button"
+                        onClick={() => restore(version.id)}
+                        className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-elevated"
+                      >
+                        <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-xs text-foreground">
+                            {version.label}
+                          </span>
+                          <span className="block text-[10px] text-muted">
+                            {formatWhen(version.createdAt)}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-1.5 flex justify-end">
+                <button
+                  type="button"
+                  className="rounded-md px-2 py-1 text-xs text-muted hover:text-foreground"
+                  onClick={close}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           ) : null}
 
           {panel === "rename" ? (

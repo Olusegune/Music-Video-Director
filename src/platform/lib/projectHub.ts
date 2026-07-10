@@ -7,6 +7,16 @@
 // layer importing app code — modules register at startup instead.
 
 import type { ModuleId } from "@/platform/lib/navModel";
+import {
+  deleteAllVersions,
+  deleteVersion,
+  listVersions,
+  readVersionPayload,
+  saveVersion,
+  type ProjectVersion,
+} from "@/platform/lib/projectVersions";
+
+export type { ProjectVersion };
 
 export type HubModuleId = Exclude<ModuleId, null>;
 
@@ -30,13 +40,34 @@ export interface ProjectAdapter {
   duplicate?: (id: string, newName: string) => string | null;
   rename?: (id: string, name: string) => void;
   remove?: (id: string) => void;
+
+  // --- version history -----------------------------------------------------
+  // Either expose read/write and the hub stores versions generically, or
+  // implement the native trio when the module already owns a version system.
+  /** Serialize the whole project record (generic versioning). */
+  read?: (id: string) => unknown | null;
+  /** Write a previously-read record back (generic versioning). */
+  write?: (record: unknown) => void;
+  /** Native override: the module keeps its own history. */
+  versions?: (id: string) => ProjectVersion[];
+  snapshot?: (id: string, label: string) => string | null;
+  restore?: (id: string, versionId: string) => boolean;
 }
 
-/** Which hub mutations a module supports (drives menu item visibility). */
+/** Which mutations a module supports (drives menu item visibility). */
 export interface ProjectCapabilities {
   duplicate: boolean;
   rename: boolean;
   remove: boolean;
+  versioning: boolean;
+}
+
+function nativeVersioning(adapter: ProjectAdapter | undefined): boolean {
+  return Boolean(adapter?.versions && adapter?.snapshot && adapter?.restore);
+}
+
+function genericVersioning(adapter: ProjectAdapter | undefined): boolean {
+  return Boolean(adapter?.read && adapter?.write);
 }
 
 export function projectCapabilities(moduleId: HubModuleId): ProjectCapabilities {
@@ -45,7 +76,85 @@ export function projectCapabilities(moduleId: HubModuleId): ProjectCapabilities 
     duplicate: Boolean(adapter?.duplicate),
     rename: Boolean(adapter?.rename),
     remove: Boolean(adapter?.remove),
+    versioning: nativeVersioning(adapter) || genericVersioning(adapter),
   };
+}
+
+/** Saved versions for a project, newest first. */
+export function listProjectVersions(moduleId: HubModuleId, id: string): ProjectVersion[] {
+  const adapter = adapters.get(moduleId);
+  if (!adapter) return [];
+  try {
+    if (nativeVersioning(adapter)) return adapter.versions!(id);
+    if (genericVersioning(adapter)) return listVersions(moduleId, id);
+  } catch {
+    return [];
+  }
+  return [];
+}
+
+/** Snapshot the project now. Returns the new version id, or null. */
+export function snapshotProject(moduleId: HubModuleId, id: string, label: string): string | null {
+  const adapter = adapters.get(moduleId);
+  if (!adapter) return null;
+  const name = label.trim() || "Snapshot";
+  try {
+    if (nativeVersioning(adapter)) return adapter.snapshot!(id, name);
+    if (genericVersioning(adapter)) {
+      const record = adapter.read!(id);
+      if (record == null) return null;
+      return saveVersion(moduleId, id, name, record);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Roll a project back to a saved version. The current state is snapshotted
+ * first as "Before restore", so a restore is itself undoable.
+ */
+export function restoreProjectVersion(
+  moduleId: HubModuleId,
+  id: string,
+  versionId: string
+): boolean {
+  const adapter = adapters.get(moduleId);
+  if (!adapter) return false;
+  try {
+    if (nativeVersioning(adapter)) {
+      adapter.snapshot!(id, "Before restore");
+      return adapter.restore!(id, versionId);
+    }
+    if (genericVersioning(adapter)) {
+      const payload = readVersionPayload(moduleId, id, versionId);
+      if (payload == null) return false;
+      const current = adapter.read!(id);
+      if (current != null) saveVersion(moduleId, id, "Before restore", current);
+      adapter.write!(payload);
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+export function deleteProjectVersion(
+  moduleId: HubModuleId,
+  id: string,
+  versionId: string
+): boolean {
+  const adapter = adapters.get(moduleId);
+  if (!adapter || nativeVersioning(adapter)) return false;
+  if (!genericVersioning(adapter)) return false;
+  try {
+    deleteVersion(moduleId, id, versionId);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -104,6 +213,8 @@ export function deleteProject(moduleId: HubModuleId, id: string): boolean {
   if (!adapter?.remove) return false;
   try {
     adapter.remove(id);
+    // A deleted project must not leave orphaned history behind.
+    if (genericVersioning(adapter)) deleteAllVersions(moduleId, id);
     return true;
   } catch {
     return false;

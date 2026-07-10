@@ -137,3 +137,19 @@ export function listMotionVersions(projectId: string): MotionProjectVersion[] {
     (version) => version.projectId === projectId
   );
 }
+
+/** Roll a Motion project back to one of its saved versions. */
+export function restoreMotionVersion(projectId: string, versionId: string): boolean {
+  const version = listMotionVersions(projectId).find((item) => item.id === versionId);
+  if (!version) return false;
+  saveMotionProject(version.project);
+  return true;
+}
+
+/** Snapshot and return the new version id (the hub needs the id). */
+export function snapshotMotionProjectId(projectId: string, label: string): string | null {
+  const before = new Set(listMotionVersions(projectId).map((version) => version.id));
+  snapshotMotionProject(projectId, label);
+  const created = listMotionVersions(projectId).find((version) => !before.has(version.id));
+  return created?.id ?? null;
+}

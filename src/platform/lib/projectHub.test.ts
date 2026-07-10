@@ -1,14 +1,18 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   clearProjectAdapters,
   deleteProject,
+  deleteProjectVersion,
   duplicateProject,
   listAllProjects,
+  listProjectVersions,
   projectCapabilities,
   projectsForModule,
   recentProjects,
   registerProjectAdapter,
   renameProject,
+  restoreProjectVersion,
+  snapshotProject,
   suggestCopyName,
   type HubProject,
 } from "@/platform/lib/projectHub";
@@ -113,9 +117,15 @@ describe("projectHub mutations", () => {
       duplicate: false,
       rename: false,
       remove: false,
+      versioning: false,
     });
     fakeGlam([]);
-    expect(projectCapabilities("glam")).toEqual({ duplicate: true, rename: true, remove: true });
+    expect(projectCapabilities("glam")).toEqual({
+      duplicate: true,
+      rename: true,
+      remove: true,
+      versioning: false,
+    });
   });
 
   it("duplicates under an auto-generated copy name, leaving the original intact", () => {
@@ -166,5 +176,111 @@ describe("projectHub mutations", () => {
     });
     expect(duplicateProject("motion", "x")).toBeNull();
     expect(deleteProject("motion", "x")).toBe(false);
+  });
+});
+
+/** A generic module: exposes read/write, so the hub versions it for free. */
+function genericModule(record: { id: string; name: string; body: string }) {
+  const store = new Map([[record.id, { ...record }]]);
+  registerProjectAdapter({
+    moduleId: "glam",
+    label: "Glam Studio",
+    list: () => [...store.values()].map((p) => ({ ...glamProject(p.id, p.name) })),
+    remove: (id) => void store.delete(id),
+    read: (id) => store.get(id) ?? null,
+    write: (rec) => {
+      const typed = rec as { id: string; name: string; body: string };
+      store.set(typed.id, { ...typed });
+    },
+  });
+  return store;
+}
+
+describe("projectHub version history", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("generic modules get versioning from read/write alone", () => {
+    genericModule({ id: "g1", name: "Hero", body: "v1" });
+    expect(projectCapabilities("glam").versioning).toBe(true);
+    expect(listProjectVersions("glam", "g1")).toEqual([]);
+
+    const versionId = snapshotProject("glam", "g1", "First cut");
+    expect(versionId).toBeTruthy();
+    const versions = listProjectVersions("glam", "g1");
+    expect(versions).toHaveLength(1);
+    expect(versions[0].label).toBe("First cut");
+  });
+
+  it("restores the snapshotted payload, and the restore is itself undoable", () => {
+    const store = genericModule({ id: "g1", name: "Hero", body: "v1" });
+    snapshotProject("glam", "g1", "First cut");
+
+    // Move the project forward, then roll back.
+    store.set("g1", { id: "g1", name: "Hero", body: "v2" });
+    const versionId = listProjectVersions("glam", "g1")[0].id;
+    expect(restoreProjectVersion("glam", "g1", versionId)).toBe(true);
+    expect(store.get("g1")?.body).toBe("v1");
+
+    // The pre-restore state was captured, so the rollback can be rolled back.
+    const labels = listProjectVersions("glam", "g1").map((v) => v.label);
+    expect(labels).toContain("Before restore");
+    const beforeRestore = listProjectVersions("glam", "g1").find(
+      (v) => v.label === "Before restore"
+    )!;
+    expect(restoreProjectVersion("glam", "g1", beforeRestore.id)).toBe(true);
+    expect(store.get("g1")?.body).toBe("v2");
+  });
+
+  it("deleting a project drops its version history", () => {
+    genericModule({ id: "g1", name: "Hero", body: "v1" });
+    snapshotProject("glam", "g1", "First cut");
+    expect(listProjectVersions("glam", "g1")).toHaveLength(1);
+    expect(deleteProject("glam", "g1")).toBe(true);
+    expect(listProjectVersions("glam", "g1")).toEqual([]);
+  });
+
+  it("a module with a native version system is delegated to, not duplicated", () => {
+    const calls: string[] = [];
+    registerProjectAdapter({
+      moduleId: "motion",
+      label: "Motion Studio",
+      list: () => [],
+      versions: () => {
+        calls.push("versions");
+        return [{ id: "v1", label: "Native", createdAt: "2026-07-01T00:00:00Z" }];
+      },
+      snapshot: (_id, label) => {
+        calls.push(`snapshot:${label}`);
+        return "v2";
+      },
+      restore: () => {
+        calls.push("restore");
+        return true;
+      },
+    });
+
+    expect(projectCapabilities("motion").versioning).toBe(true);
+    expect(listProjectVersions("motion", "m1")[0].label).toBe("Native");
+    expect(snapshotProject("motion", "m1", "Manual")).toBe("v2");
+    expect(restoreProjectVersion("motion", "m1", "v1")).toBe(true);
+    // A native restore still snapshots the current state first.
+    expect(calls).toContain("snapshot:Before restore");
+    expect(calls).toContain("restore");
+    // Generic history was never touched for this module.
+    expect(deleteProjectVersion("motion", "m1", "v1")).toBe(false);
+  });
+
+  it("modules without read/write or the native trio cannot version", () => {
+    registerProjectAdapter({ moduleId: "web", label: "Web Studio", list: () => [] });
+    expect(projectCapabilities("web").versioning).toBe(false);
+    expect(snapshotProject("web", "w1", "x")).toBeNull();
+    expect(restoreProjectVersion("web", "w1", "v1")).toBe(false);
+    expect(listProjectVersions("web", "w1")).toEqual([]);
+  });
+
+  it("restoring a missing version fails without mutating the project", () => {
+    const store = genericModule({ id: "g1", name: "Hero", body: "v1" });
+    expect(restoreProjectVersion("glam", "g1", "nope")).toBe(false);
+    expect(store.get("g1")?.body).toBe("v1");
   });
 });

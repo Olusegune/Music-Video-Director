@@ -15,6 +15,9 @@ import {
   listMotionProjects,
   saveMotionProject,
   deleteMotionProject,
+  listMotionVersions,
+  snapshotMotionProjectId,
+  restoreMotionVersion,
 } from "@/apps/motion-studio/lib/projects";
 import {
   listGlamProjects,
@@ -95,6 +98,8 @@ export function installProjectAdapters(): void {
       if (source) saveSong(renamed(source, name));
     },
     remove: deleteSong,
+    read: (id) => loadSongs().find((song) => song.id === id) ?? null,
+    write: (record) => saveSong(record as ReturnType<typeof loadSongs>[number]),
   });
   registerProjectAdapter({
     moduleId: "motion",
@@ -112,6 +117,15 @@ export function installProjectAdapters(): void {
       if (source) saveMotionProject(renamed(source, name));
     },
     remove: deleteMotionProject,
+    // Motion already owns a version system — delegate rather than duplicate it.
+    versions: (id) =>
+      listMotionVersions(id).map((version) => ({
+        id: version.id,
+        label: version.label,
+        createdAt: version.createdAt,
+      })),
+    snapshot: snapshotMotionProjectId,
+    restore: restoreMotionVersion,
   });
   registerProjectAdapter({
     moduleId: "glam",
@@ -129,6 +143,8 @@ export function installProjectAdapters(): void {
       if (source) saveGlamProject(renamed(source, name));
     },
     remove: deleteGlamProject,
+    read: (id) => listGlamProjects().find((project) => project.id === id) ?? null,
+    write: (record) => void saveGlamProject(record as ReturnType<typeof listGlamProjects>[number]),
   });
   registerProjectAdapter({
     moduleId: "web",
@@ -146,6 +162,8 @@ export function installProjectAdapters(): void {
       if (source) saveWebProject(renamed(source, name));
     },
     remove: deleteWebProject,
+    read: (id) => listWebProjects().find((project) => project.id === id) ?? null,
+    write: (record) => void saveWebProject(record as ReturnType<typeof listWebProjects>[number]),
   });
   registerProjectAdapter({
     moduleId: "campaign",
@@ -163,5 +181,7 @@ export function installProjectAdapters(): void {
       if (source) saveCampaign(renamed(source, name));
     },
     remove: deleteCampaign,
+    read: (id) => listCampaigns().find((project) => project.id === id) ?? null,
+    write: (record) => void saveCampaign(record as ReturnType<typeof listCampaigns>[number]),
   });
 }
