@@ -8,6 +8,8 @@
 // never hardcoded into UI logic. `available` marks variants wired to a working
 // adapter now; the rest are registered (visible, future-proofed) but flagged.
 
+import type { GenerationOperation } from "@/platform/lib/generationSpec";
+
 export type MediaKind = "image" | "video";
 
 export type Workflow =
@@ -81,6 +83,7 @@ export interface GenerationParamSupport {
   batch: boolean;
   resolution: boolean;
   references: ReferenceSupport;
+  operations: GenerationOperation[];
 }
 
 const IMG_BASE: ControlKey[] = [
@@ -118,6 +121,11 @@ export function generationSupportFromControls(controls: ControlKey[]): Generatio
         ? "omni"
         : "multi"
       : "none",
+    operations: [
+      "generate",
+      ...(takesReferences ? (["edit"] as GenerationOperation[]) : []),
+      ...(controls.includes("variations") ? (["variation"] as GenerationOperation[]) : []),
+    ],
   };
 }
 

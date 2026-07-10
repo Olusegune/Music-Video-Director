@@ -9,7 +9,7 @@
 // work you are already doing and closes again.
 
 import { useEffect, useState } from "react";
-import { EyeOff, Eye, X, AlertTriangle, RotateCcw, Trash2, History } from "lucide-react";
+import { EyeOff, Eye, X, AlertTriangle, RotateCcw, Trash2, History, Split } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { AssetImage } from "@/platform/components/ui/asset-image";
@@ -60,6 +60,7 @@ export function PromptStudioDrawer({
   history = [],
   onReplay,
   onDeleteHistory,
+  onCompare,
 }: {
   open: boolean;
   onClose: () => void;
@@ -69,8 +70,16 @@ export function PromptStudioDrawer({
   history?: PromptHistoryEntry[];
   onReplay?: (entry: PromptHistoryEntry) => void;
   onDeleteHistory?: (id: string) => void;
+  onCompare?: (
+    a: PromptHistoryEntry,
+    b: PromptHistoryEntry
+  ) => Promise<{ a: string[]; b: string[] }>;
 }) {
-  const [tab, setTab] = useState<"layers" | "history">("layers");
+  const [tab, setTab] = useState<"layers" | "history" | "compare">("layers");
+  const [compareIds, setCompareIds] = useState<[string | null, string | null]>([null, null]);
+  const [compareBusy, setCompareBusy] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+  const [compareResults, setCompareResults] = useState<{ a: string[]; b: string[] } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -115,7 +124,10 @@ export function PromptStudioDrawer({
         </header>
 
         <div role="tablist" className="flex gap-1 border-b border-border px-5 pt-2">
-          {(["layers", "history"] as const).map((id) => (
+          {(onCompare
+            ? (["layers", "history", "compare"] as const)
+            : (["layers", "history"] as const)
+          ).map((id) => (
             <button
               key={id}
               role="tab"
@@ -197,6 +209,94 @@ export function PromptStudioDrawer({
                 </div>
               ))
             )}
+          </div>
+        ) : tab === "compare" ? (
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
+            <div className="flex items-center gap-2 text-[11px] text-muted">
+              <Split className="h-4 w-4 text-primary" />
+              Pick two saved prompts and run them side by side through the current generation route.
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[0, 1].map((slot) => (
+                <label
+                  key={slot}
+                  className="space-y-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted"
+                >
+                  Variant {slot === 0 ? "A" : "B"}
+                  <select
+                    value={compareIds[slot] ?? ""}
+                    onChange={(event) => {
+                      const next: [string | null, string | null] = [...compareIds] as [
+                        string | null,
+                        string | null,
+                      ];
+                      next[slot] = event.target.value || null;
+                      setCompareIds(next);
+                      setCompareResults(null);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-surface px-2 text-xs font-normal normal-case text-foreground"
+                  >
+                    <option value="">Choose a history entry</option>
+                    {history.map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {entry.title || entry.prompt.slice(0, 48)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              disabled={
+                !compareIds[0] || !compareIds[1] || compareIds[0] === compareIds[1] || compareBusy
+              }
+              onClick={async () => {
+                const a = history.find((entry) => entry.id === compareIds[0]);
+                const b = history.find((entry) => entry.id === compareIds[1]);
+                if (!a || !b || !onCompare) return;
+                setCompareBusy(true);
+                setCompareError(null);
+                try {
+                  setCompareResults(await onCompare(a, b));
+                } catch (error) {
+                  setCompareError(error instanceof Error ? error.message : String(error));
+                } finally {
+                  setCompareBusy(false);
+                }
+              }}
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Split className="h-3.5 w-3.5" />
+              {compareBusy ? "Running A/B compare…" : "Run A/B compare"}
+            </button>
+            {compareError ? (
+              <p className="whitespace-pre-wrap rounded-md border border-danger/40 bg-danger/10 p-2 text-[11px] text-danger">
+                {compareError}
+              </p>
+            ) : null}
+            {compareResults ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(["a", "b"] as const).map((key) => (
+                  <div key={key} className="space-y-1.5">
+                    <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                      Variant {key.toUpperCase()}
+                    </h3>
+                    {compareResults[key][0] ? (
+                      <AssetImage
+                        src={compareResults[key][0]}
+                        alt={`A/B variant ${key.toUpperCase()}`}
+                        className="aspect-square w-full rounded-lg border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted">
+                        No result
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="flex-1 space-y-4 overflow-y-auto p-5">

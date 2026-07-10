@@ -44,6 +44,7 @@ import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
+import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 
 export function CharacterBible() {
   const queryClient = useQueryClient();
@@ -135,16 +136,23 @@ export function CharacterBible() {
 
       <div className="p-8">
         {characters.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-20 text-center">
-            <div className="grad-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm shadow-primary/30">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-            <p className="text-sm font-medium">Your cast starts here</p>
-            <p className="mt-1 max-w-sm text-xs text-muted">
-              Conjure a character from a single line, or start a blank DNA sheet. Everything you
-              define becomes a reusable consistency anchor.
-            </p>
-          </div>
+          <BibleCreationFlow
+            entityLabel="Character"
+            onSpark={(value) =>
+              create.mutate(draftCharacterFromLine(value), {
+                onSuccess: (character) => {
+                  queryClient.setQueryData<Character[]>(["characters"], (current = []) => [
+                    character,
+                    ...current.filter((item) => item.id !== character.id),
+                  ]);
+                  // The next interaction is visual: choose or generate the
+                  // portrait card before exposing the long DNA form.
+                  setSheetId(character.id);
+                },
+              })
+            }
+            onBlank={() => create.mutate(newCharacter())}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {characters.map((c) => (

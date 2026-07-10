@@ -41,6 +41,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
+import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 
 function categoryIcon(cat: string) {
   if (cat === "Vehicle") return <Car className="h-3 w-3" />;
@@ -79,6 +80,13 @@ export function PropBible() {
       setSelectedId(p.id);
     },
   });
+  const createFromSpark = (value: string) => {
+    const p = newProp(value, "Prop");
+    void api.saveProp(p).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["props"] });
+      setSelectedId(p.id);
+    });
+  };
 
   const removeProp = useMutation({
     mutationFn: (id: string) => api.deleteProp(id),
@@ -143,17 +151,11 @@ export function PropBible() {
 
       <div className="p-8">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-20 text-center">
-            <div className="grad-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm shadow-primary/30">
-              <Package className="h-6 w-6 text-white" />
-            </div>
-            <p className="text-sm font-medium">
-              No {filter === "All" ? "items" : filter.toLowerCase() + "s"} yet
-            </p>
-            <p className="mt-1 max-w-sm text-xs text-muted">
-              Create one, or import props, vehicles, and creatures from Script Studio.
-            </p>
-          </div>
+          <BibleCreationFlow
+            entityLabel="Prop"
+            onSpark={createFromSpark}
+            onBlank={() => create.mutate("Prop")}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {filtered.map((p) => (

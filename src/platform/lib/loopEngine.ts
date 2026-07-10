@@ -20,6 +20,24 @@ export interface LoopRun<T> {
   approved: boolean;
 }
 
+export interface PromptCompareValue {
+  variantA: { prompt: string; results: string[] };
+  variantB: { prompt: string; results: string[] };
+}
+
+/** Records a real A/B round in the shared loop history, rather than leaving
+ * comparison results as an ephemeral drawer-only preview. */
+export function createPromptCompareRun(value: PromptCompareValue): LoopRun<PromptCompareValue> {
+  const run = createLoopRun("Prompt A/B comparison", value, 0);
+  return saveLoopRun({
+    ...run,
+    events: [
+      createLoopEvent("generate", run.target, "Generated Prompt A and Prompt B side by side."),
+      createLoopEvent("score", run.target, "Choose a preferred variant to continue the loop."),
+    ],
+  });
+}
+
 const loopRunStorage = createVersionedStorage<LoopRun<unknown>[]>({
   namespace: "platform",
   key: "loop-runs",

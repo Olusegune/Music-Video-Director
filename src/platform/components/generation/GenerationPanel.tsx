@@ -10,7 +10,7 @@
 // means (`onPick`); everything else is handled here so every surface behaves
 // identically.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
@@ -36,6 +36,7 @@ import {
 import { describeReferenceSupport, resolveReferences } from "@/platform/lib/referenceSystem";
 import type {
   GenerationSpec,
+  GenerationOperation,
   GenerationReference,
   GenerationReferenceCategory,
 } from "@/platform/lib/generationSpec";
@@ -49,6 +50,7 @@ import {
   type PromptPipeline,
 } from "@/platform/lib/promptPipeline";
 import { useAppStore } from "@/platform/store/useAppStore";
+import { createPromptCompareRun } from "@/platform/lib/loopEngine";
 import {
   deletePromptHistory,
   listPromptHistory,
@@ -240,6 +242,8 @@ export function GenerationPanel({
   const [sizeId, setSizeId] = useState(defaultSizeId);
   const [seed, setSeed] = useState("");
   const [variations, setVariations] = useState(1);
+  const [operation, setOperation] = useState<GenerationOperation>("generate");
+  const [mask, setMask] = useState("");
   const [refStrength, setRefStrength] = useState(60);
   // video-only controls
   const [duration, setDuration] = useState(5);
@@ -289,6 +293,18 @@ export function GenerationPanel({
     [activeModel?.providerKey, isVideo]
   );
   const can = (c: string) => caps.has(c as never);
+  const supportedOperations = useMemo(
+    () =>
+      isVideo
+        ? (["generate"] as GenerationOperation[])
+        : (generationSupportForProviderKey(activeModel?.providerKey ?? "custom", "image")
+            .operations ?? ["generate"]),
+    [activeModel?.providerKey, isVideo]
+  );
+  useEffect(() => {
+    if (!supportedOperations.includes(operation))
+      setOperation(supportedOperations[0] ?? "generate");
+  }, [operation, supportedOperations]);
 
   // What will the selected model actually do with the references? Say so before
   // the user hits Generate, not in a toast afterwards.
@@ -438,6 +454,7 @@ export function GenerationPanel({
           const urls = await onGenerate({
             spec: {
               capability: isVideo ? "video" : "image",
+              operation: isVideo ? "generate" : operation,
               prompt: composed.prompt,
               negativePrompt: composed.negativePrompt,
               seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
@@ -445,6 +462,7 @@ export function GenerationPanel({
               aspect,
               resolution: { width, height },
               references: richRefs,
+              mask: !isVideo && operation === "inpaint" ? mask : undefined,
               modelHint: model.id,
               providerPref: model.providerKey as never,
               moduleId: "musicvideo",
@@ -671,6 +689,36 @@ export function GenerationPanel({
         </div>
       )}
 
+      {!isVideo && supportedOperations.length > 1 && (
+        <label className="block">
+          <Label>Image operation</Label>
+          <select
+            value={operation}
+            onChange={(event) => setOperation(event.target.value as GenerationOperation)}
+            className={selectCls}
+            aria-label="Image operation"
+          >
+            {supportedOperations.map((item) => (
+              <option key={item} value={item}>
+                {item === "generate" ? "Generate" : item[0].toUpperCase() + item.slice(1)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {!isVideo && operation === "inpaint" && (
+        <label className="block">
+          <Label>Inpaint mask URL</Label>
+          <input
+            value={mask}
+            onChange={(event) => setMask(event.target.value)}
+            placeholder="Paste a mask asset URL"
+            className={selectCls}
+            aria-label="Inpaint mask URL"
+          />
+        </label>
+      )}
+
       {isVideo && (
         <>
           {(can("duration") || can("fps")) && (
@@ -864,6 +912,49 @@ export function GenerationPanel({
         onDeleteHistory={(id) => {
           deletePromptHistory(id);
           setHistoryVersion((v) => v + 1);
+        }}
+        onCompare={async (a, b) => {
+          const { width, height } = resolveSize(aspect, sizeId);
+          const makeOpts = (entry: PromptHistoryEntry) =>
+            ({
+              spec: {
+                capability: isVideo ? "video" : "image",
+                operation: isVideo ? "generate" : operation,
+                prompt: composePrompt(entry.pipeline).prompt,
+                negativePrompt: composePrompt(entry.pipeline).negativePrompt,
+                seed: entry.seed,
+                aspect: entry.aspect ?? aspect,
+                resolution: { width, height },
+                references: richRefs,
+                modelHint: entry.modelId || modelId,
+                providerPref: (modelList.find((m) => m.id === (entry.modelId || modelId))
+                  ?.providerKey ?? activeModel?.providerKey) as never,
+                moduleId: "musicvideo",
+              },
+              mode,
+              prompt: composePrompt(entry.pipeline).prompt,
+              negativePrompt: composePrompt(entry.pipeline).negativePrompt,
+              provider:
+                modelList.find((m) => m.id === (entry.modelId || modelId))?.providerKey ??
+                activeModel?.providerKey ??
+                "custom",
+              modelId: entry.modelId || modelId,
+              apiModel: modelList.find((m) => m.id === (entry.modelId || modelId))?.apiModel,
+              width,
+              height,
+              seed: entry.seed,
+              variations: 1,
+              references: allRefs,
+            }) satisfies GenerateOpts;
+          const [aResult, bResult] = await Promise.all([
+            onGenerate(makeOpts(a)),
+            onGenerate(makeOpts(b)),
+          ]);
+          createPromptCompareRun({
+            variantA: { prompt: composePrompt(a.pipeline).prompt, results: aResult },
+            variantB: { prompt: composePrompt(b.pipeline).prompt, results: bResult },
+          });
+          return { a: aResult, b: bResult };
         }}
       />
 

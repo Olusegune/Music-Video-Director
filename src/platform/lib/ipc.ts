@@ -569,7 +569,10 @@ export const api = {
     refs?: string[],
     seed?: number,
     model?: string,
-    negativePrompt?: string
+    negativePrompt?: string,
+    operation?: GenerationSpec["operation"],
+    mask?: string,
+    batch?: number
   ): Promise<string> =>
     isTauri
       ? toAssetSrc(
@@ -582,6 +585,9 @@ export const api = {
             seed,
             model,
             negativePrompt,
+            operation,
+            mask,
+            batch,
           })
         )
       : mock.generateImagePro(provider, width, height),
@@ -629,7 +635,10 @@ export const api = {
           refs.used.map((reference) => reference.url),
           spec.seed,
           spec.modelHint,
-          spec.negativePrompt
+          spec.negativePrompt,
+          spec.operation,
+          spec.mask,
+          spec.batch
         );
       },
       { onFallback: notifyGenerationFallback }

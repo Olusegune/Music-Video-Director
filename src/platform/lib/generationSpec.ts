@@ -13,6 +13,7 @@ import {
 } from "@/platform/lib/modelRegistry";
 
 export type GenerationCapability = Capability;
+export type GenerationOperation = "generate" | "edit" | "inpaint" | "outpaint" | "variation";
 
 export type GenerationReferenceCategory =
   "character" | "style" | "product" | "scene" | "pose" | "lighting" | "color" | "asset" | "other";
@@ -38,6 +39,7 @@ export interface ProjectRef {
 
 export interface GenerationSpec {
   capability: GenerationCapability;
+  operation?: GenerationOperation;
   prompt: string;
   negativePrompt?: string;
   seed?: number;
@@ -45,6 +47,7 @@ export interface GenerationSpec {
   aspect?: string;
   resolution?: GenerationResolution;
   references?: GenerationReference[];
+  mask?: string;
   modelHint?: string;
   providerPref?: ProviderId;
   moduleId: string;
@@ -68,9 +71,11 @@ export function normalizeGenerationSpec(spec: GenerationSpec): GenerationSpec {
   const references = (spec.references ?? []).filter((ref) => ref.url.trim());
   return {
     ...spec,
+    operation: spec.operation ?? "generate",
     prompt,
     batch,
     references,
+    mask: spec.mask?.trim() || undefined,
     negativePrompt: spec.negativePrompt?.trim() || undefined,
   };
 }
@@ -90,6 +95,9 @@ export function unsupportedGenerationParams(
   if ((spec.references?.length ?? 0) > 1 && support.references === "single") {
     unsupported.push("multiple references");
   }
+  const operation = spec.operation ?? "generate";
+  if (!support.operations.includes(operation)) unsupported.push(`${operation} operation`);
+  if (operation === "inpaint" && !spec.mask) unsupported.push("inpaint mask");
   return unsupported;
 }
 

@@ -9,6 +9,7 @@ import {
   unsupportedGenerationParams,
   type GenerationSpec,
 } from "@/platform/lib/generationSpec";
+import type { GenerationOperation } from "@/platform/lib/generationSpec";
 import { listModuleManifests } from "@/platform/lib/moduleManifest";
 import { generationSupportForProviderKey } from "@/platform/lib/modelRegistry";
 
@@ -33,6 +34,21 @@ function spec(
 }
 
 describe("GenerationSpec routing contract", () => {
+  it("capability-gates image operations and requires an inpaint mask", () => {
+    expect(
+      unsupportedGenerationParams(
+        { ...spec("imagestudio"), operation: "inpaint" },
+        {
+          negativePrompt: true,
+          seed: true,
+          batch: true,
+          resolution: true,
+          references: "multi",
+          operations: ["generate", "edit"],
+        }
+      )
+    ).toEqual(["inpaint operation", "inpaint mask"]);
+  });
   it("local mode never produces network candidates", () => {
     const cfg: RouterConfig = { mode: "local", manual: {}, preferredAggregators: {} };
     expect(resolveGenerationCandidates(spec("glam"), cfg, configured)).toEqual([]);
@@ -71,6 +87,7 @@ describe("GenerationSpec routing contract", () => {
       batch: false,
       resolution: true,
       references: "none" as const,
+      operations: ["generate" as GenerationOperation],
     };
     expect(unsupportedGenerationParams(spec("campaign"), support)).toEqual([
       "negative prompt",
@@ -150,23 +167,31 @@ describe("runWithProviderFallback", () => {
 
   it("does not advance on a non-recoverable failure", async () => {
     await expect(
-      runWithProviderFallback<string>(["kie", "fal"], async () => {
-        throw new Error("bad prompt");
-      }, { isRecoverable: () => false })
+      runWithProviderFallback<string>(
+        ["kie", "fal"],
+        async () => {
+          throw new Error("bad prompt");
+        },
+        { isRecoverable: () => false }
+      )
     ).rejects.toThrow("bad prompt");
   });
 
   it("throws the last error when the whole chain fails", async () => {
     await expect(
-      runWithProviderFallback<string>(["kie", "fal"], async (p) => {
-        throw new Error(`500 ${p}`);
-      }, { isRecoverable: recoverable })
+      runWithProviderFallback<string>(
+        ["kie", "fal"],
+        async (p) => {
+          throw new Error(`500 ${p}`);
+        },
+        { isRecoverable: recoverable }
+      )
     ).rejects.toThrow("500 fal");
   });
 
   it("throws when no providers are supplied", async () => {
-    await expect(
-      runWithProviderFallback<string>([], async () => "x")
-    ).rejects.toThrow(/no configured provider/i);
+    await expect(runWithProviderFallback<string>([], async () => "x")).rejects.toThrow(
+      /no configured provider/i
+    );
   });
 });

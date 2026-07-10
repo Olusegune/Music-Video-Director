@@ -28,6 +28,12 @@ export function useGlobalShortcuts(): void {
         return;
       }
 
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        window.dispatchEvent(new Event("mf-open-notifications"));
+        return;
+      }
+
       if (isTyping(e.target)) return;
 
       // Help: F1 or "?"

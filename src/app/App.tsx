@@ -19,6 +19,7 @@ import { SessionGuard } from "@/platform/features/recovery/SessionGuard";
 import { MiniPlayer } from "@/apps/music-video/components/magic/MiniPlayer";
 import { MusicVideoGuidedFlow } from "@/apps/music-video/features/director/MusicVideoGuidedFlow";
 import { Toast } from "@/platform/components/ui/toast";
+import { NotificationCenter } from "@/platform/components/layout/NotificationCenter";
 import { GlobalSearch } from "@/platform/features/search/GlobalSearch";
 import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
 import { installUndo } from "@/platform/lib/undo";
@@ -192,6 +193,7 @@ export default function App() {
       <MiniPlayer />
       <GlobalSearch />
       <Toast />
+      <NotificationCenter />
       <StartupSplash />
     </div>
   );

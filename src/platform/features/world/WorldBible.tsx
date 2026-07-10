@@ -45,6 +45,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
+import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 
 export function WorldBible() {
   const queryClient = useQueryClient();
@@ -133,16 +134,11 @@ export function WorldBible() {
 
       <div className="p-8">
         {environments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-20 text-center">
-            <div className="grad-primary mb-3 flex h-12 w-12 items-center justify-center rounded-xl shadow-sm shadow-primary/30">
-              <Globe className="h-6 w-6 text-white" />
-            </div>
-            <p className="text-sm font-medium">Build your world here</p>
-            <p className="mt-1 max-w-sm text-xs text-muted">
-              Conjure a location from a line, or start blank. Locations imported from Script Studio
-              land here automatically.
-            </p>
-          </div>
+          <BibleCreationFlow
+            entityLabel="World"
+            onSpark={(value) => create.mutate(draftEnvironmentFromLine(value))}
+            onBlank={() => create.mutate(newEnvironment())}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {environments.map((e) => (
