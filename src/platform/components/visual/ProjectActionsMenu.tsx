@@ -3,7 +3,12 @@ import { Copy, History, MoreVertical, Package, Pencil, RotateCcw, Trash2 } from 
 import { cn } from "@/platform/lib/utils";
 import { downloadBlob } from "@/platform/lib/archive";
 import { notifyStorage } from "@/platform/lib/storage";
-import { bundleFilename, exportBundle } from "@/platform/lib/projectBundle";
+import {
+  bundleFilename,
+  exportBundleWithAssets,
+  summarizeAssets,
+} from "@/platform/lib/projectBundle";
+import { resolveAssetForBundle } from "@/platform/lib/assetEmbed";
 
 const APP_VERSION = "1.1.0";
 import {
@@ -89,15 +94,24 @@ export function ProjectActionsMenu({
     if (ok) onChanged({ restored: true });
   };
 
-  const exportProject = () => {
+  const exportProject = async () => {
     close();
-    const bundle = exportBundle(moduleId, projectId, APP_VERSION);
+    const bundle = await exportBundleWithAssets(moduleId, projectId, {
+      appVersion: APP_VERSION,
+      resolve: resolveAssetForBundle,
+    });
     if (!bundle) {
       notifyStorage("This studio cannot export that project yet.");
       return;
     }
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
     downloadBlob(blob, bundleFilename(bundle));
+    const { embedded, omitted } = summarizeAssets(bundle);
+    if (omitted) {
+      notifyStorage(
+        `Exported with ${embedded} media file${embedded === 1 ? "" : "s"}; ${omitted} too large or unreadable and left as links.`
+      );
+    }
   };
 
   const saveAs = () => {

@@ -33,6 +33,71 @@ import {
 export const BUNDLE_FORMAT = "director-studio-project";
 export const BUNDLE_FORMAT_VERSION = 1;
 
+// --- embedded assets -------------------------------------------------------
+//
+// Generated media lives on disk as an absolute local path, which resolves on
+// exactly one machine. A bundle that carried only the paths would arrive at the
+// far end full of broken images. So we walk every record, find the paths, and
+// inline the bytes as data URLs — within a budget, because these end up back in
+// localStorage on import.
+
+export const ASSET_TOKEN_PREFIX = "dsproj:asset:";
+
+/** Per-asset and whole-bundle ceilings for embedded bytes. */
+export const PER_ASSET_MAX_BYTES = 2 * 1024 * 1024;
+export const TOTAL_ASSET_MAX_BYTES = 6 * 1024 * 1024;
+
+const PASSTHROUGH = /^(https?:|data:|blob:)/i;
+const MEDIA_EXT = /\.(png|jpe?g|webp|gif|avif|bmp|svg|mp4|mov|webm|mkv|mp3|wav|m4a|ogg)$/i;
+
+/** A string that names a local media file we could embed. */
+export function looksLikeAssetPath(value: string): boolean {
+  if (!value || PASSTHROUGH.test(value)) return false;
+  if (value.startsWith(ASSET_TOKEN_PREFIX)) return false;
+  if (!/[\\/]/.test(value)) return false;
+  return MEDIA_EXT.test(value.split("?")[0]);
+}
+
+export type AssetOmission = "too-large" | "unreadable" | "budget-exceeded";
+
+export interface BundleAsset {
+  id: string;
+  /** The original on-disk path, kept so a same-machine import still resolves. */
+  originalRef: string;
+  dataUrl?: string;
+  bytes?: number;
+  omitted?: AssetOmission;
+}
+
+/** Every distinct local media path reachable inside a JSON value. */
+export function collectAssetRefs(value: unknown, found = new Set<string>()): string[] {
+  if (typeof value === "string") {
+    if (looksLikeAssetPath(value)) found.add(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectAssetRefs(item, found);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectAssetRefs(item, found);
+  }
+  return [...found];
+}
+
+/** Deep-clone a JSON value, swapping every string found in `map`. */
+export function mapStrings(value: unknown, map: Map<string, string>): unknown {
+  if (typeof value === "string") return map.get(value) ?? value;
+  if (Array.isArray(value)) return value.map((item) => mapStrings(item, map));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) out[key] = mapStrings(item, map);
+    return out;
+  }
+  return value;
+}
+
+function approxBytesOfDataUrl(dataUrl: string): number {
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  return Math.floor((base64.length * 3) / 4);
+}
+
 export interface BundledProject {
   moduleId: HubModuleId;
   projectId: string;
@@ -49,6 +114,8 @@ export interface ProjectBundle {
   umbrella?: DirectorProject;
   projects: BundledProject[];
   deliverables: Deliverable[];
+  /** Media inlined from local paths. Absent on a records-only bundle. */
+  assets?: BundleAsset[];
 }
 
 export interface ImportResult {
@@ -108,6 +175,106 @@ export function exportBundle(
   };
 }
 
+/** Resolves a local media path to a data URL. Injected so this stays testable. */
+export type AssetResolver = (ref: string) => Promise<string>;
+
+export interface AttachAssetsOptions {
+  resolve: AssetResolver;
+  perAssetMaxBytes?: number;
+  totalMaxBytes?: number;
+}
+
+/**
+ * Inline every local media file the bundle references, replacing each path with
+ * a token. Assets that are too large, unreadable, or past the budget are listed
+ * with a reason and keep their original path — the bundle never silently lies
+ * about what it contains.
+ */
+export async function attachAssets(
+  bundle: ProjectBundle,
+  options: AttachAssetsOptions
+): Promise<ProjectBundle> {
+  const perAssetMax = options.perAssetMaxBytes ?? PER_ASSET_MAX_BYTES;
+  const totalMax = options.totalMaxBytes ?? TOTAL_ASSET_MAX_BYTES;
+
+  const refs = collectAssetRefs({
+    projects: bundle.projects.map((p) => p.record),
+    deliverables: bundle.deliverables,
+  });
+  if (refs.length === 0) return { ...bundle, assets: [] };
+
+  const assets: BundleAsset[] = [];
+  const tokens = new Map<string, string>();
+  let spent = 0;
+
+  for (const [index, ref] of refs.entries()) {
+    const id = `a${index}`;
+    tokens.set(ref, `${ASSET_TOKEN_PREFIX}${id}`);
+    const asset: BundleAsset = { id, originalRef: ref };
+    try {
+      const dataUrl = await options.resolve(ref);
+      if (!dataUrl || !dataUrl.startsWith("data:")) {
+        asset.omitted = "unreadable";
+      } else {
+        const bytes = approxBytesOfDataUrl(dataUrl);
+        if (bytes > perAssetMax) asset.omitted = "too-large";
+        else if (spent + bytes > totalMax) asset.omitted = "budget-exceeded";
+        else {
+          asset.dataUrl = dataUrl;
+          asset.bytes = bytes;
+          spent += bytes;
+        }
+      }
+    } catch {
+      asset.omitted = "unreadable";
+    }
+    assets.push(asset);
+  }
+
+  return {
+    ...bundle,
+    projects: bundle.projects.map((project) => ({
+      ...project,
+      record: mapStrings(project.record, tokens),
+    })),
+    deliverables: mapStrings(bundle.deliverables, tokens) as Deliverable[],
+    assets,
+  };
+}
+
+/** Export with media embedded. The whole-umbrella rule still applies. */
+export async function exportBundleWithAssets(
+  moduleId: HubModuleId,
+  projectId: string,
+  options: AttachAssetsOptions & { appVersion?: string }
+): Promise<ProjectBundle | null> {
+  const bundle = exportBundle(moduleId, projectId, options.appVersion);
+  return bundle ? attachAssets(bundle, options) : null;
+}
+
+/** How many assets travelled, and what didn't. For an honest export toast. */
+export function summarizeAssets(bundle: ProjectBundle): {
+  embedded: number;
+  omitted: number;
+  bytes: number;
+} {
+  const assets = bundle.assets ?? [];
+  return {
+    embedded: assets.filter((asset) => asset.dataUrl).length,
+    omitted: assets.filter((asset) => asset.omitted).length,
+    bytes: assets.reduce((sum, asset) => sum + (asset.bytes ?? 0), 0),
+  };
+}
+
+/** Turn tokens back into data URLs (or the original path when not embedded). */
+function assetRestoreMap(bundle: ProjectBundle): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const asset of bundle.assets ?? []) {
+    map.set(`${ASSET_TOKEN_PREFIX}${asset.id}`, asset.dataUrl ?? asset.originalRef);
+  }
+  return map;
+}
+
 export function bundleFilename(bundle: ProjectBundle): string {
   const base =
     bundle.umbrella?.name ??
@@ -145,6 +312,7 @@ export function parseBundle(text: string): ProjectBundle {
   return {
     ...bundle,
     deliverables: Array.isArray(bundle.deliverables) ? bundle.deliverables : [],
+    assets: Array.isArray(bundle.assets) ? bundle.assets : [],
   } as ProjectBundle;
 }
 
@@ -157,6 +325,10 @@ export function importBundle(bundle: ProjectBundle): ImportResult {
   const skipped: ProjectRef[] = [];
   const failed: ProjectRef[] = [];
 
+  // Rehydrate embedded media before anything reaches a module's store, so a
+  // record never lands holding a token it cannot render.
+  const restore = assetRestoreMap(bundle);
+
   for (const project of bundle.projects) {
     const ref: ProjectRef = {
       moduleId: project.moduleId,
@@ -167,15 +339,16 @@ export function importBundle(bundle: ProjectBundle): ImportResult {
       skipped.push(ref);
       continue;
     }
-    if (writeProjectRecord(project.moduleId, project.record)) imported.push(ref);
+    const record = restore.size ? mapStrings(project.record, restore) : project.record;
+    if (writeProjectRecord(project.moduleId, record)) imported.push(ref);
     else failed.push(ref);
   }
 
   // Deliverables only for projects that actually landed.
   const landed = new Set(imported.map((ref) => `${ref.moduleId}:${ref.projectId}`));
-  const deliverables = bundle.deliverables.filter((item) =>
-    landed.has(`${item.moduleId}:${item.projectId}`)
-  );
+  const deliverables = (
+    restore.size ? (mapStrings(bundle.deliverables, restore) as Deliverable[]) : bundle.deliverables
+  ).filter((item) => landed.has(`${item.moduleId}:${item.projectId}`));
   if (deliverables.length) upsertDeliverables(deliverables);
 
   // Recreate the umbrella, keeping only members that exist here now.
