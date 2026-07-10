@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -30,6 +30,7 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { ProjectCard } from "@/platform/components/visual";
+import { ProjectActionsMenu } from "@/platform/components/visual/ProjectActionsMenu";
 import type { VisualModule } from "@/platform/components/visual/visualTheme";
 import { recentProjects, type HubModuleId } from "@/platform/lib/projectHub";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
@@ -61,7 +62,9 @@ export function Dashboard() {
   const openWebStudio = useAppStore((s) => s.openWebStudio);
   const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
 
-  const recent = recentProjects(6);
+  // Bumped after a hub mutation (Save as a copy / Rename / Delete) so Recent re-reads.
+  const [hubVersion, setHubVersion] = useState(0);
+  const recent = useMemo(() => recentProjects(6), [hubVersion]);
   const HUB_TO_VISUAL: Record<HubModuleId, VisualModule> = {
     musicvideo: "music-video",
     motion: "motionstudio",
@@ -225,6 +228,14 @@ export function Dashboard() {
                   subtitle={HUB_LABEL[project.moduleId]}
                   thumbUrl={project.thumbUrl}
                   onResume={() => openModuleProject(project.moduleId, project.id)}
+                  actions={
+                    <ProjectActionsMenu
+                      moduleId={project.moduleId}
+                      projectId={project.id}
+                      projectName={project.name}
+                      onChanged={() => setHubVersion((v) => v + 1)}
+                    />
+                  }
                 />
               ))}
             </div>

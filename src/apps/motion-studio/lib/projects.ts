@@ -89,6 +89,10 @@ export function saveMotionProject(project: MotionProject): MotionProject {
   return next;
 }
 
+export function deleteMotionProject(id: string): void {
+  persist(allProjects().filter((project) => project.id !== id));
+}
+
 export function updateMotionScenes(projectId: string, scenes: MotionScene[]): MotionProject | null {
   const project = getMotionProject(projectId);
   if (!project) return null;

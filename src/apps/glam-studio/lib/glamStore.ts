@@ -94,3 +94,21 @@ export const LS_GLAM_PROJECTS = "mf.glam.projects";
 export function listGlamProjects(): GlamProject[] {
   return glamReadStored<GlamProject>(LS_GLAM_PROJECTS);
 }
+
+function writeGlamProjects(projects: GlamProject[]): void {
+  localStorage.setItem(LS_GLAM_PROJECTS, JSON.stringify(projects));
+}
+
+/** Insert or update a Glam project (workspace + platform Project Hub). */
+export function saveGlamProject(project: GlamProject): GlamProject {
+  const projects = listGlamProjects();
+  const index = projects.findIndex((item) => item.id === project.id);
+  if (index >= 0) projects[index] = project;
+  else projects.unshift(project);
+  writeGlamProjects(projects);
+  return project;
+}
+
+export function deleteGlamProject(id: string): void {
+  writeGlamProjects(listGlamProjects().filter((project) => project.id !== id));
+}
