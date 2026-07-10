@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -13,6 +13,7 @@ import {
   Globe,
   Megaphone,
   WandSparkles,
+  Upload,
 } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import type { NewProject, ProjectType } from "@/platform/lib/types";
@@ -34,6 +35,8 @@ import { ProjectActionsMenu } from "@/platform/components/visual/ProjectActionsM
 import type { VisualModule } from "@/platform/components/visual/visualTheme";
 import { recentProjects, type HubModuleId, type HubProject } from "@/platform/lib/projectHub";
 import { umbrellaFor } from "@/platform/lib/directorProject";
+import { importBundle, parseBundle } from "@/platform/lib/projectBundle";
+import { notifyStorage } from "@/platform/lib/storage";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -66,6 +69,26 @@ export function Dashboard() {
   // Bumped after a hub mutation (Save as a copy / Rename / Delete) so Recent re-reads.
   const [hubVersion, setHubVersion] = useState(0);
   const recent = useMemo(() => recentProjects(6), [hubVersion]);
+
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const onImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    try {
+      const result = importBundle(parseBundle(await file.text()));
+      const parts = [`Imported ${result.imported.length}`];
+      if (result.skipped.length) parts.push(`${result.skipped.length} already here`);
+      if (result.failed.length) parts.push(`${result.failed.length} could not be opened`);
+      notifyStorage(
+        `${result.umbrellaName ? `${result.umbrellaName}: ` : ""}${parts.join(" · ")}.`
+      );
+      setHubVersion((v) => v + 1);
+    } catch (error) {
+      notifyStorage(error instanceof Error ? error.message : "That bundle could not be read.");
+    }
+  };
 
   // A project inside a campaign says so, rather than just naming its studio.
   const subtitleFor = (project: HubProject) => {
@@ -138,9 +161,21 @@ export function Dashboard() {
             Start a creative production, then direct, generate, refine, and export.
           </p>
         </div>
-        <Button onClick={() => setWizardOpen(true)}>
-          <Plus className="h-4 w-4" /> New production
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".dsproj,application/json"
+            className="hidden"
+            onChange={onImportFile}
+          />
+          <Button variant="secondary" onClick={() => importInputRef.current?.click()}>
+            <Upload className="h-4 w-4" /> Import project
+          </Button>
+          <Button onClick={() => setWizardOpen(true)}>
+            <Plus className="h-4 w-4" /> New production
+          </Button>
+        </div>
       </header>
 
       <div className="space-y-8 p-8">

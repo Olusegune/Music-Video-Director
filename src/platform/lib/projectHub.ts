@@ -81,6 +81,35 @@ export function projectCapabilities(moduleId: HubModuleId): ProjectCapabilities 
   };
 }
 
+/** True when the module already holds a project with this id. */
+export function projectExists(moduleId: HubModuleId, id: string): boolean {
+  const adapter = adapters.get(moduleId);
+  return adapter ? safeList(adapter).some((project) => project.id === id) : false;
+}
+
+/** The module's raw project record, for bundling. Null when unsupported. */
+export function readProjectRecord(moduleId: HubModuleId, id: string): unknown | null {
+  const adapter = adapters.get(moduleId);
+  if (!adapter?.read) return null;
+  try {
+    return adapter.read(id);
+  } catch {
+    return null;
+  }
+}
+
+/** Write a raw project record back into its module's store. */
+export function writeProjectRecord(moduleId: HubModuleId, record: unknown): boolean {
+  const adapter = adapters.get(moduleId);
+  if (!adapter?.write) return false;
+  try {
+    adapter.write(record);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Saved versions for a project, newest first. */
 export function listProjectVersions(moduleId: HubModuleId, id: string): ProjectVersion[] {
   const adapter = adapters.get(moduleId);

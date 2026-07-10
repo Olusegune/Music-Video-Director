@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, History, MoreVertical, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Copy, History, MoreVertical, Package, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
+import { downloadBlob } from "@/platform/lib/archive";
+import { notifyStorage } from "@/platform/lib/storage";
+import { bundleFilename, exportBundle } from "@/platform/lib/projectBundle";
+
+const APP_VERSION = "1.1.0";
 import {
   deleteProject,
   duplicateProject,
@@ -84,6 +89,17 @@ export function ProjectActionsMenu({
     if (ok) onChanged({ restored: true });
   };
 
+  const exportProject = () => {
+    close();
+    const bundle = exportBundle(moduleId, projectId, APP_VERSION);
+    if (!bundle) {
+      notifyStorage("This studio cannot export that project yet.");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    downloadBlob(blob, bundleFilename(bundle));
+  };
+
   const saveAs = () => {
     const newId = duplicateProject(moduleId, projectId);
     close();
@@ -156,6 +172,9 @@ export function ProjectActionsMenu({
                   <History className="h-3.5 w-3.5" /> Version history
                 </button>
               ) : null}
+              <button type="button" role="menuitem" className={item} onClick={exportProject}>
+                <Package className="h-3.5 w-3.5" /> Export .dsproj
+              </button>
               {caps.remove ? (
                 <button
                   type="button"

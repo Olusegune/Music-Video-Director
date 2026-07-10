@@ -117,6 +117,10 @@ export function installProjectAdapters(): void {
       if (source) saveMotionProject(renamed(source, name));
     },
     remove: deleteMotionProject,
+    // read/write power bundling; versioning still uses Motion's native history.
+    read: (id) => listMotionProjects().find((project) => project.id === id) ?? null,
+    write: (record) =>
+      void saveMotionProject(record as ReturnType<typeof listMotionProjects>[number]),
     // Motion already owns a version system — delegate rather than duplicate it.
     versions: (id) =>
       listMotionVersions(id).map((version) => ({
