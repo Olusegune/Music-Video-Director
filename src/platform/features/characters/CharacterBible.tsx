@@ -45,11 +45,13 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
+import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 
 export function CharacterBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [cardId, setCardId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
 
   const { data: characters = [] } = useQuery({
@@ -72,7 +74,38 @@ export function CharacterBible() {
   });
 
   const sheetChar = characters.find((c) => c.id === sheetId) ?? null;
+  const cardChar = characters.find((c) => c.id === cardId) ?? null;
   const selected = characters.find((c) => c.id === selectedId) ?? null;
+
+  if (cardChar) {
+    const anchor = identityAnchor(cardChar);
+    const dna = cardChar.promptDna.trim() || composeCharacterDna(cardChar).promptDna;
+    const portraitPrompt = `Subject: ${anchor}. ${dna}. Head-and-shoulders character portrait, expressive, neutral studio background, cinematic lighting, high detail.`;
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <BibleCardStage
+          key={cardChar.id}
+          entityLabel="Character"
+          entityName={cardChar.name}
+          generateCandidate={() => api.generateCharacterPortrait(cardChar.id, portraitPrompt)}
+          onChoose={(url) => {
+            const next = { ...cardChar, portraitUrl: url };
+            api.saveCharacter(next).then(() => {
+              queryClient.setQueryData<Character[]>(["characters"], (current = []) =>
+                current.map((item) => (item.id === next.id ? next : item))
+              );
+              setCardId(null);
+              setSelectedId(next.id);
+            });
+          }}
+          onSkip={() => {
+            setCardId(null);
+            setSelectedId(cardChar.id);
+          }}
+        />
+      </div>
+    );
+  }
 
   if (sheetChar) {
     return (
@@ -145,9 +178,9 @@ export function CharacterBible() {
                     character,
                     ...current.filter((item) => item.id !== character.id),
                   ]);
-                  // The next interaction is visual: choose or generate the
-                  // portrait card before exposing the long DNA form.
-                  setSheetId(character.id);
+                  // The next interaction is visual: pick a portrait candidate
+                  // before exposing the long DNA form.
+                  setCardId(character.id);
                 },
               })
             }
