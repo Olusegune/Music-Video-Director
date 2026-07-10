@@ -46,11 +46,13 @@ import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
+import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 
 export function WorldBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [cardId, setCardId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
 
   const { data: environments = [] } = useQuery({
@@ -71,6 +73,44 @@ export function WorldBible() {
     mutationFn: (id: string) => api.deleteEnvironment(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["environments"] }),
   });
+
+  const cardEnv = environments.find((e) => e.id === cardId) ?? null;
+  if (cardEnv) {
+    const dna = cardEnv.promptDna.trim() || composeEnvironmentDna(cardEnv).promptDna;
+    const prompt = `Establishing shot of ${cardEnv.name}. ${dna}. Cinematic wide shot, atmospheric depth, high detail, no people.`;
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <BibleCardStage
+          key={cardEnv.id}
+          entityLabel="Location"
+          entityName={cardEnv.name}
+          generateCandidate={() =>
+            api.generateImageFromSpec({
+              capability: "image",
+              prompt,
+              aspect: "16:9",
+              moduleId: "musicvideo",
+              projectRef: { moduleId: "musicvideo", entityId: cardEnv.id },
+            })
+          }
+          onChoose={(url) => {
+            const next = { ...cardEnv, establishingUrl: url };
+            api.saveEnvironment(next).then(() => {
+              queryClient.setQueryData<Environment[]>(["environments"], (current = []) =>
+                current.map((item) => (item.id === next.id ? next : item))
+              );
+              setCardId(null);
+              setSelectedId(next.id);
+            });
+          }}
+          onSkip={() => {
+            setCardId(null);
+            setSelectedId(cardEnv.id);
+          }}
+        />
+      </div>
+    );
+  }
 
   const sheetEnv = environments.find((e) => e.id === sheetId) ?? null;
   if (sheetEnv)
@@ -138,8 +178,14 @@ export function WorldBible() {
             entityLabel="World"
             onSpark={(value) =>
               create.mutate(draftEnvironmentFromLine(value), {
-                // Visual-first, like the Character Bible: open the image sheet first.
-                onSuccess: (environment) => setSheetId(environment.id),
+                // Visual-first, like the Character Bible: pick a card before the form.
+                onSuccess: (environment) => {
+                  queryClient.setQueryData<Environment[]>(["environments"], (current = []) => [
+                    environment,
+                    ...current.filter((item) => item.id !== environment.id),
+                  ]);
+                  setCardId(environment.id);
+                },
               })
             }
             onBlank={() => create.mutate(newEnvironment())}

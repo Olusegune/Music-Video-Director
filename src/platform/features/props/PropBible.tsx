@@ -48,6 +48,7 @@ import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
+import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 
 function categoryIcon(cat: string) {
   if (cat === "Vehicle") return <Car className="h-3 w-3" />;
@@ -59,6 +60,7 @@ export function PropBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [cardId, setCardId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
 
   const { data: allProps = [] } = useQuery({
@@ -89,9 +91,12 @@ export function PropBible() {
   const createFromSpark = (value: string) => {
     const p = draftPropFromLine(value);
     void api.saveProp(p).then(() => {
-      queryClient.invalidateQueries({ queryKey: ["props"] });
-      // Visual-first, like the Character Bible: open the image sheet, not the form.
-      setSheetId(p.id);
+      queryClient.setQueryData<Prop[]>(["props"], (current = []) => [
+        p,
+        ...current.filter((item) => item.id !== p.id),
+      ]);
+      // Visual-first, like the Character Bible: pick a card before the form.
+      setCardId(p.id);
     });
   };
 
@@ -99,6 +104,44 @@ export function PropBible() {
     mutationFn: (id: string) => api.deleteProp(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["props"] }),
   });
+
+  const cardProp = props.find((p) => p.id === cardId) ?? null;
+  if (cardProp) {
+    const dna = cardProp.promptDna.trim() || composePropDna(cardProp).promptDna;
+    const prompt = `${cardProp.category}: ${cardProp.name}. ${dna}. Hero product render, three-quarter view, neutral studio background, high detail.`;
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <BibleCardStage
+          key={cardProp.id}
+          entityLabel="Prop"
+          entityName={cardProp.name}
+          generateCandidate={() =>
+            api.generateImageFromSpec({
+              capability: "image",
+              prompt,
+              aspect: "1:1",
+              moduleId: "musicvideo",
+              projectRef: { moduleId: "musicvideo", entityId: cardProp.id },
+            })
+          }
+          onChoose={(url) => {
+            const next = { ...cardProp, heroUrl: url };
+            api.saveProp(next).then(() => {
+              queryClient.setQueryData<Prop[]>(["props"], (current = []) =>
+                current.map((item) => (item.id === next.id ? next : item))
+              );
+              setCardId(null);
+              setSelectedId(next.id);
+            });
+          }}
+          onSkip={() => {
+            setCardId(null);
+            setSelectedId(cardProp.id);
+          }}
+        />
+      </div>
+    );
+  }
 
   const sheetProp = props.find((p) => p.id === sheetId) ?? null;
   if (sheetProp)
