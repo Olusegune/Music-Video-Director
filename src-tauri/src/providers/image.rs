@@ -72,7 +72,11 @@ fn sdxl_size(width: u32, height: u32) -> (u32, u32) {
         (768, 1344),
         (640, 1536),
     ];
-    let r = if height == 0 { 1.0 } else { width as f32 / height as f32 };
+    let r = if height == 0 {
+        1.0
+    } else {
+        width as f32 / height as f32
+    };
     *allowed
         .iter()
         .min_by(|a, b| {
@@ -128,16 +132,27 @@ fn fal_aspect(width: u32, height: u32) -> &'static str {
 pub struct FalImageProvider {
     api_key: String,
     seed: Option<i64>,
+    batch: u32,
     model: Option<String>,
     negative: Option<String>,
 }
 
 impl FalImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, seed: None, model: None, negative: None }
+        Self {
+            api_key,
+            seed: None,
+            batch: 1,
+            model: None,
+            negative: None,
+        }
     }
     pub fn with_seed(mut self, seed: Option<i64>) -> Self {
         self.seed = seed;
+        self
+    }
+    pub fn with_batch(mut self, batch: u32) -> Self {
+        self.batch = batch.clamp(1, 4);
         self
     }
     /// Route a specific fal image model (e.g. "fal-ai/flux-pro/v1.1-ultra").
@@ -169,7 +184,7 @@ impl ImageProvider for FalImageProvider {
         //  - Ultra / Kontext families take an `aspect_ratio` string.
         //  - Recraft / Ideogram take an `image_size` preset enum string.
         //  - Flux dev/schnell/pro + Stable Diffusion take an {width,height} object.
-        let mut body = json!({ "prompt": prompt, "num_images": 1 });
+        let mut body = json!({ "prompt": prompt, "num_images": self.batch });
         if model.contains("ultra") || model.contains("kontext") {
             body["aspect_ratio"] = json!(fal_aspect(width, height));
         } else if model.contains("recraft") || model.contains("ideogram") {
@@ -271,7 +286,10 @@ impl GoogleImagenProvider {
         // Try the GA id first, then the legacy preview id — the preview suffix
         // is being retired, so older keys/endpoints differ.
         for model in GEMINI_IMAGE_MODELS {
-            match self.nano_banana_with(model, prompt, width, height, refs).await {
+            match self
+                .nano_banana_with(model, prompt, width, height, refs)
+                .await
+            {
                 Ok(bytes) => return Ok(bytes),
                 Err(e) => last_err = e,
             }
@@ -369,12 +387,7 @@ impl OpenAiImageProvider {
 
     /// One images/generations call for a given model + size. dall-e-3 needs an
     /// explicit response_format; gpt-image-1 rejects it (returns b64 by default).
-    async fn generate_with(
-        &self,
-        model: &str,
-        size: &str,
-        prompt: &str,
-    ) -> Result<Vec<u8>> {
+    async fn generate_with(&self, model: &str, size: &str, prompt: &str) -> Result<Vec<u8>> {
         let mut body = json!({ "model": model, "prompt": prompt, "size": size, "n": 1 });
         if model == "dall-e-3" {
             body["response_format"] = json!("b64_json");
@@ -434,13 +447,16 @@ impl ImageProvider for OpenAiImageProvider {
     }
 
     /// gpt-image-1 supports reference images via the /images/edits endpoint
-    /// (multipart). Each ref is sent as an `image[]` file part.
-    async fn generate_image_ref(
+    /// (multipart). Each ref is sent as an `image[]` file part. Inpaint adds a
+    /// transparent mask file to that same request.
+    async fn generate_image_op(
         &self,
         prompt: &str,
         width: u32,
         height: u32,
         refs: &[Vec<u8>],
+        _operation: Option<&str>,
+        mask: Option<&[u8]>,
     ) -> Result<Vec<u8>> {
         if refs.is_empty() {
             return self.generate_image_sized(prompt, width, height).await;
@@ -455,6 +471,12 @@ impl ImageProvider for OpenAiImageProvider {
                 .file_name(format!("ref_{i}.png"))
                 .mime_str("image/png")?;
             form = form.part("image[]", part);
+        }
+        if let Some(mask) = mask {
+            let part = reqwest::multipart::Part::bytes(mask.to_vec())
+                .file_name("mask.png")
+                .mime_str("image/png")?;
+            form = form.part("mask", part);
         }
 
         let client = reqwest::Client::new();
@@ -480,21 +502,42 @@ impl ImageProvider for OpenAiImageProvider {
         let bytes = client.get(url).send().await?.bytes().await?;
         Ok(bytes.to_vec())
     }
+
+    async fn generate_image_ref(
+        &self,
+        prompt: &str,
+        width: u32,
+        height: u32,
+        refs: &[Vec<u8>],
+    ) -> Result<Vec<u8>> {
+        self.generate_image_op(prompt, width, height, refs, Some("edit"), None)
+            .await
+    }
 }
 
 /// Stability AI v1 text-to-image (SDXL). Returns base64 image bytes.
 pub struct StabilityImageProvider {
     api_key: String,
     seed: Option<i64>,
+    batch: u32,
     negative: Option<String>,
 }
 
 impl StabilityImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, seed: None, negative: None }
+        Self {
+            api_key,
+            seed: None,
+            batch: 1,
+            negative: None,
+        }
     }
     pub fn with_seed(mut self, seed: Option<i64>) -> Self {
         self.seed = seed;
+        self
+    }
+    pub fn with_batch(mut self, batch: u32) -> Self {
+        self.batch = batch.clamp(1, 4);
         self
     }
     /// Stability's v1 API takes negatives as a weighted `text_prompts` entry.
@@ -516,7 +559,7 @@ impl ImageProvider for StabilityImageProvider {
             "text_prompts": [{ "text": prompt }],
             "width": w,
             "height": h,
-            "samples": 1,
+            "samples": self.batch,
             "steps": 30
         });
         if let Some(neg) = self.negative.as_deref() {
@@ -569,7 +612,12 @@ impl ImageProvider for GrokImageProvider {
         self.generate_image_sized(prompt, 1024, 1024).await
     }
 
-    async fn generate_image_sized(&self, prompt: &str, _width: u32, _height: u32) -> Result<Vec<u8>> {
+    async fn generate_image_sized(
+        &self,
+        prompt: &str,
+        _width: u32,
+        _height: u32,
+    ) -> Result<Vec<u8>> {
         // xAI's image API takes prompt + n only (no size/seed); aspect is implicit.
         let resp = reqwest::Client::new()
             .post("https://api.x.ai/v1/images/generations")
@@ -590,7 +638,12 @@ impl ImageProvider for GrokImageProvider {
         let url = v["data"][0]["url"]
             .as_str()
             .ok_or_else(|| anyhow!("unexpected Grok response: {v}"))?;
-        let bytes = reqwest::Client::new().get(url).send().await?.bytes().await?;
+        let bytes = reqwest::Client::new()
+            .get(url)
+            .send()
+            .await?
+            .bytes()
+            .await?;
         Ok(bytes.to_vec())
     }
 }

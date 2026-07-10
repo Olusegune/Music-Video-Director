@@ -176,7 +176,10 @@ pub struct KieImageProvider {
 
 impl KieImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, model: None }
+        Self {
+            api_key,
+            model: None,
+        }
     }
 
     /// Route a specific Kie image model by slug (e.g. "google/nano-banana", "gpt-image-1").
@@ -222,7 +225,10 @@ pub struct KieVideoProvider {
 
 impl KieVideoProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, model: None }
+        Self {
+            api_key,
+            model: None,
+        }
     }
 
     /// Route a specific Kie model (Seedance / Kling / Veo …) by slug.
@@ -358,6 +364,7 @@ impl VideoProvider for KieVideoProvider {
     }
 
     async fn generate_video_ref(&self, prompt: &str, refs: &[Vec<u8>]) -> Result<Vec<u8>> {
-        self.generate_video_omni(prompt, refs, None, &[], &[], &ClipOpts::default()).await
+        self.generate_video_omni(prompt, refs, None, &[], &[], &ClipOpts::default())
+            .await
     }
 }

@@ -21,16 +21,28 @@ pub struct ConnectionResult {
 
 impl ConnectionResult {
     fn ok(msg: &str) -> Self {
-        Self { status: "connected".into(), message: msg.into() }
+        Self {
+            status: "connected".into(),
+            message: msg.into(),
+        }
     }
     fn invalid(msg: String) -> Self {
-        Self { status: "invalid".into(), message: msg }
+        Self {
+            status: "invalid".into(),
+            message: msg,
+        }
     }
     fn offline(msg: String) -> Self {
-        Self { status: "offline".into(), message: msg }
+        Self {
+            status: "offline".into(),
+            message: msg,
+        }
     }
     fn untested(msg: &str) -> Self {
-        Self { status: "untested".into(), message: msg.into() }
+        Self {
+            status: "untested".into(),
+            message: msg.into(),
+        }
     }
 }
 
@@ -80,9 +92,7 @@ pub async fn test(provider: &str, key: &str) -> ConnectionResult {
         "gemini" | "google_imagen" | "google_veo" | "nano_banana" | "nano_banana_pro" => {
             // Nano Banana (Pro) are Google Gemini image models — validate the
             // Google key against the model-list endpoint.
-            let url = format!(
-                "https://generativelanguage.googleapis.com/v1beta/models?key={key}"
-            );
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models?key={key}");
             c.get(url).send().await
         }
         "wavespeed" => {
@@ -115,7 +125,10 @@ pub async fn test(provider: &str, key: &str) -> ConnectionResult {
         }
         "grok" => {
             // xAI is OpenAI-compatible; /v1/models validates the bearer cheaply.
-            c.get("https://api.x.ai/v1/models").bearer_auth(key).send().await
+            c.get("https://api.x.ai/v1/models")
+                .bearer_auth(key)
+                .send()
+                .await
         }
         "stability" => {
             c.get("https://api.stability.ai/v1/user/account")

@@ -86,13 +86,21 @@ impl GeminiTextProvider {
             "contents": [{ "parts": [{ "text": prompt }] }],
             "generationConfig": { "temperature": 0.55, "responseMimeType": "application/json" }
         });
-        let response = reqwest::Client::new().post(&url).json(&body).send().await.context("calling Gemini structured-text API")?;
+        let response = reqwest::Client::new()
+            .post(&url)
+            .json(&body)
+            .send()
+            .await
+            .context("calling Gemini structured-text API")?;
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
             return Err(anyhow!("Gemini structured-text error {status}: {text}"));
         }
-        let value: serde_json::Value = response.json().await.context("parsing Gemini structured response")?;
+        let value: serde_json::Value = response
+            .json()
+            .await
+            .context("parsing Gemini structured response")?;
         value["candidates"][0]["content"]["parts"][0]["text"]
             .as_str()
             .map(str::to_owned)

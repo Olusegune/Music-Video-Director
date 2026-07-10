@@ -40,7 +40,10 @@ async fn main() {
             Ok(Some(k)) => {
                 let cleaned: String = k.chars().filter(|c| !c.is_whitespace()).collect();
                 if cleaned == k {
-                    println!("'{p}' key has no whitespace ({} chars) — unchanged.", k.len());
+                    println!(
+                        "'{p}' key has no whitespace ({} chars) — unchanged.",
+                        k.len()
+                    );
                 } else {
                     let _ = secrets::set_key(&p, &cleaned);
                     println!(
@@ -102,7 +105,11 @@ async fn main() {
         "openai" | "gpt_image" => {
             report(OpenAiImageProvider::new(key).generate_image(prompt).await)
         }
-        "stability" => report(StabilityImageProvider::new(key).generate_image(prompt).await),
+        "stability" => report(
+            StabilityImageProvider::new(key)
+                .generate_image(prompt)
+                .await,
+        ),
         "google_imagen" => report(GoogleImagenProvider::new(key).generate_image(prompt).await),
         "replicate" => report(ReplicateProvider::new(key).generate_image(prompt).await),
         "kie" => report(KieImageProvider::new(key).generate_image(prompt).await),

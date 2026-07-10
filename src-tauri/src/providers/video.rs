@@ -42,7 +42,10 @@ pub struct FalVideoProvider {
 
 impl FalVideoProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, model: None }
+        Self {
+            api_key,
+            model: None,
+        }
     }
     /// Route a specific fal model path (Seedance / Kling …) instead of the default.
     pub fn with_model(mut self, model: Option<String>) -> Self {
@@ -175,7 +178,8 @@ impl VideoProvider for FalVideoProvider {
     }
 
     async fn generate_video_ref(&self, prompt: &str, refs: &[Vec<u8>]) -> Result<Vec<u8>> {
-        self.generate_video_omni(prompt, refs, None, &ClipOpts::default()).await
+        self.generate_video_omni(prompt, refs, None, &ClipOpts::default())
+            .await
     }
 }
 

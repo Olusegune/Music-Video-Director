@@ -8,8 +8,7 @@
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
-const FFMPEG_URL: &str =
-    "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+const FFMPEG_URL: &str = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -83,9 +82,7 @@ pub fn check(app: &AppHandle) -> FfmpegStatus {
     match resolve(app) {
         Some(path) => {
             let version = probe(&path);
-            let managed = managed_path(app)
-                .map(|m| m == path)
-                .unwrap_or(false);
+            let managed = managed_path(app).map(|m| m == path).unwrap_or(false);
             FfmpegStatus {
                 available: true,
                 path: Some(path.to_string_lossy().to_string()),
@@ -106,13 +103,12 @@ pub fn check(app: &AppHandle) -> FfmpegStatus {
 /// app-managed location. Returns the installed path. Windows-only download URL.
 pub async fn install(app: &AppHandle) -> Result<String, String> {
     if !cfg!(windows) {
-        return Err("Automatic install is Windows-only. Install FFmpeg via your package manager.".into());
+        return Err(
+            "Automatic install is Windows-only. Install FFmpeg via your package manager.".into(),
+        );
     }
     let dest = managed_path(app)?;
-    let dir = dest
-        .parent()
-        .ok_or("Bad ffmpeg path")?
-        .to_path_buf();
+    let dir = dest.parent().ok_or("Bad ffmpeg path")?.to_path_buf();
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     // Download the archive (~80 MB) into memory, then write it next to the dest.

@@ -4,12 +4,15 @@
 use crate::db::{self, Db};
 use crate::export;
 use crate::models::{
-    BrandKit, Character, Environment, NewProject, Project, PromptPack, Prop,
-    ProviderKeyStatus, VersionMeta,
+    BrandKit, Character, Environment, NewProject, Project, PromptPack, Prop, ProviderKeyStatus,
+    VersionMeta,
 };
 use crate::providers::{
     audio::ElevenLabsProvider,
-    image::{FalImageProvider, GoogleImagenProvider, GrokImageProvider, OpenAiImageProvider, StabilityImageProvider},
+    image::{
+        FalImageProvider, GoogleImagenProvider, GrokImageProvider, OpenAiImageProvider,
+        StabilityImageProvider,
+    },
     kie::{KieImageProvider, KieVideoProvider},
     replicate::ReplicateProvider,
     text::GeminiTextProvider,
@@ -71,11 +74,17 @@ pub async fn generate_structured_text(
 ) -> Result<String, String> {
     match provider.as_str() {
         "gemini" => {
-            let key = secrets::get_key("gemini").map_err(err)?
+            let key = secrets::get_key("gemini")
+                .map_err(err)?
                 .ok_or("Add a Gemini API key in the API Key Dashboard.")?;
-            GeminiTextProvider::new(key).generate_structured(&prompt, &schema).await.map_err(err)
+            GeminiTextProvider::new(key)
+                .generate_structured(&prompt, &schema)
+                .await
+                .map_err(err)
         }
-        _ => Err(format!("Structured text is not wired for provider '{provider}' yet.")),
+        _ => Err(format!(
+            "Structured text is not wired for provider '{provider}' yet."
+        )),
     }
 }
 
@@ -121,20 +130,56 @@ pub fn delete_character(db: State<Db>, id: String) -> Result<(), String> {
 /// Mirrors the chain used by `generate_shot_image`.
 async fn generate_image_any(prompt: &str) -> Result<(&'static str, Vec<u8>), String> {
     if let Some(key) = secrets::get_key("fal").map_err(err)? {
-        Ok(("fal", FalImageProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "fal",
+            FalImageProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("kie").map_err(err)? {
-        Ok(("kie", KieImageProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "kie",
+            KieImageProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("openai")
         .map_err(err)?
         .or(secrets::get_key("gpt_image").map_err(err)?)
     {
-        Ok(("openai", OpenAiImageProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "openai",
+            OpenAiImageProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("stability").map_err(err)? {
-        Ok(("stability", StabilityImageProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "stability",
+            StabilityImageProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("google_imagen").map_err(err)? {
-        Ok(("google_imagen", GoogleImagenProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "google_imagen",
+            GoogleImagenProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
-        Ok(("replicate", ReplicateProvider::new(key).generate_image(prompt).await.map_err(err)?))
+        Ok((
+            "replicate",
+            ReplicateProvider::new(key)
+                .generate_image(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else {
         Err("No image provider key set. Add fal.ai, OpenAI, Stability, Google, or Replicate in Settings.".into())
     }
@@ -171,7 +216,10 @@ async fn generate_entity_image(
     prompt: &str,
 ) -> Result<String, String> {
     let (_provider_name, bytes) = generate_image_any(prompt).await?;
-    let dir = crate::paths::base_dir(app)?.join("assets").join(kind).join(id);
+    let dir = crate::paths::base_dir(app)?
+        .join("assets")
+        .join(kind)
+        .join(id);
     std::fs::create_dir_all(&dir).map_err(err)?;
     let file_path = dir.join(format!("{kind}_{}.{}", Uuid::new_v4(), image_ext(&bytes)));
     std::fs::write(&file_path, &bytes).map_err(err)?;
@@ -251,10 +299,16 @@ pub async fn generate_image_pro(
     seed: Option<i64>,
     model: Option<String>,
     negative_prompt: Option<String>,
+    operation: Option<String>,
+    mask: Option<String>,
+    batch: Option<u32>,
 ) -> Result<String, String> {
     let get = |id: &str| secrets::get_key(id).map_err(err);
     let model = model.filter(|s| !s.is_empty());
     let negative_prompt = negative_prompt.filter(|s| !s.trim().is_empty());
+    let operation = operation.filter(|s| !s.trim().is_empty());
+    let mask_bytes = mask.as_deref().and_then(|value| B64.decode(value).ok());
+    let batch = batch.unwrap_or(1).clamp(1, 4);
 
     // Decode any reference images (base64, no data: prefix) once.
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -280,7 +334,7 @@ pub async fn generate_image_pro(
                 .or(get("gpt_image")?)
                 .ok_or("Add an OpenAI key in the API Key Dashboard.")?;
             OpenAiImageProvider::new(key)
-                .generate_image_ref(&prompt, width, height, r)
+                .generate_image_op(&prompt, width, height, r, operation.as_deref(), mask_bytes.as_deref())
                 .await
                 .map_err(err)?
         }
@@ -288,6 +342,7 @@ pub async fn generate_image_pro(
             let key = get("fal")?.ok_or("Add a fal.ai key in the API Key Dashboard.")?;
             FalImageProvider::new(key)
                 .with_seed(seed)
+                .with_batch(batch)
                 .with_model(model.clone())
                 .with_negative(negative_prompt.clone())
                 .generate_image_ref(&prompt, width, height, r)
@@ -314,6 +369,7 @@ pub async fn generate_image_pro(
             let key = get("stability")?.ok_or("Add a Stability key in the API Key Dashboard.")?;
             StabilityImageProvider::new(key)
                 .with_seed(seed)
+                .with_batch(batch)
                 .with_negative(negative_prompt.clone())
                 .generate_image_ref(&prompt, width, height, r)
                 .await
@@ -339,13 +395,13 @@ pub async fn generate_image_pro(
         // "custom" / anything else → first configured provider.
         _ => {
             if let Some(key) = get("fal")? {
-                FalImageProvider::new(key).with_seed(seed).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
+                FalImageProvider::new(key).with_seed(seed).with_batch(batch).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else if let Some(key) = get("openai")?.or(get("gpt_image")?) {
-                OpenAiImageProvider::new(key).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
+                OpenAiImageProvider::new(key).generate_image_op(&prompt, width, height, r, operation.as_deref(), mask_bytes.as_deref()).await.map_err(err)?
             } else if let Some(key) = get("google_imagen")? {
                 GoogleImagenProvider::new(key).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else if let Some(key) = get("stability")? {
-                StabilityImageProvider::new(key).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
+                StabilityImageProvider::new(key).with_batch(batch).with_negative(negative_prompt.clone()).generate_image_ref(&prompt, width, height, r).await.map_err(err)?
             } else {
                 return Err("No image provider key set. Add one in the API Key Dashboard.".into());
             }
@@ -363,17 +419,47 @@ pub async fn generate_image_pro(
 
 /// Pick the first configured video provider and generate a clip from `prompt`.
 /// Mirrors the chain used by `generate_shot_video`.
-async fn generate_video_any(prompt: &str, refs: &[Vec<u8>]) -> Result<(&'static str, Vec<u8>), String> {
+async fn generate_video_any(
+    prompt: &str,
+    refs: &[Vec<u8>],
+) -> Result<(&'static str, Vec<u8>), String> {
     if let Some(key) = secrets::get_key("fal").map_err(err)? {
-        Ok(("fal", FalVideoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)?))
+        Ok((
+            "fal",
+            FalVideoProvider::new(key)
+                .generate_video_ref(prompt, refs)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("google_veo").map_err(err)? {
-        Ok(("google_veo", GoogleVeoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)?))
+        Ok((
+            "google_veo",
+            GoogleVeoProvider::new(key)
+                .generate_video_ref(prompt, refs)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
-        Ok(("replicate", ReplicateProvider::new(key).generate_video(prompt).await.map_err(err)?))
+        Ok((
+            "replicate",
+            ReplicateProvider::new(key)
+                .generate_video(prompt)
+                .await
+                .map_err(err)?,
+        ))
     } else if let Some(key) = secrets::get_key("kie").map_err(err)? {
-        Ok(("kie", KieVideoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)?))
+        Ok((
+            "kie",
+            KieVideoProvider::new(key)
+                .generate_video_ref(prompt, refs)
+                .await
+                .map_err(err)?,
+        ))
     } else {
-        Err("No video provider key set. Add fal.ai, Google Veo, kie.ai, or Replicate in Settings.".into())
+        Err(
+            "No video provider key set. Add fal.ai, Google Veo, kie.ai, or Replicate in Settings."
+                .into(),
+        )
     }
 }
 
@@ -408,35 +494,71 @@ async fn generate_video_with(
     let model = model.filter(|s| !s.is_empty());
     match provider {
         Some("fal") => {
-            let key = secrets::get_key("fal").map_err(err)?.ok_or("Add a fal.ai key in the API Key Dashboard.")?;
-            FalVideoProvider::new(key).with_model(model).generate_video_omni(prompt, refs, end_frame.as_deref(), opts).await.map_err(err)
+            let key = secrets::get_key("fal")
+                .map_err(err)?
+                .ok_or("Add a fal.ai key in the API Key Dashboard.")?;
+            FalVideoProvider::new(key)
+                .with_model(model)
+                .generate_video_omni(prompt, refs, end_frame.as_deref(), opts)
+                .await
+                .map_err(err)
         }
         Some("google_veo") => {
-            let key = secrets::get_key("google_veo").map_err(err)?.ok_or("Add a Google Veo key in the API Key Dashboard.")?;
-            GoogleVeoProvider::new(key).generate_video_ref(prompt, refs).await.map_err(err)
+            let key = secrets::get_key("google_veo")
+                .map_err(err)?
+                .ok_or("Add a Google Veo key in the API Key Dashboard.")?;
+            GoogleVeoProvider::new(key)
+                .generate_video_ref(prompt, refs)
+                .await
+                .map_err(err)
         }
         Some("replicate") => {
-            let key = secrets::get_key("replicate").map_err(err)?.ok_or("Add a Replicate key in the API Key Dashboard.")?;
-            ReplicateProvider::new(key).generate_video(prompt).await.map_err(err)
+            let key = secrets::get_key("replicate")
+                .map_err(err)?
+                .ok_or("Add a Replicate key in the API Key Dashboard.")?;
+            ReplicateProvider::new(key)
+                .generate_video(prompt)
+                .await
+                .map_err(err)
         }
         Some("kie") => {
-            let key = secrets::get_key("kie").map_err(err)?.ok_or("Add a kie.ai key in the API Key Dashboard.")?;
+            let key = secrets::get_key("kie")
+                .map_err(err)?
+                .ok_or("Add a kie.ai key in the API Key Dashboard.")?;
             // Kie supports the full omni reference set (end frame, audio, video).
             KieVideoProvider::new(key)
                 .with_model(model)
-                .generate_video_omni(prompt, refs, end_frame.as_deref(), audio_refs, video_refs, opts)
+                .generate_video_omni(
+                    prompt,
+                    refs,
+                    end_frame.as_deref(),
+                    audio_refs,
+                    video_refs,
+                    opts,
+                )
                 .await
                 .map_err(err)
         }
         Some("wavespeed") => {
-            let key = secrets::get_key("wavespeed").map_err(err)?.ok_or("Add a WaveSpeed key in the API Key Dashboard.")?;
-            WaveSpeedVideoProvider::new(key).with_model(model).generate_video_omni(prompt, refs, end_frame.as_deref(), opts).await.map_err(err)
+            let key = secrets::get_key("wavespeed")
+                .map_err(err)?
+                .ok_or("Add a WaveSpeed key in the API Key Dashboard.")?;
+            WaveSpeedVideoProvider::new(key)
+                .with_model(model)
+                .generate_video_omni(prompt, refs, end_frame.as_deref(), opts)
+                .await
+                .map_err(err)
         }
         Some("grok") => {
-            return Err("Grok video has no public API yet. Use Seedance/Kling via Kie, Fal, or WaveSpeed.".into());
+            return Err(
+                "Grok video has no public API yet. Use Seedance/Kling via Kie, Fal, or WaveSpeed."
+                    .into(),
+            );
         }
         // "auto" / unknown / none → first configured video provider.
-        _ => generate_video_any(prompt, refs).await.map(|(_, bytes)| bytes),
+        _ => generate_video_any(prompt, refs)
+            .await
+            .map(|(_, bytes)| bytes),
     }
 }
 
@@ -462,9 +584,8 @@ pub async fn generate_mv_shot_video(
     generate_audio: Option<bool>,
 ) -> Result<String, String> {
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
-    let decode_all = |v: Vec<String>| -> Vec<Vec<u8>> {
-        v.iter().filter_map(|b| B64.decode(b).ok()).collect()
-    };
+    let decode_all =
+        |v: Vec<String>| -> Vec<Vec<u8>> { v.iter().filter_map(|b| B64.decode(b).ok()).collect() };
     let ref_bytes = decode_all(refs.unwrap_or_default());
     let end_bytes = end_frame.and_then(|b| B64.decode(b).ok());
     let audio_bytes = decode_all(audio_refs.unwrap_or_default());
@@ -553,7 +674,11 @@ pub fn import_song_audio(
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
     let bytes = B64.decode(data_base64.as_bytes()).map_err(err)?;
     let safe_ext: String = ext.chars().filter(|c| c.is_alphanumeric()).collect();
-    let safe_ext = if safe_ext.is_empty() { "mp3".into() } else { safe_ext };
+    let safe_ext = if safe_ext.is_empty() {
+        "mp3".into()
+    } else {
+        safe_ext
+    };
     let dir = crate::paths::base_dir(&app)?
         .join("assets")
         .join("mv")
@@ -600,7 +725,16 @@ pub async fn render_music_video(
     let ffmpeg_s = ffmpeg.to_string_lossy().to_string();
 
     let out = tokio::task::spawn_blocking(move || {
-        crate::render::render(&dir, &ffmpeg_s, w, h, fps, audio.as_deref(), &voices, &segments)
+        crate::render::render(
+            &dir,
+            &ffmpeg_s,
+            w,
+            h,
+            fps,
+            audio.as_deref(),
+            &voices,
+            &segments,
+        )
     })
     .await
     .map_err(err)??;
@@ -668,10 +802,7 @@ pub fn clear_provider_key(provider: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn get_latest_pack(
-    db: State<Db>,
-    project_id: String,
-) -> Result<Option<PromptPack>, String> {
+pub fn get_latest_pack(db: State<Db>, project_id: String) -> Result<Option<PromptPack>, String> {
     let conn = db.0.lock().map_err(err)?;
     let json: Option<String> = conn
         .query_row(
@@ -690,11 +821,7 @@ pub fn get_latest_pack(
 }
 
 #[tauri::command]
-pub fn save_pack(
-    db: State<Db>,
-    project_id: String,
-    pack: PromptPack,
-) -> Result<(), String> {
+pub fn save_pack(db: State<Db>, project_id: String, pack: PromptPack) -> Result<(), String> {
     let json = serde_json::to_string(&pack).map_err(err)?;
     let conn = db.0.lock().map_err(err)?;
 
@@ -777,47 +904,76 @@ pub async fn generate_shot_image(
         .collect();
 
     // Pick the configured image provider (fal → OpenAI → Stability → Imagen).
-    let (provider_name, bytes): (&str, Vec<u8>) =
-        if let Some(key) = secrets::get_key("fal").map_err(err)? {
-            ("fal", FalImageProvider::new(key).generate_image_ref(&prompt, 1280, 720, &r).await.map_err(err)?)
-        } else if let Some(key) = secrets::get_key("kie").map_err(err)? {
-            ("kie", KieImageProvider::new(key).generate_image_ref(&prompt, 1280, 720, &r).await.map_err(err)?)
-        } else if let Some(key) = secrets::get_key("openai")
-            .map_err(err)?
-            .or(secrets::get_key("gpt_image").map_err(err)?)
-        {
-            (
-                "openai",
-                OpenAiImageProvider::new(key).generate_image_ref(&prompt, 1280, 720, &r).await.map_err(err)?,
-            )
-        } else if let Some(key) = secrets::get_key("stability").map_err(err)? {
-            (
-                "stability",
-                StabilityImageProvider::new(key).generate_image_ref(&prompt, 1280, 720, &r).await.map_err(err)?,
-            )
-        } else if let Some(key) = secrets::get_key("google_imagen").map_err(err)? {
-            (
-                "google_imagen",
-                GoogleImagenProvider::new(key).generate_image_ref(&prompt, 1280, 720, &r).await.map_err(err)?,
-            )
-        } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
-            (
-                "replicate",
-                ReplicateProvider::new(key).generate_image(&prompt).await.map_err(err)?,
-            )
-        } else {
-            return Err(
+    let (provider_name, bytes): (&str, Vec<u8>) = if let Some(key) =
+        secrets::get_key("fal").map_err(err)?
+    {
+        (
+            "fal",
+            FalImageProvider::new(key)
+                .generate_image_ref(&prompt, 1280, 720, &r)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("kie").map_err(err)? {
+        (
+            "kie",
+            KieImageProvider::new(key)
+                .generate_image_ref(&prompt, 1280, 720, &r)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("openai")
+        .map_err(err)?
+        .or(secrets::get_key("gpt_image").map_err(err)?)
+    {
+        (
+            "openai",
+            OpenAiImageProvider::new(key)
+                .generate_image_ref(&prompt, 1280, 720, &r)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("stability").map_err(err)? {
+        (
+            "stability",
+            StabilityImageProvider::new(key)
+                .generate_image_ref(&prompt, 1280, 720, &r)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("google_imagen").map_err(err)? {
+        (
+            "google_imagen",
+            GoogleImagenProvider::new(key)
+                .generate_image_ref(&prompt, 1280, 720, &r)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
+        (
+            "replicate",
+            ReplicateProvider::new(key)
+                .generate_image(&prompt)
+                .await
+                .map_err(err)?,
+        )
+    } else {
+        return Err(
                 "No image provider key set. Add fal.ai, OpenAI, Stability, Google, or Replicate in Settings."
                     .into(),
             );
-        };
+    };
 
     // Persist the image under the app's assets directory.
     let dir = crate::paths::base_dir(&app)?
         .join("assets")
         .join(&project_id);
     std::fs::create_dir_all(&dir).map_err(err)?;
-    let file_path = dir.join(format!("shot_{shot_number}_{}.{}", Uuid::new_v4(), image_ext(&bytes)));
+    let file_path = dir.join(format!(
+        "shot_{shot_number}_{}.{}",
+        Uuid::new_v4(),
+        image_ext(&bytes)
+    ));
     std::fs::write(&file_path, &bytes).map_err(err)?;
     let path_str = file_path.to_string_lossy().to_string();
 
@@ -907,17 +1063,19 @@ pub fn export_project(
             )
             .optional()
             .map_err(err)?;
-        let pack: PromptPack = serde_json::from_str(
-            &json.ok_or("No Prompt Pack to export — generate one first.")?,
-        )
-        .map_err(err)?;
+        let pack: PromptPack =
+            serde_json::from_str(&json.ok_or("No Prompt Pack to export — generate one first.")?)
+                .map_err(err)?;
         (project, pack)
     };
 
     let blocks = export::build_blocks(&project, &pack);
     let (bytes, ext): (Vec<u8>, &str) = match format.as_str() {
         "markdown" => (export::to_markdown(&blocks).into_bytes(), "md"),
-        "json" => (export::to_json(&project, &pack).map_err(err)?.into_bytes(), "json"),
+        "json" => (
+            export::to_json(&project, &pack).map_err(err)?.into_bytes(),
+            "json",
+        ),
         "pdf" => (export::to_pdf(&blocks).map_err(err)?, "pdf"),
         "docx" => (export::to_docx(&blocks).map_err(err)?, "docx"),
         other => return Err(format!("Unknown export format: {other}")),
@@ -1017,14 +1175,24 @@ pub fn import_shot_image(
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
     let bytes = B64.decode(data_base64.as_bytes()).map_err(err)?;
 
-    let safe_ext = ext.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
-    let safe_ext = if safe_ext.is_empty() { "png".into() } else { safe_ext };
+    let safe_ext = ext
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>();
+    let safe_ext = if safe_ext.is_empty() {
+        "png".into()
+    } else {
+        safe_ext
+    };
 
     let dir = crate::paths::base_dir(&app)?
         .join("assets")
         .join(&project_id);
     std::fs::create_dir_all(&dir).map_err(err)?;
-    let file_path = dir.join(format!("upload_{shot_number}_{}.{safe_ext}", Uuid::new_v4()));
+    let file_path = dir.join(format!(
+        "upload_{shot_number}_{}.{safe_ext}",
+        Uuid::new_v4()
+    ));
     std::fs::write(&file_path, &bytes).map_err(err)?;
     let path_str = file_path.to_string_lossy().to_string();
 
@@ -1056,25 +1224,37 @@ pub async fn generate_shot_video(
     prompt: String,
 ) -> Result<String, String> {
     // Pick the configured video provider (fal preferred, then Google Veo).
-    let (provider_name, bytes): (&str, Vec<u8>) =
-        if let Some(key) = secrets::get_key("fal").map_err(err)? {
-            ("fal", FalVideoProvider::new(key).generate_video(&prompt).await.map_err(err)?)
-        } else if let Some(key) = secrets::get_key("google_veo").map_err(err)? {
-            (
-                "google_veo",
-                GoogleVeoProvider::new(key).generate_video(&prompt).await.map_err(err)?,
-            )
-        } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
-            (
-                "replicate",
-                ReplicateProvider::new(key).generate_video(&prompt).await.map_err(err)?,
-            )
-        } else {
-            return Err(
-                "No video provider key set. Add fal.ai, Google Veo, or Replicate in Settings."
-                    .into(),
-            );
-        };
+    let (provider_name, bytes): (&str, Vec<u8>) = if let Some(key) =
+        secrets::get_key("fal").map_err(err)?
+    {
+        (
+            "fal",
+            FalVideoProvider::new(key)
+                .generate_video(&prompt)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("google_veo").map_err(err)? {
+        (
+            "google_veo",
+            GoogleVeoProvider::new(key)
+                .generate_video(&prompt)
+                .await
+                .map_err(err)?,
+        )
+    } else if let Some(key) = secrets::get_key("replicate").map_err(err)? {
+        (
+            "replicate",
+            ReplicateProvider::new(key)
+                .generate_video(&prompt)
+                .await
+                .map_err(err)?,
+        )
+    } else {
+        return Err(
+            "No video provider key set. Add fal.ai, Google Veo, or Replicate in Settings.".into(),
+        );
+    };
 
     // Persist the video under the app's assets directory.
     let dir = crate::paths::base_dir(&app)?

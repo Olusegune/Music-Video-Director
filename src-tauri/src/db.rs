@@ -2,9 +2,7 @@
 //! held in Tauri state. Schema follows MOTIONFORGE_PLAN.md §5; Phase 0 implements
 //! the `projects` table — child tables are created here too, ready for Phase 1+.
 
-use crate::models::{
-    BrandKit, Character, Environment, NewProject, Project, Prop, VersionMeta,
-};
+use crate::models::{BrandKit, Character, Environment, NewProject, Project, Prop, VersionMeta};
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use rusqlite::{Connection, OptionalExtension};
@@ -372,8 +370,16 @@ pub fn duplicate_project(conn: &Connection, project_id: &str) -> Result<Project>
              emotional_tone, created_at, updated_at)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
         rusqlite::params![
-            new.id, new.name, new.description, new.project_type, new.status,
-            new.aspect_ratio, new.duration, new.emotional_tone, new.created_at, new.updated_at,
+            new.id,
+            new.name,
+            new.description,
+            new.project_type,
+            new.status,
+            new.aspect_ratio,
+            new.duration,
+            new.emotional_tone,
+            new.created_at,
+            new.updated_at,
         ],
     )?;
 
@@ -484,12 +490,35 @@ pub fn save_character(conn: &Connection, c: &Character) -> Result<()> {
             consistency_rules=?24, reference_images_json=?25, portrait_url=?26,
             locked=?27, updated_at=?29",
         rusqlite::params![
-            c.id, c.name, c.age, c.gender, c.occupation, c.role, c.face_shape,
-            c.eye_shape, c.eye_color, c.hair_style, c.hair_color, c.body_type,
-            c.skin_tone, c.distinguishing_features, c.primary_outfit,
-            c.secondary_outfit, c.accessories, c.traits, c.motivations, c.fears,
-            c.goals, c.style_preset, c.prompt_dna, c.consistency_rules, refs_json,
-            c.portrait_url, c.locked as i64, c.created_at, c.updated_at,
+            c.id,
+            c.name,
+            c.age,
+            c.gender,
+            c.occupation,
+            c.role,
+            c.face_shape,
+            c.eye_shape,
+            c.eye_color,
+            c.hair_style,
+            c.hair_color,
+            c.body_type,
+            c.skin_tone,
+            c.distinguishing_features,
+            c.primary_outfit,
+            c.secondary_outfit,
+            c.accessories,
+            c.traits,
+            c.motivations,
+            c.fears,
+            c.goals,
+            c.style_preset,
+            c.prompt_dna,
+            c.consistency_rules,
+            refs_json,
+            c.portrait_url,
+            c.locked as i64,
+            c.created_at,
+            c.updated_at,
         ],
     )?;
     Ok(())
@@ -557,10 +586,25 @@ pub fn save_environment(conn: &Connection, e: &Environment) -> Result<()> {
             consistency_rules=?14, reference_images_json=?15, establishing_url=?16,
             locked=?17, updated_at=?19",
         rusqlite::params![
-            e.id, e.name, e.description, e.architecture, e.time_of_day, e.mood,
-            e.lighting_style, palette, e.materials, e.key_props, e.environment_rules,
-            e.style_preset, e.prompt_dna, e.consistency_rules, refs,
-            e.establishing_url, e.locked as i64, e.created_at, e.updated_at,
+            e.id,
+            e.name,
+            e.description,
+            e.architecture,
+            e.time_of_day,
+            e.mood,
+            e.lighting_style,
+            palette,
+            e.materials,
+            e.key_props,
+            e.environment_rules,
+            e.style_preset,
+            e.prompt_dna,
+            e.consistency_rules,
+            refs,
+            e.establishing_url,
+            e.locked as i64,
+            e.created_at,
+            e.updated_at,
         ],
     )?;
     Ok(())
@@ -624,9 +668,22 @@ pub fn save_prop(conn: &Connection, p: &Prop) -> Result<()> {
             prompt_dna=?11, consistency_rules=?12, reference_images_json=?13,
             hero_url=?14, locked=?15, updated_at=?17",
         rusqlite::params![
-            p.id, p.name, p.category, p.dimensions, p.materials, p.condition,
-            palette, p.usage, p.story_significance, p.style_preset, p.prompt_dna,
-            p.consistency_rules, refs, p.hero_url, p.locked as i64, p.created_at,
+            p.id,
+            p.name,
+            p.category,
+            p.dimensions,
+            p.materials,
+            p.condition,
+            palette,
+            p.usage,
+            p.story_significance,
+            p.style_preset,
+            p.prompt_dna,
+            p.consistency_rules,
+            refs,
+            p.hero_url,
+            p.locked as i64,
+            p.created_at,
             p.updated_at,
         ],
     )?;

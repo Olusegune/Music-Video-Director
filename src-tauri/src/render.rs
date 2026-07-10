@@ -97,13 +97,20 @@ fn render_segment(
         // Hold a still for `dur` seconds.
         vec![
             "-y".into(),
-            "-loop".into(), "1".into(),
-            "-i".into(), seg.src.clone(),
-            "-t".into(), format!("{dur}"),
-            "-vf".into(), vf,
-            "-c:v".into(), "libx264".into(),
-            "-pix_fmt".into(), "yuv420p".into(),
-            "-r".into(), format!("{fps}"),
+            "-loop".into(),
+            "1".into(),
+            "-i".into(),
+            seg.src.clone(),
+            "-t".into(),
+            format!("{dur}"),
+            "-vf".into(),
+            vf,
+            "-c:v".into(),
+            "libx264".into(),
+            "-pix_fmt".into(),
+            "yuv420p".into(),
+            "-r".into(),
+            format!("{fps}"),
             "-an".into(),
             out_s,
         ]
@@ -111,13 +118,20 @@ fn render_segment(
         // Loop the clip if it's shorter than the slot, then trim to `dur`.
         vec![
             "-y".into(),
-            "-stream_loop".into(), "-1".into(),
-            "-i".into(), seg.src.clone(),
-            "-t".into(), format!("{dur}"),
-            "-vf".into(), vf,
-            "-c:v".into(), "libx264".into(),
-            "-pix_fmt".into(), "yuv420p".into(),
-            "-r".into(), format!("{fps}"),
+            "-stream_loop".into(),
+            "-1".into(),
+            "-i".into(),
+            seg.src.clone(),
+            "-t".into(),
+            format!("{dur}"),
+            "-vf".into(),
+            vf,
+            "-c:v".into(),
+            "libx264".into(),
+            "-pix_fmt".into(),
+            "yuv420p".into(),
+            "-r".into(),
+            format!("{fps}"),
             "-an".into(),
             out_s,
         ]
@@ -166,10 +180,14 @@ pub fn render(
     let silent = tmp.join("concat.mp4");
     let concat_args: Vec<String> = vec![
         "-y".into(),
-        "-f".into(), "concat".into(),
-        "-safe".into(), "0".into(),
-        "-i".into(), list_path.to_string_lossy().to_string(),
-        "-c".into(), "copy".into(),
+        "-f".into(),
+        "concat".into(),
+        "-safe".into(),
+        "0".into(),
+        "-i".into(),
+        list_path.to_string_lossy().to_string(),
+        "-c".into(),
+        "copy".into(),
         silent.to_string_lossy().to_string(),
     ];
     if let Err(e) = run(ffmpeg, &concat_args) {
@@ -193,9 +211,12 @@ pub fn render(
         // No audio at all — just finalize the silent cut.
         vec![
             "-y".into(),
-            "-i".into(), silent_s,
-            "-c".into(), "copy".into(),
-            "-movflags".into(), "+faststart".into(),
+            "-i".into(),
+            silent_s,
+            "-c".into(),
+            "copy".into(),
+            "-movflags".into(),
+            "+faststart".into(),
             final_s,
         ]
     } else if voices.is_empty() {
@@ -203,15 +224,23 @@ pub fn render(
         let audio_path = master.unwrap().to_string();
         vec![
             "-y".into(),
-            "-i".into(), silent_s,
-            "-i".into(), audio_path,
-            "-map".into(), "0:v:0".into(),
-            "-map".into(), "1:a:0".into(),
-            "-c:v".into(), "copy".into(),
-            "-c:a".into(), "aac".into(),
-            "-b:a".into(), "192k".into(),
+            "-i".into(),
+            silent_s,
+            "-i".into(),
+            audio_path,
+            "-map".into(),
+            "0:v:0".into(),
+            "-map".into(),
+            "1:a:0".into(),
+            "-c:v".into(),
+            "copy".into(),
+            "-c:a".into(),
+            "aac".into(),
+            "-b:a".into(),
+            "192k".into(),
             "-shortest".into(),
-            "-movflags".into(), "+faststart".into(),
+            "-movflags".into(),
+            "+faststart".into(),
             final_s,
         ]
     } else {
@@ -238,7 +267,9 @@ pub fn render(
             let delay_ms = (v.at_sec.max(0.0) * 1000.0).round() as i64;
             let vol = if v.volume > 0.0 { v.volume } else { 1.0 };
             // adelay + per-layer volume.
-            filters.push(format!("[{idx}:a]adelay={delay_ms}:all=1,volume={vol:.3}[pre{n}]"));
+            filters.push(format!(
+                "[{idx}:a]adelay={delay_ms}:all=1,volume={vol:.3}[pre{n}]"
+            ));
             if v.duck && master_label.is_some() {
                 // Split: one copy feeds the mix, one feeds the sidechain key.
                 filters.push(format!("[pre{n}]asplit=2[mix{n}][sc{n}]"));

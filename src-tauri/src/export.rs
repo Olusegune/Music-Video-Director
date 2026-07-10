@@ -150,16 +150,60 @@ pub fn build_bible_blocks(
             if role.is_empty() { "" } else { " — " },
             role
         )));
-        kv_opt(&mut b, "Identity", &[c.age.as_str(), c.gender.as_str()].join(" ").trim().to_string());
-        kv_opt(&mut b, "Face", &[c.face_shape.as_str(), c.eye_shape.as_str(), c.eye_color.as_str(), c.skin_tone.as_str(), c.distinguishing_features.as_str()].iter().filter(|s| !s.is_empty()).cloned().collect::<Vec<_>>().join(", "));
-        kv_opt(&mut b, "Hair", &[c.hair_style.as_str(), c.hair_color.as_str()].iter().filter(|s| !s.is_empty()).cloned().collect::<Vec<_>>().join(", "));
+        kv_opt(
+            &mut b,
+            "Identity",
+            &[c.age.as_str(), c.gender.as_str()]
+                .join(" ")
+                .trim()
+                .to_string(),
+        );
+        kv_opt(
+            &mut b,
+            "Face",
+            &[
+                c.face_shape.as_str(),
+                c.eye_shape.as_str(),
+                c.eye_color.as_str(),
+                c.skin_tone.as_str(),
+                c.distinguishing_features.as_str(),
+            ]
+            .iter()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", "),
+        );
+        kv_opt(
+            &mut b,
+            "Hair",
+            &[c.hair_style.as_str(), c.hair_color.as_str()]
+                .iter()
+                .filter(|s| !s.is_empty())
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", "),
+        );
         kv_opt(&mut b, "Body", &c.body_type);
-        kv_opt(&mut b, "Wardrobe", &[c.primary_outfit.as_str(), c.accessories.as_str()].iter().filter(|s| !s.is_empty()).cloned().collect::<Vec<_>>().join("; "));
+        kv_opt(
+            &mut b,
+            "Wardrobe",
+            &[c.primary_outfit.as_str(), c.accessories.as_str()]
+                .iter()
+                .filter(|s| !s.is_empty())
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("; "),
+        );
         kv_opt(&mut b, "Personality", &c.traits);
         kv_opt(&mut b, "Motivations", &c.motivations);
         kv_opt(&mut b, "Goals", &c.goals);
         kv_opt(&mut b, "Prompt DNA", &c.prompt_dna);
-        kv_opt(&mut b, "Consistency Rules", &c.consistency_rules.replace('\n', " "));
+        kv_opt(
+            &mut b,
+            "Consistency Rules",
+            &c.consistency_rules.replace('\n', " "),
+        );
         b.push(Block::Bullet(format!(
             "Status: {}",
             if c.locked { "Canon (locked)" } else { "Draft" }
@@ -303,11 +347,11 @@ pub fn to_pdf(blocks: &[Block]) -> Result<Vec<u8>> {
     };
 
     let emit = |doc_layer: &mut printpdf::PdfLayerReference,
-                    y: &mut f32,
-                    text: &str,
-                    size: f32,
-                    is_bold: bool,
-                    gap: f32| {
+                y: &mut f32,
+                text: &str,
+                size: f32,
+                is_bold: bool,
+                gap: f32| {
         for line in wrap(text, size) {
             if *y < BOTTOM {
                 let (p, l) = doc.add_page(Mm(W), Mm(H), "Layer 1");

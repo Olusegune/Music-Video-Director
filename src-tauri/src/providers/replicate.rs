@@ -111,7 +111,10 @@ fn first_url(output: &Value) -> Option<String> {
 impl ImageProvider for ReplicateProvider {
     async fn generate_image(&self, prompt: &str) -> Result<Vec<u8>> {
         let out = self
-            .run(IMAGE_MODEL, json!({ "prompt": prompt, "aspect_ratio": "16:9" }))
+            .run(
+                IMAGE_MODEL,
+                json!({ "prompt": prompt, "aspect_ratio": "16:9" }),
+            )
             .await?;
         let url =
             first_url(&out).ok_or_else(|| anyhow!("Replicate image output had no url: {out}"))?;

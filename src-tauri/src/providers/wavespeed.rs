@@ -61,8 +61,14 @@ async fn run_job(api_key: &str, model: &str, body: Value) -> Result<Vec<u8>> {
                 .as_str()
                 .or_else(|| data["output"].as_str())
                 .ok_or_else(|| anyhow!("WaveSpeed completed but no output: {st}"))?;
-            let bytes = client.get(url).send().await.context("downloading WaveSpeed output")?
-                .bytes().await.context("reading WaveSpeed bytes")?;
+            let bytes = client
+                .get(url)
+                .send()
+                .await
+                .context("downloading WaveSpeed output")?
+                .bytes()
+                .await
+                .context("reading WaveSpeed bytes")?;
             return Ok(bytes.to_vec());
         }
         if status == "failed" || status == "error" {
@@ -85,7 +91,10 @@ pub struct WaveSpeedImageProvider {
 
 impl WaveSpeedImageProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, model: None }
+        Self {
+            api_key,
+            model: None,
+        }
     }
     pub fn with_model(mut self, model: Option<String>) -> Self {
         self.model = model.filter(|s| !s.is_empty());
@@ -105,12 +114,23 @@ impl ImageProvider for WaveSpeedImageProvider {
         )
         .await
     }
-    async fn generate_image_ref(&self, prompt: &str, width: u32, height: u32, refs: &[Vec<u8>]) -> Result<Vec<u8>> {
+    async fn generate_image_ref(
+        &self,
+        prompt: &str,
+        width: u32,
+        height: u32,
+        refs: &[Vec<u8>],
+    ) -> Result<Vec<u8>> {
         let mut body = json!({ "prompt": prompt, "size": format!("{width}*{height}") });
         if let Some(img) = refs.first() {
             body["image"] = json!(data_uri(img));
         }
-        run_job(&self.api_key, self.model.as_deref().unwrap_or(DEFAULT_IMAGE), body).await
+        run_job(
+            &self.api_key,
+            self.model.as_deref().unwrap_or(DEFAULT_IMAGE),
+            body,
+        )
+        .await
     }
 }
 
@@ -123,7 +143,10 @@ pub struct WaveSpeedVideoProvider {
 
 impl WaveSpeedVideoProvider {
     pub fn new(api_key: String) -> Self {
-        Self { api_key, model: None }
+        Self {
+            api_key,
+            model: None,
+        }
     }
     pub fn with_model(mut self, model: Option<String>) -> Self {
         self.model = model.filter(|s| !s.is_empty());
@@ -174,6 +197,7 @@ impl VideoProvider for WaveSpeedVideoProvider {
         .await
     }
     async fn generate_video_ref(&self, prompt: &str, refs: &[Vec<u8>]) -> Result<Vec<u8>> {
-        self.generate_video_omni(prompt, refs, None, &ClipOpts::default()).await
+        self.generate_video_omni(prompt, refs, None, &ClipOpts::default())
+            .await
     }
 }

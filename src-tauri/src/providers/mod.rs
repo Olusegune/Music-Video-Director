@@ -69,6 +69,21 @@ pub trait ImageProvider {
     ) -> Result<Vec<u8>> {
         self.generate_image_sized(prompt, width, height).await
     }
+
+    /// Operation-aware image generation. Providers may opt into edit/inpaint
+    /// semantics; the default keeps older adapters safe and treats it as a
+    /// reference-guided generation.
+    async fn generate_image_op(
+        &self,
+        prompt: &str,
+        width: u32,
+        height: u32,
+        refs: &[Vec<u8>],
+        _operation: Option<&str>,
+        _mask: Option<&[u8]>,
+    ) -> Result<Vec<u8>> {
+        self.generate_image_ref(prompt, width, height, refs).await
+    }
 }
 
 /// Generates a video (async job: submit → poll → download), returning encoded bytes.
