@@ -29,7 +29,11 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
 import { ASPECT_RATIOS, SIZE_PRESETS, resolveSize, IMAGE_MODELS } from "@/platform/lib/imageGen";
-import { controlsForProviderKey } from "@/platform/lib/modelRegistry";
+import {
+  controlsForProviderKey,
+  generationSupportForProviderKey,
+} from "@/platform/lib/modelRegistry";
+import { describeReferenceSupport, resolveReferences } from "@/platform/lib/referenceSystem";
 import type { GenerationSpec } from "@/platform/lib/generationSpec";
 import { isRecoverableProviderFailure, notifyGenerationFallback } from "@/platform/lib/providers";
 import { GenerateBar } from "@/platform/components/generation/GenerateBar";
@@ -258,6 +262,25 @@ export function GenerationPanel({
     [activeModel?.providerKey, isVideo]
   );
   const can = (c: string) => caps.has(c as never);
+
+  // What will the selected model actually do with the references? Say so before
+  // the user hits Generate, not in a toast afterwards.
+  const refSupport = useMemo(
+    () =>
+      generationSupportForProviderKey(
+        activeModel?.providerKey ?? "custom",
+        isVideo ? "video" : "image"
+      ).references,
+    [activeModel?.providerKey, isVideo]
+  );
+  const refPreview = useMemo(
+    () =>
+      resolveReferences(
+        allRefs.map((url) => ({ url })),
+        refSupport
+      ),
+    [allRefs, refSupport]
+  );
 
   // Manual providers (Midjourney) have no API — copy the prompt for the user.
   const copyForManual = async () => {
@@ -647,7 +670,23 @@ export function GenerationPanel({
 
       {/* Reference images — host-tracked + any asset pulled from the library */}
       <div>
-        <Label>Reference images</Label>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <Label>Reference images</Label>
+          <span
+            className={cn(
+              "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+              refSupport === "none"
+                ? "border-warning/40 bg-warning/10 text-warning"
+                : "border-border bg-elevated text-muted"
+            )}
+            title="What the selected model does with reference images"
+          >
+            {describeReferenceSupport(refSupport)}
+          </span>
+        </div>
+        {refPreview.notice ? (
+          <p className="mb-1.5 text-[11px] leading-snug text-warning">{refPreview.notice}</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {allRefs.map((src, i) => {
             const isLib = libRefs.includes(src) && !references.includes(src);

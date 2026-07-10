@@ -28,6 +28,9 @@ import {
 } from "@/platform/lib/providers";
 import { PROVIDERS } from "@/platform/lib/providers";
 import { runWithProviderFallback, type GenerationSpec } from "@/platform/lib/generationSpec";
+import { resolveReferences } from "@/platform/lib/referenceSystem";
+import { generationSupportForProviderKey } from "@/platform/lib/modelRegistry";
+import { notifyStorage } from "@/platform/lib/storage";
 
 /** Context the local engine needs; passed by the workspace so it works in Tauri too. */
 export interface GenerateContext {
@@ -610,17 +613,25 @@ export const api = {
     }
     return runWithProviderFallback(
       providers,
-      (provider) =>
-        api.generateImagePro(
+      (provider) => {
+        // Each candidate may handle references differently — resolve per provider,
+        // and tell the user when one had to be dropped.
+        const refs = resolveReferences(
+          spec.references,
+          generationSupportForProviderKey(provider, "image").references
+        );
+        if (refs.notice) notifyStorage(refs.notice);
+        return api.generateImagePro(
           provider,
           spec.prompt,
           spec.resolution?.width ?? 1024,
           spec.resolution?.height ?? 1024,
-          spec.references?.map((reference) => reference.url),
+          refs.used.map((reference) => reference.url),
           spec.seed,
           spec.modelHint,
           spec.negativePrompt
-        ),
+        );
+      },
       { onFallback: notifyGenerationFallback }
     );
   },
@@ -702,16 +713,22 @@ export const api = {
     }
     return runWithProviderFallback(
       providers,
-      (provider) =>
-        api.generateMvShotVideo(
+      (provider) => {
+        const refs = resolveReferences(
+          spec.references,
+          generationSupportForProviderKey(provider, "video").references
+        );
+        if (refs.notice) notifyStorage(refs.notice);
+        return api.generateMvShotVideo(
           songId,
           shotId,
           spec.prompt,
           provider,
-          spec.references?.map((reference) => reference.url),
+          refs.used.map((reference) => reference.url),
           spec.modelHint,
           { ...extras, resolution: extras?.resolution ?? spec.resolution?.label }
-        ),
+        );
+      },
       { onFallback: notifyGenerationFallback }
     );
   },
