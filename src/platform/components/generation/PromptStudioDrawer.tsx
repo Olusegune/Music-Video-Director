@@ -21,6 +21,16 @@ import {
   type PromptPipeline,
 } from "@/platform/lib/promptPipeline";
 import { describeEntry, type PromptHistoryEntry } from "@/platform/lib/promptHistory";
+import { comparePipelines, type LayerChange } from "@/platform/lib/promptCompare";
+
+const LAYER_CHANGE_TONE: Record<LayerChange["kind"], string> = {
+  unchanged: "text-muted",
+  added: "text-success",
+  removed: "text-danger",
+  muted: "text-danger",
+  unmuted: "text-success",
+  edited: "text-accent",
+};
 
 function timeAgo(iso: string, now = Date.now()): string {
   const seconds = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
@@ -246,6 +256,70 @@ export function PromptStudioDrawer({
                 </label>
               ))}
             </div>
+            {(() => {
+              const a = history.find((entry) => entry.id === compareIds[0]);
+              const b = history.find((entry) => entry.id === compareIds[1]);
+              if (!a || !b || a.id === b.id) return null;
+              const diff = comparePipelines(a.pipeline, b.pipeline);
+              const changed = diff.layers.filter((change) => change.kind !== "unchanged");
+              return (
+                <div className="space-y-2 rounded-lg border border-border bg-elevated/40 p-3">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    What differs{" "}
+                    {diff.identical
+                      ? ""
+                      : `· ${changed.length} layer change${changed.length === 1 ? "" : "s"}`}
+                  </h3>
+                  {diff.identical ? (
+                    <p className="text-[11px] text-muted">
+                      These two prompts are identical — the results should only differ by seed.
+                    </p>
+                  ) : (
+                    <>
+                      {changed.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {changed.map((change) => (
+                            <span
+                              key={change.id}
+                              className={cn(
+                                "rounded-full border border-border px-1.5 py-0.5 text-[10px]",
+                                LAYER_CHANGE_TONE[change.kind]
+                              )}
+                              title={`${change.label}: ${change.kind}`}
+                            >
+                              {change.label} · {change.kind}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <p className="whitespace-pre-wrap rounded-md border border-border bg-background p-2 text-[11px] leading-relaxed">
+                        {diff.wordDiff.map((part, index) =>
+                          part.kind === "same" ? (
+                            <span key={index} className="text-muted">
+                              {part.value}
+                            </span>
+                          ) : part.kind === "added" ? (
+                            <span
+                              key={index}
+                              className="rounded bg-success/15 text-success underline decoration-success/60"
+                            >
+                              {part.value}
+                            </span>
+                          ) : (
+                            <span
+                              key={index}
+                              className="rounded bg-danger/15 text-danger line-through decoration-danger/60"
+                            >
+                              {part.value}
+                            </span>
+                          )
+                        )}
+                      </p>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
             <button
               type="button"
               disabled={
