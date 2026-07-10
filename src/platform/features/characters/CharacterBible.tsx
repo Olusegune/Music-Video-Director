@@ -457,6 +457,7 @@ function CharacterSheet({
             initialPrompt=""
             contextLayers={portraitLayers}
             promptVariables={{ character: draft.name, role: draft.role }}
+            historyScope={{ moduleId: "characters", entityId: draft.id }}
             defaultAspect="4:5"
             references={draft.referenceImages}
             onGenerate={runGenerate}

@@ -8,10 +8,11 @@
 // It is not a screen. It never becomes a place you "go" — it opens over the
 // work you are already doing and closes again.
 
-import { useEffect } from "react";
-import { EyeOff, Eye, X, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { EyeOff, Eye, X, AlertTriangle, RotateCcw, Trash2, History } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import { Textarea } from "@/platform/components/ui/textarea";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 import {
   composePrompt,
   setLayer,
@@ -19,6 +20,17 @@ import {
   type PromptLayer,
   type PromptPipeline,
 } from "@/platform/lib/promptPipeline";
+import { describeEntry, type PromptHistoryEntry } from "@/platform/lib/promptHistory";
+
+function timeAgo(iso: string, now = Date.now()): string {
+  const seconds = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
 
 const KIND_LABEL: Record<PromptLayer["kind"], string> = {
   system: "System",
@@ -45,13 +57,21 @@ export function PromptStudioDrawer({
   onChange,
   /** Creator may mute and override layers; Studio sees a read-only summary. */
   editable,
+  history = [],
+  onReplay,
+  onDeleteHistory,
 }: {
   open: boolean;
   onClose: () => void;
   pipeline: PromptPipeline;
   onChange: (next: PromptPipeline) => void;
   editable: boolean;
+  history?: PromptHistoryEntry[];
+  onReplay?: (entry: PromptHistoryEntry) => void;
+  onDeleteHistory?: (id: string) => void;
 }) {
+  const [tab, setTab] = useState<"layers" | "history">("layers");
+
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
@@ -94,135 +114,221 @@ export function PromptStudioDrawer({
           </button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
-          {composed.missingVariables.length > 0 ? (
-            <div className="flex gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-[11px] text-warning">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p>
-                No value for{" "}
-                <span className="font-semibold">
-                  {composed.missingVariables.map((name) => `{${name}}`).join(", ")}
-                </span>
-                . The model would receive the placeholder text as written.
-              </p>
-            </div>
-          ) : null}
+        <div role="tablist" className="flex gap-1 border-b border-border px-5 pt-2">
+          {(["layers", "history"] as const).map((id) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={cn(
+                "-mb-px border-b-2 px-2 pb-2 text-[11px] font-medium capitalize transition",
+                tab === id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted hover:text-foreground"
+              )}
+            >
+              {id}
+              {id === "history" && history.length ? (
+                <span className="ml-1 tabular-nums opacity-70">{history.length}</span>
+              ) : null}
+            </button>
+          ))}
+        </div>
 
-          {/* Layers */}
-          <section className="space-y-2">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Prompt layers
-            </h3>
-            {pipeline.layers.map((layer) => (
-              <div
-                key={layer.id}
-                className={cn(
-                  "rounded-lg border p-2.5 transition",
-                  layer.muted
-                    ? "border-border/60 bg-elevated/30 opacity-60"
-                    : "border-border bg-elevated/50"
-                )}
-              >
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
-                        KIND_TONE[layer.kind]
-                      )}
-                    >
-                      {KIND_LABEL[layer.kind]}
-                    </span>
-                    <span className="truncate text-[11px] font-medium">{layer.label}</span>
-                  </div>
-                  {editable ? (
-                    <button
-                      type="button"
-                      aria-label={layer.muted ? `Unmute ${layer.label}` : `Mute ${layer.label}`}
-                      title={layer.muted ? "Include this layer" : "Exclude this layer"}
-                      onClick={() =>
-                        onChange(setLayer(pipeline, layer.id, { muted: !layer.muted }))
-                      }
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
-                    >
-                      {layer.muted ? (
-                        <EyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <Eye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  ) : null}
-                </div>
-
-                {layer.source ? (
-                  <p className="mb-1.5 truncate text-[10px] text-muted">{layer.source}</p>
-                ) : null}
-
-                {editable && layer.editable ? (
-                  <Textarea
-                    value={layer.text}
-                    aria-label={`${layer.label} text`}
-                    onChange={(event) =>
-                      onChange(setLayer(pipeline, layer.id, { text: event.target.value }))
-                    }
-                    className="min-h-14 text-[12px]"
-                  />
-                ) : (
-                  <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-muted">
-                    {layer.text || <span className="italic">empty</span>}
-                  </p>
-                )}
+        {tab === "history" ? (
+          <div className="flex-1 space-y-2 overflow-y-auto p-5">
+            {history.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                <History className="h-6 w-6 text-muted" />
+                <p className="text-[11px] text-muted">
+                  Generations you run here will be listed, with the exact prompt that made them.
+                </p>
               </div>
-            ))}
-          </section>
+            ) : (
+              history.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex gap-2 rounded-lg border border-border bg-elevated/50 p-2"
+                >
+                  {entry.thumbUrl ? (
+                    <AssetImage
+                      src={entry.thumbUrl}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-md border border-border object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-[9px] text-muted">
+                      no img
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-[11px] leading-snug">{entry.prompt}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-muted">
+                      {timeAgo(entry.createdAt)} · {describeEntry(entry)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    {onReplay ? (
+                      <button
+                        type="button"
+                        aria-label="Replay this prompt"
+                        title="Restore this exact prompt, layers, model and seed"
+                        onClick={() => {
+                          onReplay(entry);
+                          setTab("layers");
+                        }}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-primary"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                    {onDeleteHistory ? (
+                      <button
+                        type="button"
+                        aria-label="Delete from history"
+                        onClick={() => onDeleteHistory(entry.id)}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-muted hover:bg-danger/10 hover:text-danger"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
+            {composed.missingVariables.length > 0 ? (
+              <div className="flex gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-[11px] text-warning">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <p>
+                  No value for{" "}
+                  <span className="font-semibold">
+                    {composed.missingVariables.map((name) => `{${name}}`).join(", ")}
+                  </span>
+                  . The model would receive the placeholder text as written.
+                </p>
+              </div>
+            ) : null}
 
-          {/* Variables */}
-          {variables.length > 0 ? (
+            {/* Layers */}
+            <section className="space-y-2">
+              <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Prompt layers
+              </h3>
+              {pipeline.layers.map((layer) => (
+                <div
+                  key={layer.id}
+                  className={cn(
+                    "rounded-lg border p-2.5 transition",
+                    layer.muted
+                      ? "border-border/60 bg-elevated/30 opacity-60"
+                      : "border-border bg-elevated/50"
+                  )}
+                >
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide",
+                          KIND_TONE[layer.kind]
+                        )}
+                      >
+                        {KIND_LABEL[layer.kind]}
+                      </span>
+                      <span className="truncate text-[11px] font-medium">{layer.label}</span>
+                    </div>
+                    {editable ? (
+                      <button
+                        type="button"
+                        aria-label={layer.muted ? `Unmute ${layer.label}` : `Mute ${layer.label}`}
+                        title={layer.muted ? "Include this layer" : "Exclude this layer"}
+                        onClick={() =>
+                          onChange(setLayer(pipeline, layer.id, { muted: !layer.muted }))
+                        }
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-foreground"
+                      >
+                        {layer.muted ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {layer.source ? (
+                    <p className="mb-1.5 truncate text-[10px] text-muted">{layer.source}</p>
+                  ) : null}
+
+                  {editable && layer.editable ? (
+                    <Textarea
+                      value={layer.text}
+                      aria-label={`${layer.label} text`}
+                      onChange={(event) =>
+                        onChange(setLayer(pipeline, layer.id, { text: event.target.value }))
+                      }
+                      className="min-h-14 text-[12px]"
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-muted">
+                      {layer.text || <span className="italic">empty</span>}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </section>
+
+            {/* Variables */}
+            {variables.length > 0 ? (
+              <section className="space-y-1.5">
+                <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                  Variables
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {variables.map((name) => {
+                    const value = pipeline.variables?.[name];
+                    const resolved = Boolean(value);
+                    return (
+                      <span
+                        key={name}
+                        className={cn(
+                          "rounded-md border px-2 py-1 text-[10px]",
+                          resolved
+                            ? "border-border bg-elevated text-foreground"
+                            : "border-warning/40 bg-warning/10 text-warning"
+                        )}
+                        title={resolved ? value : "No value in this project"}
+                      >
+                        <span className="font-mono">{`{${name}}`}</span>
+                        {resolved ? <span className="ml-1 text-muted">→ {value}</span> : null}
+                      </span>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Resolved output */}
             <section className="space-y-1.5">
               <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                Variables
+                What the model receives
               </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {variables.map((name) => {
-                  const value = pipeline.variables?.[name];
-                  const resolved = Boolean(value);
-                  return (
-                    <span
-                      key={name}
-                      className={cn(
-                        "rounded-md border px-2 py-1 text-[10px]",
-                        resolved
-                          ? "border-border bg-elevated text-foreground"
-                          : "border-warning/40 bg-warning/10 text-warning"
-                      )}
-                      title={resolved ? value : "No value in this project"}
-                    >
-                      <span className="font-mono">{`{${name}}`}</span>
-                      {resolved ? <span className="ml-1 text-muted">→ {value}</span> : null}
-                    </span>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {/* Resolved output */}
-          <section className="space-y-1.5">
-            <h3 className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-              What the model receives
-            </h3>
-            <p className="whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-[11px] leading-relaxed">
-              {composed.prompt || (
-                <span className="italic text-muted">Nothing — every layer is muted.</span>
-              )}
-            </p>
-            {composed.negativePrompt ? (
-              <p className="whitespace-pre-wrap rounded-lg border border-danger/30 bg-danger/5 p-3 text-[11px] leading-relaxed text-danger">
-                Negative: {composed.negativePrompt}
+              <p className="whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-[11px] leading-relaxed">
+                {composed.prompt || (
+                  <span className="italic text-muted">Nothing — every layer is muted.</span>
+                )}
               </p>
-            ) : null}
-          </section>
-        </div>
+              {composed.negativePrompt ? (
+                <p className="whitespace-pre-wrap rounded-lg border border-danger/30 bg-danger/5 p-3 text-[11px] leading-relaxed text-danger">
+                  Negative: {composed.negativePrompt}
+                </p>
+              ) : null}
+            </section>
+          </div>
+        )}
       </aside>
     </div>
   );

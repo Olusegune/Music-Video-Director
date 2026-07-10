@@ -49,6 +49,12 @@ import {
   type PromptPipeline,
 } from "@/platform/lib/promptPipeline";
 import { useAppStore } from "@/platform/store/useAppStore";
+import {
+  deletePromptHistory,
+  listPromptHistory,
+  recordPromptHistory,
+  type PromptHistoryEntry,
+} from "@/platform/lib/promptHistory";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
 type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
@@ -188,6 +194,7 @@ export function GenerationPanel({
   references = [],
   contextLayers = [],
   promptVariables,
+  historyScope,
   onAddReferences,
   onRemoveReference,
   onGenerate,
@@ -208,6 +215,8 @@ export function GenerationPanel({
   contextLayers?: PromptLayer[];
   /** Values for `{variables}` used anywhere in the pipeline. */
   promptVariables?: Record<string, string>;
+  /** Scopes prompt history so an entity sees only its own generations. */
+  historyScope?: { moduleId?: string; entityId?: string };
   /** Open the host's picker to add references (optional). */
   onAddReferences?: () => void;
   onRemoveReference?: (src: string) => void;
@@ -350,10 +359,37 @@ export function GenerationPanel({
     }
   };
 
+  // Prompt history for this surface, refreshed after each generation.
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const history = useMemo(
+    () => listPromptHistory({ ...historyScope, limit: 25 }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [historyScope?.moduleId, historyScope?.entityId, historyVersion]
+  );
+
+  /**
+   * Restore a past generation: the layers as they were (mutes and overrides
+   * included), plus the model and seed that produced it. Layers the current
+   * host no longer contributes are simply absent — we never invent them back.
+   */
+  const replay = (entry: PromptHistoryEntry) => {
+    const overrides: Record<string, Partial<PromptLayer>> = {};
+    for (const layer of entry.pipeline.layers) {
+      if (layer.id === "user") setPrompt(layer.text);
+      else if (layer.id === "negative") setNegativePrompt(layer.text);
+      else overrides[layer.id] = { text: layer.text, muted: layer.muted };
+    }
+    if (!entry.pipeline.layers.some((layer) => layer.id === "negative")) setNegativePrompt("");
+    setLayerOverrides(overrides);
+    if (entry.modelId && modelList.some((m) => m.id === entry.modelId)) setModelId(entry.modelId);
+    setSeed(typeof entry.seed === "number" ? String(entry.seed) : "");
+    if (entry.aspect) setAspect(entry.aspect);
+  };
+
   // Manual providers (Midjourney) have no API — copy the prompt for the user.
   const copyForManual = async () => {
     try {
-      await navigator.clipboard.writeText(prompt.trim());
+      await navigator.clipboard.writeText(composed.prompt);
       window.dispatchEvent(
         new CustomEvent("mf-toast", {
           detail: `Prompt copied — paste it into ${activeModel?.label ?? "the tool"}, then import the image.`,
@@ -430,6 +466,25 @@ export function GenerationPanel({
           setResults(urls);
           setUsedModel(i > 0 ? model : null);
           setAttemptNote(null);
+          // Record the pipeline that produced this, not just the flat string, so
+          // a replay restores mutes and overrides too. Never block a result on it.
+          try {
+            recordPromptHistory({
+              ...historyScope,
+              title,
+              prompt: composed.prompt,
+              negativePrompt: composed.negativePrompt,
+              pipeline,
+              modelId: model.id,
+              seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
+              aspect,
+              referenceCount: refPreview.used.length,
+              thumbUrl: urls[0],
+            });
+            setHistoryVersion((v) => v + 1);
+          } catch {
+            /* history is a convenience; a failure here must not lose the result */
+          }
           // Auto-adopt the first result so single-shot generation "just works".
           if (urls[0] && onPick) {
             onPick(urls[0]);
@@ -804,6 +859,12 @@ export function GenerationPanel({
         pipeline={pipeline}
         onChange={onPipelineChange}
         editable={studioMode === "creator"}
+        history={history}
+        onReplay={replay}
+        onDeleteHistory={(id) => {
+          deletePromptHistory(id);
+          setHistoryVersion((v) => v + 1);
+        }}
       />
 
       {pickerOpen && (
@@ -822,7 +883,17 @@ export function GenerationPanel({
         }
         busy={isBusy}
         busyLabel={attemptNote ?? "Generating..."}
-        disabledReason={!prompt.trim() ? "Enter a prompt before generating." : undefined}
+        disabledReason={
+          // Gate on what will actually be sent, not just the textarea: a host may
+          // contribute the whole prompt through context layers.
+          !composed.prompt.trim()
+            ? contextLayers.length
+              ? "Every prompt layer is muted or empty."
+              : "Enter a prompt before generating."
+            : composed.missingVariables.length
+              ? `No value for ${composed.missingVariables.map((n) => `{${n}}`).join(", ")}.`
+              : undefined
+        }
         onGenerate={run}
       />
       {isManual && (
