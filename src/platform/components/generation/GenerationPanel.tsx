@@ -12,7 +12,15 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Download, Check, RefreshCw, SlidersHorizontal, ImagePlus } from "lucide-react";
+import {
+  Sparkles,
+  Download,
+  Check,
+  RefreshCw,
+  SlidersHorizontal,
+  ImagePlus,
+  Layers,
+} from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 import { api } from "@/platform/lib/ipc";
 import type { ProviderId } from "@/platform/lib/types";
@@ -34,6 +42,13 @@ import type {
 import { isRecoverableProviderFailure, notifyGenerationFallback } from "@/platform/lib/providers";
 import { GenerateBar } from "@/platform/components/generation/GenerateBar";
 import { ReferenceTray } from "@/platform/components/generation/ReferenceTray";
+import { PromptStudioDrawer } from "@/platform/components/generation/PromptStudioDrawer";
+import {
+  composePrompt,
+  type PromptLayer,
+  type PromptPipeline,
+} from "@/platform/lib/promptPipeline";
+import { useAppStore } from "@/platform/store/useAppStore";
 
 /** Readiness of a model given which of its keyIds are configured/tested. */
 type Readiness = "ready" | "configured" | "invalid" | "no-key" | "manual";
@@ -171,6 +186,8 @@ export function GenerationPanel({
   defaultSizeId = "medium",
   models,
   references = [],
+  contextLayers = [],
+  promptVariables,
   onAddReferences,
   onRemoveReference,
   onGenerate,
@@ -187,6 +204,10 @@ export function GenerationPanel({
   models?: GenModel[];
   /** Reference images the host is tracking (shown as a strip). */
   references?: string[];
+  /** Prompt contributions the host adds ahead of the user's text (DNA, style…). */
+  contextLayers?: PromptLayer[];
+  /** Values for `{variables}` used anywhere in the pipeline. */
+  promptVariables?: Record<string, string>;
   /** Open the host's picker to add references (optional). */
   onAddReferences?: () => void;
   onRemoveReference?: (src: string) => void;
@@ -290,6 +311,45 @@ export function GenerationPanel({
 
   const refPreview = useMemo(() => resolveReferences(richRefs, refSupport), [richRefs, refSupport]);
 
+  // --- Prompt Studio -------------------------------------------------------
+  // The prompt is a stack: context the host contributes (Bible DNA, style
+  // presets, consistency rules), then what the user typed, then negatives.
+  const studioMode = useAppStore((s) => s.studioMode);
+  const [promptStudioOpen, setPromptStudioOpen] = useState(false);
+  const [layerOverrides, setLayerOverrides] = useState<Record<string, Partial<PromptLayer>>>({});
+
+  const pipeline: PromptPipeline = useMemo(() => {
+    const context = contextLayers.map((layer) => ({ ...layer, ...layerOverrides[layer.id] }));
+    const layers: PromptLayer[] = [
+      ...context,
+      { id: "user", kind: "user", label: "Your prompt", text: prompt, editable: true },
+    ];
+    if (negativePrompt.trim()) {
+      layers.push({
+        id: "negative",
+        kind: "negative",
+        label: "Negative prompt",
+        text: negativePrompt,
+        editable: true,
+      });
+    }
+    return { layers, variables: promptVariables };
+  }, [contextLayers, layerOverrides, prompt, negativePrompt, promptVariables]);
+
+  const composed = useMemo(() => composePrompt(pipeline), [pipeline]);
+
+  const onPipelineChange = (next: PromptPipeline) => {
+    for (const layer of next.layers) {
+      if (layer.id === "user") setPrompt(layer.text);
+      else if (layer.id === "negative") setNegativePrompt(layer.text);
+      else
+        setLayerOverrides((prev) => ({
+          ...prev,
+          [layer.id]: { text: layer.text, muted: layer.muted },
+        }));
+    }
+  };
+
   // Manual providers (Midjourney) have no API — copy the prompt for the user.
   const copyForManual = async () => {
     try {
@@ -320,7 +380,7 @@ export function GenerationPanel({
   };
 
   const run = async () => {
-    if (!prompt.trim() || isBusy) return;
+    if (!composed.prompt.trim() || isBusy) return;
     if (isManual) {
       void copyForManual();
       return;
@@ -342,8 +402,8 @@ export function GenerationPanel({
           const urls = await onGenerate({
             spec: {
               capability: isVideo ? "video" : "image",
-              prompt: prompt.trim(),
-              negativePrompt: negativePrompt.trim() || undefined,
+              prompt: composed.prompt,
+              negativePrompt: composed.negativePrompt,
               seed: seed.trim() ? parseInt(seed.trim(), 10) : undefined,
               batch: Math.max(1, Math.min(4, variations)),
               aspect,
@@ -354,8 +414,8 @@ export function GenerationPanel({
               moduleId: "musicvideo",
             },
             mode,
-            prompt: prompt.trim(),
-            negativePrompt: negativePrompt.trim() || undefined,
+            prompt: composed.prompt,
+            negativePrompt: composed.negativePrompt,
             provider: model.providerKey ?? "custom",
             modelId: model.id,
             apiModel: model.apiModel,
@@ -416,10 +476,30 @@ export function GenerationPanel({
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">{title}</h3>
+        {/* Director mode never sees prompt internals. */}
+        {studioMode !== "director" && (
+          <button
+            onClick={() => setPromptStudioOpen(true)}
+            className={cn(
+              "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+              composed.missingVariables.length
+                ? "bg-warning/10 text-warning"
+                : "text-muted hover:bg-elevated"
+            )}
+            title="Inspect every layer of this prompt"
+          >
+            <Layers className="h-3 w-3" />
+            Prompt
+            {pipeline.layers.length > 1 ? (
+              <span className="tabular-nums opacity-70">{pipeline.layers.length}</span>
+            ) : null}
+          </button>
+        )}
         <button
           onClick={() => setAdvanced((v) => !v)}
           className={cn(
-            "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+            "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+            studioMode === "director" && "ml-auto",
             advanced ? "bg-primary/12 text-primary" : "text-muted hover:bg-elevated"
           )}
           title="Advanced controls"
@@ -717,6 +797,14 @@ export function GenerationPanel({
           <ImagePlus className="h-3.5 w-3.5" /> Add reference
         </button>
       </div>
+
+      <PromptStudioDrawer
+        open={promptStudioOpen}
+        onClose={() => setPromptStudioOpen(false)}
+        pipeline={pipeline}
+        onChange={onPipelineChange}
+        editable={studioMode === "creator"}
+      />
 
       {pickerOpen && (
         <AssetPicker
