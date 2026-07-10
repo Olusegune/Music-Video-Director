@@ -14,6 +14,7 @@ import {
   FolderInput,
 } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
+import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import {
   GenerationPanel,
   type GenerateOpts,
@@ -225,6 +226,9 @@ export function MediaPanel({
   aspect,
   isTauri,
   initialPrompt,
+  contextLayers,
+  promptVariables,
+  historyScope,
   onGenerate,
   onPick,
   pickLabel,
@@ -241,6 +245,10 @@ export function MediaPanel({
   isTauri: boolean;
   /** Composed DNA prompt seeded into the unified panel. */
   initialPrompt: string;
+  /** Named prompt contributions (DNA, consistency, style) for the Prompt Studio. */
+  contextLayers?: PromptLayer[];
+  promptVariables?: Record<string, string>;
+  historyScope?: { moduleId?: string; entityId?: string };
   /** Run a generation (unified panel handles model/size/seed/variations). */
   onGenerate: (opts: GenerateOpts) => Promise<string[]>;
   /** Adopt a result as the entity's hero image. */
@@ -272,6 +280,9 @@ export function MediaPanel({
       <GenerationPanel
         title="Generate image"
         initialPrompt={initialPrompt}
+        contextLayers={contextLayers}
+        promptVariables={promptVariables}
+        historyScope={historyScope}
         defaultAspect={defaultAspect}
         references={references}
         onAddReferences={onAddReferences}

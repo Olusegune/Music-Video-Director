@@ -28,8 +28,9 @@ import {
   newCharacter,
   CHARACTER_ROLES,
 } from "@/platform/lib/characterDna";
-import { STYLE_GROUPS, presetsByGroup, findPreset } from "@/platform/lib/styles";
+import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
+import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import { MoveAssetMenu } from "@/platform/features/dna/dnaKit";
 import {
   GenerationPanel,
@@ -304,45 +305,11 @@ function CharacterSheet({
     },
   });
 
-  // The portrait prompt as named contributions rather than one blob. DNA is
-  // live (it is what we already sent); the consistency rules and style preset
-  // ship muted, so the Prompt Studio reveals them without silently changing
-  // anyone's output. Unmute to fold them in.
-  const portraitLayers: PromptLayer[] = useMemo(() => {
-    const dna = draft.promptDna || composeCharacterDna(draft).promptDna;
-    const layers: PromptLayer[] = [
-      {
-        id: "dna",
-        kind: "dna",
-        label: "Character DNA",
-        source: `Character Bible · ${draft.name || "Untitled"}`,
-        text: dna,
-        editable: true,
-      },
-    ];
-    if (draft.consistencyRules?.trim()) {
-      layers.push({
-        id: "consistency",
-        kind: "system",
-        label: "Consistency rules",
-        source: "Keeps this character on-model across shots",
-        text: draft.consistencyRules,
-        muted: true,
-      });
-    }
-    const styleFragment = findPreset(draft.stylePreset)?.fragment;
-    if (styleFragment) {
-      layers.push({
-        id: "style",
-        kind: "style",
-        label: "Style preset",
-        source: draft.stylePreset,
-        text: styleFragment,
-        muted: true,
-      });
-    }
-    return layers;
-  }, [draft.promptDna, draft.name, draft.consistencyRules, draft.stylePreset, draft]);
+  // The portrait prompt as named contributions rather than one blob.
+  const portraitLayers: PromptLayer[] = useMemo(
+    () => bibleEntityLayers(draft, composeCharacterDna(draft).promptDna, "Character Bible"),
+    [draft]
+  );
 
   const runGenerate = async (opts: GenerateOpts): Promise<string[]> => {
     const urls: string[] = [];

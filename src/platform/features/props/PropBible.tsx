@@ -15,6 +15,8 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
+import type { PromptLayer } from "@/platform/lib/promptPipeline";
+import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import type { Prop } from "@/platform/lib/types";
 import { composePropDna, isPropDnaStale, newProp, PROP_CATEGORIES } from "@/platform/lib/propDna";
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
@@ -266,6 +268,12 @@ function PropSheet({
     },
   });
 
+  // Named prompt contributions rather than one flattened blob.
+  const propLayers: PromptLayer[] = useMemo(
+    () => bibleEntityLayers(draft, composePropDna(draft).promptDna, "Prop Bible"),
+    [draft]
+  );
+
   const runGenerate = async (opts: GenerateOpts): Promise<string[]> => {
     const urls: string[] = [];
     for (let i = 0; i < opts.variations; i++) {
@@ -355,7 +363,10 @@ function PropSheet({
             generating={false}
             aspect="aspect-square"
             isTauri={isTauri}
-            initialPrompt={draft.promptDna || composePropDna(draft).promptDna}
+            initialPrompt=""
+            contextLayers={propLayers}
+            promptVariables={{ prop: draft.name }}
+            historyScope={{ moduleId: "props", entityId: draft.id }}
             onGenerate={runGenerate}
             onPick={pickHero}
             pickLabel="Use as hero"

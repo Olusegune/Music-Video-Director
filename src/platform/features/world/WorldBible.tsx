@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Globe,
@@ -15,6 +15,8 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
+import type { PromptLayer } from "@/platform/lib/promptPipeline";
+import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import type { Environment } from "@/platform/lib/types";
 import {
   composeEnvironmentDna,
@@ -251,6 +253,12 @@ function EnvironmentSheet({
     },
   });
 
+  // Named prompt contributions rather than one flattened blob.
+  const worldLayers: PromptLayer[] = useMemo(
+    () => bibleEntityLayers(draft, composeEnvironmentDna(draft).promptDna, "World Bible"),
+    [draft]
+  );
+
   const runGenerate = async (opts: GenerateOpts): Promise<string[]> => {
     const urls: string[] = [];
     for (let i = 0; i < opts.variations; i++) {
@@ -336,7 +344,10 @@ function EnvironmentSheet({
             generating={false}
             aspect="aspect-video"
             isTauri={isTauri}
-            initialPrompt={draft.promptDna || composeEnvironmentDna(draft).promptDna}
+            initialPrompt=""
+            contextLayers={worldLayers}
+            promptVariables={{ location: draft.name }}
+            historyScope={{ moduleId: "world", entityId: draft.id }}
             onGenerate={runGenerate}
             onPick={pickEstablishing}
             pickLabel="Use as establishing"
