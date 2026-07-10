@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { Sidebar } from "@/platform/components/layout/Sidebar";
 import { Inspector } from "@/platform/components/layout/Inspector";
 import { StartupSplash } from "@/platform/components/layout/StartupSplash";
+import { StudioErrorBoundary } from "@/platform/components/layout/StudioErrorBoundary";
+import { moduleManifestForView } from "@/platform/lib/moduleManifest";
 import { Dashboard } from "@/platform/features/dashboard/Dashboard";
 import { AnimationLab } from "@/apps/music-video/features/animation/AnimationLab";
 import { SongStudio } from "@/apps/music-video/features/song/SongStudio";
@@ -147,33 +149,35 @@ export default function App() {
         key={dataVersion}
         className={`studio-view studio-view-${view} flex min-w-0 flex-1 flex-col`}
       >
-        <Suspense fallback={<StudioLoading />}>
-          {view === "song" && <SongStudio />}
-          {view === "mvdirector" && <MvDirector />}
-          {view === "magicoutput" && <MagicOutputScreen />}
-          {view === "cast" && <CastView />}
-          {view === "choreography" && <ChoreographyView />}
-          {view === "timeline" && <TimelineView />}
-          {view === "motionstudio" && <MotionStudio />}
-          {view === "glamstudio" && <GlamStudio />}
-          {view === "webstudio" && <WebStudio />}
-          {view === "campaignstudio" && <CampaignStudio />}
-          {view === "templates" && <TemplatesView />}
-          {view === "help" && <HelpCenter />}
-          {view === "dashboard" && <Dashboard />}
-          {view === "project" && <ProjectWorkspace />}
-          {view === "settings" && <SettingsView />}
-          {view === "brandkits" && <BrandKitManager />}
-          {view === "assets" && <AssetLibrary />}
-          {view === "characters" && <CharacterBible />}
-          {view === "world" && <WorldBible />}
-          {view === "props" && <PropBible />}
-          {view === "scripts" && <ScriptStudio />}
-          {view === "animation" && <AnimationLab />}
-          {view === "export" && <BibleExport />}
-          {view === "apikeys" && <ApiKeyDashboard />}
-          {view === "models" && <ModelRegistryView />}
-        </Suspense>
+        <StudioErrorBoundary key={view} label={moduleManifestForView(view)?.label}>
+          <Suspense fallback={<StudioLoading />}>
+            {view === "song" && <SongStudio />}
+            {view === "mvdirector" && <MvDirector />}
+            {view === "magicoutput" && <MagicOutputScreen />}
+            {view === "cast" && <CastView />}
+            {view === "choreography" && <ChoreographyView />}
+            {view === "timeline" && <TimelineView />}
+            {view === "motionstudio" && <MotionStudio />}
+            {view === "glamstudio" && <GlamStudio />}
+            {view === "webstudio" && <WebStudio />}
+            {view === "campaignstudio" && <CampaignStudio />}
+            {view === "templates" && <TemplatesView />}
+            {view === "help" && <HelpCenter />}
+            {view === "dashboard" && <Dashboard />}
+            {view === "project" && <ProjectWorkspace />}
+            {view === "settings" && <SettingsView />}
+            {view === "brandkits" && <BrandKitManager />}
+            {view === "assets" && <AssetLibrary />}
+            {view === "characters" && <CharacterBible />}
+            {view === "world" && <WorldBible />}
+            {view === "props" && <PropBible />}
+            {view === "scripts" && <ScriptStudio />}
+            {view === "animation" && <AnimationLab />}
+            {view === "export" && <BibleExport />}
+            {view === "apikeys" && <ApiKeyDashboard />}
+            {view === "models" && <ModelRegistryView />}
+          </Suspense>
+        </StudioErrorBoundary>
       </main>
 
       {/* RIGHT — inspector (only in project view) */}
