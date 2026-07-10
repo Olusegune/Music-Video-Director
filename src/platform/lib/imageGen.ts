@@ -343,7 +343,39 @@ function styleFrag(presetId: string): string {
   return findPreset(presetId)?.fragment ?? "";
 }
 
-function characterPrompt(c: Character, template: string, aspect: string): string {
+/**
+ * A sheet prompt is not one sentence — it is a layout instruction, an identity,
+ * a consistency rule, a style, a board directive and a quality bar, in that
+ * order. Naming them lets the Prompt Studio show which words came from where,
+ * and lets a user mute one without rewriting the paragraph.
+ */
+export interface SheetPromptParts {
+  layout: string;
+  identity: string;
+  consistency: string;
+  style: string;
+  board: string;
+  quality: string;
+  /** Extra directives (environments forbid people). */
+  constraints?: string;
+}
+
+/** Flatten parts exactly as the prompt builders always have: joined by a space. */
+export function joinSheetParts(parts: SheetPromptParts): string {
+  return [
+    parts.layout,
+    parts.identity,
+    parts.consistency,
+    parts.style,
+    parts.board,
+    parts.quality,
+    parts.constraints,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function characterParts(c: Character, template: string, aspect: string): SheetPromptParts {
   const dna = c.promptDna.trim() || composeCharacterDna(c).promptDna;
   const anchor = identityAnchor(c);
   const style = styleFrag(c.stylePreset);
@@ -362,12 +394,17 @@ function characterPrompt(c: Character, template: string, aspect: string): string
     story: `Create a story-moments sheet. ${ar}Show a row of cinematic mini-scene panels of the same character in key story beats, each labeled.`,
   };
 
-  return [layouts[template] ?? layouts.deluxe, identity, consistency, style, BOARD, QUALITY]
-    .filter(Boolean)
-    .join(" ");
+  return {
+    layout: layouts[template] ?? layouts.deluxe,
+    identity,
+    consistency,
+    style,
+    board: BOARD,
+    quality: QUALITY,
+  };
 }
 
-function environmentPrompt(e: Environment, template: string, aspect: string): string {
+function environmentParts(e: Environment, template: string, aspect: string): SheetPromptParts {
   const dna = e.promptDna.trim() || composeEnvironmentDna(e).promptDna;
   const style = styleFrag(e.stylePreset);
   const identity = `Location: ${e.name}. Design DNA: ${dna}.`;
@@ -381,20 +418,18 @@ function environmentPrompt(e: Environment, template: string, aspect: string): st
     times: `Create a time-of-day sheet for the same location. ${ar}Show it at day, golden hour, night, and overcast, each labeled, with consistent layout.`,
   };
 
-  return [
-    layouts[template] ?? layouts.deluxe,
+  return {
+    layout: layouts[template] ?? layouts.deluxe,
     identity,
     consistency,
     style,
-    BOARD,
-    QUALITY,
-    "no people.",
-  ]
-    .filter(Boolean)
-    .join(" ");
+    board: BOARD,
+    quality: QUALITY,
+    constraints: "no people.",
+  };
 }
 
-function propPrompt(p: Prop, template: string, aspect: string): string {
+function propParts(p: Prop, template: string, aspect: string): SheetPromptParts {
   const dna = p.promptDna.trim() || composePropDna(p).promptDna;
   const style = styleFrag(p.stylePreset);
   const identity = `${p.category}: ${p.name}. Design DNA: ${dna}.`;
@@ -408,9 +443,26 @@ function propPrompt(p: Prop, template: string, aspect: string): string {
     renders: `Create a ${p.category.toLowerCase()} render sheet. ${ar}Show a hero beauty render, a macro detail render, and an in-use/in-context render, each labeled.`,
   };
 
-  return [layouts[template] ?? layouts.deluxe, identity, consistency, style, BOARD, QUALITY]
-    .filter(Boolean)
-    .join(" ");
+  return {
+    layout: layouts[template] ?? layouts.deluxe,
+    identity,
+    consistency,
+    style,
+    board: BOARD,
+    quality: QUALITY,
+  };
+}
+
+/** The named contributions of a sheet prompt, before they are flattened. */
+export function buildSheetPromptParts(
+  kind: EntityKind,
+  entity: Character | Environment | Prop,
+  template: string,
+  aspect: string
+): SheetPromptParts {
+  if (kind === "character") return characterParts(entity as Character, template, aspect);
+  if (kind === "environment") return environmentParts(entity as Environment, template, aspect);
+  return propParts(entity as Prop, template, aspect);
 }
 
 export function buildSheetPrompt(
@@ -419,9 +471,7 @@ export function buildSheetPrompt(
   template: string,
   aspect: string
 ): string {
-  if (kind === "character") return characterPrompt(entity as Character, template, aspect);
-  if (kind === "environment") return environmentPrompt(entity as Environment, template, aspect);
-  return propPrompt(entity as Prop, template, aspect);
+  return joinSheetParts(buildSheetPromptParts(kind, entity, template, aspect));
 }
 
 // --- filename --------------------------------------------------------------

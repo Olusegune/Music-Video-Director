@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -11,8 +11,13 @@ import {
   Check,
   AlertCircle,
   Clipboard,
+  Layers,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
+import { sheetPromptLayers } from "@/platform/lib/bibleLayers";
+import { composePrompt, type PromptPipeline } from "@/platform/lib/promptPipeline";
+import { PromptStudioDrawer } from "@/platform/components/generation/PromptStudioDrawer";
+import { useAppStore } from "@/platform/store/useAppStore";
 import type { Character, Environment, Prop } from "@/platform/lib/types";
 import {
   IMAGE_MODELS,
@@ -22,7 +27,7 @@ import {
   findModel,
   findSize,
   resolveSize,
-  buildSheetPrompt,
+  buildSheetPromptParts,
   type EntityKind,
 } from "@/platform/lib/imageGen";
 import {
@@ -58,12 +63,58 @@ export function ImageStudio({
   const [sizeId, setSizeId] = useState("large");
   const [customW, setCustomW] = useState(1024);
   const [customH, setCustomH] = useState(1024);
-  const [prompt, setPrompt] = useState(() => buildSheetPrompt(kind, entity, templateId, aspect));
+  const bibleLabel =
+    kind === "character"
+      ? "Character Bible"
+      : kind === "environment"
+        ? "World Bible"
+        : "Prop Bible";
+  // The sheet prompt is composed from its named layers, so the Prompt Studio can
+  // show exactly what the model receives rather than an approximation of it.
+  const composeSheet = (templateId: string, aspect: string) =>
+    composePrompt({
+      layers: sheetPromptLayers(
+        buildSheetPromptParts(kind, entity, templateId, aspect),
+        entityName,
+        bibleLabel
+      ),
+    }).prompt;
+
+  const [prompt, setPrompt] = useState(() => composeSheet(templateId, aspect));
   const [dirty, setDirty] = useState(false);
+  const [promptStudioOpen, setPromptStudioOpen] = useState(false);
+  const studioMode = useAppStore((s) => s.studioMode);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [gallery, setGallery] = useState<GeneratedAsset[]>(() => loadAssetsFor(entity.id));
   const [preview, setPreview] = useState<GeneratedAsset | null>(null);
+
+  // Once hand-edited, the composition no longer describes what will be sent, so
+  // we say so rather than showing layers that are no longer the source of truth.
+  const pipeline: PromptPipeline = useMemo(
+    () =>
+      dirty
+        ? {
+            layers: [
+              {
+                id: "user",
+                kind: "user",
+                label: "Your prompt (edited)",
+                source: "Hand-edited — reset to see the layers it was built from",
+                text: prompt,
+              },
+            ],
+          }
+        : {
+            layers: sheetPromptLayers(
+              buildSheetPromptParts(kind, entity, templateId, aspect),
+              entityName,
+              bibleLabel
+            ),
+          },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dirty, prompt, kind, entity, templateId, aspect, entityName, bibleLabel]
+  );
 
   const { data: keyStatuses = [] } = useQuery({
     queryKey: ["providerKeys"],
@@ -75,7 +126,7 @@ export function ImageStudio({
 
   // Recompose the prompt when template / aspect change (unless hand-edited).
   useEffect(() => {
-    setPrompt(buildSheetPrompt(kind, entity, templateId, aspect));
+    setPrompt(composeSheet(templateId, aspect));
     setDirty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId, aspect, entity.id]);
@@ -298,7 +349,7 @@ export function ImageStudio({
                 <button
                   className="flex items-center gap-1 text-[11px] text-muted hover:text-foreground"
                   onClick={() => {
-                    setPrompt(buildSheetPrompt(kind, entity, templateId, aspect));
+                    setPrompt(composeSheet(templateId, aspect));
                     setDirty(false);
                   }}
                   title="Reset to template"
@@ -312,6 +363,15 @@ export function ImageStudio({
                 >
                   <Copy className="h-3 w-3" /> Copy
                 </button>
+                {studioMode !== "director" && (
+                  <button
+                    className="flex items-center gap-1 text-[11px] text-muted hover:text-foreground"
+                    onClick={() => setPromptStudioOpen(true)}
+                    title="See what this sheet prompt is made of"
+                  >
+                    <Layers className="h-3 w-3" /> Layers
+                  </button>
+                )}
               </div>
             </div>
             <textarea
@@ -404,6 +464,16 @@ export function ImageStudio({
           regenerating={busy}
         />
       )}
+
+      {/* Read-only: the sheet prompt is edited in its textarea, which stays the
+          single source of truth. The drawer explains what it is made of. */}
+      <PromptStudioDrawer
+        open={promptStudioOpen}
+        onClose={() => setPromptStudioOpen(false)}
+        pipeline={pipeline}
+        onChange={() => undefined}
+        editable={false}
+      />
     </div>
   );
 }

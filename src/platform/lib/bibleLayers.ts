@@ -7,6 +7,7 @@
 
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { findPreset } from "@/platform/lib/styles";
+import type { SheetPromptParts } from "@/platform/lib/imageGen";
 
 export interface BibleEntityLike {
   name: string;
@@ -53,6 +54,68 @@ export function bibleEntityLayers(
       source: entity.stylePreset,
       text: styleFragment,
       muted: true,
+    });
+  }
+
+  return layers;
+}
+
+/**
+ * A sheet prompt as layers. Unlike a Bible entity's portrait prompt, every part
+ * here is already being sent, so nothing ships muted: this reveals a prompt the
+ * user was always receiving, it does not change it.
+ */
+export function sheetPromptLayers(
+  parts: SheetPromptParts,
+  entityName: string,
+  bibleLabel: string
+): PromptLayer[] {
+  const layers: PromptLayer[] = [
+    {
+      id: "layout",
+      kind: "template",
+      label: "Sheet layout",
+      source: "The board this template asks for",
+      text: parts.layout,
+      editable: true,
+    },
+    {
+      id: "identity",
+      kind: "dna",
+      label: "Identity & DNA",
+      source: `${bibleLabel} · ${entityName || "Untitled"}`,
+      text: parts.identity,
+      editable: true,
+    },
+    {
+      id: "consistency",
+      kind: "system",
+      label: "Consistency rules",
+      source: "Keeps every panel on-model",
+      text: parts.consistency,
+    },
+  ];
+
+  if (parts.style) {
+    layers.push({
+      id: "style",
+      kind: "style",
+      label: "Style preset",
+      text: parts.style,
+    });
+  }
+
+  layers.push(
+    { id: "board", kind: "system", label: "Board directive", text: parts.board },
+    { id: "quality", kind: "system", label: "Quality bar", text: parts.quality }
+  );
+
+  if (parts.constraints) {
+    layers.push({
+      id: "constraints",
+      kind: "system",
+      label: "Constraints",
+      text: parts.constraints,
     });
   }
 
