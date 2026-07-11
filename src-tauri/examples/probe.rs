@@ -11,6 +11,7 @@
 //!   cargo run --example probe -- google_veo    # video (slower — polls a long-running op)
 //!   cargo run --example probe -- kie_seedance  # Seedance 2.0 video via Kie.ai (bytedance/seedance-2)
 //!   cargo run --example probe -- badkey        # deliberately-invalid key, proves the failure path
+//!   cargo run --example probe -- smart_import  # Smart Import structured-JSON extraction (Gemini)
 
 use motionforge_lib::providers::audio::ElevenLabsProvider;
 use motionforge_lib::providers::image::{
@@ -90,7 +91,11 @@ async fn main() {
 
     // kie_seedance reuses the "kie" keychain entry — Seedance is routed through
     // Kie.ai by model slug, not a separate credential.
-    let key_lookup = if which == "kie_seedance" { "kie" } else { which.as_str() };
+    let key_lookup = match which.as_str() {
+        "kie_seedance" => "kie",
+        "smart_import" => "gemini",
+        other => other,
+    };
     let key = match secrets::get_key(key_lookup) {
         Ok(Some(k)) => k,
         _ => {
@@ -148,6 +153,25 @@ async fn main() {
                 .generate_video(prompt)
                 .await,
         ),
+        "smart_import" => {
+            let doc = "SCENE 1. Mara Okafor, late 30s, a weathered freighter pilot with a shaved \
+                head and a scar across her left cheek. She wears a patched flight jacket over \
+                grease-stained coveralls. Quiet, methodical, distrustful of authority. She's \
+                haunted by a crash that killed her crew and is searching for the saboteur.";
+            let schema = r#"{"name":{"value":"string","confidence":"high|low","source":"string"},"age":{"value":"string","confidence":"high|low","source":"string"},"distinguishingFeatures":{"value":"string","confidence":"high|low","source":"string"},"primaryOutfit":{"value":"string","confidence":"high|low","source":"string"},"traits":{"value":"string","confidence":"high|low","source":"string"},"motivations":{"value":"string","confidence":"high|low","source":"string"}}"#;
+            let prompt = format!(
+                "You are extracting character sheet fields from a production document. Only \
+                 include a field if the text directly supports it; omit anything not present — \
+                 do not invent values. Include a short verbatim `source` excerpt per field.\n\nDOCUMENT:\n{doc}"
+            );
+            match GeminiTextProvider::new(key)
+                .generate_structured(&prompt, schema)
+                .await
+            {
+                Ok(json) => println!("OK — Gemini returned structured extraction:\n{json}"),
+                Err(e) => println!("FAILED — {e:#}"),
+            }
+        }
         other => println!("No live test wired for '{other}' yet."),
     }
 }
