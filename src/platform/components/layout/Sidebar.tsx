@@ -89,7 +89,12 @@ export function Sidebar() {
           <Film className="h-4 w-4 text-white" />
         </div>
         <div className="leading-tight">
-          <div className="text-sm font-semibold">Director Studio</div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold">Director Studio</span>
+            <span className="rounded border border-primary/30 bg-primary/10 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-primary">
+              Pro
+            </span>
+          </div>
           <div className="text-[10px] text-muted">Wheelbarrow</div>
         </div>
       </button>
@@ -292,6 +297,7 @@ function NavTreeItem({
         label={item.label}
         active={active}
         tone={item.tone}
+        badge={item.badge}
         onClick={() => onNavigate(item.view)}
       />
       {expanded && (
@@ -330,6 +336,7 @@ function NavItem({
   onClick,
   tone,
   compact,
+  badge,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -337,6 +344,7 @@ function NavItem({
   onClick?: () => void;
   tone?: "violet" | "cyan" | "gold" | "green" | "pink";
   compact?: boolean;
+  badge?: string;
 }) {
   const activeTone = {
     violet: "bg-violet-500/12 text-violet-400",
@@ -351,6 +359,13 @@ function NavItem({
     gold: "bg-amber-400",
     green: "bg-emerald-400",
     pink: "bg-fuchsia-400",
+  };
+  const chipTone = {
+    violet: "bg-violet-500/15 text-violet-400",
+    cyan: "bg-cyan-500/15 text-cyan-400",
+    gold: "bg-amber-500/15 text-amber-400",
+    green: "bg-emerald-500/15 text-emerald-400",
+    pink: "bg-fuchsia-500/15 text-fuchsia-400",
   };
   return (
     <button
@@ -374,8 +389,21 @@ function NavItem({
           )}
         />
       )}
-      <span className={cn("shrink-0", active && !tone && "text-primary")}>{icon}</span>
+      <span
+        className={cn(
+          "flex shrink-0 items-center justify-center rounded-md transition-colors",
+          compact ? "h-5 w-5" : "h-6 w-6",
+          tone ? chipTone[tone] : active ? "bg-primary/12 text-primary" : "text-muted group-hover:text-foreground"
+        )}
+      >
+        {icon}
+      </span>
       <span className="truncate">{label}</span>
+      {badge && (
+        <span className="ml-auto shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
+          {badge}
+        </span>
+      )}
     </button>
   );
 }

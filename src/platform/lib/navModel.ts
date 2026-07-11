@@ -61,6 +61,7 @@ export interface NavItemModel {
   icon: NavIcon;
   moduleId?: Exclude<ModuleId, null>;
   tone?: NavTone;
+  badge?: string;
   subItems?: NavItemModel[];
 }
 
@@ -107,28 +108,28 @@ export const NAV_MODEL: NavSectionModel[] = [
     id: "library",
     label: "Production Library",
     items: [
-      { id: "characters", label: "Character Designer", view: "characters", icon: "users" },
-      { id: "world", label: "World Bible", view: "world", icon: "globe" },
-      { id: "props", label: "Props & Vehicles", view: "props", icon: "package" },
-      { id: "assets", label: "Asset Library", view: "assets", icon: "library" },
-      { id: "brandkits", label: "Brand Kits", view: "brandkits", icon: "palette" },
-      { id: "scripts", label: "Script Studio", view: "scripts", icon: "file" },
+      { id: "characters", label: "Character Designer", view: "characters", icon: "users", tone: "violet", badge: "NEW" },
+      { id: "world", label: "World Designer", view: "world", icon: "globe", tone: "cyan" },
+      { id: "props", label: "Props & Vehicles", view: "props", icon: "package", tone: "green" },
+      { id: "brandkits", label: "Brand Kits", view: "brandkits", icon: "palette", tone: "gold" },
+      { id: "scripts", label: "Script Studio", view: "scripts", icon: "file", tone: "pink" },
     ],
   },
   {
     id: "tools",
-    label: "Tools",
+    label: "Manage",
     items: [
-      { id: "dashboard", label: "Dashboard", view: "dashboard", icon: "dashboard" },
-      { id: "export", label: "Export Center", view: "export", icon: "book" },
+      { id: "dashboard", label: "Dashboard", view: "dashboard", icon: "dashboard", tone: "violet" },
+      { id: "assets", label: "Asset Library", view: "assets", icon: "library", tone: "cyan" },
+      { id: "export", label: "Export Center", view: "export", icon: "book", tone: "green" },
     ],
   },
   {
     id: "system",
     label: "System",
     items: [
-      { id: "apikeys", label: "API Keys", view: "apikeys", icon: "key" },
-      { id: "models", label: "AI Models", view: "models", icon: "boxes" },
+      { id: "models", label: "AI Models", view: "models", icon: "boxes", tone: "violet" },
+      { id: "apikeys", label: "API Keys", view: "apikeys", icon: "key", tone: "gold" },
       { id: "settings", label: "Settings", view: "settings", icon: "settings" },
     ],
   },
