@@ -132,12 +132,23 @@ export interface GenerateOpts {
   camera?: string;
 }
 
-/** Turn a raw provider error into an actionable "Model · reason · fix" message. */
-function diagnose(modelLabel: string, e: unknown): string {
+export interface DiagnosedError {
+  modelLabel: string;
+  reason: string;
+  action: string;
+  /** True when the fix is "add/fix a key" — surfaces the Open API Settings button. */
+  needsApiSettings: boolean;
+  /** The raw provider message, kept out of the main copy and shown collapsed. */
+  raw: string;
+}
+
+/** Turn a raw provider error into an actionable "Model · reason · fix" diagnosis. */
+function diagnose(modelLabel: string, e: unknown): DiagnosedError {
   const raw = e instanceof Error ? e.message : String(e ?? "Generation failed");
   const low = raw.toLowerCase();
   let reason = raw;
   let action = "Open API Keys → Test Connection, or switch the model above.";
+  let needsApiSettings = true;
   if (/401|403|unauthor|invalid.*key|api key|rejected/.test(low)) {
     reason = "The provider rejected the API key.";
     action = "Add or fix the key in API Keys, then run Test Connection.";
@@ -146,12 +157,15 @@ function diagnose(modelLabel: string, e: unknown): string {
       "This model needs a reference image, but none was provided (or none could be resolved).";
     action =
       'Select a Character/Environment/Prop with a locked image, add one via "Add reference," or turn on Auto-fallback above so a model that doesn\'t need one can pick up automatically.';
+    needsApiSettings = false;
   } else if (/429|quota|rate limit|exceeded|insufficient|billing/.test(low)) {
     reason = "Rate-limited or out of quota/credits.";
     action = "Wait and retry, or switch to another provider above.";
+    needsApiSettings = false;
   } else if (/404|not found|model.*(unavailable|not found)|unsupported/.test(low)) {
     reason = "That model/endpoint isn't available for this key.";
     action = "Switch the model above (e.g. Fal.ai or OpenAI).";
+    needsApiSettings = false;
   } else if (/verif|organization must be verified/.test(low)) {
     reason = "This model needs a verified provider account.";
     action = "Verify your org, or switch model (DALL·E 3 / Fal.ai need no verification).";
@@ -161,8 +175,9 @@ function diagnose(modelLabel: string, e: unknown): string {
   } else if (/timed out|timeout|could not reach|network|offline/.test(low)) {
     reason = "Couldn't reach the provider.";
     action = "Check your connection and retry.";
+    needsApiSettings = false;
   }
-  return `${modelLabel} — ${reason}\nFix: ${action}\n\n(${raw})`;
+  return { modelLabel, reason, action, needsApiSettings, raw };
 }
 
 // Image pickers include every provider — including manual (Midjourney).
@@ -254,7 +269,9 @@ export function GenerationPanel({
   const [results, setResults] = useState<string[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | DiagnosedError | null>(null);
+  const [showRawError, setShowRawError] = useState(false);
+  const [copiedRawError, setCopiedRawError] = useState(false);
   const [autoFallback, setAutoFallback] = useState(true);
   const [attemptNote, setAttemptNote] = useState<string | null>(null);
   const [usedModel, setUsedModel] = useState<GenModel | null>(null);
@@ -439,6 +456,7 @@ export function GenerationPanel({
     }
     setBusy(true);
     setError(null);
+    setShowRawError(false);
     setAttemptNote(null);
     setUsedModel(null);
     try {
@@ -996,7 +1014,16 @@ export function GenerationPanel({
 
       {error && (
         <div className="rounded-md border border-danger/40 bg-danger/10 px-2.5 py-2 text-[11px] text-danger">
-          <p className="whitespace-pre-line">{error}</p>
+          {typeof error === "string" ? (
+            <p className="whitespace-pre-line">{error}</p>
+          ) : (
+            <>
+              <p className="font-medium">
+                {error.modelLabel} — {error.reason}
+              </p>
+              <p className="mt-0.5 text-danger/90">{error.action}</p>
+            </>
+          )}
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <button
               onClick={run}
@@ -1013,13 +1040,53 @@ export function GenerationPanel({
                 if (nextNonManual) {
                   setModelId(nextNonManual.id);
                   setError(null);
+                  setShowRawError(false);
                 }
               }}
               className="rounded bg-danger/15 px-2 py-0.5 font-medium hover:bg-danger/25"
             >
-              Switch provider
+              Switch model
             </button>
+            {typeof error !== "string" && error.needsApiSettings && (
+              <button
+                onClick={() => useAppStore.getState().openApiKeys()}
+                className="rounded bg-danger/15 px-2 py-0.5 font-medium hover:bg-danger/25"
+              >
+                Open API Settings
+              </button>
+            )}
+            {typeof error !== "string" && (
+              <button
+                onClick={() => setShowRawError((v) => !v)}
+                className="rounded bg-danger/15 px-2 py-0.5 font-medium hover:bg-danger/25"
+              >
+                {showRawError ? "Hide" : "Show"} diagnostics
+              </button>
+            )}
           </div>
+          {typeof error !== "string" && showRawError && (
+            <div className="mt-1.5 rounded bg-black/20 p-2">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-danger/70">
+                  Technical details
+                </span>
+                <button
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(error.raw).then(() => {
+                      setCopiedRawError(true);
+                      setTimeout(() => setCopiedRawError(false), 1500);
+                    });
+                  }}
+                  className="rounded bg-danger/15 px-1.5 py-0.5 text-[10px] font-medium hover:bg-danger/25"
+                >
+                  {copiedRawError ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <pre className="whitespace-pre-wrap break-words font-mono text-[10px] text-danger/90">
+                {error.raw}
+              </pre>
+            </div>
+          )}
         </div>
       )}
 
