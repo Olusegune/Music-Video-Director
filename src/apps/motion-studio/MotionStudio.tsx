@@ -41,6 +41,8 @@ import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { STYLE_PRESETS } from "@/platform/lib/styles";
 import { cn } from "@/platform/lib/utils";
 import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
+import { exportMotionProject } from "@/apps/motion-studio/lib/motionExport";
+import { notifyStorage } from "@/platform/lib/storage";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { critiqueScene, directStoryboard, improveScene } from "./lib/brain";
 import { establishDirection } from "./lib/direction";
@@ -681,8 +683,23 @@ export function MotionStudio() {
                           <Badge variant="success">
                             {activeProject.scenes.filter((scene) => scene.approved).length} approved
                           </Badge>
-                          <Button variant="secondary" size="sm">
-                            <Download /> Export placeholder
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={activeProject.scenes.length === 0}
+                            title={
+                              activeProject.scenes.length === 0
+                                ? "Add at least one scene before exporting"
+                                : "Download the production script + shot list"
+                            }
+                            onClick={() => {
+                              const result = exportMotionProject(activeProject);
+                              notifyStorage(
+                                `Exported ${result.filename} — ${result.approvedCount}/${result.sceneCount} scenes approved.`
+                              );
+                            }}
+                          >
+                            <Download /> Export production script
                           </Button>
                         </div>
                       </div>
