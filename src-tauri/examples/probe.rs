@@ -7,6 +7,8 @@
 //!   cargo run --example probe -- fal          # verify fal.ai image
 //!   cargo run --example probe -- openai        | gpt_image | stability
 //!   cargo run --example probe -- google_imagen | replicate
+//!   cargo run --example probe -- nano_banana    | nano_banana_pro | wavespeed
+//!   cargo run --example probe -- google_veo    # video (slower — polls a long-running op)
 
 use motionforge_lib::providers::audio::ElevenLabsProvider;
 use motionforge_lib::providers::image::{
@@ -15,7 +17,9 @@ use motionforge_lib::providers::image::{
 use motionforge_lib::providers::kie::KieImageProvider;
 use motionforge_lib::providers::replicate::ReplicateProvider;
 use motionforge_lib::providers::text::GeminiTextProvider;
-use motionforge_lib::providers::{AudioProvider, ImageProvider, TextProvider};
+use motionforge_lib::providers::video::GoogleVeoProvider;
+use motionforge_lib::providers::wavespeed::WaveSpeedImageProvider;
+use motionforge_lib::providers::{AudioProvider, ImageProvider, TextProvider, VideoProvider};
 use motionforge_lib::secrets;
 
 #[tokio::main]
@@ -113,6 +117,11 @@ async fn main() {
         "google_imagen" => report(GoogleImagenProvider::new(key).generate_image(prompt).await),
         "replicate" => report(ReplicateProvider::new(key).generate_image(prompt).await),
         "kie" => report(KieImageProvider::new(key).generate_image(prompt).await),
+        "nano_banana" | "nano_banana_pro" => {
+            report(GoogleImagenProvider::new(key).generate_image(prompt).await)
+        }
+        "wavespeed" => report(WaveSpeedImageProvider::new(key).generate_image(prompt).await),
+        "google_veo" => report(GoogleVeoProvider::new(key).generate_video(prompt).await),
         other => println!("No live test wired for '{other}' yet."),
     }
 }
