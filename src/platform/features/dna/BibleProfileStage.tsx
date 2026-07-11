@@ -48,15 +48,21 @@ export function BibleProfileStage({
   enhanceHint?: string;
 }) {
   const [enhancing, setEnhancing] = useState(false);
+  const [enhanceError, setEnhanceError] = useState<string | null>(null);
 
   const enhance = async () => {
     if (!onEnhance || enhancing) return;
     setEnhancing(true);
+    setEnhanceError(null);
     try {
       const patches = await onEnhance();
       for (const [key, value] of Object.entries(patches)) {
         if (value?.trim()) onField(key, value);
       }
+    } catch (error) {
+      setEnhanceError(
+        error instanceof Error ? error.message : "AI enhancement could not be completed."
+      );
     } finally {
       setEnhancing(false);
     }
@@ -143,6 +149,11 @@ export function BibleProfileStage({
           Skip
         </Button>
       </div>
+      {enhanceError ? (
+        <p className="mt-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">
+          {enhanceError}
+        </p>
+      ) : null}
     </section>
   );
 }

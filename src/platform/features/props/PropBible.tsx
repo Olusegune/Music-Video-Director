@@ -49,6 +49,8 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
+import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
+import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
 
 function categoryIcon(cat: string) {
   if (cat === "Vehicle") return <Car className="h-3 w-3" />;
@@ -56,11 +58,73 @@ function categoryIcon(cat: string) {
   return <Package className="h-3 w-3" />;
 }
 
+function PropProfile({ prop, onDone }: { prop: Prop; onDone: (saved: Prop | null) => void }) {
+  const [draft, setDraft] = useState<Prop>(prop);
+  const { data: keyStatuses = [] } = useQuery({
+    queryKey: ["providerKeys"],
+    queryFn: api.getProviderKeyStatuses,
+  });
+  const set = (key: string, value: string) =>
+    setDraft((current) => ({ ...current, [key]: value }) as Prop);
+  const canEnhance = textProviderIsReady(keyStatuses);
+  return (
+    <BibleProfileStage
+      entityLabel="Prop"
+      entityName={draft.name}
+      portraitUrl={draft.heroUrl}
+      sections={[
+        {
+          title: "Object",
+          fields: [
+            { key: "category", label: "Category", value: draft.category },
+            { key: "condition", label: "Condition", value: draft.condition },
+            { key: "materials", label: "Materials", value: draft.materials },
+          ],
+        },
+        {
+          title: "Story use",
+          fields: [
+            { key: "usage", label: "Usage", value: draft.usage, multiline: true },
+            {
+              key: "storySignificance",
+              label: "Story significance",
+              value: draft.storySignificance,
+              multiline: true,
+            },
+            { key: "dimensions", label: "Dimensions", value: draft.dimensions },
+          ],
+        },
+      ]}
+      onField={set}
+      onContinue={() => onDone(draft)}
+      onSkip={() => onDone(null)}
+      onEnhance={
+        canEnhance
+          ? () =>
+              enhanceBibleProfile(
+                `Draft a concise production profile for the ${draft.category.toLowerCase()} ${draft.name}. Existing materials: ${draft.materials}. Existing condition: ${draft.condition}. Return only requested production fields.`,
+                '{"condition":"string","materials":"string","usage":"string","storySignificance":"string","dimensions":"string"}',
+                "musicvideo",
+                draft.id,
+                ["condition", "materials", "usage", "storySignificance", "dimensions"]
+              )
+          : undefined
+      }
+      enhanceHint={
+        canEnhance
+          ? undefined
+          : "Add a configured Gemini key in API Keys to draft this prop profile."
+      }
+    />
+  );
+}
+
 export function PropBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
 
   const { data: allProps = [] } = useQuery({
@@ -106,6 +170,7 @@ export function PropBible() {
   });
 
   const cardProp = props.find((p) => p.id === cardId) ?? null;
+  const profileProp = props.find((p) => p.id === profileId) ?? null;
   if (cardProp) {
     const dna = cardProp.promptDna.trim() || composePropDna(cardProp).promptDna;
     const prompt = `${cardProp.category}: ${cardProp.name}. ${dna}. Hero product render, three-quarter view, neutral studio background, high detail.`;
@@ -131,12 +196,33 @@ export function PropBible() {
                 current.map((item) => (item.id === next.id ? next : item))
               );
               setCardId(null);
-              setSelectedId(next.id);
+              setProfileId(next.id);
             });
           }}
           onSkip={() => {
             setCardId(null);
-            setSelectedId(cardProp.id);
+            setProfileId(cardProp.id);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (profileProp) {
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <PropProfile
+          key={profileProp.id}
+          prop={profileProp}
+          onDone={(saved) => {
+            if (saved) {
+              queryClient.setQueryData<Prop[]>(["props"], (current = []) =>
+                current.map((item) => (item.id === saved.id ? saved : item))
+              );
+              void api.saveProp(saved);
+            }
+            setProfileId(null);
+            setSelectedId(profileProp.id);
           }}
         />
       </div>

@@ -47,12 +47,15 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
+import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
+import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
 
 export function WorldBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
 
   const { data: environments = [] } = useQuery({
@@ -75,6 +78,7 @@ export function WorldBible() {
   });
 
   const cardEnv = environments.find((e) => e.id === cardId) ?? null;
+  const profileEnv = environments.find((e) => e.id === profileId) ?? null;
   if (cardEnv) {
     const dna = cardEnv.promptDna.trim() || composeEnvironmentDna(cardEnv).promptDna;
     const prompt = `Establishing shot of ${cardEnv.name}. ${dna}. Cinematic wide shot, atmospheric depth, high detail, no people.`;
@@ -100,12 +104,33 @@ export function WorldBible() {
                 current.map((item) => (item.id === next.id ? next : item))
               );
               setCardId(null);
-              setSelectedId(next.id);
+              setProfileId(next.id);
             });
           }}
           onSkip={() => {
             setCardId(null);
-            setSelectedId(cardEnv.id);
+            setProfileId(cardEnv.id);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (profileEnv) {
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-8">
+        <EnvironmentProfile
+          key={profileEnv.id}
+          environment={profileEnv}
+          onDone={(saved) => {
+            if (saved) {
+              queryClient.setQueryData<Environment[]>(["environments"], (current = []) =>
+                current.map((item) => (item.id === saved.id ? saved : item))
+              );
+              void api.saveEnvironment(saved);
+            }
+            setProfileId(null);
+            setSelectedId(profileEnv.id);
           }}
         />
       </div>
@@ -206,6 +231,66 @@ export function WorldBible() {
         )}
       </div>
     </div>
+  );
+}
+
+function EnvironmentProfile({
+  environment,
+  onDone,
+}: {
+  environment: Environment;
+  onDone: (saved: Environment | null) => void;
+}) {
+  const [draft, setDraft] = useState<Environment>(environment);
+  const { data: keyStatuses = [] } = useQuery({
+    queryKey: ["providerKeys"],
+    queryFn: api.getProviderKeyStatuses,
+  });
+  const set = (key: string, value: string) =>
+    setDraft((current) => ({ ...current, [key]: value }) as Environment);
+  const canEnhance = textProviderIsReady(keyStatuses);
+  return (
+    <BibleProfileStage
+      entityLabel="Location"
+      entityName={draft.name}
+      portraitUrl={draft.establishingUrl}
+      sections={[
+        {
+          title: "Place",
+          fields: [
+            { key: "description", label: "Description", value: draft.description, multiline: true },
+            { key: "architecture", label: "Architecture", value: draft.architecture },
+            { key: "materials", label: "Materials", value: draft.materials },
+          ],
+        },
+        {
+          title: "Atmosphere",
+          fields: [
+            { key: "timeOfDay", label: "Time of day", value: draft.timeOfDay },
+            { key: "mood", label: "Mood", value: draft.mood },
+            { key: "lightingStyle", label: "Lighting", value: draft.lightingStyle },
+          ],
+        },
+      ]}
+      onField={set}
+      onContinue={() => onDone(draft)}
+      onSkip={() => onDone(null)}
+      onEnhance={
+        canEnhance
+          ? () =>
+              enhanceBibleProfile(
+                `Draft a concise cinematic location profile for ${draft.name}. Existing description: ${draft.description}. Return only useful production detail for the requested fields.`,
+                '{"description":"string","architecture":"string","materials":"string","timeOfDay":"string","mood":"string","lightingStyle":"string"}',
+                "musicvideo",
+                draft.id,
+                ["description", "architecture", "materials", "timeOfDay", "mood", "lightingStyle"]
+              )
+          : undefined
+      }
+      enhanceHint={
+        canEnhance ? undefined : "Add a configured Gemini key in API Keys to draft this location."
+      }
+    />
   );
 }
 

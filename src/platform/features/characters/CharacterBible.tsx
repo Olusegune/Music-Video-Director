@@ -47,6 +47,7 @@ import { Badge } from "@/platform/components/ui/badge";
 import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
+import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
 
 export function CharacterBible() {
   const queryClient = useQueryClient();
@@ -241,6 +242,11 @@ function CharacterProfile({
   onDone: (saved: Character | null) => void;
 }) {
   const [draft, setDraft] = useState<Character>(character);
+  const { data: keyStatuses = [] } = useQuery({
+    queryKey: ["providerKeys"],
+    queryFn: api.getProviderKeyStatuses,
+  });
+  const canEnhance = textProviderIsReady(keyStatuses);
   const set = (key: string, value: string) =>
     setDraft((d) => ({ ...d, [key]: value }) as Character);
 
@@ -274,7 +280,23 @@ function CharacterProfile({
       onField={set}
       onContinue={() => onDone(draft)}
       onSkip={() => onDone(null)}
-      enhanceHint="Add a text provider key in API Keys to draft personality automatically."
+      onEnhance={
+        canEnhance
+          ? () =>
+              enhanceBibleProfile(
+                `Draft a concise, cinematic character profile for ${draft.name}. Existing role: ${draft.role}. Existing occupation: ${draft.occupation}. Keep continuity with these traits: ${draft.traits}. Fill only the requested fields.`,
+                '{"traits":"string","motivations":"string","fears":"string","goals":"string"}',
+                "musicvideo",
+                draft.id,
+                ["traits", "motivations", "fears", "goals"]
+              )
+          : undefined
+      }
+      enhanceHint={
+        canEnhance
+          ? undefined
+          : "Add a configured Gemini key in API Keys to draft personality automatically."
+      }
     />
   );
 }
