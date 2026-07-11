@@ -341,7 +341,7 @@ function LaunchKitStep({ state }: GuidedFlowStepComponentProps<CampaignFlowState
       items={[
         { label: "Campaign", value: state.name },
         { label: "Product", value: state.product },
-        { label: "Deliverables", value: `${counts} planned assets` },
+        { label: "Deliverables", value: `${counts} planned` },
         { label: "Channels", value: "Glam, Web, Motion, Social, Email" },
         { label: "Package", value: "Strategy PDF, plan CSV, native copy, prompts" },
       ]}

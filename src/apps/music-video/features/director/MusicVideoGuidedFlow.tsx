@@ -541,7 +541,7 @@ export function MusicVideoGuidedFlow() {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold">Magic Mode V2</h2>
+              <h2 className="text-base font-semibold">Magic Flow</h2>
               <Badge variant="primary">Guided Flow</Badge>
             </div>
             <p className="text-xs text-muted">

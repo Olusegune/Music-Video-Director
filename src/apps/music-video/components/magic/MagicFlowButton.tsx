@@ -38,12 +38,12 @@ export function MagicFlowButton({
         <span className="magic-glow absolute -inset-1 rounded-full" aria-hidden />
         <button
           onClick={open}
-          title="Magic Mode — direct a full music video in one click"
-          aria-label="Magic Mode — direct a full music video in one click"
+          title="Magic Flow — direct a full music video in one click"
+          aria-label="Magic Flow — direct a full music video in one click"
           className="magic-cta relative inline-flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold"
         >
           <Clapperboard className="h-5 w-5" />
-          Magic Mode
+          Magic Flow
           <Sparkles />
         </button>
       </div>
@@ -58,7 +58,7 @@ export function MagicFlowButton({
         className="magic-cta relative flex w-full items-center justify-center gap-3 rounded-[1.5rem] px-8 py-6 text-xl font-extrabold tracking-tight"
       >
         <Clapperboard className="h-7 w-7 shrink-0" />
-        Start Magic Mode
+        Start Magic Flow
         <Sparkles />
       </button>
     </div>

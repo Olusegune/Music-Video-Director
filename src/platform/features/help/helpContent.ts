@@ -63,7 +63,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         ],
       },
       {
-        tip: "Magic Mode is Music Video Director's guided path. Other studios use their own plainly named creation flows.",
+        tip: "Magic Flow is Music Video Director's guided path. Other studios use their own plainly named creation flows.",
       },
     ],
   },
@@ -109,14 +109,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     id: "magic-mode",
-    title: "Magic Mode guide",
+    title: "Magic Flow guide",
     section: "Music Video Director",
     relatedViews: ["song", "magicoutput"],
     updatedAt,
     keywords: "guided music video treatment story",
     blocks: [
       {
-        body: "Magic Mode is Music Video Director's guided path from a song to a treatment. It asks one clear question at a time and saves a normal production you can refine later.",
+        body: "Magic Flow is Music Video Director's guided path from a song to a treatment. It asks one clear question at a time and saves a normal production you can refine later.",
       },
       {
         steps: [

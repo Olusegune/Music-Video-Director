@@ -3,7 +3,39 @@
 > Living document: what shipped, known issues, next steps. Update at every
 > phase boundary so any agent/session can resume cold.
 
-Last updated: 2026-07-09
+Last updated: 2026-07-11
+
+- **Phase 5 — Evenness Sweep, closing the platform program (2026-07-11)**: the last phase of `docs/PLATFORM-CONSISTENCY-AUDIT-2026-07.md` is complete. (1) Motion Studio's "Export placeholder" is now a real production-script export (Markdown shot list + project JSON, zipped) that registers a deliverable — the last gap-matrix cell that was still faking its export. (2) `ProjectHome` (hero Magic Flow CTA + Resume + Recent grid) is live in Glam, Web, and Campaign, reachable via a new `onHome` action in `ModuleHeader`; this also fixed a real bug where `active = projects.find(...) ?? projects[0] ?? null` made "no active project" unreachable once any project existed, permanently pinning returning users into a workbench. Motion (already auto-resumes) and Music Video (Song Studio is a deliberately different entry point) were left alone. (3) A GenerateBar audit across every module found one real violation — the legacy Project workspace's "Generate Pack" button was silently disabled with no visible reason, and Export Center's empty state was a dead end with no pointer to the action; both fixed. (4) Terminology pass: fixed "Magic Mode" → "Magic Flow" in the five remaining user-facing strings (MagicFlowButton labels, Help Center article/tip/body) that had drifted from the naming decision in `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`; fixed a deliverable/asset label mismatch in Campaign's launch-kit summary. See the Terminology Glossary and the closed-out gap matrix below.
+
+## Terminology Glossary (Phase 5)
+
+One vocabulary, used consistently in user-facing strings across every studio:
+
+- **Production** — the top-level "New production" action from the Sidebar/Dashboard; the umbrella term for "a thing you're making," used only at that platform-router altitude.
+- **Project** — a saved unit of work inside one studio (a Glam campaign, a Web site, a Motion project, a Campaign). Each studio may use a more specific word in its own UI (a Campaign's project is called a "Campaign," a Web project a "Website") — that specificity is intentional, not drift.
+- **Deliverable** — a registered output artifact in the platform deliverables registry (`platform/lib/deliverables.ts`): has a `kind`, a `format`, a `status`, and (usually) a thumbnail. Shown in Recent, Dashboard, and Export Center.
+- **Asset** — raw generated media (an image, a video clip) before or independent of being registered as a deliverable. A deliverable's `assetRefs` point at assets; the words are not interchangeable in user-facing copy.
+- **Look** — Glam Studio's visual-direction unit (a `LuxuryLook`): palette, set, lighting, lens. Do not use "look" generically for "style" elsewhere — Bibles use "style preset," Web uses "design tokens."
+- **Flow** (as in **Magic Flow**) — the platform Guided Flow system's user-facing name (`docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`). Internal/code name is `guidedFlow`. "Magic Mode" is retired; any remaining occurrences are code comments, not user-visible text.
+
+## Platform Consistency Audit — gap matrix, closed out
+
+Every ⚠️ cell from `docs/PLATFORM-CONSISTENCY-AUDIT-2026-07.md` §10 is now resolved or explicitly deferred:
+
+| Capability | Status |
+|---|---|
+| Rich generation UI, Seeds/negative/batch, References, Prompt inspection/history | ✅ GenerationSpec + ReferenceTray + Prompt Studio, adopted platform-wide (Phases 1–3) |
+| Project save/list/delete, Save As/duplicate, Snapshots/recovery | ✅ ProjectHub adapters + `.dsproj` bundles, all five modules (Phase 2) |
+| Loop engine | ✅ Contract adopted; A/B compare runs through it |
+| Deliverables registry | ✅ MV and Motion now register; only module that doesn't produce a registrable artifact is intentional (none) |
+| Export from module | ✅ Motion Studio completed (Phase 5); all five modules now export something real |
+| ProjectHome parity | ✅ Glam/Web/Campaign (Phase 5); Motion/MV deliberately excluded (see above) |
+| Generate-button audit | ✅ One real violation found and fixed (legacy Project workspace); everything else already correct or is a legitimate per-item inline action |
+| Terminology | ✅ Glossary above; known drift fixed |
+
+**Deliberately still module-specific (not gaps):** MV timeline/choreography/song brain, Web pattern compiler, Glam format compositor, Campaign plan generator, Motion storyboard brain. Platformizing these was explicitly rejected in the audit as the "Adobe beige panel" mistake.
+
+**Post-launch, not blocking:** `platform/features/projects/` (the legacy generic-project workspace) predates the studio spine and heavily overlaps Glam/Web/Motion/Campaign's own workbenches — candidate for consolidation or archive in a future pass, not touched further here since it still works and Phase 5 fixed its one real bug (hidden generate reason).
 
 - **Phase 3 completion slice + Phase 4 foundation (2026-07-10)**: Prompt Studio now includes a history-driven A/B compare tab that runs both saved pipelines through the same generation route and records the pair as a shared Loop Engine round. `GenerationSpec` now carries an operation (`generate`/`edit`/`inpaint`/`outpaint`/`variation`) and optional mask; the shared panel only exposes operations supported by the routed model. Native image routing now carries operation/mask plus batch to the capable adapters (OpenAI edit/inpaint multipart; Fal/Stability batch). Phase 4 starts with a visual Bible entry flow shared by Character/World/Prop: Spark → Card → Profile → Details → Creator, with Character Spark opening the portrait sheet before the long DNA editor. A platform Notification Center preserves toast events and opens with `Ctrl/Cmd+Shift+N`.
 - **Phase 4 profile parity (2026-07-10)**: Character, World, and Prop now all continue from visual Card selection into editable Profile review cards before the full DNA sheet. Each profile saves only on Continue and discards local edits on Skip. The shared “Enhance with AI” action is live when the native Gemini structured-text provider is configured, with field-whitelisted JSON parsing and an honest disabled explanation otherwise.
