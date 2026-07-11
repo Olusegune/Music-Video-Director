@@ -17,6 +17,8 @@ import {
   Drama,
   Palette,
   LayoutGrid,
+  BookOpen,
+  Images,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
@@ -417,7 +419,16 @@ function CharacterSheet({
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Character>(character);
   const [savedTick, setSavedTick] = useState(false);
-  const [section, setSection] = useState<"overview" | "visual" | "advanced">("overview");
+  const [section, setSection] = useState<
+    | "overview"
+    | "appearance"
+    | "wardrobe"
+    | "personality"
+    | "background"
+    | "references"
+    | "dna"
+    | "advanced"
+  >("overview");
   const [mode, setMode] = useState<"simple" | "complete">("simple");
   const firstRun = useRef(true);
 
@@ -727,8 +738,8 @@ function CharacterSheet({
               <span className="min-w-0">
                 <span className="block text-sm font-medium">Open Complete Mode</span>
                 <span className="block text-[11px] text-muted">
-                  Full control — Overview, Appearance, Wardrobe, Personality, Visual Style, and
-                  advanced Prompt DNA / consistency rules.
+                  Full control — Overview, Appearance, Wardrobe, Personality, Background,
+                  References, DNA &amp; Consistency, and Advanced.
                 </span>
               </span>
             </button>
@@ -738,13 +749,18 @@ function CharacterSheet({
           <div
             role="tablist"
             aria-label="Character detail section"
-            className="flex gap-1 rounded-lg border border-border bg-elevated/40 p-1"
+            className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-elevated/40 p-1"
           >
             {(
               [
                 ["overview", "Overview"],
-                ["visual", "Visual Identity"],
-                ["advanced", "Advanced DNA"],
+                ["appearance", "Appearance"],
+                ["wardrobe", "Wardrobe"],
+                ["personality", "Personality"],
+                ["background", "Background"],
+                ["references", "References"],
+                ["dna", "DNA & Consistency"],
+                ["advanced", "Advanced"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -754,7 +770,7 @@ function CharacterSheet({
                 aria-selected={section === id}
                 onClick={() => setSection(id)}
                 className={cn(
-                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   section === id
                     ? "bg-surface text-foreground shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -773,7 +789,7 @@ function CharacterSheet({
               </div>
               <p className="text-[13px] leading-relaxed text-muted">
                 {[draft.occupation, draft.age, draft.gender].filter(Boolean).join(" · ") ||
-                  "No description yet — fill in Identity under Advanced DNA."}
+                  "No description yet — fill in Identity under Advanced."}
               </p>
               {draft.traits && (
                 <div className="mt-3">
@@ -803,10 +819,139 @@ function CharacterSheet({
             </div>
           )}
 
-          {section === "visual" && (
+          {section === "appearance" && (
+            <Section icon={<Eye className="h-4 w-4 text-primary" />} title="Appearance">
+              <Field label="Face shape">
+                <Input
+                  value={draft.faceShape}
+                  onChange={(e) => set("faceShape", e.target.value)}
+                  placeholder="angular, square jaw"
+                />
+              </Field>
+              <Field label="Skin tone">
+                <Input
+                  value={draft.skinTone}
+                  onChange={(e) => set("skinTone", e.target.value)}
+                  placeholder="warm olive"
+                />
+              </Field>
+              <Field label="Eye shape">
+                <Input
+                  value={draft.eyeShape}
+                  onChange={(e) => set("eyeShape", e.target.value)}
+                  placeholder="almond"
+                />
+              </Field>
+              <Field label="Eye color">
+                <Input
+                  value={draft.eyeColor}
+                  onChange={(e) => set("eyeColor", e.target.value)}
+                  placeholder="amber"
+                />
+              </Field>
+              <Field label="Hair style">
+                <Input
+                  value={draft.hairStyle}
+                  onChange={(e) => set("hairStyle", e.target.value)}
+                  placeholder="shaved sides, long top"
+                />
+              </Field>
+              <Field label="Hair color">
+                <Input
+                  value={draft.hairColor}
+                  onChange={(e) => set("hairColor", e.target.value)}
+                  placeholder="auburn"
+                />
+              </Field>
+              <Field label="Body type">
+                <Input
+                  value={draft.bodyType}
+                  onChange={(e) => set("bodyType", e.target.value)}
+                  placeholder="lean, athletic"
+                />
+              </Field>
+              <Field label="Distinguishing features">
+                <Input
+                  value={draft.distinguishingFeatures}
+                  onChange={(e) => set("distinguishingFeatures", e.target.value)}
+                  placeholder="scar over left brow"
+                />
+              </Field>
+            </Section>
+          )}
+
+          {section === "wardrobe" && (
+            <Section icon={<Shirt className="h-4 w-4 text-primary" />} title="Wardrobe">
+              <Field label="Primary outfit" full>
+                <Input
+                  value={draft.primaryOutfit}
+                  onChange={(e) => set("primaryOutfit", e.target.value)}
+                  placeholder="weathered leather duster over dark fatigues"
+                />
+              </Field>
+              <Field label="Secondary outfit" full>
+                <Input
+                  value={draft.secondaryOutfit}
+                  onChange={(e) => set("secondaryOutfit", e.target.value)}
+                  placeholder="formal wear for the gala scene"
+                />
+              </Field>
+              <Field label="Accessories" full>
+                <Input
+                  value={draft.accessories}
+                  onChange={(e) => set("accessories", e.target.value)}
+                  placeholder="fingerless gloves, dog tags, holstered blaster"
+                />
+              </Field>
+            </Section>
+          )}
+
+          {section === "personality" && (
+            <Section icon={<Drama className="h-4 w-4 text-primary" />} title="Personality">
+              <Field label="Traits" full>
+                <Input
+                  value={draft.traits}
+                  onChange={(e) => set("traits", e.target.value)}
+                  placeholder="grizzled, wary, dry-humored"
+                />
+              </Field>
+            </Section>
+          )}
+
+          {section === "background" && (
+            <Section icon={<BookOpen className="h-4 w-4 text-primary" />} title="Background">
+              <Field label="Motivations" full>
+                <Textarea
+                  value={draft.motivations}
+                  onChange={(e) => set("motivations", e.target.value)}
+                  placeholder="What drives them?"
+                  className="min-h-16"
+                />
+              </Field>
+              <Field label="Fears" full>
+                <Textarea
+                  value={draft.fears}
+                  onChange={(e) => set("fears", e.target.value)}
+                  placeholder="What do they avoid?"
+                  className="min-h-16"
+                />
+              </Field>
+              <Field label="Goals" full>
+                <Textarea
+                  value={draft.goals}
+                  onChange={(e) => set("goals", e.target.value)}
+                  placeholder="What are they after?"
+                  className="min-h-16"
+                />
+              </Field>
+            </Section>
+          )}
+
+          {section === "references" && (
             <div className="flex flex-col gap-4">
               <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
-                <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="mb-2 flex items-center gap-2">
+                  <Images className="h-4 w-4 text-primary" />
                   <Label className="!mb-0">
                     Reference images
                     {draft.referenceImages.length > 0 && ` (${draft.referenceImages.length})`}
@@ -849,58 +994,59 @@ function CharacterSheet({
             </div>
           )}
 
-          {section !== "advanced" ? null : (
-            <>
-              {/* Prompt DNA — the magic, kept up top */}
-              <div className="rounded-[var(--radius-card)] border border-primary/30 bg-primary/[0.04] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Fingerprint className="h-4 w-4 text-primary" />
-                    <h2 className="text-sm font-semibold">Prompt DNA</h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant={stale ? "primary" : "secondary"} onClick={compose}>
-                      <Sparkles className="h-4 w-4" />
-                      {draft.promptDna ? "Recompose" : "Compose Prompt DNA"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={copyDna}
-                      disabled={!draft.promptDna}
-                      aria-label="Copy Prompt DNA"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-success" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+          {section === "dna" && (
+            <div className="rounded-[var(--radius-card)] border border-primary/30 bg-primary/[0.04] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Fingerprint className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Prompt DNA</h2>
                 </div>
-                <p className="mt-1 text-[11px] text-muted">
-                  Identity anchor: <span className="text-foreground">{identityAnchor(draft)}</span>
-                </p>
-                {stale && draft.promptDna && (
-                  <p className="mt-1 text-[11px] text-warning">
-                    Fields changed since this was composed — recompose to refresh.
-                  </p>
-                )}
-                <Textarea
-                  value={draft.promptDna}
-                  onChange={(e) => set("promptDna", e.target.value)}
-                  placeholder="Fill in the fields below, then Compose — or write your own anchor prompt here."
-                  className="mt-2 min-h-24 font-mono text-[13px] leading-relaxed"
-                />
-                <Label className="mb-1 mt-3 block">Consistency rules</Label>
-                <Textarea
-                  value={draft.consistencyRules}
-                  onChange={(e) => set("consistencyRules", e.target.value)}
-                  placeholder="Lock rules + negatives that keep this character on-model."
-                  className="min-h-20 font-mono text-[13px] leading-relaxed"
-                />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant={stale ? "primary" : "secondary"} onClick={compose}>
+                    <Sparkles className="h-4 w-4" />
+                    {draft.promptDna ? "Recompose" : "Compose Prompt DNA"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={copyDna}
+                    disabled={!draft.promptDna}
+                    aria-label="Copy Prompt DNA"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-success" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
+              <p className="mt-1 text-[11px] text-muted">
+                Identity anchor: <span className="text-foreground">{identityAnchor(draft)}</span>
+              </p>
+              {stale && draft.promptDna && (
+                <p className="mt-1 text-[11px] text-warning">
+                  Fields changed since this was composed — recompose to refresh.
+                </p>
+              )}
+              <Textarea
+                value={draft.promptDna}
+                onChange={(e) => set("promptDna", e.target.value)}
+                placeholder="Fill in the fields below, then Compose — or write your own anchor prompt here."
+                className="mt-2 min-h-24 font-mono text-[13px] leading-relaxed"
+              />
+              <Label className="mb-1 mt-3 block">Consistency rules</Label>
+              <Textarea
+                value={draft.consistencyRules}
+                onChange={(e) => set("consistencyRules", e.target.value)}
+                placeholder="Lock rules + negatives that keep this character on-model."
+                className="min-h-20 font-mono text-[13px] leading-relaxed"
+              />
+            </div>
+          )}
 
+          {section === "advanced" && (
+            <>
               <Section icon={<Users className="h-4 w-4 text-primary" />} title="Identity">
                 <Field label="Role">
                   <Select value={draft.role} onChange={(v) => set("role", v)}>
@@ -931,123 +1077,6 @@ function CharacterSheet({
                     value={draft.gender}
                     onChange={(e) => set("gender", e.target.value)}
                     placeholder="Female"
-                  />
-                </Field>
-              </Section>
-
-              <Section icon={<Eye className="h-4 w-4 text-primary" />} title="Appearance">
-                <Field label="Face shape">
-                  <Input
-                    value={draft.faceShape}
-                    onChange={(e) => set("faceShape", e.target.value)}
-                    placeholder="angular, square jaw"
-                  />
-                </Field>
-                <Field label="Skin tone">
-                  <Input
-                    value={draft.skinTone}
-                    onChange={(e) => set("skinTone", e.target.value)}
-                    placeholder="warm olive"
-                  />
-                </Field>
-                <Field label="Eye shape">
-                  <Input
-                    value={draft.eyeShape}
-                    onChange={(e) => set("eyeShape", e.target.value)}
-                    placeholder="almond"
-                  />
-                </Field>
-                <Field label="Eye color">
-                  <Input
-                    value={draft.eyeColor}
-                    onChange={(e) => set("eyeColor", e.target.value)}
-                    placeholder="amber"
-                  />
-                </Field>
-                <Field label="Hair style">
-                  <Input
-                    value={draft.hairStyle}
-                    onChange={(e) => set("hairStyle", e.target.value)}
-                    placeholder="shaved sides, long top"
-                  />
-                </Field>
-                <Field label="Hair color">
-                  <Input
-                    value={draft.hairColor}
-                    onChange={(e) => set("hairColor", e.target.value)}
-                    placeholder="auburn"
-                  />
-                </Field>
-                <Field label="Body type">
-                  <Input
-                    value={draft.bodyType}
-                    onChange={(e) => set("bodyType", e.target.value)}
-                    placeholder="lean, athletic"
-                  />
-                </Field>
-                <Field label="Distinguishing features">
-                  <Input
-                    value={draft.distinguishingFeatures}
-                    onChange={(e) => set("distinguishingFeatures", e.target.value)}
-                    placeholder="scar over left brow"
-                  />
-                </Field>
-              </Section>
-
-              <Section icon={<Shirt className="h-4 w-4 text-primary" />} title="Wardrobe">
-                <Field label="Primary outfit" full>
-                  <Input
-                    value={draft.primaryOutfit}
-                    onChange={(e) => set("primaryOutfit", e.target.value)}
-                    placeholder="weathered leather duster over dark fatigues"
-                  />
-                </Field>
-                <Field label="Secondary outfit" full>
-                  <Input
-                    value={draft.secondaryOutfit}
-                    onChange={(e) => set("secondaryOutfit", e.target.value)}
-                    placeholder="formal wear for the gala scene"
-                  />
-                </Field>
-                <Field label="Accessories" full>
-                  <Input
-                    value={draft.accessories}
-                    onChange={(e) => set("accessories", e.target.value)}
-                    placeholder="fingerless gloves, dog tags, holstered blaster"
-                  />
-                </Field>
-              </Section>
-
-              <Section icon={<Drama className="h-4 w-4 text-primary" />} title="Personality">
-                <Field label="Traits" full>
-                  <Input
-                    value={draft.traits}
-                    onChange={(e) => set("traits", e.target.value)}
-                    placeholder="grizzled, wary, dry-humored"
-                  />
-                </Field>
-                <Field label="Motivations" full>
-                  <Textarea
-                    value={draft.motivations}
-                    onChange={(e) => set("motivations", e.target.value)}
-                    placeholder="What drives them?"
-                    className="min-h-16"
-                  />
-                </Field>
-                <Field label="Fears" full>
-                  <Textarea
-                    value={draft.fears}
-                    onChange={(e) => set("fears", e.target.value)}
-                    placeholder="What do they avoid?"
-                    className="min-h-16"
-                  />
-                </Field>
-                <Field label="Goals" full>
-                  <Textarea
-                    value={draft.goals}
-                    onChange={(e) => set("goals", e.target.value)}
-                    placeholder="What are they after?"
-                    className="min-h-16"
                   />
                 </Field>
               </Section>
