@@ -51,6 +51,7 @@ import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
 import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
+import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
 
 function categoryIcon(cat: string) {
   if (cat === "Vehicle") return <Car className="h-3 w-3" />;
@@ -466,6 +467,7 @@ function PropSheet({
           )}
         </div>
         <div className="flex items-center gap-3">
+          <BibleStageBadge />
           <SavedTick show={savedTick} />
           <MoveAssetMenu
             fromKind="Prop"

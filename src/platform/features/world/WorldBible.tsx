@@ -49,6 +49,7 @@ import { BibleCreationFlow } from "@/platform/features/dna/BibleCreationFlow";
 import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
 import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
+import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
 
 export function WorldBible() {
   const queryClient = useQueryClient();
@@ -442,6 +443,7 @@ function EnvironmentSheet({
           )}
         </div>
         <div className="flex items-center gap-3">
+          <BibleStageBadge />
           <SavedTick show={savedTick} />
           <MoveAssetMenu
             fromKind="Environment"
