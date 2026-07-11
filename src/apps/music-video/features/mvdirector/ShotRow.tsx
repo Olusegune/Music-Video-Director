@@ -204,6 +204,7 @@ export function ShotRow({
   const [preview, setPreview] = useState<null | "image" | "video">(null);
   const [assetPicker, setAssetPicker] = useState(false);
   const [showChoreo, setShowChoreo] = useState(!!startExpanded);
+  const [showAdvancedDirection, setShowAdvancedDirection] = useState(!!startExpanded);
   const [showPrompt, setShowPrompt] = useState(!!startExpanded);
   // Switching to Expert view (startExpanded) after this row is already mounted
   // must actually open these panels — useState's initial value only applies
@@ -214,6 +215,7 @@ export function ShotRow({
     if (startExpanded) {
       setShowChoreo(true);
       setShowPrompt(true);
+      setShowAdvancedDirection(true);
     }
   }, [startExpanded]);
   const refs = shot.refImages ?? [];
@@ -431,101 +433,119 @@ export function ShotRow({
             </div>
           )}
 
-          {/* Story intent — first-class */}
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
-              🎯 Why this shot exists
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {STORY_EMOTIONS.map((e) => (
-                <DirChip
-                  key={e}
-                  label={e}
-                  active={new RegExp(`\\b${e}\\b`, "i").test(shot.storyIntent ?? "")}
-                  accent={accent}
-                  onClick={() => toggleEmotion(e)}
+          {/* Advanced direction toggle — story-intent chips, camera, lighting, and
+              performance are real controls but overwhelm the shot at a glance.
+              Collapsed by default; Director's Intent + Director Brain above stay
+              visible so the shot is still readable with this closed. */}
+          <button
+            type="button"
+            onClick={() => setShowAdvancedDirection((v) => !v)}
+            className="flex w-full items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            Advanced direction — story intent, camera, lighting, performance
+            <span className="ml-auto text-[9px]">{showAdvancedDirection ? "▲" : "▼"}</span>
+          </button>
+
+          {showAdvancedDirection && (
+            <>
+              {/* Story intent — first-class */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+                  🎯 Why this shot exists
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {STORY_EMOTIONS.map((e) => (
+                    <DirChip
+                      key={e}
+                      label={e}
+                      active={new RegExp(`\\b${e}\\b`, "i").test(shot.storyIntent ?? "")}
+                      accent={accent}
+                      onClick={() => toggleEmotion(e)}
+                    />
+                  ))}
+                </div>
+                <input
+                  value={shot.storyIntent ?? ""}
+                  onChange={(e) => onChange({ ...shot, storyIntent: e.target.value || undefined })}
+                  className="w-full rounded border border-border bg-surface px-1.5 py-1 text-[11px] focus-visible:border-primary focus-visible:outline-none"
+                  placeholder="Refine the story intent… (e.g. Neo Dude celebrates the wonder of creation)"
                 />
-              ))}
-            </div>
-            <input
-              value={shot.storyIntent ?? ""}
-              onChange={(e) => onChange({ ...shot, storyIntent: e.target.value || undefined })}
-              className="w-full rounded border border-border bg-surface px-1.5 py-1 text-[11px] focus-visible:border-primary focus-visible:outline-none"
-              placeholder="Refine the story intent… (e.g. Neo Dude celebrates the wonder of creation)"
-            />
-          </div>
+              </div>
 
-          {/* Camera direction */}
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
-              🎬 Camera{" "}
-              <span className="font-normal normal-case text-muted/60">— {shot.movement}</span>
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {CAMERA_PRESETS.map((c) => (
-                <DirChip
-                  key={c.label}
-                  label={c.label}
-                  active={shot.movement === c.value}
-                  onClick={() => onChange({ ...shot, movement: c.value })}
+              {/* Camera direction */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+                  🎬 Camera{" "}
+                  <span className="font-normal normal-case text-muted/60">— {shot.movement}</span>
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {CAMERA_PRESETS.map((c) => (
+                    <DirChip
+                      key={c.label}
+                      label={c.label}
+                      active={shot.movement === c.value}
+                      onClick={() => onChange({ ...shot, movement: c.value })}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Lighting direction */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+                  💡 Lighting{" "}
+                  <span className="font-normal normal-case text-muted/60">— {shot.lighting}</span>
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {LIGHTING_PRESETS.map((l) => (
+                    <DirChip
+                      key={l.label}
+                      label={l.label}
+                      active={shot.lighting === l.value}
+                      onClick={() => onChange({ ...shot, lighting: l.value })}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Shot type + cut (compact) */}
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted">
+                <MetaEdit
+                  label="Shot"
+                  value={shot.shotType}
+                  onChange={(v) => onChange({ ...shot, shotType: v })}
                 />
-              ))}
-            </div>
-          </div>
-
-          {/* Lighting direction */}
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
-              💡 Lighting{" "}
-              <span className="font-normal normal-case text-muted/60">— {shot.lighting}</span>
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {LIGHTING_PRESETS.map((l) => (
-                <DirChip
-                  key={l.label}
-                  label={l.label}
-                  active={shot.lighting === l.value}
-                  onClick={() => onChange({ ...shot, lighting: l.value })}
+                <MetaEdit
+                  label="Cut"
+                  value={shot.transition}
+                  onChange={(v) => onChange({ ...shot, transition: v })}
                 />
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Shot type + cut (compact) */}
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted">
-            <MetaEdit
-              label="Shot"
-              value={shot.shotType}
-              onChange={(v) => onChange({ ...shot, shotType: v })}
-            />
-            <MetaEdit
-              label="Cut"
-              value={shot.transition}
-              onChange={(v) => onChange({ ...shot, transition: v })}
-            />
-          </div>
-
-          {/* Performance */}
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
-              🎭 Performance
-            </p>
-            <MentionTextarea
-              value={shot.performanceNote}
-              onChange={(v) => onChange({ ...shot, performanceNote: v })}
-              onMention={(v, src) =>
-                onChange({
-                  ...shot,
-                  performanceNote: v,
-                  refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
-                })
-              }
-              rows={1}
-              className="text-[11px] italic text-muted/90"
-              ariaLabel={`Shot ${index + 1} performance note`}
-              placeholder="Performance note… type @ to reference a performer"
-            />
-          </div>
+              {/* Performance */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+                  🎭 Performance
+                </p>
+                <MentionTextarea
+                  value={shot.performanceNote}
+                  onChange={(v) => onChange({ ...shot, performanceNote: v })}
+                  onMention={(v, src) =>
+                    onChange({
+                      ...shot,
+                      performanceNote: v,
+                      refImages: Array.from(new Set([...(shot.refImages ?? []), src])),
+                    })
+                  }
+                  rows={1}
+                  className="text-[11px] italic text-muted/90"
+                  ariaLabel={`Shot ${index + 1} performance note`}
+                  placeholder="Performance note… type @ to reference a performer"
+                />
+              </div>
+            </>
+          )}
 
           {/* Choreography & story-intent toggle */}
           <button
