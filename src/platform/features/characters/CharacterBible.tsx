@@ -172,9 +172,9 @@ export function CharacterBible() {
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-8 py-5">
         <div>
-          <h1 className="text-lg font-semibold">Character Bible</h1>
+          <h1 className="text-lg font-semibold">Character Designer</h1>
           <p className="text-xs text-muted">
-            Your cast’s source of truth — define each character once, stay consistent in every shot.
+            Create, refine, and preserve consistent characters across every project.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export function CharacterBible() {
                 character={c}
                 onClick={() => setSelectedId(c.id)}
                 onDelete={() => {
-                  if (confirm(`Delete "${c.name}" from the Character Bible?`))
+                  if (confirm(`Delete "${c.name}" from Character Designer?`))
                     removeChar.mutate(c.id);
                 }}
               />

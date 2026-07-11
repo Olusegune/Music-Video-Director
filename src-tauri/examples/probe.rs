@@ -9,12 +9,14 @@
 //!   cargo run --example probe -- google_imagen | replicate
 //!   cargo run --example probe -- nano_banana    | nano_banana_pro | wavespeed
 //!   cargo run --example probe -- google_veo    # video (slower — polls a long-running op)
+//!   cargo run --example probe -- kie_seedance  # Seedance 2.0 video via Kie.ai (bytedance/seedance-2)
+//!   cargo run --example probe -- badkey        # deliberately-invalid key, proves the failure path
 
 use motionforge_lib::providers::audio::ElevenLabsProvider;
 use motionforge_lib::providers::image::{
     FalImageProvider, GoogleImagenProvider, OpenAiImageProvider, StabilityImageProvider,
 };
-use motionforge_lib::providers::kie::KieImageProvider;
+use motionforge_lib::providers::kie::{KieImageProvider, KieVideoProvider};
 use motionforge_lib::providers::replicate::ReplicateProvider;
 use motionforge_lib::providers::text::GeminiTextProvider;
 use motionforge_lib::providers::video::GoogleVeoProvider;
@@ -71,10 +73,28 @@ async fn main() {
         }
     };
 
-    let key = match secrets::get_key(&which) {
+    // Deliberately-invalid credential, to prove the failure path renders a real
+    // provider rejection rather than a stored key. Uses fal.ai (cheap, fast to
+    // reject on auth, does not touch anyone's real key or quota).
+    if which == "badkey" {
+        println!("\n== Live round-trip: badkey == (intentionally invalid credential)");
+        match FalImageProvider::new("fal_key_intentionally_invalid_00000".to_string())
+            .generate_image("A glowing 3D notebook icon, premium dark studio, 16:9")
+            .await
+        {
+            Ok(bytes) => println!("UNEXPECTED OK — received {} bytes with a bad key.", bytes.len()),
+            Err(e) => println!("FAILED as expected — {e:#}"),
+        }
+        return;
+    }
+
+    // kie_seedance reuses the "kie" keychain entry — Seedance is routed through
+    // Kie.ai by model slug, not a separate credential.
+    let key_lookup = if which == "kie_seedance" { "kie" } else { which.as_str() };
+    let key = match secrets::get_key(key_lookup) {
         Ok(Some(k)) => k,
         _ => {
-            println!("\nNo key stored for '{which}'.");
+            println!("\nNo key stored for '{key_lookup}'.");
             return;
         }
     };
@@ -122,6 +142,12 @@ async fn main() {
         }
         "wavespeed" => report(WaveSpeedImageProvider::new(key).generate_image(prompt).await),
         "google_veo" => report(GoogleVeoProvider::new(key).generate_video(prompt).await),
+        "kie_seedance" => report(
+            KieVideoProvider::new(key)
+                .with_model(Some("bytedance/seedance-2".to_string()))
+                .generate_video(prompt)
+                .await,
+        ),
         other => println!("No live test wired for '{other}' yet."),
     }
 }

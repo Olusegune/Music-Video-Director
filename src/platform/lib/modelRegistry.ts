@@ -417,6 +417,7 @@ export const MODEL_REGISTRY: ModelVariant[] = [
     family: "Seedance",
     variant: "2.0",
     kind: "video",
+    available: true,
     aggregator: true,
     workflows: [
       "text-to-video",

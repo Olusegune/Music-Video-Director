@@ -107,7 +107,7 @@ export const NAV_MODEL: NavSectionModel[] = [
     id: "library",
     label: "Production Library",
     items: [
-      { id: "characters", label: "Character Bible", view: "characters", icon: "users" },
+      { id: "characters", label: "Character Designer", view: "characters", icon: "users" },
       { id: "world", label: "World Bible", view: "world", icon: "globe" },
       { id: "props", label: "Props & Vehicles", view: "props", icon: "package" },
       { id: "assets", label: "Asset Library", view: "assets", icon: "library" },
