@@ -19,6 +19,9 @@ import {
   LayoutGrid,
   BookOpen,
   Images,
+  Shuffle,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
@@ -500,6 +503,50 @@ function CharacterSheet({
         : [url, ...d.referenceImages].slice(0, 8),
     }));
 
+  // --- Quick Actions rail ---------------------------------------------------
+  const [quickBusy, setQuickBusy] = useState<"portrait" | "outfit" | null>(null);
+  const [quickError, setQuickError] = useState<string | null>(null);
+
+  const addReferences = (urls: string[]) =>
+    setDraft((d) => ({
+      ...d,
+      referenceImages: [...urls.filter((u) => !d.referenceImages.includes(u)), ...d.referenceImages].slice(
+        0,
+        8
+      ),
+    }));
+
+  const generateVariations = async (kind: "portrait" | "outfit") => {
+    setQuickError(null);
+    setQuickBusy(kind);
+    try {
+      const base = draft.promptDna.trim() || composeCharacterDna(draft).promptDna;
+      const anchor = identityAnchor(draft);
+      const prompt =
+        kind === "portrait"
+          ? `Subject: ${anchor}. ${base}. Head-and-shoulders character portrait, alternate expression and angle, same identity, cinematic lighting, high detail.`
+          : `Subject: ${anchor}. ${base}. Full-body character shot wearing a different outfit variation consistent with their style, same face and identity, cinematic lighting, high detail.`;
+      const urls: string[] = [];
+      for (let i = 0; i < 4; i++) {
+        urls.push(
+          await api.generateImageFromSpec({
+            capability: "image",
+            prompt,
+            aspect: kind === "portrait" ? "4:5" : "2:3",
+            batch: 1,
+            moduleId: "characters",
+            projectRef: { moduleId: "characters", entityId: draft.id },
+          })
+        );
+      }
+      addReferences(urls);
+    } catch (e) {
+      setQuickError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setQuickBusy(null);
+    }
+  };
+
   const [copied, setCopied] = useState(false);
   const copyDna = async () => {
     try {
@@ -591,7 +638,12 @@ function CharacterSheet({
         </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-1 gap-6 p-8 lg:grid-cols-[20rem_1fr]">
+      <div
+        className={cn(
+          "grid flex-1 grid-cols-1 gap-6 p-8",
+          mode === "complete" ? "lg:grid-cols-[20rem_1fr_15rem]" : "lg:grid-cols-[20rem_1fr]"
+        )}
+      >
         {/* LEFT — portrait, lock, references */}
         <div className="flex flex-col gap-4">
           <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card">
@@ -1101,8 +1153,99 @@ function CharacterSheet({
           )}
         </div>
         )}
+
+        {mode === "complete" && (
+          <div className="flex flex-col gap-2">
+            <h2 className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+              Quick Actions
+            </h2>
+            <QuickActionButton
+              icon={
+                quickBusy === "portrait" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Images className="h-4 w-4" />
+                )
+              }
+              label="Generate Portrait Variations"
+              disabled={quickBusy !== null}
+              onClick={() => generateVariations("portrait")}
+            />
+            <QuickActionButton
+              icon={
+                quickBusy === "outfit" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Shuffle className="h-4 w-4" />
+                )
+              }
+              label="Generate Outfit Variations"
+              disabled={quickBusy !== null}
+              onClick={() => generateVariations("outfit")}
+            />
+            <QuickActionButton
+              icon={<RefreshCw className="h-4 w-4" />}
+              label="Regenerate DNA"
+              onClick={compose}
+            />
+            <QuickActionButton
+              icon={draft.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+              label={draft.locked ? "Identity Locked" : "Lock Identity"}
+              active={draft.locked}
+              onClick={() => set("locked", !draft.locked)}
+            />
+            <QuickActionButton
+              icon={<Trash2 className="h-4 w-4" />}
+              label="Delete Character"
+              danger
+              onClick={() => {
+                if (confirm(`Delete "${draft.name}" from Character Designer?`)) remove.mutate();
+              }}
+            />
+            {quickError && (
+              <p className="mt-1 rounded-md border border-danger/30 bg-danger/10 p-2 text-[11px] text-danger">
+                {quickError}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function QuickActionButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  active,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex items-center gap-2.5 rounded-[var(--radius-card)] border px-3 py-2.5 text-left text-sm font-medium shadow-card transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+        danger
+          ? "border-border bg-surface text-danger hover:border-danger/40 hover:bg-danger/10"
+          : active
+            ? "border-success/40 bg-success/10 text-success"
+            : "border-border bg-surface text-foreground hover:border-primary/40"
+      )}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </button>
   );
 }
 
