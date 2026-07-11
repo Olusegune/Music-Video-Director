@@ -65,7 +65,7 @@ import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { addMember } from "@/platform/lib/directorProject";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
-import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
+import { ModuleHeader, ProjectCard, ProjectHome } from "@/platform/components/visual";
 import {
   buildProductFilmPlan,
   productFilmMarkdown,
@@ -906,8 +906,9 @@ export function GlamStudioWorkspace() {
   const [generationNote, setGenerationNote] = useState("");
   const [exportingCampaign, setExportingCampaign] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState("");
-  const activeProject =
-    projects.find((project) => project.id === activeProjectId) ?? projects[0] ?? null;
+  // No `?? projects[0]` fallback: an explicitly cleared activeProjectId (Studio
+  // Home) must mean "no active project," not "silently pin the first one again."
+  const activeProject = projects.find((project) => project.id === activeProjectId) ?? null;
   const deliverables = activeProject
     ? listDeliverables({ moduleId: "glam-studio", projectId: activeProject.id })
     : [];
@@ -1276,6 +1277,7 @@ export function GlamStudioWorkspace() {
         primaryLabel="New Glam Project"
         primaryIcon={<Wand2 />}
         onPrimary={() => setFlowOpen(true)}
+        onHome={activeProject ? () => setActiveProjectId("") : undefined}
       />
 
       <div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]">
@@ -1351,6 +1353,28 @@ export function GlamStudioWorkspace() {
               onLayoutChange={updateFormatLayout}
               onDownloadFormat={downloadCampaignFormat}
               downloadingFormat={downloadingFormat}
+            />
+          ) : projects.length > 0 ? (
+            <ProjectHome
+              module="glam-studio"
+              icon={<Shirt className="h-5 w-5" />}
+              flowLabel="Start Glam Magic Flow"
+              onStartFlow={() => setFlowOpen(true)}
+              onResume={(id) => setActiveProjectId(id)}
+              projects={[...projects]
+                .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))
+                .map((project) => ({
+                  id: project.id,
+                  title: project.name,
+                  subtitle: `${project.look.name} · ${project.formats.length} formats`,
+                  thumbUrl:
+                    project.heroAssets?.find((asset) => asset.id === project.selectedHeroAssetId)
+                      ?.url ??
+                    project.heroAssets?.[0]?.url ??
+                    deliverableThumbnail(allGlamDeliverables, project.id),
+                  progress: project.heroLoop.approved ? 100 : 68,
+                  status: project.heroLoop.approved ? "Approved" : "Campaign",
+                }))}
             />
           ) : (
             <CreativeEmptyState

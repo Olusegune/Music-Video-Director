@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { House } from "lucide-react";
 import { Button } from "@/platform/components/ui/button";
 import { cn } from "@/platform/lib/utils";
 import type { StudioMode } from "@/platform/lib/settings";
@@ -20,6 +21,8 @@ export function ModuleHeader({
   primaryLabel,
   primaryIcon,
   onPrimary,
+  /** Present only when there is somewhere to return to (an open project). */
+  onHome,
   className,
 }: {
   module: VisualModule;
@@ -31,6 +34,7 @@ export function ModuleHeader({
   primaryLabel: string;
   primaryIcon?: ReactNode;
   onPrimary: () => void;
+  onHome?: () => void;
   className?: string;
 }) {
   const theme = VISUAL_MODULE_THEME[module];
@@ -56,6 +60,17 @@ export function ModuleHeader({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {onHome ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onHome}
+            aria-label={`${title} home`}
+            title="Back to studio home"
+          >
+            <House className="h-4 w-4" />
+          </Button>
+        ) : null}
         <div className="flex rounded-lg border border-border bg-elevated/65 p-1">
           {MODES.map((option) => (
             <button

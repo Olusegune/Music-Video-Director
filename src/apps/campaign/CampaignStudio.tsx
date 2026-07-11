@@ -29,7 +29,7 @@ import { Input } from "@/platform/components/ui/input";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
-import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
+import { ModuleHeader, ProjectCard, ProjectHome } from "@/platform/components/visual";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna } from "@/platform/lib/brandDna";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
@@ -778,7 +778,9 @@ export function CampaignStudio() {
     setActiveId(id);
     setFlowOpen(false);
   });
-  const active = projects.find((project) => project.id === activeId) ?? projects[0] ?? null;
+  // No `?? projects[0]` fallback: an explicitly cleared activeId (Studio Home)
+  // must mean "no active project," not "silently pin the first one again."
+  const active = projects.find((project) => project.id === activeId) ?? null;
   const definition = useMemo<GuidedFlowDefinition<CampaignFlowState>>(
     () => ({
       id: "campaignstudio.launch",
@@ -873,6 +875,7 @@ export function CampaignStudio() {
         primaryLabel="New Campaign"
         primaryIcon={<Plus />}
         onPrimary={() => setFlowOpen(true)}
+        onHome={active ? () => setActiveId("") : undefined}
       />
       <div className="grid gap-5 p-8 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="space-y-3">
@@ -927,6 +930,31 @@ export function CampaignStudio() {
             />
           ) : active ? (
             <CampaignWorkbench project={active} onChange={saveActive} />
+          ) : projects.length > 0 ? (
+            <ProjectHome
+              module="campaignstudio"
+              icon={<Megaphone className="h-5 w-5" />}
+              flowLabel="Start Campaign Studio Magic Flow"
+              onStartFlow={() => setFlowOpen(true)}
+              onResume={(id) => {
+                setActiveId(id);
+                setFlowOpen(false);
+              }}
+              projects={[...projects]
+                .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))
+                .map((project) => ({
+                  id: project.id,
+                  title: project.name,
+                  subtitle: `${project.plan.length} deliverables · ${project.launchDate}`,
+                  thumbUrl: deliverableThumbnail(allDeliverables, project.id),
+                  progress: Math.round(
+                    (project.plan.filter((item) => item.content).length /
+                      Math.max(project.plan.length, 1)) *
+                      100
+                  ),
+                  status: "Launch",
+                }))}
+            />
           ) : (
             <CreativeEmptyState
               icon={<Megaphone />}

@@ -28,7 +28,7 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { GuidedFlowShell, PickCardStep, SummaryStep } from "@/platform/components/flow";
 import { IntakeFormStep } from "@/platform/components/flow/steps/IntakeFormStep";
-import { ModuleHeader, ProjectCard } from "@/platform/components/visual";
+import { ModuleHeader, ProjectCard, ProjectHome } from "@/platform/components/visual";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import { createBrandDna, getBrandDna } from "@/platform/lib/brandDna";
 import { consumeSeedContext, type SeedContext } from "@/platform/lib/seedContext";
@@ -945,7 +945,9 @@ export function WebStudio() {
   const [flowOpen, setFlowOpen] = useState(
     () => Boolean(campaignSeed) || listWebProjects().length === 0
   );
-  const active = projects.find((project) => project.id === activeId) ?? projects[0] ?? null;
+  // No `?? projects[0]` fallback: an explicitly cleared activeId (Studio Home)
+  // must mean "no active project," not "silently pin the first one again."
+  const active = projects.find((project) => project.id === activeId) ?? null;
   usePendingProjectOpen("web", (id) => {
     setActiveId(id);
     setFlowOpen(false);
@@ -1066,6 +1068,7 @@ export function WebStudio() {
         primaryLabel="New Website"
         primaryIcon={<Plus />}
         onPrimary={() => setFlowOpen(true)}
+        onHome={active ? () => setActiveId("") : undefined}
       />
       <div className="grid gap-5 p-8 xl:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="space-y-3">
@@ -1129,6 +1132,28 @@ export function WebStudio() {
             />
           ) : active ? (
             <WebWorkbench project={active} onChange={saveActive} />
+          ) : projects.length > 0 ? (
+            <ProjectHome
+              module="webstudio"
+              icon={<Code2 className="h-5 w-5" />}
+              flowLabel="Start Web Studio Magic Flow"
+              onStartFlow={() => setFlowOpen(true)}
+              onResume={(id) => {
+                setActiveId(id);
+                setFlowOpen(false);
+              }}
+              projects={[...projects]
+                .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))
+                .map((project) => ({
+                  id: project.id,
+                  title: project.name,
+                  subtitle: `${project.sections.length} sections · ${project.positioning.offer}`,
+                  thumbUrl: deliverableThumbnail(allDeliverables, project.id),
+                  progress:
+                    project.sections.length >= 5 ? 100 : Math.round(project.sections.length * 18),
+                  status: "Site",
+                }))}
+            />
           ) : (
             <CreativeEmptyState
               icon={<Code2 />}
