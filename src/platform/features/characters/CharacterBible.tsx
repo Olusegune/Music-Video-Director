@@ -418,6 +418,7 @@ function CharacterSheet({
   const [draft, setDraft] = useState<Character>(character);
   const [savedTick, setSavedTick] = useState(false);
   const [section, setSection] = useState<"overview" | "visual" | "advanced">("overview");
+  const [mode, setMode] = useState<"simple" | "complete">("simple");
   const firstRun = useRef(true);
 
   // Debounced autosave — the sheet always persists itself.
@@ -521,6 +522,32 @@ function CharacterSheet({
           )}
         </div>
         <div className="flex items-center gap-3">
+          <div
+            role="tablist"
+            aria-label="Character workspace mode"
+            className="flex items-center gap-0.5 rounded-lg border border-border bg-elevated/40 p-0.5"
+          >
+            {(
+              [
+                ["simple", "Simple Mode"],
+                ["complete", "Complete Mode"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={mode === id}
+                onClick={() => setMode(id)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  mode === id ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <BibleStageBadge />
           <span
             className={cn(
@@ -618,7 +645,95 @@ function CharacterSheet({
           </button>
         </div>
 
-        {/* RIGHT — progressive disclosure: Overview / Visual Identity / Advanced DNA */}
+        {/* RIGHT — Simple Mode (minimal fields) or Complete Mode (full tabbed workspace) */}
+        {mode === "simple" ? (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
+              <h2 className="mb-3 text-sm font-semibold">Create Character — Simple Mode</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Role">
+                  <Select value={draft.role} onChange={(v) => set("role", v)}>
+                    <option value="">—</option>
+                    {CHARACTER_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Occupation">
+                  <Input
+                    value={draft.occupation}
+                    onChange={(e) => set("occupation", e.target.value)}
+                    placeholder="bounty hunter"
+                  />
+                </Field>
+                <Field label="Age">
+                  <Input
+                    value={draft.age}
+                    onChange={(e) => set("age", e.target.value)}
+                    placeholder="40s / Elderly"
+                  />
+                </Field>
+                <Field label="Gender">
+                  <Input
+                    value={draft.gender}
+                    onChange={(e) => set("gender", e.target.value)}
+                    placeholder="Female"
+                  />
+                </Field>
+                <Field label="Short description" full>
+                  <Textarea
+                    value={draft.traits}
+                    onChange={(e) => set("traits", e.target.value)}
+                    placeholder="Confident, intelligent, charismatic leader…"
+                    className="min-h-16"
+                  />
+                </Field>
+              </div>
+              <Button
+                className="mt-4 w-full"
+                onClick={() => {
+                  compose();
+                  setMode("complete");
+                }}
+              >
+                <Sparkles className="h-4 w-4" /> Generate Full Profile
+              </Button>
+              <p className="mt-2 text-center text-[11px] text-muted">
+                Composes Prompt DNA from the fields above, then opens Complete Mode to review.
+              </p>
+            </div>
+
+            <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
+              <Label className="mb-1 block">DNA Status</Label>
+              <p className="text-[13px] text-muted">
+                {draft.promptDna
+                  ? stale
+                    ? "Fields changed since this was composed — recompose in Complete Mode."
+                    : "Prompt DNA composed and up to date."
+                  : "No DNA generated yet."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMode("complete")}
+              className="flex items-center gap-3 rounded-[var(--radius-card)] border border-border bg-surface p-4 text-left shadow-card transition-colors hover:border-primary/40"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Fingerprint className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">Open Complete Mode</span>
+                <span className="block text-[11px] text-muted">
+                  Full control — Overview, Appearance, Wardrobe, Personality, Visual Style, and
+                  advanced Prompt DNA / consistency rules.
+                </span>
+              </span>
+            </button>
+          </div>
+        ) : (
         <div className="flex flex-col gap-6">
           <div
             role="tablist"
@@ -956,6 +1071,7 @@ function CharacterSheet({
             </>
           )}
         </div>
+        )}
       </div>
     </div>
   );
