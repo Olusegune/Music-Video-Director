@@ -22,6 +22,10 @@ import {
   Shuffle,
   RefreshCw,
   Loader2,
+  Lightbulb,
+  Smile,
+  User,
+  Gem,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
@@ -765,6 +769,59 @@ function CharacterSheet({
               </Button>
               <p className="mt-2 text-center text-[11px] text-muted">
                 Composes Prompt DNA from the fields above, then opens Complete Mode to review.
+              </p>
+            </div>
+
+            <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
+              <Label className="mb-2 block">Quick Preview</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["Appearance", Eye, draft.faceShape || draft.eyeColor || draft.hairColor],
+                    ["Wardrobe", Shirt, draft.primaryOutfit],
+                    ["Personality", Drama, draft.traits],
+                    ["Accessories", Gem, draft.accessories],
+                    ["Expressions", Smile, draft.referenceImages.length > 1],
+                    ["Full Body", User, draft.referenceImages.length > 0],
+                  ] as const
+                ).map(([label, Icon, filled]) => (
+                  <div
+                    key={label}
+                    className="flex flex-col items-center gap-1 rounded-md border border-border bg-elevated/40 p-2"
+                  >
+                    <div className="relative aspect-square w-full overflow-hidden rounded-md bg-elevated">
+                      <AssetImage
+                        src={draft.portraitUrl}
+                        alt={label}
+                        className="h-full w-full object-cover"
+                        fallback={
+                          <div className="flex h-full w-full items-center justify-center text-muted">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                        }
+                        label={label}
+                      />
+                      {!filled && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+                          <Icon className="h-4 w-4 text-muted" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-muted">
+                Previews reuse the current portrait until distinct art is generated per category
+                from the Character Sheet.
+              </p>
+            </div>
+
+            <div className="flex items-start gap-2.5 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-card">
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+              <p className="text-[11px] text-muted">
+                <span className="text-foreground">Start simple.</span> Fill a few fields or import
+                a document. Then refine details in Complete Mode.
               </p>
             </div>
 
