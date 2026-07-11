@@ -68,7 +68,10 @@ export function ExportCenter({ projectId, hasPack }: { projectId: string; hasPac
     return (
       <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-16 text-center">
         <FolderDown className="mb-2 h-7 w-7 text-muted" />
-        <p className="text-sm text-muted">Generate a Prompt Pack to enable exports.</p>
+        <p className="text-sm text-muted">
+          Add a Concept Brief above and click <span className="text-foreground">Generate Pack</span>{" "}
+          to enable exports.
+        </p>
       </div>
     );
   }

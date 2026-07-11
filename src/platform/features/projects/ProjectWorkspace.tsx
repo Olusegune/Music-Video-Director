@@ -235,10 +235,14 @@ export function ProjectWorkspace() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {!generate.isPending && brief.trim().length === 0 ? (
+            <span className="text-[11px] text-muted">Add a brief below to enable this</span>
+          ) : null}
           <Button
             variant="primary"
             onClick={() => generate.mutate()}
             disabled={generate.isPending || brief.trim().length === 0}
+            title={brief.trim().length === 0 ? "Add a brief below before generating" : undefined}
           >
             {generate.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
