@@ -310,8 +310,14 @@ export function ShotRow({
         </span>
       </div>
 
-      <div className="flex gap-3 p-3">
-        <div className="min-w-0 flex-1 space-y-2.5">
+      {/* flex-wrap (not a viewport breakpoint) so the preview column drops
+          to its own line based on the ACTUAL space available in this row —
+          correct whether ShotRow sits in the full-width List view or the
+          narrower Console stage (nav rail + sidebar already eat width there,
+          so a `lg:` viewport breakpoint alone was still squeezing the text
+          column at ordinary desktop widths). */}
+      <div className="mx-auto flex max-w-[1440px] flex-wrap gap-3 p-3">
+        <div className="min-w-[280px] flex-1 space-y-2.5">
           {shot.lyric ? (
             <div className="flex items-start gap-1.5 text-xs text-accent">
               <Quote className="mt-0.5 h-3 w-3 shrink-0" />
@@ -674,7 +680,7 @@ export function ShotRow({
         </div>
 
         {/* Frame / clip preview monitor */}
-        <div className="w-80 shrink-0 lg:w-96">
+        <div className="w-80 max-w-full shrink-0">
           <div
             className="group relative aspect-video min-h-[200px] overflow-hidden rounded-lg border-2 bg-elevated/50 shadow-sm"
             style={{ borderColor: `${accent}55` }}
