@@ -206,6 +206,14 @@ export function ShotRow({
   const [showChoreo, setShowChoreo] = useState(!!startExpanded);
   const [showAdvancedDirection, setShowAdvancedDirection] = useState(!!startExpanded);
   const [showPrompt, setShowPrompt] = useState(!!startExpanded);
+  // Director's Intent + Director Brain are AI reading material, not controls —
+  // real signal, but they compete with the shot itself for attention when every
+  // card shows them at once. Collapsed by default, same as the other layers.
+  const [showNotes, setShowNotes] = useState(!!startExpanded);
+  // Raw provider/model overrides are Layer 3 (power-user) — collapsed even in
+  // Expert view, since "which endpoint" is a different concern than "what does
+  // this shot look like." A shot with an override set still shows that inline.
+  const [showModelOverrides, setShowModelOverrides] = useState(false);
   // Switching to Expert view (startExpanded) after this row is already mounted
   // must actually open these panels — useState's initial value only applies
   // once, on mount, so a plain prop change wouldn't otherwise take effect.
@@ -216,6 +224,7 @@ export function ShotRow({
       setShowChoreo(true);
       setShowPrompt(true);
       setShowAdvancedDirection(true);
+      setShowNotes(true);
     }
   }, [startExpanded]);
   const refs = shot.refImages ?? [];
@@ -328,47 +337,61 @@ export function ShotRow({
             placeholder="Describe the shot… type @ to reference a character, set, or prop"
           />
 
-          {/* Director's Intent — auto summary */}
-          <div className="rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-accent/80">
-              🎬 Director's intent
-            </p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-              {directorSummary(shot, approach)}
-            </p>
-          </div>
+          {/* Director's notes — Director's Intent + Director Brain are AI
+              reading material rather than controls. Collapsed by default so
+              the shot idea and its frame stay the focus at a glance. */}
+          <button
+            type="button"
+            onClick={() => setShowNotes((v) => !v)}
+            className="flex w-full items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
+          >
+            🎬 Director's notes
+            <span className="ml-auto text-[9px]">{showNotes ? "▲" : "▼"}</span>
+          </button>
 
-          {/* Director Brain — context-aware suggestions */}
-          {(() => {
-            const brain = directorBrain(shot, sectionKind, energy, approach);
-            if (brain.tips.length === 0 && brain.actions.length === 0) return null;
-            return (
-              <div className="rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                  🧠 Director Brain
+          {showNotes && (
+            <>
+              <div className="rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-accent/80">
+                  🎬 Director's intent
                 </p>
-                {brain.tips.map((t, ti) => (
-                  <p key={ti} className="mt-0.5 text-[11px] leading-relaxed text-muted">
-                    {t}
-                  </p>
-                ))}
-                {brain.actions.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {brain.actions.map((act, ai) => (
-                      <button
-                        key={ai}
-                        type="button"
-                        onClick={() => onChange({ ...shot, ...act.patch })}
-                        className="rounded-md border border-primary/40 bg-surface px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
-                      >
-                        + {act.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                  {directorSummary(shot, approach)}
+                </p>
               </div>
-            );
-          })()}
+
+              {(() => {
+                const brain = directorBrain(shot, sectionKind, energy, approach);
+                if (brain.tips.length === 0 && brain.actions.length === 0) return null;
+                return (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                      🧠 Director Brain
+                    </p>
+                    {brain.tips.map((t, ti) => (
+                      <p key={ti} className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                        {t}
+                      </p>
+                    ))}
+                    {brain.actions.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {brain.actions.map((act, ai) => (
+                          <button
+                            key={ai}
+                            type="button"
+                            onClick={() => onChange({ ...shot, ...act.patch })}
+                            className="rounded-md border border-primary/40 bg-surface px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+                          >
+                            + {act.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
 
           {/* Continuity intelligence — how this shot relates to its neighbours */}
           {(continuity.prevMatches || continuity.firstAppearance || continuity.energyRising) && (
@@ -443,7 +466,7 @@ export function ShotRow({
             className="flex w-full items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
           >
             <SlidersHorizontal className="h-3 w-3" />
-            Advanced direction — story intent, camera, lighting, performance
+            🎥 Direct this shot — intent, camera, lighting, performance
             <span className="ml-auto text-[9px]">{showAdvancedDirection ? "▲" : "▼"}</span>
           </button>
 
@@ -817,7 +840,7 @@ export function ShotRow({
               ) : (
                 <ImageIcon className="h-3.5 w-3.5" />
               )}
-              Frame
+              {shot.imageUrl ? "🎬 Reshoot" : "🎬 Create Shot"}
             </Button>
             <Button
               variant="secondary"
@@ -840,7 +863,7 @@ export function ShotRow({
               ) : (
                 <Video className="h-3.5 w-3.5" />
               )}
-              Clip
+              🎥 Direct Performance
             </Button>
             <Button
               variant="ghost"
@@ -872,34 +895,47 @@ export function ShotRow({
             )}
             Pose sheet
           </Button>
-          <select
-            value={shot.imageProvider ?? ""}
-            onChange={(e) => onChange({ ...shot, imageProvider: e.target.value || undefined })}
-            className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
-            aria-label={`Shot ${index + 1} image model`}
-            title="Override the image provider for this shot"
+          <button
+            type="button"
+            onClick={() => setShowModelOverrides((v) => !v)}
+            className="mt-1.5 flex w-full items-center gap-1 text-[9px] font-medium text-muted/70 hover:text-muted"
           >
-            <option value="">Frame model: inherit</option>
-            {GEN_MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={shot.videoProvider ?? ""}
-            onChange={(e) => onChange({ ...shot, videoProvider: e.target.value || undefined })}
-            className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
-            aria-label={`Shot ${index + 1} video model`}
-            title="Override the video provider for this shot"
-          >
-            <option value="">Clip model: inherit</option>
-            {VIDEO_MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+            <SlidersHorizontal className="h-2.5 w-2.5" />
+            {shot.imageProvider || shot.videoProvider ? "Model overrides (set)" : "Model overrides"}
+            <span className="ml-auto">{showModelOverrides ? "▲" : "▼"}</span>
+          </button>
+          {showModelOverrides && (
+            <>
+              <select
+                value={shot.imageProvider ?? ""}
+                onChange={(e) => onChange({ ...shot, imageProvider: e.target.value || undefined })}
+                className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
+                aria-label={`Shot ${index + 1} image model`}
+                title="Override the image provider for this shot"
+              >
+                <option value="">Frame model: inherit</option>
+                {GEN_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={shot.videoProvider ?? ""}
+                onChange={(e) => onChange({ ...shot, videoProvider: e.target.value || undefined })}
+                className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
+                aria-label={`Shot ${index + 1} video model`}
+                title="Override the video provider for this shot"
+              >
+                <option value="">Clip model: inherit</option>
+                {VIDEO_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
 
           {/* Reference assets — characters / environments / props / uploads */}
           <div className="mt-1.5">

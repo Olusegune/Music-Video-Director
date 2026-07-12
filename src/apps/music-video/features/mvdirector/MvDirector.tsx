@@ -13,6 +13,7 @@ import {
   Users,
   X,
   HelpCircle,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   directSong,
@@ -141,6 +142,11 @@ export function MvDirector() {
   const [audioDialogue, setAudioDialogue] = useState(true);
   const [audioSfx, setAudioSfx] = useState(true);
   const [audioMusic, setAudioMusic] = useState(false);
+  // Clip settings (size/seed/variations/video model/motion/fps/duration/
+  // resolution/audio) are real Layer-3 controls, but a flat row of ~9 selects
+  // reads as a form even to power users — collapsed behind one toggle instead
+  // of dumping them all into the header whenever Creator mode is active.
+  const [showClipSettings, setShowClipSettings] = useState(false);
   // Per-shot fine-tune via the unified GenerationPanel.
   const [tune, setTune] = useState<{ section: MvSectionPlan; shot: MvShot } | null>(null);
 
@@ -690,6 +696,22 @@ export function MvDirector() {
               {/* Display tier follows the platform-wide Director / Studio /
                   Creator switch in the Sidebar (StudioMode, decision D1). */}
               {advanced && (
+                <button
+                  type="button"
+                  onClick={() => setShowClipSettings((v) => !v)}
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-input)] border px-2 text-xs font-medium transition-colors",
+                    showClipSettings
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border bg-surface text-muted hover:text-foreground"
+                  )}
+                  title="Clip size, seed, variations, video model, motion, fps, duration, resolution, audio"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Clip settings
+                </button>
+              )}
+              {advanced && showClipSettings && (
                 <>
                   <select
                     value={sizeId}
