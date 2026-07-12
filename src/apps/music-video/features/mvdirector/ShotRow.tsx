@@ -315,12 +315,13 @@ export function ShotRow({
           correct whether ShotRow sits in the full-width List view or the
           narrower Console stage (nav rail + sidebar already eat width there,
           so a `lg:` viewport breakpoint alone was still squeezing the text
-          column at ordinary desktop widths). Edge-to-edge like every other
-          page — no centered max-width wrapper — with the readable-width cap
-          on the text column itself instead, so long lines don't stretch
-          across an ultrawide monitor. */}
+          column at ordinary desktop widths). The text column is a genuine
+          flex-1 — it fills whatever width remains next to the preview, same
+          as every other edge-to-edge page (Cast, etc.) — no max-width cap
+          here, since capping it just pushes the dead space from "below a
+          short preview" to "an empty gutter on the right of the whole row." */}
       <div className="flex flex-wrap gap-3 p-3">
-        <div className="min-w-[280px] max-w-3xl flex-1 space-y-2.5">
+        <div className="min-w-[280px] flex-1 space-y-2.5">
           {shot.lyric ? (
             <div className="flex items-start gap-1.5 text-xs text-accent">
               <Quote className="mt-0.5 h-3 w-3 shrink-0" />
@@ -364,7 +365,7 @@ export function ShotRow({
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-accent/80">
                   🎬 Director's intent
                 </p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                <p className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-muted">
                   {directorSummary(shot, approach)}
                 </p>
               </div>
@@ -378,7 +379,7 @@ export function ShotRow({
                       🧠 Director Brain
                     </p>
                     {brain.tips.map((t, ti) => (
-                      <p key={ti} className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                      <p key={ti} className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-muted">
                         {t}
                       </p>
                     ))}
@@ -409,19 +410,19 @@ export function ShotRow({
                 🔗 Continuity
               </p>
               {continuity.firstAppearance && (
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                <p className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-muted">
                   First appearance of{" "}
                   <span className="font-medium text-foreground">{continuity.firstAppearance}</span>{" "}
                   — establish importance.
                 </p>
               )}
               {continuity.prevMatches && (
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                <p className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-muted">
                   Same look as the previous shot — continue the language, or push the energy.
                 </p>
               )}
               {continuity.energyRising && !continuity.prevMatches && (
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                <p className="mt-0.5 max-w-2xl text-[11px] leading-relaxed text-muted">
                   Energy rises into this section — a bolder camera + brighter light sells the lift.
                 </p>
               )}
