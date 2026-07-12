@@ -12,6 +12,9 @@
 //!   cargo run --example probe -- kie_seedance  # Seedance 2.0 video via Kie.ai (bytedance/seedance-2)
 //!   cargo run --example probe -- badkey        # deliberately-invalid key, proves the failure path
 //!   cargo run --example probe -- smart_import  # Smart Import structured-JSON extraction (Gemini)
+//!   cargo run --example probe -- kie_kling       # Kling 2.6 i2v via Kie.ai (needs a start frame)
+//!   cargo run --example probe -- wavespeed_kling    # Kling v2.6 Pro i2v via WaveSpeed
+//!   cargo run --example probe -- wavespeed_seedance # Seedance 2.0 i2v via WaveSpeed
 
 use motionforge_lib::providers::audio::ElevenLabsProvider;
 use motionforge_lib::providers::image::{
@@ -21,7 +24,8 @@ use motionforge_lib::providers::kie::{KieImageProvider, KieVideoProvider};
 use motionforge_lib::providers::replicate::ReplicateProvider;
 use motionforge_lib::providers::text::GeminiTextProvider;
 use motionforge_lib::providers::video::GoogleVeoProvider;
-use motionforge_lib::providers::wavespeed::WaveSpeedImageProvider;
+use motionforge_lib::providers::wavespeed::{WaveSpeedImageProvider, WaveSpeedVideoProvider};
+use motionforge_lib::providers::ClipOpts;
 use motionforge_lib::providers::{AudioProvider, ImageProvider, TextProvider, VideoProvider};
 use motionforge_lib::secrets;
 
@@ -92,7 +96,8 @@ async fn main() {
     // kie_seedance reuses the "kie" keychain entry — Seedance is routed through
     // Kie.ai by model slug, not a separate credential.
     let key_lookup = match which.as_str() {
-        "kie_seedance" => "kie",
+        "kie_seedance" | "kie_kling" => "kie",
+        "wavespeed_kling" | "wavespeed_seedance" => "wavespeed",
         "smart_import" => "gemini",
         other => other,
     };
@@ -153,6 +158,75 @@ async fn main() {
                 .generate_video(prompt)
                 .await,
         ),
+        "kie_kling" => {
+            // Kling requires a start frame — generate one cheaply via fal first.
+            let fal_key = match secrets::get_key("fal") {
+                Ok(Some(k)) => k,
+                _ => {
+                    println!("Kling needs a start frame and no 'fal' key is stored to make one.");
+                    return;
+                }
+            };
+            println!("Generating a start frame via fal.ai first...");
+            let frame = match FalImageProvider::new(fal_key).generate_image(prompt).await {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    println!("FAILED to generate start frame — {e:#}");
+                    return;
+                }
+            };
+            report(
+                KieVideoProvider::new(key)
+                    .with_model(Some("kling-2.6/image-to-video".to_string()))
+                    .generate_video_omni(prompt, &[frame], None, &[], &[], &ClipOpts::default())
+                    .await,
+            )
+        }
+        "wavespeed_kling" => {
+            let fal_key = match secrets::get_key("fal") {
+                Ok(Some(k)) => k,
+                _ => {
+                    println!("Kling needs a start frame and no 'fal' key is stored to make one.");
+                    return;
+                }
+            };
+            println!("Generating a start frame via fal.ai first...");
+            let frame = match FalImageProvider::new(fal_key).generate_image(prompt).await {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    println!("FAILED to generate start frame — {e:#}");
+                    return;
+                }
+            };
+            report(
+                WaveSpeedVideoProvider::new(key)
+                    .with_model(Some("kwaivgi/kling-v2.6-pro/image-to-video".to_string()))
+                    .generate_video_omni(prompt, &[frame], None, &ClipOpts::default())
+                    .await,
+            )
+        }
+        "wavespeed_seedance" => {
+            let fal_key = match secrets::get_key("fal") {
+                Ok(Some(k)) => k,
+                _ => {
+                    println!("Seedance i2v needs a start frame and no 'fal' key is stored to make one.");
+                    return;
+                }
+            };
+            println!("Generating a start frame via fal.ai first...");
+            let frame = match FalImageProvider::new(fal_key).generate_image(prompt).await {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    println!("FAILED to generate start frame — {e:#}");
+                    return;
+                }
+            };
+            report(
+                WaveSpeedVideoProvider::new(key)
+                    .generate_video_omni(prompt, &[frame], None, &ClipOpts::default())
+                    .await,
+            )
+        }
         "smart_import" => {
             let doc = "SCENE 1. Mara Okafor, late 30s, a weathered freighter pilot with a shaved \
                 head and a scar across her left cheek. She wears a patched flight jacket over \

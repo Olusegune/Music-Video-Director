@@ -460,8 +460,9 @@ export const MODEL_REGISTRY: ModelVariant[] = [
     family: "Kling",
     variant: "Pro",
     kind: "video",
+    available: true,
     aggregator: true,
-    workflows: ["text-to-video", "image-to-video", "reference-to-video", "camera-motion"],
+    workflows: ["image-to-video", "reference-to-video", "camera-motion"],
     capabilities: ["Character consistency", "Camera motion"],
   }),
   v({
@@ -471,8 +472,9 @@ export const MODEL_REGISTRY: ModelVariant[] = [
     family: "Kling",
     variant: "",
     kind: "video",
+    available: true,
     aggregator: true,
-    workflows: ["text-to-video", "image-to-video"],
+    workflows: ["image-to-video"],
     capabilities: ["Fast", "Fallback"],
   }),
   v({
@@ -482,8 +484,9 @@ export const MODEL_REGISTRY: ModelVariant[] = [
     family: "Seedance",
     variant: "",
     kind: "video",
+    available: true,
     aggregator: true,
-    workflows: ["text-to-video", "image-to-video"],
+    workflows: ["image-to-video"],
     capabilities: ["Fast", "Fallback"],
   }),
   v({
