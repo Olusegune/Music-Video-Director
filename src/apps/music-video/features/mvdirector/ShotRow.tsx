@@ -25,6 +25,7 @@ import { useAppStore } from "@/platform/store/useAppStore";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
+import { InspectorGroup } from "@/platform/components/ui/inspector-group";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
 import { MentionTextarea } from "@/platform/components/ui/mention-textarea";
 import {
@@ -350,17 +351,13 @@ export function ShotRow({
           {/* Director's notes — Director's Intent + Director Brain are AI
               reading material rather than controls. Collapsed by default so
               the shot idea and its frame stay the focus at a glance. */}
-          <button
-            type="button"
-            onClick={() => setShowNotes((v) => !v)}
-            className="flex w-full items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
+          <InspectorGroup
+            title="Director's notes"
+            open={showNotes}
+            onOpenChange={setShowNotes}
+            className="border-t-0 pt-0"
           >
-            🎬 Director's notes
-            <span className="ml-auto text-[9px]">{showNotes ? "▲" : "▼"}</span>
-          </button>
-
-          {showNotes && (
-            <>
+            <div className="space-y-2">
               <div className="rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-accent/80">
                   🎬 Director's intent
@@ -400,8 +397,8 @@ export function ShotRow({
                   </div>
                 );
               })()}
-            </>
-          )}
+            </div>
+          </InspectorGroup>
 
           {/* Continuity intelligence — how this shot relates to its neighbours */}
           {(continuity.prevMatches || continuity.firstAppearance || continuity.energyRising) && (
