@@ -51,6 +51,7 @@ import { collectRefs } from "@/platform/lib/refs";
 import { GEN_MODELS } from "./shotHelpers";
 import { TreatmentView } from "./TreatmentView";
 import { SimpleTreatmentView } from "./SimpleTreatment";
+import { DirectConsole } from "./DirectConsole";
 import type { PerformerOption, ContinuityInfo } from "./ChoreoPanel";
 
 /** Pull a song section's authored brief (lead, camera, mood, …) for prompting. */
@@ -147,6 +148,11 @@ export function MvDirector() {
   // reads as a form even to power users — collapsed behind one toggle instead
   // of dumping them all into the header whenever Creator mode is active.
   const [showClipSettings, setShowClipSettings] = useState(false);
+  // Console = one shot at a time (scene navigator + full-attention shot
+  // surface), the new default. List = the original scroll-past-every-shot
+  // view, kept for anyone who prefers scanning the whole treatment at once —
+  // no functionality removed, just not the first thing you see.
+  const [layoutMode, setLayoutMode] = useState<"console" | "list">("console");
   // Per-shot fine-tune via the unified GenerationPanel.
   const [tune, setTune] = useState<{ section: MvSectionPlan; shot: MvShot } | null>(null);
 
@@ -842,6 +848,35 @@ export function MvDirector() {
                   </div>
                 </>
               )}
+              {viewMode !== "simple" && (
+                <div
+                  role="tablist"
+                  aria-label="Direct layout"
+                  className="flex h-9 items-center gap-0.5 rounded-[var(--radius-input)] border border-border bg-surface p-0.5"
+                >
+                  {(
+                    [
+                      ["console", "Console"],
+                      ["list", "List"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      role="tab"
+                      aria-selected={layoutMode === id}
+                      onClick={() => setLayoutMode(id)}
+                      className={cn(
+                        "rounded-[calc(var(--radius-input)-2px)] px-2 py-1 text-xs font-medium transition-colors",
+                        layoutMode === id
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted hover:text-foreground"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Button
                 variant="accent"
                 onClick={generateAll}
@@ -888,7 +923,14 @@ export function MvDirector() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        className={cn(
+          "min-h-0 flex-1",
+          treatment && viewMode !== "simple" && layoutMode === "console"
+            ? "overflow-hidden"
+            : "overflow-y-auto"
+        )}
+      >
         {!treatment ? (
           <div className="flex h-full items-center justify-center p-10">
             <button
@@ -920,6 +962,29 @@ export function MvDirector() {
             isImageReady={(id) => isReady(findModel(id).keyIds)}
             defaultImageModelId={modelId}
             bpm={song?.bpm ?? 0}
+          />
+        ) : layoutMode === "console" ? (
+          <DirectConsole
+            treatment={treatment}
+            onChange={patch}
+            onGenerate={generateOne}
+            onGenerateClip={generateClip}
+            onGeneratePoseSheet={generatePoseSheet}
+            onTune={(section, shot) => setTune({ section, shot })}
+            genShotId={genShotId}
+            genClipId={genClipId}
+            genPoseId={genPoseId}
+            isImageReady={(id) => isReady(findModel(id).keyIds)}
+            defaultImageModelId={modelId}
+            isVideoReady={(id) => isReady(findVideoModel(id).keyIds)}
+            defaultVideoModelId={videoModelId}
+            performers={performers}
+            choreoMoves={choreoMoves}
+            poseSheets={poseSheets}
+            buildPrompt={buildPromptPreview}
+            continuityFor={continuityFor}
+            bpm={song?.bpm ?? 0}
+            startExpanded={viewMode === "expert"}
           />
         ) : (
           <TreatmentView
