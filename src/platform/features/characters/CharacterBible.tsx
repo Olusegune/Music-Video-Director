@@ -26,7 +26,6 @@ import {
   Smile,
   User,
   Gem,
-  FileUp,
   X,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
@@ -42,7 +41,12 @@ import {
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
-import { MoveAssetMenu } from "@/platform/features/dna/dnaKit";
+import {
+  MoveAssetMenu,
+  QuickActionButton,
+  SmartImportButton,
+  SmartImportReview,
+} from "@/platform/features/dna/dnaKit";
 import {
   GenerationPanel,
   type GenerateOpts,
@@ -60,7 +64,7 @@ import { BibleCardStage } from "@/platform/features/dna/BibleCardStage";
 import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
 import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
 import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
-import { extractTextFromFile, ACCEPT_ATTR } from "@/platform/lib/docParse";
+import { extractTextFromFile } from "@/platform/lib/docParse";
 import {
   extractCharacterFields,
   CHARACTER_IMPORT_FIELDS,
@@ -686,37 +690,11 @@ function CharacterSheet({
           >
             <Check className="h-3.5 w-3.5" /> Saved
           </span>
-          <label
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-button)] border px-3 py-1.5 text-xs font-medium transition-colors",
-              !canSmartImport || importBusy
-                ? "cursor-not-allowed border-border text-muted opacity-60"
-                : "border-primary/30 text-primary hover:bg-primary/10"
-            )}
-            title={
-              canSmartImport
-                ? "Extract character fields from a PDF or DOCX — you review before anything is applied."
-                : "Add a configured Gemini key in API Keys to use Smart Import."
-            }
-          >
-            {importBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <FileUp className="h-3.5 w-3.5" />
-            )}
-            AI Import (PDF / DOCX)
-            <input
-              type="file"
-              accept={ACCEPT_ATTR}
-              className="hidden"
-              disabled={!canSmartImport || importBusy}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (file) void handleImportFile(file);
-              }}
-            />
-          </label>
+          <SmartImportButton
+            canImport={canSmartImport}
+            busy={importBusy}
+            onFile={(file) => void handleImportFile(file)}
+          />
           <MoveAssetMenu
             fromKind="Character"
             fromId={draft.id}
@@ -751,8 +729,9 @@ function CharacterSheet({
 
       {importFields && (
         <SmartImportReview
+          fields={CHARACTER_IMPORT_FIELDS}
           fileName={importFileName}
-          fields={importFields}
+          imported={importFields}
           accepted={importAccepted}
           onToggle={(key) =>
             setImportAccepted((prev) => {
@@ -1394,125 +1373,6 @@ function CharacterSheet({
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function QuickActionButton({
-  icon,
-  label,
-  onClick,
-  disabled,
-  active,
-  danger,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  active?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex items-center gap-2.5 rounded-[var(--radius-card)] border px-3 py-2.5 text-left text-sm font-medium shadow-card transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-        danger
-          ? "border-border bg-surface text-danger hover:border-danger/40 hover:bg-danger/10"
-          : active
-            ? "border-success/40 bg-success/10 text-success"
-            : "border-border bg-surface text-foreground hover:border-primary/40"
-      )}
-    >
-      {icon}
-      <span className="truncate">{label}</span>
-    </button>
-  );
-}
-
-function SmartImportReview({
-  fileName,
-  fields,
-  accepted,
-  onToggle,
-  onEdit,
-  onApply,
-  onDiscard,
-}: {
-  fileName: string | null;
-  fields: ImportedFields;
-  accepted: Set<string>;
-  onToggle: (key: string) => void;
-  onEdit: (key: string, value: string) => void;
-  onApply: () => void;
-  onDiscard: () => void;
-}) {
-  const entries = CHARACTER_IMPORT_FIELDS.filter(([key]) => fields[key]);
-  const highCount = entries.filter(([key]) => fields[key]?.confidence === "high").length;
-  return (
-    <div className="mx-8 mt-4 rounded-[var(--radius-card)] border border-primary/30 bg-primary/[0.04] p-4">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <FileUp className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">
-            Smart Import review{fileName ? ` — ${fileName}` : ""}
-          </h2>
-        </div>
-        <button onClick={onDiscard} aria-label="Discard import" className="text-muted hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <p className="mb-3 text-[11px] text-muted">
-        {entries.length} field{entries.length === 1 ? "" : "s"} found ({highCount} high
-        confidence). Nothing is applied until you accept below — uncheck anything that looks
-        wrong, or edit the value directly.
-      </p>
-      <div className="flex flex-col gap-2">
-        {entries.map(([key, label]) => {
-          const field = fields[key]!;
-          return (
-            <div
-              key={key}
-              className="flex items-start gap-3 rounded-md border border-border bg-surface p-2.5"
-            >
-              <input
-                type="checkbox"
-                checked={accepted.has(key)}
-                onChange={() => onToggle(key)}
-                className="mt-1 h-4 w-4 shrink-0"
-                aria-label={`Accept ${label}`}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <Label className="!mb-0">{label}</Label>
-                  <Badge variant={field.confidence === "high" ? "success" : "warning"}>
-                    {field.confidence === "high" ? "High confidence" : "Needs review"}
-                  </Badge>
-                </div>
-                <Input
-                  value={field.value}
-                  onChange={(e) => onEdit(key, e.target.value)}
-                  className="h-8 text-[13px]"
-                />
-                {field.source && (
-                  <p className="mt-1 truncate text-[11px] italic text-muted">“{field.source}”</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-3 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onDiscard}>
-          Discard
-        </Button>
-        <Button onClick={onApply} disabled={accepted.size === 0}>
-          <Check className="h-4 w-4" /> Apply {accepted.size} field{accepted.size === 1 ? "" : "s"}
-        </Button>
       </div>
     </div>
   );
