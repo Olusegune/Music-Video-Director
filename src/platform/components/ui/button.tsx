@@ -7,7 +7,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "grad-primary text-white shadow-sm shadow-primary/25 hover:brightness-110",
+        primary:
+          "grad-primary text-[var(--color-primary-foreground)] shadow-sm shadow-primary/25 hover:brightness-110",
         accent: "grad-accent font-semibold text-[#06283d] shadow-sm hover:brightness-105",
         gold: "grad-gold font-semibold text-[var(--color-gold-foreground)] shadow-sm shadow-[var(--color-gold)]/25 hover:brightness-105",
         success: "bg-success text-white shadow-sm hover:brightness-110",

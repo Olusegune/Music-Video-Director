@@ -37,7 +37,7 @@ export function SimpleTreatmentView({
   const imageReady = isImageReady(defaultImageModelId);
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-6">
+    <div className="space-y-6 p-6">
       <Card className="overflow-hidden">
         <div className="grad-primary h-1 w-full" />
         <CardContent className="space-y-2 p-5">

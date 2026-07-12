@@ -315,9 +315,12 @@ export function ShotRow({
           correct whether ShotRow sits in the full-width List view or the
           narrower Console stage (nav rail + sidebar already eat width there,
           so a `lg:` viewport breakpoint alone was still squeezing the text
-          column at ordinary desktop widths). */}
-      <div className="mx-auto flex max-w-[1440px] flex-wrap gap-3 p-3">
-        <div className="min-w-[280px] flex-1 space-y-2.5">
+          column at ordinary desktop widths). Edge-to-edge like every other
+          page — no centered max-width wrapper — with the readable-width cap
+          on the text column itself instead, so long lines don't stretch
+          across an ultrawide monitor. */}
+      <div className="flex flex-wrap gap-3 p-3">
+        <div className="min-w-[280px] max-w-3xl flex-1 space-y-2.5">
           {shot.lyric ? (
             <div className="flex items-start gap-1.5 text-xs text-accent">
               <Quote className="mt-0.5 h-3 w-3 shrink-0" />
