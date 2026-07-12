@@ -3,7 +3,14 @@
 // shot cards. Reuses ShotRow entirely for the shot surface (same generation
 // wiring, same fields) — this is a spatial re-arrangement, not a new editor.
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ImageIcon, Video as VideoIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImageIcon,
+  Video as VideoIcon,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 import {
   approachColor,
   type MvTreatment,
@@ -12,7 +19,7 @@ import {
 } from "@/apps/music-video/lib/mvDirector";
 import { sectionColor, formatTime } from "@/apps/music-video/lib/songBrain";
 import { cn } from "@/platform/lib/utils";
-import { AssetImage } from "@/platform/components/ui/asset-image";
+import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { Button } from "@/platform/components/ui/button";
 import { ShotRow } from "./ShotRow";
 import type { PerformerOption, ContinuityInfo } from "./ChoreoPanel";
@@ -193,6 +200,57 @@ export function DirectConsole({
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
+
+        {/* Large live shot preview — the console's hero surface. Distinct
+            from ShotRow's own small monitor below (that one stays as the
+            working reference while editing fields; this one is the "what am
+            I directing right now" focal point). */}
+        <div className="border-b border-border bg-background/40 px-4 py-4">
+          <div
+            className="relative mx-auto flex aspect-video max-h-[52vh] w-full max-w-4xl items-center justify-center overflow-hidden rounded-lg border"
+            style={{ borderColor: `${color}55`, backgroundColor: "var(--color-elevated)" }}
+          >
+            {shot.videoUrl ? (
+              <AssetVideo src={shot.videoUrl} className="h-full w-full object-contain" controls />
+            ) : shot.imageUrl ? (
+              <AssetImage
+                src={shot.imageUrl}
+                alt={shot.idea}
+                className="h-full w-full object-contain"
+                label="Frame"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => onGenerate(section, shot)}
+                disabled={genShotId === shot.id || !isImageReady(defaultImageModelId)}
+                className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted transition-colors hover:text-foreground disabled:cursor-not-allowed"
+              >
+                {genShotId === shot.id ? (
+                  <Loader2 className="h-10 w-10 animate-spin" style={{ color }} />
+                ) : (
+                  <ImageIcon className="h-10 w-10 opacity-50" />
+                )}
+                <span className="text-sm font-medium">
+                  {genShotId === shot.id ? "Directing this shot…" : "Click to direct this shot"}
+                </span>
+              </button>
+            )}
+            {!genShotId && (shot.imageUrl || shot.videoUrl) && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-6">
+                <p className="line-clamp-1 text-xs font-medium text-white/90">{shot.idea}</p>
+              </div>
+            )}
+          </div>
+          {!shot.imageUrl && !genShotId && (
+            <div className="mx-auto mt-3 flex max-w-4xl justify-center">
+              <Button size="sm" onClick={() => onGenerate(section, shot)} disabled={!isImageReady(defaultImageModelId)}>
+                <Sparkles className="h-3.5 w-3.5" />
+                Create Shot
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="p-4">
