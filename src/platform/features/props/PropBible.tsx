@@ -15,6 +15,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
+import { cn } from "@/platform/lib/utils";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import type { Prop } from "@/platform/lib/types";
@@ -262,7 +263,8 @@ export function PropBible() {
         <div>
           <h1 className="text-lg font-semibold">Props &amp; Vehicles</h1>
           <p className="text-xs text-muted">
-            Hero props, vehicles, and creatures — defined once, identical in every shot.
+            Design, refine, and preserve consistent props, vehicles, and creatures across every
+            project.
           </p>
         </div>
         <Button onClick={() => create.mutate(filter)} disabled={create.isPending}>
@@ -301,7 +303,7 @@ export function PropBible() {
                 prop={p}
                 onClick={() => setSelectedId(p.id)}
                 onDelete={() => {
-                  if (confirm(`Delete "${p.name}" from the Prop Bible?`)) removeProp.mutate(p.id);
+                  if (confirm(`Delete "${p.name}" from Props & Vehicles?`)) removeProp.mutate(p.id);
                 }}
               />
             ))}
@@ -384,6 +386,7 @@ function PropSheet({
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Prop>(prop);
+  const [section, setSection] = useState<"overview" | "physical" | "usage" | "style">("overview");
 
   const savedTick = useAutosave(draft, async (d) => {
     await api.saveProp(d);
@@ -522,6 +525,37 @@ function PropSheet({
         </div>
 
         <div className="flex flex-col gap-6">
+          <div
+            role="tablist"
+            aria-label="Prop detail section"
+            className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-elevated/40 p-1"
+          >
+            {(
+              [
+                ["overview", "Overview"],
+                ["physical", "Physical"],
+                ["usage", "Usage"],
+                ["style", "Color & Style"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={section === id}
+                onClick={() => setSection(id)}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  section === id
+                    ? "bg-surface text-foreground shadow-sm"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <PromptDnaBlock
             anchorLabel="Subject"
             anchor={[draft.condition, draft.name].filter(Boolean).join(" ") || draft.name}
@@ -534,82 +568,95 @@ function PropSheet({
             onRules={(v) => set("consistencyRules", v)}
           />
 
-          <Section icon={<Package className="h-4 w-4 text-primary" />} title="Identity">
-            <Field label="Category">
-              <DnaSelect value={draft.category} onChange={(v) => set("category", v)}>
-                {PROP_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </DnaSelect>
-            </Field>
-            <Field label="Story significance">
-              <Input
-                value={draft.storySignificance}
-                onChange={(e) => set("storySignificance", e.target.value)}
-                placeholder="heirloom; the MacGuffin"
-              />
-            </Field>
-          </Section>
+          {section === "overview" && (
+            <Section icon={<Package className="h-4 w-4 text-primary" />} title="Identity">
+              <Field label="Category">
+                <DnaSelect value={draft.category} onChange={(v) => set("category", v)}>
+                  {PROP_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </DnaSelect>
+              </Field>
+              <Field label="Story significance">
+                <Input
+                  value={draft.storySignificance}
+                  onChange={(e) => set("storySignificance", e.target.value)}
+                  placeholder="heirloom; the MacGuffin"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section icon={<Ruler className="h-4 w-4 text-primary" />} title="Physical">
-            <Field label="Materials">
-              <Input
-                value={draft.materials}
-                onChange={(e) => set("materials", e.target.value)}
-                placeholder="weathered brass, oak grip"
-              />
-            </Field>
-            <Field label="Condition">
-              <Input
-                value={draft.condition}
-                onChange={(e) => set("condition", e.target.value)}
-                placeholder="battle-worn, scratched"
-              />
-            </Field>
-            <Field label="Dimensions / scale" full>
-              <Input
-                value={draft.dimensions}
-                onChange={(e) => set("dimensions", e.target.value)}
-                placeholder="hand-sized; 30cm long"
-              />
-            </Field>
-          </Section>
+          {section === "physical" && (
+            <Section icon={<Ruler className="h-4 w-4 text-primary" />} title="Physical">
+              <Field label="Materials">
+                <Input
+                  value={draft.materials}
+                  onChange={(e) => set("materials", e.target.value)}
+                  placeholder="weathered brass, oak grip"
+                />
+              </Field>
+              <Field label="Condition">
+                <Input
+                  value={draft.condition}
+                  onChange={(e) => set("condition", e.target.value)}
+                  placeholder="battle-worn, scratched"
+                />
+              </Field>
+              <Field label="Dimensions / scale" full>
+                <Input
+                  value={draft.dimensions}
+                  onChange={(e) => set("dimensions", e.target.value)}
+                  placeholder="hand-sized; 30cm long"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section icon={<Boxes className="h-4 w-4 text-primary" />} title="Usage">
-            <Field label="How it's used" full>
-              <Textarea
-                value={draft.usage}
-                onChange={(e) => set("usage", e.target.value)}
-                placeholder="Carried by the hero; drawn in the duel scene…"
-                className="min-h-16"
-              />
-            </Field>
-          </Section>
+          {section === "usage" && (
+            <Section icon={<Boxes className="h-4 w-4 text-primary" />} title="Usage">
+              <Field label="How it's used" full>
+                <Textarea
+                  value={draft.usage}
+                  onChange={(e) => set("usage", e.target.value)}
+                  placeholder="Carried by the hero; drawn in the duel scene…"
+                  className="min-h-16"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section icon={<Palette className="h-4 w-4 text-primary" />} title="Color palette">
-            <Field label="Palette (comma-separated)" full>
-              <PaletteField value={draft.colorPalette} onChange={(v) => set("colorPalette", v)} />
-            </Field>
-          </Section>
+          {section === "style" && (
+            <>
+              <Section icon={<Palette className="h-4 w-4 text-primary" />} title="Color palette">
+                <Field label="Palette (comma-separated)" full>
+                  <PaletteField
+                    value={draft.colorPalette}
+                    onChange={(v) => set("colorPalette", v)}
+                  />
+                </Field>
+              </Section>
 
-          <Section icon={<BookOpen className="h-4 w-4 text-primary" />} title="Style">
-            <Field label="Style preset" full>
-              <DnaSelect value={draft.stylePreset} onChange={(v) => set("stylePreset", v)}>
-                <option value="">No style binding</option>
-                {STYLE_GROUPS.map((g) => (
-                  <optgroup key={g.group} label={g.label}>
-                    {presetsByGroup(g.group).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
+              <Section icon={<BookOpen className="h-4 w-4 text-primary" />} title="Style">
+                <Field label="Style preset" full>
+                  <DnaSelect value={draft.stylePreset} onChange={(v) => set("stylePreset", v)}>
+                    <option value="">No style binding</option>
+                    {STYLE_GROUPS.map((g) => (
+                      <optgroup key={g.group} label={g.label}>
+                        {presetsByGroup(g.group).map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
-                  </optgroup>
-                ))}
-              </DnaSelect>
-            </Field>
-          </Section>
+                  </DnaSelect>
+                </Field>
+              </Section>
+            </>
+          )}
         </div>
       </div>
     </div>

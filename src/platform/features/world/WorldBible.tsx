@@ -15,6 +15,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
+import { cn } from "@/platform/lib/utils";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import type { Environment } from "@/platform/lib/types";
@@ -165,9 +166,9 @@ export function WorldBible() {
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-8 py-5">
         <div>
-          <h1 className="text-lg font-semibold">World Bible</h1>
+          <h1 className="text-lg font-semibold">World Designer</h1>
           <p className="text-xs text-muted">
-            Every location, locked once — so the world looks the same in every shot.
+            Design, refine, and preserve consistent locations across every project.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -224,7 +225,7 @@ export function WorldBible() {
                 env={e}
                 onClick={() => setSelectedId(e.id)}
                 onDelete={() => {
-                  if (confirm(`Delete "${e.name}" from the World Bible?`)) removeEnv.mutate(e.id);
+                  if (confirm(`Delete "${e.name}" from World Designer?`)) removeEnv.mutate(e.id);
                 }}
               />
             ))}
@@ -363,6 +364,9 @@ function EnvironmentSheet({
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Environment>(environment);
+  const [section, setSection] = useState<"overview" | "place" | "atmosphere" | "style">(
+    "overview"
+  );
 
   const savedTick = useAutosave(draft, async (d) => {
     await api.saveEnvironment(d);
@@ -497,6 +501,37 @@ function EnvironmentSheet({
         </div>
 
         <div className="flex flex-col gap-6">
+          <div
+            role="tablist"
+            aria-label="Location detail section"
+            className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-elevated/40 p-1"
+          >
+            {(
+              [
+                ["overview", "Overview"],
+                ["place", "Place & Materials"],
+                ["atmosphere", "Atmosphere"],
+                ["style", "Color & Style"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={section === id}
+                onClick={() => setSection(id)}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  section === id
+                    ? "bg-surface text-foreground shadow-sm"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <PromptDnaBlock
             anchorLabel="Establishing"
             anchor={draft.name || "location"}
@@ -509,101 +544,114 @@ function EnvironmentSheet({
             onRules={(v) => set("consistencyRules", v)}
           />
 
-          <Section icon={<Globe className="h-4 w-4 text-primary" />} title="Identity">
-            <Field label="Description" full>
-              <Textarea
-                value={draft.description}
-                onChange={(e) => set("description", e.target.value)}
-                placeholder="A rain-soaked alley behind a row of neon ramen bars…"
-                className="min-h-16"
-              />
-            </Field>
-          </Section>
+          {section === "overview" && (
+            <Section icon={<Globe className="h-4 w-4 text-primary" />} title="Identity">
+              <Field label="Description" full>
+                <Textarea
+                  value={draft.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  placeholder="A rain-soaked alley behind a row of neon ramen bars…"
+                  className="min-h-16"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section
-            icon={<Building2 className="h-4 w-4 text-primary" />}
-            title="Architecture & Materials"
-          >
-            <Field label="Architecture">
-              <Input
-                value={draft.architecture}
-                onChange={(e) => set("architecture", e.target.value)}
-                placeholder="brutalist concrete, fire escapes"
-              />
-            </Field>
-            <Field label="Materials">
-              <Input
-                value={draft.materials}
-                onChange={(e) => set("materials", e.target.value)}
-                placeholder="wet asphalt, rusted steel, glass"
-              />
-            </Field>
-            <Field label="Key props / set dressing" full>
-              <Input
-                value={draft.keyProps}
-                onChange={(e) => set("keyProps", e.target.value)}
-                placeholder="neon signage, dumpsters, puddles, steam vents"
-              />
-            </Field>
-          </Section>
+          {section === "place" && (
+            <Section
+              icon={<Building2 className="h-4 w-4 text-primary" />}
+              title="Architecture & Materials"
+            >
+              <Field label="Architecture">
+                <Input
+                  value={draft.architecture}
+                  onChange={(e) => set("architecture", e.target.value)}
+                  placeholder="brutalist concrete, fire escapes"
+                />
+              </Field>
+              <Field label="Materials">
+                <Input
+                  value={draft.materials}
+                  onChange={(e) => set("materials", e.target.value)}
+                  placeholder="wet asphalt, rusted steel, glass"
+                />
+              </Field>
+              <Field label="Key props / set dressing" full>
+                <Input
+                  value={draft.keyProps}
+                  onChange={(e) => set("keyProps", e.target.value)}
+                  placeholder="neon signage, dumpsters, puddles, steam vents"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section icon={<CloudSun className="h-4 w-4 text-primary" />} title="Atmosphere">
-            <Field label="Time of day">
-              <Input
-                value={draft.timeOfDay}
-                onChange={(e) => set("timeOfDay", e.target.value)}
-                placeholder="night"
-              />
-            </Field>
-            <Field label="Lighting style">
-              <Input
-                value={draft.lightingStyle}
-                onChange={(e) => set("lightingStyle", e.target.value)}
-                placeholder="neon glow, high contrast, wet reflections"
-              />
-            </Field>
-            <Field label="Mood" full>
-              <Input
-                value={draft.mood}
-                onChange={(e) => set("mood", e.target.value)}
-                placeholder="gritty, lonely, cinematic"
-              />
-            </Field>
-          </Section>
+          {section === "atmosphere" && (
+            <Section icon={<CloudSun className="h-4 w-4 text-primary" />} title="Atmosphere">
+              <Field label="Time of day">
+                <Input
+                  value={draft.timeOfDay}
+                  onChange={(e) => set("timeOfDay", e.target.value)}
+                  placeholder="night"
+                />
+              </Field>
+              <Field label="Lighting style">
+                <Input
+                  value={draft.lightingStyle}
+                  onChange={(e) => set("lightingStyle", e.target.value)}
+                  placeholder="neon glow, high contrast, wet reflections"
+                />
+              </Field>
+              <Field label="Mood" full>
+                <Input
+                  value={draft.mood}
+                  onChange={(e) => set("mood", e.target.value)}
+                  placeholder="gritty, lonely, cinematic"
+                />
+              </Field>
+            </Section>
+          )}
 
-          <Section icon={<Palette className="h-4 w-4 text-primary" />} title="Color palette">
-            <Field label="Palette (comma-separated)" full>
-              <PaletteField value={draft.colorPalette} onChange={(v) => set("colorPalette", v)} />
-            </Field>
-          </Section>
+          {section === "style" && (
+            <>
+              <Section icon={<Palette className="h-4 w-4 text-primary" />} title="Color palette">
+                <Field label="Palette (comma-separated)" full>
+                  <PaletteField
+                    value={draft.colorPalette}
+                    onChange={(v) => set("colorPalette", v)}
+                  />
+                </Field>
+              </Section>
 
-          <Section
-            icon={<ScrollText className="h-4 w-4 text-primary" />}
-            title="World rules & style"
-          >
-            <Field label="Environment rules" full>
-              <Textarea
-                value={draft.environmentRules}
-                onChange={(e) => set("environmentRules", e.target.value)}
-                placeholder="What must stay consistent: signage language, layout, weather, era…"
-                className="min-h-16"
-              />
-            </Field>
-            <Field label="Style preset" full>
-              <DnaSelect value={draft.stylePreset} onChange={(v) => set("stylePreset", v)}>
-                <option value="">No style binding</option>
-                {STYLE_GROUPS.map((g) => (
-                  <optgroup key={g.group} label={g.label}>
-                    {presetsByGroup(g.group).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
+              <Section
+                icon={<ScrollText className="h-4 w-4 text-primary" />}
+                title="World rules & style"
+              >
+                <Field label="Environment rules" full>
+                  <Textarea
+                    value={draft.environmentRules}
+                    onChange={(e) => set("environmentRules", e.target.value)}
+                    placeholder="What must stay consistent: signage language, layout, weather, era…"
+                    className="min-h-16"
+                  />
+                </Field>
+                <Field label="Style preset" full>
+                  <DnaSelect value={draft.stylePreset} onChange={(v) => set("stylePreset", v)}>
+                    <option value="">No style binding</option>
+                    {STYLE_GROUPS.map((g) => (
+                      <optgroup key={g.group} label={g.label}>
+                        {presetsByGroup(g.group).map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
-                  </optgroup>
-                ))}
-              </DnaSelect>
-            </Field>
-          </Section>
+                  </DnaSelect>
+                </Field>
+              </Section>
+            </>
+          )}
         </div>
       </div>
     </div>
