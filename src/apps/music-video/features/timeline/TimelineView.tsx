@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Circle,
   ImageIcon,
+  Mic,
 } from "lucide-react";
 import {
   loadSongs,
@@ -679,6 +680,9 @@ export function TimelineView() {
           shotId={detail.shotId}
           cast={cast}
           characters={characters}
+          prevShot={shots[shots.findIndex((s) => s.id === detail.shotId) - 1] ?? null}
+          nextShot={shots[shots.findIndex((s) => s.id === detail.shotId) + 1] ?? null}
+          onPatch={patchShot}
           onClose={() => setDetail(null)}
         />
       )}
@@ -851,6 +855,33 @@ export function TimelineView() {
                 <span className="ml-1 truncate text-[10px] italic text-accent">{l.text}</span>
               </div>
             ))}
+          </Lane>
+
+          <Lane label="Voice" icon={<Mic className="h-3.5 w-3.5" />}>
+            {(song.audioTracks ?? []).length > 0 ? (
+              (song.audioTracks ?? []).map((t) => {
+                // AudioTrack carries a start time but no duration — render a
+                // fixed-width marker (real placement, honest about not
+                // knowing exact length client-side) rather than fabricating one.
+                const w = xFor(3);
+                return (
+                  <div
+                    key={t.id}
+                    className="absolute top-1 bottom-1 flex items-center gap-1 overflow-hidden rounded-md border border-fuchsia-500/40 bg-fuchsia-500/12 px-1.5"
+                    style={{ left: xFor(t.atSec), width: Math.max(24, w) }}
+                    title={`${t.kind} · ${formatTime(t.atSec)}${t.duck ? " · ducks music" : ""}\n“${t.text}”`}
+                  >
+                    <span className="truncate text-[10px] font-medium text-fuchsia-400">
+                      {t.kind}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-muted">
+                No voice/dialogue layers yet — add one from Song Studio's audio panel.
+              </span>
+            )}
           </Lane>
 
           <Lane label="Choreo" icon={<Footprints className="h-3.5 w-3.5" />}>

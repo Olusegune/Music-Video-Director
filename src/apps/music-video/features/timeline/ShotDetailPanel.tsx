@@ -1,11 +1,28 @@
 // Click-a-shot detail panel (extracted from TimelineView.tsx, Phase 2).
-import { Film, X, Sparkles, Users, Camera, CheckCircle2, Circle, ImageIcon } from "lucide-react";
+import { useState } from "react";
+import {
+  Film,
+  X,
+  Sparkles,
+  Users,
+  Camera,
+  CheckCircle2,
+  Circle,
+  ImageIcon,
+  RefreshCw,
+  Video,
+  ArrowLeftFromLine,
+  ArrowRightFromLine,
+  Loader2,
+} from "lucide-react";
 import { formatTime } from "@/apps/music-video/lib/songBrain";
-import { type MvTreatment } from "@/apps/music-video/lib/mvDirector";
+import { type MvTreatment, type MvShot } from "@/apps/music-video/lib/mvDirector";
 import { type Performer } from "@/apps/music-video/lib/cast";
-import { buildShotImagePrompt } from "@/apps/music-video/lib/mvGen";
+import { buildShotImagePrompt, buildShotVideoPrompt } from "@/apps/music-video/lib/mvGen";
 import type { Character } from "@/platform/lib/types";
+import { api } from "@/platform/lib/ipc";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
+import { Button } from "@/platform/components/ui/button";
 
 export function ShotDetailPanel({
   treatment,
@@ -13,6 +30,9 @@ export function ShotDetailPanel({
   shotId,
   cast,
   characters,
+  prevShot,
+  nextShot,
+  onPatch,
   onClose,
 }: {
   treatment: MvTreatment;
@@ -20,8 +40,16 @@ export function ShotDetailPanel({
   shotId: string;
   cast: Performer[];
   characters: Character[];
+  /** Adjacent shots in timeline order, for "Match Previous/Next Shot". */
+  prevShot?: { imageUrl?: string } | null;
+  nextShot?: { imageUrl?: string } | null;
+  /** Persist a field patch on this shot (image/video url, etc). */
+  onPatch?: (sectionId: string, shotId: string, patch: Partial<MvShot>) => void;
   onClose: () => void;
 }) {
+  const [busy, setBusy] = useState<"image" | "video" | "matchPrev" | "matchNext" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const section = treatment.sections.find((s) => s.sectionId === sectionId);
   const shot = section?.shots.find((s) => s.id === shotId);
   if (!section || !shot) return null;
@@ -34,6 +62,57 @@ export function ShotDetailPanel({
     characters,
     aspect: "16:9",
   });
+
+  const regenerateImage = async (matchRef?: string) => {
+    setError(null);
+    setBusy(matchRef ? (matchRef === prevShot?.imageUrl ? "matchPrev" : "matchNext") : "image");
+    try {
+      const url = await api.generateImageFromSpec({
+        capability: "image",
+        prompt,
+        aspect: "16:9",
+        references: matchRef ? [{ url: matchRef, category: "style", strength: 0.7 }] : undefined,
+        moduleId: "musicvideo",
+        projectRef: { moduleId: "musicvideo", projectId: treatment.songId, entityId: shot.id },
+      });
+      onPatch?.(sectionId, shot.id, { imageUrl: url });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const regenerateVideo = async () => {
+    setError(null);
+    setBusy("video");
+    try {
+      const videoPrompt = buildShotVideoPrompt({
+        shot,
+        section,
+        treatment,
+        cast,
+        characters,
+        aspect: "16:9",
+      });
+      const url = await api.generateVideoFromSpec(
+        {
+          capability: "video",
+          prompt: videoPrompt,
+          references: shot.imageUrl ? [{ url: shot.imageUrl, category: "scene" }] : undefined,
+          moduleId: "musicvideo",
+          projectRef: { moduleId: "musicvideo", projectId: treatment.songId, entityId: shot.id },
+        },
+        treatment.songId,
+        shot.id
+      );
+      onPatch?.(sectionId, shot.id, { videoUrl: url });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
   const who = (shot.choreo ?? []).map((a) => a.performer).filter(Boolean);
   const status: { label: string; icon: React.ReactNode; color: string } = shot.videoUrl
     ? { label: "Clip rendered", icon: <CheckCircle2 className="h-3.5 w-3.5" />, color: "#16a34a" }
@@ -107,6 +186,60 @@ export function ShotDetailPanel({
           <DetailField icon={<Film className="h-3.5 w-3.5" />} label="Prompt">
             <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted">{prompt}</p>
           </DetailField>
+
+          {error && (
+            <p className="rounded-md border border-danger/30 bg-danger/10 p-2 text-[11px] text-danger">
+              {error}
+            </p>
+          )}
+
+          <div>
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+              <Sparkles className="h-3.5 w-3.5" />
+              AI actions
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <ShotActionButton
+                icon={busy === "image" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                label="Regenerate Image"
+                disabled={busy !== null}
+                onClick={() => regenerateImage()}
+              />
+              <ShotActionButton
+                icon={busy === "video" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Video className="h-3.5 w-3.5" />}
+                label="Regenerate Video"
+                disabled={busy !== null || !shot.imageUrl}
+                title={!shot.imageUrl ? "Generate a frame first" : undefined}
+                onClick={regenerateVideo}
+              />
+              <ShotActionButton
+                icon={
+                  busy === "matchPrev" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ArrowLeftFromLine className="h-3.5 w-3.5" />
+                  )
+                }
+                label="Match Previous Shot"
+                disabled={busy !== null || !prevShot?.imageUrl}
+                title={!prevShot?.imageUrl ? "Previous shot has no frame yet" : undefined}
+                onClick={() => regenerateImage(prevShot?.imageUrl)}
+              />
+              <ShotActionButton
+                icon={
+                  busy === "matchNext" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ArrowRightFromLine className="h-3.5 w-3.5" />
+                  )
+                }
+                label="Match Next Shot"
+                disabled={busy !== null || !nextShot?.imageUrl}
+                title={!nextShot?.imageUrl ? "Next shot has no frame yet" : undefined}
+                onClick={() => regenerateImage(nextShot?.imageUrl)}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -130,5 +263,33 @@ function DetailField({
       </div>
       <div className="text-sm text-foreground">{children}</div>
     </div>
+  );
+}
+
+function ShotActionButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  title,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="justify-start"
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </Button>
   );
 }
