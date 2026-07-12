@@ -10,6 +10,9 @@ import {
   Video as VideoIcon,
   Sparkles,
   Loader2,
+  Wand2,
+  SkipForward,
+  Film,
 } from "lucide-react";
 import {
   approachColor,
@@ -93,6 +96,23 @@ export function DirectConsole({
     const next = flat[idx + delta];
     if (next) setSelectedId(next.shot.id);
   };
+
+  // --- AI Director Copilot -------------------------------------------------
+  // Real, computed navigation over the whole treatment — not a duplicate of
+  // ShotRow's per-shot Director Brain suggestions, which stay where they are.
+  const framesDone = flat.filter((f) => f.shot.imageUrl).length;
+  const clipsDone = flat.filter((f) => f.shot.videoUrl).length;
+  const sectionFramesDone = section.shots.filter((s) => s.imageUrl).length;
+
+  const nextIndexMatching = (from: number, test: (f: (typeof flat)[number]) => boolean) => {
+    for (let i = 1; i <= flat.length; i++) {
+      const j = (from + i) % flat.length;
+      if (test(flat[j])) return j;
+    }
+    return -1;
+  };
+  const nextEmptyIdx = nextIndexMatching(idx, (f) => !f.shot.imageUrl);
+  const nextUnclippedIdx = nextIndexMatching(idx, (f) => Boolean(f.shot.imageUrl) && !f.shot.videoUrl);
 
   return (
     <div className="flex h-full min-h-0">
@@ -292,6 +312,75 @@ export function DirectConsole({
               })
             }
           />
+        </div>
+      </div>
+
+      {/* AI Director Copilot — treatment-wide progress and smart navigation.
+          Doesn't duplicate ShotRow's per-shot Director Brain suggestions;
+          this is the thing only possible with a view over all 80+ shots. */}
+      <div className="w-64 shrink-0 overflow-y-auto border-l border-border p-3">
+        <div className="mb-3 flex items-center gap-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-accent">
+          <Wand2 className="h-3 w-3" />
+          AI Director Copilot
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-md border border-border bg-surface p-2.5">
+            <div className="mb-1.5 flex items-center justify-between text-[11px]">
+              <span className="text-muted">Frames</span>
+              <span className="font-medium tabular-nums">
+                {framesDone}/{flat.length}
+              </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded bg-elevated">
+              <div
+                className="h-full bg-accent transition-all"
+                style={{ width: `${flat.length ? (framesDone / flat.length) * 100 : 0}%` }}
+              />
+            </div>
+            <div className="mb-1.5 mt-2.5 flex items-center justify-between text-[11px]">
+              <span className="text-muted">Clips</span>
+              <span className="font-medium tabular-nums">
+                {clipsDone}/{flat.length}
+              </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded bg-elevated">
+              <div
+                className="h-full bg-success transition-all"
+                style={{ width: `${flat.length ? (clipsDone / flat.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-md border border-border bg-surface p-2.5">
+            <p className="mb-1 text-[11px] font-medium">{section.label}</p>
+            <p className="text-[11px] text-muted">
+              {sectionFramesDone}/{section.shots.length} shots have a frame in this scene.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => nextEmptyIdx >= 0 && setSelectedId(flat[nextEmptyIdx].shot.id)}
+              disabled={nextEmptyIdx < 0}
+              className="flex w-full items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-2 text-left text-[11px] font-medium transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <SkipForward className="h-3.5 w-3.5 shrink-0 text-accent" />
+              {nextEmptyIdx < 0 ? "Every shot has a frame" : "Jump to next shot needing a frame"}
+            </button>
+            <button
+              type="button"
+              onClick={() => nextUnclippedIdx >= 0 && setSelectedId(flat[nextUnclippedIdx].shot.id)}
+              disabled={nextUnclippedIdx < 0}
+              className="flex w-full items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-2 text-left text-[11px] font-medium transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Film className="h-3.5 w-3.5 shrink-0 text-accent" />
+              {nextUnclippedIdx < 0
+                ? "Every framed shot has a clip"
+                : "Jump to next shot ready for a clip"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

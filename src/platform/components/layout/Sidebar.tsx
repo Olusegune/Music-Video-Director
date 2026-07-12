@@ -400,7 +400,7 @@ function NavItem({
       </span>
       <span className="truncate">{label}</span>
       {badge && (
-        <span className="ml-auto shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
+        <span className="ml-auto shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
           {badge}
         </span>
       )}
