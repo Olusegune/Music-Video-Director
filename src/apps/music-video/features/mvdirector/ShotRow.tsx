@@ -573,33 +573,28 @@ export function ShotRow({
             </div>
           </InspectorGroup>
 
-          {/* Choreography & story-intent toggle */}
-          <button
-            type="button"
-            onClick={() => setShowChoreo((v) => !v)}
-            className={cn(
-              "flex w-full items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-              assignments.length || shot.storyIntent || shot.promptOverride
-                ? "border-primary/50 bg-primary/10 text-primary"
-                : "border-border bg-surface text-muted hover:text-foreground"
-            )}
+          {/* Choreography & story-intent */}
+          <InspectorGroup
+            icon={<Sparkles className="h-3 w-3" />}
+            title="Choreography & Direction"
+            tone={assignments.length || shot.storyIntent || shot.promptOverride ? "primary" : "default"}
+            trailingBadge={
+              <>
+                {assignments.length > 0 && (
+                  <span className="rounded bg-primary/20 px-1 text-[9px] text-primary">
+                    {assignments.length}
+                  </span>
+                )}
+                {shot.promptOverride && (
+                  <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">
+                    custom prompt
+                  </span>
+                )}
+              </>
+            }
+            open={showChoreo}
+            onOpenChange={setShowChoreo}
           >
-            <Sparkles className="h-3 w-3" />
-            Choreography & Direction
-            {assignments.length > 0 && (
-              <span className="ml-0.5 rounded bg-primary/20 px-1 text-[9px]">
-                {assignments.length}
-              </span>
-            )}
-            {shot.promptOverride && (
-              <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">
-                custom prompt
-              </span>
-            )}
-            <span className="ml-auto text-[9px]">{showChoreo ? "▲" : "▼"}</span>
-          </button>
-
-          {showChoreo && (
             <ChoreoPanel
               shot={shot}
               performers={performers}
@@ -611,27 +606,21 @@ export function ShotRow({
               onRemove={removeAssignment}
               onChange={onChange}
             />
-          )}
+          </InspectorGroup>
 
           {/* View Final Prompt — the assembled prompt generation will send */}
-          <button
-            type="button"
-            onClick={() => setShowPrompt((v) => !v)}
-            className={cn(
-              "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors",
-              shot.promptOverride
-                ? "border-accent/60 bg-accent/10 text-accent"
-                : "border-border bg-surface text-foreground hover:border-primary/40"
-            )}
+          <InspectorGroup
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            title="View Final Prompt"
+            tone={shot.promptOverride ? "accent" : "default"}
+            trailingBadge={
+              shot.promptOverride && (
+                <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">edited</span>
+              )
+            }
+            open={showPrompt}
+            onOpenChange={setShowPrompt}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            View Final Prompt
-            {shot.promptOverride && (
-              <span className="rounded bg-accent/20 px-1 text-[9px] text-accent">edited</span>
-            )}
-            <span className="ml-auto text-[9px]">{showPrompt ? "▲" : "▼"}</span>
-          </button>
-          {showPrompt && (
             <div className="space-y-1.5 rounded-md border border-border/60 bg-elevated/30 p-2">
               <p className="text-[10px] leading-relaxed text-muted/70">
                 Character Bible + Story Intent + Camera + Lighting + Performance + Choreography +
@@ -673,7 +662,7 @@ export function ShotRow({
                 </>
               )}
             </div>
-          )}
+          </InspectorGroup>
         </div>
 
         {/* Frame / clip preview monitor */}

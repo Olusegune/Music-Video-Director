@@ -12,6 +12,8 @@ export function InspectorGroup({
   icon,
   title,
   badge,
+  trailingBadge,
+  tone = "default",
   defaultOpen = true,
   collapsible = true,
   open: openProp,
@@ -23,6 +25,12 @@ export function InspectorGroup({
   title: string;
   /** Small trailing note, e.g. a count or current value — not a full Badge pill. */
   badge?: string;
+  /** Small pill(s) after the title — for real per-group state like an
+   *  assignment count or "edited"/"custom prompt", not decoration. */
+  trailingBadge?: React.ReactNode;
+  /** "primary"/"accent" tint the trigger row when this group has content the
+   *  user should notice at a glance (assignments set, prompt overridden). */
+  tone?: "default" | "primary" | "accent";
   defaultOpen?: boolean;
   /** Set false for a group that's always expanded (no chevron, no toggle). */
   collapsible?: boolean;
@@ -41,6 +49,12 @@ export function InspectorGroup({
     else setInternalOpen(next);
   };
   const expanded = !collapsible || open;
+  const toneCls =
+    tone === "primary"
+      ? "text-primary"
+      : tone === "accent"
+        ? "text-accent"
+        : "text-muted";
 
   return (
     <div className={cn("border-t border-border pt-3 first:border-t-0 first:pt-0", className)}>
@@ -51,11 +65,14 @@ export function InspectorGroup({
           aria-expanded={expanded}
           className="flex w-full items-center gap-1.5 text-left"
         >
-          {icon && <span className="shrink-0 text-muted">{icon}</span>}
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+          {icon && <span className={cn("shrink-0", toneCls)}>{icon}</span>}
+          <span
+            className={cn("text-[11px] font-semibold uppercase tracking-wide", toneCls)}
+          >
             {title}
           </span>
           {badge && <span className="text-[11px] text-muted/70">— {badge}</span>}
+          {trailingBadge}
           <ChevronDown
             className={cn(
               "ml-auto h-3.5 w-3.5 shrink-0 text-muted transition-transform",
@@ -65,11 +82,14 @@ export function InspectorGroup({
         </button>
       ) : (
         <div className="flex items-center gap-1.5">
-          {icon && <span className="shrink-0 text-muted">{icon}</span>}
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+          {icon && <span className={cn("shrink-0", toneCls)}>{icon}</span>}
+          <span
+            className={cn("text-[11px] font-semibold uppercase tracking-wide", toneCls)}
+          >
             {title}
           </span>
           {badge && <span className="text-[11px] text-muted/70">— {badge}</span>}
+          {trailingBadge}
         </div>
       )}
       {expanded && <div className="mt-2.5">{children}</div>}
