@@ -78,6 +78,8 @@ import {
 } from "@/apps/glam-studio/features/intake/IntakeSteps";
 import { LookStep } from "@/apps/glam-studio/features/looks/LookStep";
 import { ConceptStep } from "@/apps/glam-studio/features/hero/ConceptStep";
+import { CameraLightingStep } from "@/apps/glam-studio/features/camera/CameraLightingStep";
+import { CAMERA_PRESETS, LIGHTING_PRESETS } from "@/apps/glam-studio/lib/photoPresets";
 import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
 import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
 
@@ -151,6 +153,8 @@ interface GlamFlowState {
   tagline: string;
   lookId: string;
   conceptId: string;
+  cameraPresetId?: string;
+  lightingPresetId?: string;
   formats: string[];
 }
 
@@ -395,6 +399,8 @@ function conceptsFor(state: GlamFlowState): CampaignConcept[] {
 
 function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: LuxuryLook) {
   const profile = buildProductProfile(state);
+  const cameraPreset = CAMERA_PRESETS.find((c) => c.id === state.cameraPresetId);
+  const lightingPreset = LIGHTING_PRESETS.find((l) => l.id === state.lightingPresetId);
   return [
     `Luxury advertising hero image for ${state.productName || "a premium product"}.`,
     `Product details: ${state.productDescription || "premium materials, refined silhouette, hero product fidelity."}`,
@@ -407,6 +413,9 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
     profile.fidelityNotes ? `Non-negotiable product fidelity: ${profile.fidelityNotes}.` : "",
     `Brand tone: ${state.brandTone}.`,
     `Look: ${look.name}; palette ${look.palette.join(", ")}; ${look.lighting}; ${look.lens}.`,
+    // Camera/Lighting Studio overrides — refine, not replace, the Look's baseline.
+    cameraPreset ? cameraPreset.promptFragment : "",
+    lightingPreset ? lightingPreset.promptFragment : "",
     `Campaign territory: ${concept.territory}.`,
     `Visual direction: ${concept.visualDirection}`,
     "Leave clean negative space for real typography overlays. Do not render text in the image.",
@@ -969,6 +978,13 @@ export function GlamStudioWorkspace() {
           subtitle: "Select the art direction system for the campaign.",
           component: LookStep,
           advancedComponent: CreativeControls,
+          technicalComponent: CreatorControls,
+        },
+        {
+          id: "camera-lighting",
+          title: "Camera & Lighting",
+          subtitle: "Optional — dial in professional lens and lighting direction.",
+          component: CameraLightingStep,
           technicalComponent: CreatorControls,
         },
         {

@@ -75,6 +75,10 @@ export interface GlamFlowState {
   tagline: string;
   lookId: string;
   conceptId: string;
+  /** Optional Camera Studio override — refines the Look's baked-in lens direction. */
+  cameraPresetId?: string;
+  /** Optional Lighting Studio override — refines the Look's baked-in lighting direction. */
+  lightingPresetId?: string;
   formats: string[];
 }
 
