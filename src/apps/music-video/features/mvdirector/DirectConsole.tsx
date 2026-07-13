@@ -24,6 +24,7 @@ import { sectionColor, formatTime } from "@/apps/music-video/lib/songBrain";
 import { cn } from "@/platform/lib/utils";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { Button } from "@/platform/components/ui/button";
+import { Toolbar, ToolbarSpacer } from "@/platform/components/ui/toolbar";
 import { ShotRow } from "./ShotRow";
 import type { PerformerOption, ContinuityInfo } from "./ChoreoPanel";
 
@@ -185,7 +186,7 @@ export function DirectConsole({
 
       {/* Console stage */}
       <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+        <Toolbar>
           <Button
             variant="ghost"
             size="icon"
@@ -216,11 +217,11 @@ export function DirectConsole({
             onClick={() => go(1)}
             disabled={idx >= flat.length - 1}
             aria-label="Next shot"
-            className="mr-auto"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-        </div>
+          <ToolbarSpacer />
+        </Toolbar>
 
         {/* Large live shot preview — the console's hero surface. Distinct
             from ShotRow's own small monitor below (that one stays as the

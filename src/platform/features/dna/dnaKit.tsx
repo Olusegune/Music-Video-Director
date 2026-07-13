@@ -33,6 +33,7 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
 import { AssetImage } from "@/platform/components/ui/asset-image";
+import { InspectorGroup } from "@/platform/components/ui/inspector-group";
 import type { FieldSpec, ImportedFields } from "@/platform/lib/smartImport";
 import { ACCEPT_ATTR } from "@/platform/lib/docParse";
 
@@ -399,13 +400,9 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
-      <div className="mb-3 flex items-center gap-2">
-        {icon}
-        <h2 className="text-sm font-semibold">{title}</h2>
-      </div>
+    <InspectorGroup icon={icon} title={title} collapsible={false} className="border-t-0 pt-0">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
-    </div>
+    </InspectorGroup>
   );
 }
 

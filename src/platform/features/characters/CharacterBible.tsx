@@ -46,6 +46,7 @@ import {
   QuickActionButton,
   SmartImportButton,
   SmartImportReview,
+  Section,
 } from "@/platform/features/dna/dnaKit";
 import {
   GenerationPanel,
@@ -1379,26 +1380,6 @@ function CharacterSheet({
 }
 
 // --- small layout helpers --------------------------------------------------
-
-function Section({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-card">
-      <div className="mb-3 flex items-center gap-2">
-        {icon}
-        <h2 className="text-sm font-semibold">{title}</h2>
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
-    </div>
-  );
-}
 
 function Field({
   label,
