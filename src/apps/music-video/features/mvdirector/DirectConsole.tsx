@@ -25,6 +25,7 @@ import { cn } from "@/platform/lib/utils";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { Button } from "@/platform/components/ui/button";
 import { Toolbar, ToolbarSpacer } from "@/platform/components/ui/toolbar";
+import { Tooltip } from "@/platform/components/ui/tooltip";
 import { ShotRow } from "./ShotRow";
 import type { PerformerOption, ContinuityInfo } from "./ChoreoPanel";
 
@@ -187,15 +188,17 @@ export function DirectConsole({
       {/* Console stage */}
       <div className="min-w-0 flex-1 overflow-y-auto">
         <Toolbar>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => go(-1)}
-            disabled={idx <= 0}
-            aria-label="Previous shot"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          <Tooltip label="Previous shot">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => go(-1)}
+              disabled={idx <= 0}
+              aria-label="Previous shot"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </Tooltip>
           <span
             className="rounded-md px-2 py-1 text-xs font-semibold text-white"
             style={{ backgroundColor: color }}
@@ -211,15 +214,17 @@ export function DirectConsole({
           <span className="text-xs tabular-nums text-muted">
             Shot {shotIndexInSection + 1} of {section.shots.length} · {idx + 1}/{flat.length} overall
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => go(1)}
-            disabled={idx >= flat.length - 1}
-            aria-label="Next shot"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <Tooltip label="Next shot">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => go(1)}
+              disabled={idx >= flat.length - 1}
+              aria-label="Next shot"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Tooltip>
           <ToolbarSpacer />
         </Toolbar>
 
