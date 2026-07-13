@@ -86,6 +86,10 @@ export interface GlamFlowState {
   castingSkinToneId?: string;
   castingExpressionId?: string;
   castingAccessoryId?: string;
+  /** Human Realism — multi-select, applies universally (see realismPresets.ts honesty note). */
+  realismPresetIds?: string[];
+  /** Inspiration Library — mood/composition/lighting language, not a named style. */
+  inspirationId?: string;
   formats: string[];
 }
 

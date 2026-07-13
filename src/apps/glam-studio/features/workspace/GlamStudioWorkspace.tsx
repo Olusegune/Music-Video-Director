@@ -89,6 +89,9 @@ import {
   EXPRESSION_PRESETS,
   ACCESSORY_PRESETS,
 } from "@/apps/glam-studio/lib/castingPresets";
+import { REALISM_PRESETS } from "@/apps/glam-studio/lib/realismPresets";
+import { INSPIRATION_PRESETS } from "@/apps/glam-studio/lib/inspirationPresets";
+import { RealismInspirationStep } from "@/apps/glam-studio/features/realism/RealismInspirationStep";
 import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
 import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
 
@@ -170,6 +173,10 @@ interface GlamFlowState {
   castingSkinToneId?: string;
   castingExpressionId?: string;
   castingAccessoryId?: string;
+  /** Human Realism — multi-select, applies universally (see realismPresets.ts honesty note). */
+  realismPresetIds?: string[];
+  /** Inspiration Library — mood/composition/lighting language, not a named style. */
+  inspirationId?: string;
   formats: string[];
 }
 
@@ -429,6 +436,10 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
   const cameraPreset = CAMERA_PRESETS.find((c) => c.id === state.cameraPresetId);
   const lightingPreset = LIGHTING_PRESETS.find((l) => l.id === state.lightingPresetId);
   const castingLine = buildCastingLine(state);
+  const realismFragments = (state.realismPresetIds ?? [])
+    .map((id) => REALISM_PRESETS.find((r) => r.id === id)?.promptFragment)
+    .filter((s): s is string => Boolean(s));
+  const inspiration = INSPIRATION_PRESETS.find((i) => i.id === state.inspirationId);
   return [
     `Luxury advertising hero image for ${state.productName || "a premium product"}.`,
     `Product details: ${state.productDescription || "premium materials, refined silhouette, hero product fidelity."}`,
@@ -446,6 +457,10 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
     // Camera/Lighting Studio overrides — refine, not replace, the Look's baseline.
     cameraPreset ? cameraPreset.promptFragment : "",
     lightingPreset ? lightingPreset.promptFragment : "",
+    // Human Realism — only meaningful alongside a casting/model direction.
+    realismFragments.length ? `Realism direction: ${realismFragments.join(", ")}.` : "",
+    // Inspiration Library — mood/composition language, not a named style.
+    inspiration ? `Visual language: ${inspiration.promptFragment}.` : "",
     `Campaign territory: ${concept.territory}.`,
     `Visual direction: ${concept.visualDirection}`,
     "Leave clean negative space for real typography overlays. Do not render text in the image.",
@@ -1015,6 +1030,13 @@ export function GlamStudioWorkspace() {
           title: "Casting",
           subtitle: "Optional — only for campaigns with a human model.",
           component: CastingStep,
+          technicalComponent: CreatorControls,
+        },
+        {
+          id: "realism-inspiration",
+          title: "Realism & Inspiration",
+          subtitle: "Optional — human realism detail and mood/composition language.",
+          component: RealismInspirationStep,
           technicalComponent: CreatorControls,
         },
         {
