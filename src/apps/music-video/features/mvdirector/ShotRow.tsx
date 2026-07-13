@@ -463,22 +463,18 @@ export function ShotRow({
             </div>
           )}
 
-          {/* Advanced direction toggle — story-intent chips, camera, lighting, and
+          {/* Advanced direction — story-intent chips, camera, lighting, and
               performance are real controls but overwhelm the shot at a glance.
               Collapsed by default; Director's Intent + Director Brain above stay
               visible so the shot is still readable with this closed. */}
-          <button
-            type="button"
-            onClick={() => setShowAdvancedDirection((v) => !v)}
-            className="flex w-full items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:text-foreground"
+          <InspectorGroup
+            icon={<SlidersHorizontal className="h-3 w-3" />}
+            title="Direct this shot — intent, camera, lighting, performance"
+            open={showAdvancedDirection}
+            onOpenChange={setShowAdvancedDirection}
+            className="border-t-0 pt-0"
           >
-            <SlidersHorizontal className="h-3 w-3" />
-            🎥 Direct this shot — intent, camera, lighting, performance
-            <span className="ml-auto text-[9px]">{showAdvancedDirection ? "▲" : "▼"}</span>
-          </button>
-
-          {showAdvancedDirection && (
-            <>
+            <div className="space-y-3">
               {/* Story intent — first-class */}
               <div className="space-y-1">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
@@ -574,8 +570,8 @@ export function ShotRow({
                   placeholder="Performance note… type @ to reference a performer"
                 />
               </div>
-            </>
-          )}
+            </div>
+          </InspectorGroup>
 
           {/* Choreography & story-intent toggle */}
           <button
