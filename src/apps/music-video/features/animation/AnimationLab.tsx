@@ -247,9 +247,10 @@ export function AnimationLab() {
           )}
         </div>
 
-        {/* Generation panel + gallery */}
-        <div className="min-h-0 overflow-y-auto p-6">
-          <div className="mb-6 max-w-md">
+        {/* Generation panel + recent animations — full width, like every
+            other page, instead of the old fixed max-w-md column. */}
+        <div className="flex min-h-0 flex-col overflow-y-auto p-6">
+          <div className="max-w-2xl">
             <GenerationPanel
               key={`${characterId}:${environmentId}:${propId}:${motionKey}`}
               title="Generate motion test"
@@ -270,48 +271,50 @@ export function AnimationLab() {
             )}
           </div>
 
-          <Label className="mb-2 block">Motion test library</Label>
-          {tests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-12 text-center">
-              <Film className="mb-3 h-8 w-8 text-muted" />
-              <p className="text-sm font-medium">No motion tests yet</p>
-              <p className="mt-1 max-w-xs text-xs text-muted">
-                Generate a test above, then "Save to library" to keep it.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {tests.map((t) => (
-                <div
-                  key={t.id}
-                  className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card"
-                >
-                  <div className="relative aspect-video w-full bg-black">
-                    <AssetVideo
-                      src={t.url}
-                      className="h-full w-full object-cover"
-                      label="Motion test"
-                    />
-                  </div>
-                  <div className="flex items-start justify-between gap-2 p-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{t.characterName}</div>
-                      <div className="flex items-center gap-1 text-[11px] text-muted">
-                        <Play className="h-3 w-3" /> {t.motionLabel}
-                      </div>
+          <div className="mt-8">
+            <Label className="mb-2 block">Recent Animations</Label>
+            {tests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-12 text-center">
+                <Film className="mb-3 h-8 w-8 text-muted" />
+                <p className="text-sm font-medium">No motion tests yet</p>
+                <p className="mt-1 max-w-xs text-xs text-muted">
+                  Generate a test above, then "Save to library" to keep it.
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {tests.map((t) => (
+                  <div
+                    key={t.id}
+                    className="w-56 shrink-0 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-card"
+                  >
+                    <div className="relative aspect-video w-full bg-black">
+                      <AssetVideo
+                        src={t.url}
+                        className="h-full w-full object-cover"
+                        label="Motion test"
+                      />
                     </div>
-                    <button
-                      onClick={() => remove(t.id)}
-                      aria-label="Delete motion test"
-                      className="text-muted hover:text-danger"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-start justify-between gap-2 p-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{t.characterName}</div>
+                        <div className="flex items-center gap-1 text-[11px] text-muted">
+                          <Play className="h-3 w-3" /> {t.motionLabel}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => remove(t.id)}
+                        aria-label="Delete motion test"
+                        className="text-muted hover:text-danger"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
