@@ -80,6 +80,15 @@ import { LookStep } from "@/apps/glam-studio/features/looks/LookStep";
 import { ConceptStep } from "@/apps/glam-studio/features/hero/ConceptStep";
 import { CameraLightingStep } from "@/apps/glam-studio/features/camera/CameraLightingStep";
 import { CAMERA_PRESETS, LIGHTING_PRESETS } from "@/apps/glam-studio/lib/photoPresets";
+import { CastingStep } from "@/apps/glam-studio/features/casting/CastingStep";
+import {
+  AGE_PRESETS,
+  BODY_TYPE_PRESETS,
+  HAIR_PRESETS,
+  SKIN_TONE_PRESETS,
+  EXPRESSION_PRESETS,
+  ACCESSORY_PRESETS,
+} from "@/apps/glam-studio/lib/castingPresets";
 import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
 import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
 
@@ -155,6 +164,12 @@ interface GlamFlowState {
   conceptId: string;
   cameraPresetId?: string;
   lightingPresetId?: string;
+  castingAgeId?: string;
+  castingBodyTypeId?: string;
+  castingHairId?: string;
+  castingSkinToneId?: string;
+  castingExpressionId?: string;
+  castingAccessoryId?: string;
   formats: string[];
 }
 
@@ -397,10 +412,23 @@ function conceptsFor(state: GlamFlowState): CampaignConcept[] {
   ];
 }
 
+function buildCastingLine(state: GlamFlowState): string {
+  const parts = [
+    AGE_PRESETS.find((o) => o.id === state.castingAgeId)?.promptFragment,
+    BODY_TYPE_PRESETS.find((o) => o.id === state.castingBodyTypeId)?.promptFragment,
+    HAIR_PRESETS.find((o) => o.id === state.castingHairId)?.promptFragment,
+    SKIN_TONE_PRESETS.find((o) => o.id === state.castingSkinToneId)?.promptFragment,
+    EXPRESSION_PRESETS.find((o) => o.id === state.castingExpressionId)?.promptFragment,
+    ACCESSORY_PRESETS.find((o) => o.id === state.castingAccessoryId)?.promptFragment,
+  ].filter((s): s is string => Boolean(s && s.trim()));
+  return parts.length ? `Model: ${parts.join(", ")}.` : "";
+}
+
 function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: LuxuryLook) {
   const profile = buildProductProfile(state);
   const cameraPreset = CAMERA_PRESETS.find((c) => c.id === state.cameraPresetId);
   const lightingPreset = LIGHTING_PRESETS.find((l) => l.id === state.lightingPresetId);
+  const castingLine = buildCastingLine(state);
   return [
     `Luxury advertising hero image for ${state.productName || "a premium product"}.`,
     `Product details: ${state.productDescription || "premium materials, refined silhouette, hero product fidelity."}`,
@@ -413,6 +441,8 @@ function buildHeroPrompt(state: GlamFlowState, concept: CampaignConcept, look: L
     profile.fidelityNotes ? `Non-negotiable product fidelity: ${profile.fidelityNotes}.` : "",
     `Brand tone: ${state.brandTone}.`,
     `Look: ${look.name}; palette ${look.palette.join(", ")}; ${look.lighting}; ${look.lens}.`,
+    // Casting — only present when the campaign includes a human model.
+    castingLine,
     // Camera/Lighting Studio overrides — refine, not replace, the Look's baseline.
     cameraPreset ? cameraPreset.promptFragment : "",
     lightingPreset ? lightingPreset.promptFragment : "",
@@ -978,6 +1008,13 @@ export function GlamStudioWorkspace() {
           subtitle: "Select the art direction system for the campaign.",
           component: LookStep,
           advancedComponent: CreativeControls,
+          technicalComponent: CreatorControls,
+        },
+        {
+          id: "casting",
+          title: "Casting",
+          subtitle: "Optional — only for campaigns with a human model.",
+          component: CastingStep,
           technicalComponent: CreatorControls,
         },
         {

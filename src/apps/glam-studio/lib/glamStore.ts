@@ -79,6 +79,13 @@ export interface GlamFlowState {
   cameraPresetId?: string;
   /** Optional Lighting Studio override — refines the Look's baked-in lighting direction. */
   lightingPresetId?: string;
+  /** Casting — all optional; a product-only campaign leaves these unset. */
+  castingAgeId?: string;
+  castingBodyTypeId?: string;
+  castingHairId?: string;
+  castingSkinToneId?: string;
+  castingExpressionId?: string;
+  castingAccessoryId?: string;
   formats: string[];
 }
 
