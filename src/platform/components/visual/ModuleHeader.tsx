@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { House } from "lucide-react";
 import { Button } from "@/platform/components/ui/button";
+import { Tooltip } from "@/platform/components/ui/tooltip";
 import { cn } from "@/platform/lib/utils";
 import type { StudioMode } from "@/platform/lib/settings";
 import { VISUAL_MODULE_THEME, type VisualModule } from "@/platform/components/visual/visualTheme";
@@ -61,15 +62,11 @@ export function ModuleHeader({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {onHome ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onHome}
-            aria-label={`${title} home`}
-            title="Back to studio home"
-          >
-            <House className="h-4 w-4" />
-          </Button>
+          <Tooltip label="Back to studio home">
+            <Button variant="ghost" size="icon" onClick={onHome} aria-label={`${title} home`}>
+              <House className="h-4 w-4" />
+            </Button>
+          </Tooltip>
         ) : null}
         <div className="flex rounded-lg border border-border bg-elevated/65 p-1">
           {MODES.map((option) => (
