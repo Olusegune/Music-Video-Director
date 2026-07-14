@@ -27,6 +27,9 @@ interface UniversalGenerationPanelProps {
   title?: string;
   prompt: string;
   promptComposition?: PromptCompositionType;
+  /** Which model list to show — image or video generators. Defaults to
+   *  "image" (the panel's original, and still most common, use). */
+  kind?: "image" | "video";
   selectedProvider?: ProviderId;
   onProviderChange: (provider: ProviderId) => void;
   generationState: GenerationState;
@@ -47,6 +50,7 @@ export function UniversalGenerationPanel({
   title = "Generation",
   prompt,
   promptComposition,
+  kind = "image",
   selectedProvider,
   onProviderChange,
   generationState,
@@ -59,10 +63,7 @@ export function UniversalGenerationPanel({
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
 
-  // Get available image models
-  const availableModels = MODEL_REGISTRY.filter(
-    (m) => m.kind === "image" && m.available
-  );
+  const availableModels = MODEL_REGISTRY.filter((m) => m.kind === kind && m.available);
 
   // Get selected model info
   const selectedModel = selectedProvider

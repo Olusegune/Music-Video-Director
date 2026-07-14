@@ -67,6 +67,14 @@ import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-stat
 import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
 import type { GenerationState } from "@/platform/components/generation/types";
 import type { ProviderId } from "@/platform/lib/types";
+import { AnimationTypePresetPicker } from "./components/AnimationPresetPicker";
+import { MotionStylePresetPicker } from "./components/MotionStylePresetPicker";
+import { ChoreographyPatternPicker } from "./components/ChoreographyPatternPicker";
+import {
+  ANIMATION_TYPE_PRESETS,
+  MOTION_STYLE_PRESETS,
+  CHOREOGRAPHY_PATTERN_PRESETS,
+} from "./lib/animationPresets";
 
 const emptyDraft: MotionProjectDraft = {
   name: "New Product Motion Film",
@@ -83,6 +91,30 @@ const emptyDraft: MotionProjectDraft = {
 
 function sceneAccent(scene: MotionScene, project: MotionProject): string {
   return scene.accent || project.direction.colorPalette[2] || "#4F46E5";
+}
+
+/** Compose a scene's generation prompt: manual override wins outright (full
+ *  escape hatch for Creator mode); otherwise headline+motion plus whichever
+ *  animation/motion-style/choreography presets are selected for the scene. */
+function buildScenePrompt(scene: MotionScene): string {
+  if (scene.promptOverride) return scene.promptOverride;
+
+  const parts = [`${scene.headline} — Motion: ${scene.motion}`];
+
+  const animType = ANIMATION_TYPE_PRESETS.find((p) => p.id === scene.animationTypePresetId);
+  if (animType) parts.push(animType.promptFragment);
+
+  const motionStyles = (scene.motionStylePresetIds ?? [])
+    .map((id) => MOTION_STYLE_PRESETS.find((p) => p.id === id)?.promptFragment)
+    .filter((fragment): fragment is string => Boolean(fragment));
+  if (motionStyles.length) parts.push(`Motion styles: ${motionStyles.join(", ")}.`);
+
+  const chorePattern = CHOREOGRAPHY_PATTERN_PRESETS.find(
+    (p) => p.id === scene.choreographyPatternPresetId
+  );
+  if (chorePattern) parts.push(chorePattern.promptFragment);
+
+  return parts.join(" ");
 }
 
 function ScenePreview({
@@ -282,8 +314,7 @@ export function MotionStudio() {
 
       setGenerationState((prev) => ({ ...prev, status: "queued" }));
 
-      const prompt = selectedScene.promptOverride ||
-        `${selectedScene.headline} — Motion: ${selectedScene.motion}`;
+      const prompt = buildScenePrompt(selectedScene);
 
       const url = await api.generateVideoFromSpec({
         capability: "video",
@@ -817,6 +848,58 @@ export function MotionStudio() {
                           </Card>
                         )}
 
+                        {studioMode !== "director" && (
+                          <Card className="border-border bg-elevated">
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Route className="size-4 text-accent" /> Motion Presets
+                              </CardTitle>
+                              <CardDescription>
+                                Per-scene movement direction — folded into the generation prompt
+                                automatically.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <AnimationTypePresetPicker
+                                value={selectedScene.animationTypePresetId}
+                                onChange={(presetId) => {
+                                  const scenes = activeProject.scenes.map((scene) =>
+                                    scene.id === selectedScene.id
+                                      ? { ...scene, animationTypePresetId: presetId }
+                                      : scene
+                                  );
+                                  updateMotionScenes(activeProject.id, scenes);
+                                  refreshProjects(activeProject.id);
+                                }}
+                              />
+                              <MotionStylePresetPicker
+                                values={selectedScene.motionStylePresetIds}
+                                onChange={(presetIds) => {
+                                  const scenes = activeProject.scenes.map((scene) =>
+                                    scene.id === selectedScene.id
+                                      ? { ...scene, motionStylePresetIds: presetIds }
+                                      : scene
+                                  );
+                                  updateMotionScenes(activeProject.id, scenes);
+                                  refreshProjects(activeProject.id);
+                                }}
+                              />
+                              <ChoreographyPatternPicker
+                                value={selectedScene.choreographyPatternPresetId}
+                                onChange={(presetId) => {
+                                  const scenes = activeProject.scenes.map((scene) =>
+                                    scene.id === selectedScene.id
+                                      ? { ...scene, choreographyPatternPresetId: presetId }
+                                      : scene
+                                  );
+                                  updateMotionScenes(activeProject.id, scenes);
+                                  refreshProjects(activeProject.id);
+                                }}
+                              />
+                            </CardContent>
+                          </Card>
+                        )}
+
                         {studioMode === "creator" && (
                           <Card className="border-border bg-elevated">
                             <CardHeader>
@@ -844,7 +927,7 @@ export function MotionStudio() {
                                   updateMotionScenes(activeProject.id, scenes);
                                   refreshProjects(activeProject.id);
                                 }}
-                                placeholder="Optional prompt override for this scene"
+                                placeholder="Optional prompt override for this scene — replaces headline, motion, and presets outright"
                                 rows={5}
                               />
                             </CardContent>
@@ -853,20 +936,25 @@ export function MotionStudio() {
 
                         <UniversalGenerationPanel
                           title="Generate Motion Prompt"
-                          prompt={
-                            selectedScene.promptOverride ||
-                            `${selectedScene.headline} — Motion: ${selectedScene.motion}`
-                          }
+                          kind="video"
+                          prompt={buildScenePrompt(selectedScene)}
                           promptComposition={{
                             userPrompt: selectedScene.headline || "Motion scene",
                             presetDirections: [
                               selectedScene.motion,
+                              ANIMATION_TYPE_PRESETS.find(
+                                (p) => p.id === selectedScene.animationTypePresetId
+                              )?.label,
+                              ...(selectedScene.motionStylePresetIds ?? [])
+                                .map((id) => MOTION_STYLE_PRESETS.find((p) => p.id === id)?.label)
+                                .filter((label): label is string => Boolean(label)),
+                              CHOREOGRAPHY_PATTERN_PRESETS.find(
+                                (p) => p.id === selectedScene.choreographyPatternPresetId
+                              )?.label,
                               selectedScene.voiceover ? `VO: ${selectedScene.voiceover}` : "",
                             ].filter(Boolean) as string[],
                             studioContext: `Production: ${productionType(activeProject.typeId).name}; Style: ${visualStyle(activeProject.styleId).name}; Duration: ${selectedScene.end - selectedScene.start}s`,
-                            finalPrompt:
-                              selectedScene.promptOverride ||
-                              `${selectedScene.headline} — Motion: ${selectedScene.motion}`,
+                            finalPrompt: buildScenePrompt(selectedScene),
                             negativePrompt: "static, blurry, low quality, distorted motion",
                           }}
                           selectedProvider={selectedProviderPref}
