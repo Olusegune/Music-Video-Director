@@ -1,8 +1,10 @@
+mod appmenu;
 mod commands;
 mod connectivity;
 mod db;
 mod export;
 mod ffmpeg;
+mod file_ops;
 pub mod models;
 mod paths;
 pub mod providers;
@@ -17,6 +19,7 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Open (or create) the local SQLite database in the writable base dir
             // (per-user app data, or <exe>/data when running portable).
@@ -34,6 +37,7 @@ pub fn run() {
             let conn = Connection::open(dir.join("motionforge.db"))?;
             db::init(&conn)?;
             app.manage(Db(Mutex::new(conn)));
+            appmenu::install(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -78,6 +82,10 @@ pub fn run() {
             commands::export_bible,
             commands::read_asset_data_url,
             commands::test_provider_connection,
+            commands::get_recent_projects,
+            commands::add_recent_project,
+            commands::write_project_to_disk,
+            commands::read_project_from_disk,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

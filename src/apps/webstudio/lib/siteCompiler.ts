@@ -57,7 +57,8 @@ export function compileCss(tokens: DesignTokens) {
 
 export function compileSite(project: WebProject, inlineCss = true) {
   const css = compileCss(project.tokens);
-  const sections = project.sections
+  const visibleSections = project.sections.filter((s) => !s.hidden);
+  const sections = visibleSections
     .map((section, index) => sectionHtml(section, index === 0))
     .join("\n");
   const description = project.positioning.promise || project.businessDescription;
@@ -65,7 +66,8 @@ export function compileSite(project: WebProject, inlineCss = true) {
 }
 
 export function compilePage(project: WebProject, page: WebPage, inlineCss = true) {
-  const base = compileSite({ ...project, sections: page.sections }, inlineCss);
+  const filteredSections = page.sections.filter((s) => !s.hidden);
+  const base = compileSite({ ...project, sections: filteredSections }, inlineCss);
   const title = (project.seo?.titleTemplate || `%s — ${project.businessName}`).replace(
     "%s",
     page.title

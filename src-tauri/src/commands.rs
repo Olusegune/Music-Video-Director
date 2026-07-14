@@ -5,7 +5,6 @@ use crate::db::{self, Db};
 use crate::export;
 use crate::models::{
     BrandKit, Character, Environment, NewProject, Project, PromptPack, Prop, ProviderKeyStatus,
-    VersionMeta,
 };
 use crate::providers::{
     audio::ElevenLabsProvider,
@@ -616,6 +615,28 @@ pub async fn generate_mv_shot_video(
     let file_path = dir.join(format!("clip_{safe_shot}_{}.mp4", Uuid::new_v4()));
     std::fs::write(&file_path, &bytes).map_err(err)?;
     Ok(file_path.to_string_lossy().to_string())
+}
+
+// ----- File I/O & Recent Files ------------------------------------------
+
+#[tauri::command]
+pub fn get_recent_projects() -> Result<Vec<crate::file_ops::RecentFile>, String> {
+    crate::file_ops::load_recent_files()
+}
+
+#[tauri::command]
+pub fn add_recent_project(path: String, name: String) -> Result<(), String> {
+    crate::file_ops::add_recent_file(&path, &name)
+}
+
+#[tauri::command]
+pub fn write_project_to_disk(path: String, data: String) -> Result<(), String> {
+    crate::file_ops::write_project_file(&path, &data)
+}
+
+#[tauri::command]
+pub fn read_project_from_disk(path: String) -> Result<String, String> {
+    crate::file_ops::read_project_file(&path)
 }
 
 /// Generate a spoken/vocal audio layer for the song (intro tags, ad-libs,

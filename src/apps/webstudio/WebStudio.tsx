@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
   Code2,
-  Copy,
   Download,
   Globe2,
   Laptop,
@@ -39,15 +36,17 @@ import {
   listDeliverables,
   saveDeliverable,
 } from "@/platform/lib/deliverables";
-import { loadAssets } from "@/platform/lib/generatedAssets";
 import { buildZip, downloadBlob } from "@/platform/lib/archive";
-import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
+import { loadRouterConfig, routeProvider, ROUTER_MODES } from "@/platform/lib/providers";
 import { api } from "@/platform/lib/ipc";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { cn } from "@/platform/lib/utils";
 import { usePendingProjectOpen } from "@/platform/lib/usePendingProjectOpen";
 import { addMember } from "@/platform/lib/directorProject";
 import { useAppStore } from "@/platform/store/useAppStore";
+import { SectionTreePanel } from "@/apps/webstudio/features/layout/SectionTreePanel";
+import { PropertyInspector } from "@/apps/webstudio/features/layout/PropertyInspector";
+import { shouldShowSectionTree, shouldShowPropertyInspector } from "@/apps/webstudio/features/ModeBehavior";
 import { SECTION_PATTERNS, patternById } from "@/apps/webstudio/lib/patterns";
 import { buildSections, derivePositioning } from "@/apps/webstudio/lib/positioning";
 import { compileCss, compilePage } from "@/apps/webstudio/lib/siteCompiler";
@@ -62,6 +61,9 @@ import {
 } from "@/apps/webstudio/lib/webAi";
 import type { SectionCopy } from "@/apps/webstudio/lib/types";
 import { auditSite } from "@/apps/webstudio/lib/siteAudit";
+import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
+import type { GenerationState } from "@/platform/components/generation/types";
+import type { ProviderId } from "@/platform/lib/types";
 
 interface WebFlowState {
   campaignSeed?: SeedContext;
@@ -473,14 +475,23 @@ const VIEWPORT_WIDTH: Record<Viewport, string> = {
 function WebWorkbench({
   project,
   onChange,
+  selectedProviderPref,
+  setSelectedProviderPref,
+  generationState,
+  setGenerationState,
 }: {
   project: WebProject;
   onChange: (project: WebProject) => void;
+  selectedProviderPref?: ProviderId;
+  setSelectedProviderPref: (provider: ProviderId) => void;
+  generationState: GenerationState;
+  setGenerationState: (update: ((prev: GenerationState) => GenerationState)) => void;
 }) {
   const studioMode = useAppStore((state) => state.studioMode);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [selectedSectionIds, setSelectedSectionIds] = useState<string[]>([]);
   const pages: WebPage[] = project.pages?.length
     ? project.pages
     : [
@@ -500,7 +511,6 @@ function WebWorkbench({
     [project, activePage, pages]
   );
   const audit = useMemo(() => auditSite(project), [project]);
-  const mediaAssets = useMemo(() => loadAssets().filter((asset) => Boolean(asset.url)), []);
   const persist = (next: WebProject) => onChange(saveWebProject(next));
   const persistPage = (nextPage: WebPage) =>
     persist({
@@ -515,14 +525,6 @@ function WebWorkbench({
         section.id === id ? { ...section, ...patch } : section
       ),
     });
-  const moveSection = (id: string, direction: -1 | 1) => {
-    const index = workingSections.findIndex((section) => section.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= workingSections.length) return;
-    const sections = [...workingSections];
-    [sections[index], sections[target]] = [sections[target], sections[index]];
-    persistPage({ ...activePage, sections });
-  };
   const duplicateSection = (section: SectionInstance) => {
     const index = workingSections.findIndex((item) => item.id === section.id);
     const sections = [...workingSections];
@@ -542,7 +544,90 @@ function WebWorkbench({
       ...activePage,
       sections: workingSections.filter((section) => section.id !== id),
     });
+    setSelectedSectionIds((ids) => ids.filter((sid) => sid !== id));
   };
+  const handleSelectSection = (id: string, multiSelect: boolean) => {
+    if (multiSelect) {
+      setSelectedSectionIds((ids) =>
+        ids.includes(id) ? ids.filter((sid) => sid !== id) : [...ids, id]
+      );
+    } else {
+      setSelectedSectionIds([id]);
+    }
+  };
+  const handleReorderSections = (fromIdx: number, toIdx: number) => {
+    const sections = [...workingSections];
+    [sections[fromIdx], sections[toIdx]] = [sections[toIdx], sections[fromIdx]];
+    persistPage({ ...activePage, sections });
+  };
+  const handleToggleSectionVisibility = (id: string) => {
+    const section = workingSections.find((s) => s.id === id);
+    if (section) {
+      updateSection(id, { hidden: !section.hidden });
+    }
+  };
+  const handleRenameSectionInTree = (id: string, newName: string) => {
+    // For now, we'll update the heading in the copy
+    const section = workingSections.find((s) => s.id === id);
+    if (section) {
+      updateSection(id, {
+        copy: { ...section.copy, heading: newName },
+      });
+    }
+  };
+
+  async function generateHeroImage() {
+    try {
+      setGenerationState((prev) => ({ ...prev, status: "validating" }));
+
+      const statuses = await api.getProviderKeyStatuses();
+      const configured = new Set<ProviderId>(
+        statuses.filter((item) => item.configured).map((item) => item.provider)
+      );
+
+      const routerConfig = loadRouterConfig();
+      const provider = selectedProviderPref ?? routeProvider("image", routerConfig, configured);
+      if (!provider) {
+        setGenerationState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: "No image provider configured",
+        }));
+        return;
+      }
+
+      setGenerationState((prev) => ({ ...prev, status: "queued" }));
+
+      const prompt = `Hero for ${project.positioning.offer} targeting ${project.positioning.audience}`;
+
+      const url = await api.generateImageFromSpec({
+        capability: "image",
+        prompt,
+        negativePrompt: generationState.negativePrompt || "text, watermark, low quality",
+        batch: generationState.batch || 1,
+        aspect: generationState.aspectRatio || "16:9",
+        resolution: { width: 1920, height: 1080, label: "1920x1080" },
+        seed: generationState.seed,
+        providerPref: provider,
+        modelHint: generationState.selectedModel || "web-hero",
+        moduleId: "web",
+        projectRef: { moduleId: "web", projectId: project.id },
+      });
+
+      setGenerationState((prev) => ({ ...prev, status: "completed", resultUrl: url }));
+
+      if (workingSections[0] && workingSections[0].mediaUrl === undefined) {
+        updateSection(workingSections[0].id, { mediaUrl: url });
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Generation failed";
+      setGenerationState((prev) => ({ ...prev, status: "failed", error: errorMsg }));
+    }
+  }
+
+  const selectedSections = selectedSectionIds
+    .map((id) => workingSections.find((s) => s.id === id))
+    .filter(Boolean) as typeof workingSections;
   const addPage = () => {
     const number = pages.length + 1;
     const page: WebPage = {
@@ -815,95 +900,29 @@ function WebWorkbench({
                 ))}
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Section Stack</CardTitle>
-                <CardDescription>
-                  Reorder, duplicate, remove, edit, and swap curated patterns.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {workingSections.map((section, index) => (
-                  <div key={section.id} className="space-y-2 rounded-md border border-border p-3">
-                    <div className="flex items-center gap-1">
-                      <span className="mr-auto text-[10px] uppercase tracking-wide text-muted">
-                        {index + 1} · {patternById(section.patternId).family}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => moveSection(section.id, -1)}
-                        disabled={index === 0}
-                      >
-                        <ArrowUp />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => moveSection(section.id, 1)}
-                        disabled={index === workingSections.length - 1}
-                      >
-                        <ArrowDown />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => duplicateSection(section)}>
-                        <Copy />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}>
-                        <Trash2 />
-                      </Button>
-                    </div>
-                    <select
-                      value={section.patternId}
-                      onChange={(event) =>
-                        updateSection(section.id, { patternId: event.target.value })
-                      }
-                      className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"
-                    >
-                      {SECTION_PATTERNS.map((pattern) => (
-                        <option key={pattern.id} value={pattern.id}>
-                          {pattern.name}
-                        </option>
-                      ))}
-                    </select>
-                    <Input
-                      value={section.copy.heading}
-                      onChange={(event) =>
-                        updateSection(section.id, {
-                          copy: { ...section.copy, heading: event.target.value },
-                        })
-                      }
-                      aria-label="Section heading"
-                    />
-                    <Textarea
-                      value={section.copy.body}
-                      onChange={(event) =>
-                        updateSection(section.id, {
-                          copy: { ...section.copy, body: event.target.value },
-                        })
-                      }
-                      className="min-h-20"
-                      aria-label="Section body"
-                    />
-                    {patternById(section.patternId).family === "hero" ? (
-                      <select
-                        value={section.mediaUrl ?? ""}
-                        onChange={(event) =>
-                          updateSection(section.id, { mediaUrl: event.target.value || undefined })
-                        }
-                        className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"
-                      >
-                        <option value="">Generated placeholder + export prompt</option>
-                        {mediaAssets.map((asset) => (
-                          <option key={asset.id} value={asset.url}>
-                            {asset.entityName} · {asset.sheetType}
-                          </option>
-                        ))}
-                      </select>
-                    ) : null}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            {shouldShowSectionTree(studioMode) && (
+              <SectionTreePanel
+                sections={workingSections}
+                selectedIds={selectedSectionIds}
+                onSelect={handleSelectSection}
+                onReorder={handleReorderSections}
+                onDelete={removeSection}
+                onDuplicate={(id) => {
+                  const section = workingSections.find((s) => s.id === id);
+                  if (section) duplicateSection(section);
+                }}
+                onToggleVisibility={handleToggleSectionVisibility}
+                onRename={handleRenameSectionInTree}
+              />
+            )}
+            {shouldShowPropertyInspector(studioMode) && (
+              <PropertyInspector
+                selectedSections={selectedSections}
+                onUpdate={updateSection}
+                onRemove={removeSection}
+                studioMode={studioMode}
+              />
+            )}
             {studioMode === "creator" ? (
               <Card>
                 <CardHeader>
@@ -929,6 +948,35 @@ function WebWorkbench({
                 </CardContent>
               </Card>
             ) : null}
+
+            <UniversalGenerationPanel
+              title="Generate Hero Image"
+              prompt={`Hero for ${project.positioning.offer} targeting ${project.positioning.audience}`}
+              promptComposition={{
+                userPrompt: project.positioning.offer || "Responsive campaign website",
+                presetDirections: [
+                  project.positioning.audience,
+                  project.positioning.promise ? `Promise: ${project.positioning.promise}` : "",
+                ].filter(Boolean) as string[],
+                studioContext: `Brand: ${project.businessName}; Site type: Landing page; CTA: ${project.positioning.cta}`,
+                finalPrompt: `Hero for ${project.positioning.offer} targeting ${project.positioning.audience}`,
+                negativePrompt: "text, watermark, low quality, distorted, blur",
+              }}
+              selectedProvider={selectedProviderPref}
+              onProviderChange={setSelectedProviderPref}
+              generationState={generationState}
+              onGenerationStateChange={(updates) =>
+                setGenerationState((prev) => ({ ...prev, ...updates }))
+              }
+              onGenerate={generateHeroImage}
+              capabilities={{
+                supportsNegativePrompt: true,
+                supportsSeed: true,
+                supportsAspectRatio: true,
+                supportsQuality: true,
+              }}
+              showAdvanced={studioMode === "creator"}
+            />
           </div>
         ) : null}
       </div>
@@ -938,6 +986,12 @@ function WebWorkbench({
 
 export function WebStudio() {
   const { studioMode, setStudioMode } = useAppStore();
+  const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
+  const [generationState, setGenerationState] = useState<GenerationState>({
+    mode: "auto",
+    status: "idle",
+    prompt: "",
+  });
   const [router] = useState(() => loadRouterConfig());
   const [projects, setProjects] = useState(() => listWebProjects());
   const [activeId, setActiveId] = useState(() => listWebProjects()[0]?.id ?? "");
@@ -1131,7 +1185,14 @@ export function WebStudio() {
               onComplete={() => undefined}
             />
           ) : active ? (
-            <WebWorkbench project={active} onChange={saveActive} />
+            <WebWorkbench
+              project={active}
+              onChange={saveActive}
+              selectedProviderPref={selectedProviderPref}
+              setSelectedProviderPref={setSelectedProviderPref}
+              generationState={generationState}
+              setGenerationState={setGenerationState}
+            />
           ) : projects.length > 0 ? (
             <ProjectHome
               module="webstudio"

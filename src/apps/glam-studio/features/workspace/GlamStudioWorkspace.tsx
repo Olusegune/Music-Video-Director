@@ -94,6 +94,8 @@ import { INSPIRATION_PRESETS } from "@/apps/glam-studio/lib/inspirationPresets";
 import { RealismInspirationStep } from "@/apps/glam-studio/features/realism/RealismInspirationStep";
 import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
 import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
+import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
+import type { GenerationState } from "@/platform/components/generation/types";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
 
@@ -620,9 +622,7 @@ function ProjectPreview({
   deliverables,
   onImprove,
   onApprove,
-  onGenerate,
   onExport,
-  generating,
   generationNote,
   onExportCampaign,
   exportingCampaign,
@@ -637,9 +637,7 @@ function ProjectPreview({
   deliverables: Deliverable[];
   onImprove: () => void;
   onApprove: () => void;
-  onGenerate: () => void;
   onExport: (format: "json" | "markdown") => void;
-  generating: boolean;
   generationNote: string;
   onExportCampaign: () => void;
   exportingCampaign: boolean;
@@ -708,14 +706,8 @@ function ProjectPreview({
               </div>
             </div>
           </div>
-          <div className="rounded-md border border-border bg-background/60 p-3 text-xs leading-5 text-muted">
-            {project.heroLoop.value}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="gold" onClick={onGenerate} disabled={generating}>
-              {generating ? <Loader2 className="animate-spin" /> : <Sparkles />} Generate hero
-            </Button>
-            <Button variant="secondary" onClick={onImprove}>
+
+          <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={onImprove}>
               <RefreshCw /> Improve
             </Button>
             <Button onClick={onApprove}>
@@ -956,10 +948,15 @@ export function GlamStudioWorkspace() {
     setActiveProjectId(id);
     setFlowOpen(false);
   });
-  const [generating, setGenerating] = useState(false);
   const [generationNote, setGenerationNote] = useState("");
   const [exportingCampaign, setExportingCampaign] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState("");
+  const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
+  const [generationState, setGenerationState] = useState<GenerationState>({
+    mode: "auto",
+    status: "idle",
+    prompt: "",
+  });
   // No `?? projects[0]` fallback: an explicitly cleared activeProjectId (Studio
   // Home) must mean "no active project," not "silently pin the first one again."
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? null;
@@ -968,6 +965,85 @@ export function GlamStudioWorkspace() {
     : [];
   const allGlamDeliverables = listDeliverables({ moduleId: "glam-studio" });
   const routerMode = ROUTER_MODES.find((mode) => mode.id === routerConfig.mode)?.label ?? "Auto";
+
+  async function generateHeroImage() {
+    if (!activeProject) return;
+    try {
+      setGenerationState((prev) => ({ ...prev, status: "validating" }));
+      setGenerationNote("Checking configured image providers...");
+
+      const statuses = await api.getProviderKeyStatuses();
+      const configured = new Set<ProviderId>(
+        statuses.filter((item) => item.configured).map((item) => item.provider)
+      );
+
+      const references = activeProject.productProfile?.referenceImages ?? [];
+      const referenceProvider = references.length
+        ? routeReferenceImageProvider(routerConfig, configured)
+        : null;
+
+      const provider = selectedProviderPref
+        ? selectedProviderPref
+        : referenceProvider ?? routeProvider("image", routerConfig, configured);
+
+      if (!provider) {
+        setGenerationNote("No image provider configured. Add a key in Settings.");
+        setGenerationState((prev) => ({ ...prev, status: "failed", error: "No provider" }));
+        return;
+      }
+
+      setGenerationState((prev) => ({ ...prev, status: "queued" }));
+      setGenerationNote(`Queued with ${providerInfo(provider)?.name ?? provider}...`);
+
+      const url = await api.generateImageFromSpec({
+        capability: "image",
+        prompt: activeProject.heroLoop.value,
+        negativePrompt: generationState.negativePrompt || "misspelled labels, distorted packaging, fake text, extra logos",
+        batch: generationState.batch || 1,
+        aspect: generationState.aspectRatio || "3:2",
+        resolution: { width: 1536, height: 1024, label: "1536x1024" },
+        seed: generationState.seed,
+        references: references.length > 0 && provider === referenceProvider
+          ? references.map((url) => ({ url, category: "product", strength: 0.85 }))
+          : [],
+        providerPref: provider,
+        modelHint: generationState.selectedModel || "glam-hero",
+        moduleId: "glam",
+        projectRef: { moduleId: "glam", projectId: activeProject.id },
+      });
+
+      setGenerationState((prev) => ({ ...prev, status: "completed", resultUrl: url }));
+      setGenerationNote(`Hero generated via ${providerInfo(provider)?.name ?? provider}.`);
+
+      const asset = addAsset({
+        entityId: activeProject.id,
+        entityKind: "glam",
+        entityName: activeProject.productName,
+        url,
+        filePath: url,
+        provider,
+        model: providerInfo(provider)?.name ?? provider,
+        prompt: activeProject.heroLoop.value,
+        aspectRatio: generationState.aspectRatio || "3:2",
+        width: 1536,
+        height: 1024,
+        sheetType: "Glam campaign hero",
+      });
+
+      const nextProject = saveProject({
+        ...activeProject,
+        heroAssets: [asset, ...(activeProject.heroAssets ?? [])].slice(0, 12),
+        selectedHeroAssetId: asset.id,
+      });
+
+      setProjects(readProjects());
+      setActiveProjectId(nextProject.id);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Generation failed";
+      setGenerationNote(errorMsg);
+      setGenerationState((prev) => ({ ...prev, status: "failed", error: errorMsg }));
+    }
+  }
 
   const definition = useMemo<GuidedFlowDefinition<GlamFlowState>>(
     () => ({
@@ -1093,94 +1169,6 @@ export function GlamStudioWorkspace() {
     setActiveProjectId(nextProject.id);
   }
 
-  async function generateHero() {
-    if (!activeProject || generating) return;
-    if (routerConfig.mode === "local") {
-      setGenerationNote(
-        "Local prompt-only mode is active. Export the prompt pack to generate externally without an API call."
-      );
-      return;
-    }
-    setGenerating(true);
-    setGenerationNote("Checking configured image providers…");
-    try {
-      const statuses = await api.getProviderKeyStatuses();
-      const configured = new Set<ProviderId>(
-        statuses.filter((item) => item.configured).map((item) => item.provider)
-      );
-      const references = activeProject.productProfile?.referenceImages ?? [];
-      const referenceProvider = references.length
-        ? routeReferenceImageProvider(routerConfig, configured)
-        : null;
-      const provider = referenceProvider ?? routeProvider("image", routerConfig, configured);
-      if (!provider) {
-        setGenerationNote(
-          "No routed image provider is configured. Add a key in Settings or export the local prompt pack."
-        );
-        return;
-      }
-      const usesReferences = references.length > 0 && provider === referenceProvider;
-      setGenerationNote(
-        usesReferences
-          ? `Product-faithful generation through ${providerInfo(provider)?.name ?? provider}…`
-          : references.length
-            ? `${providerInfo(provider)?.name ?? provider} cannot consume product references; generating an explicitly labeled look-alike hero…`
-            : `Generating through ${providerInfo(provider)?.name ?? provider}…`
-      );
-      const url = await api.generateImageFromSpec({
-        capability: "image",
-        prompt: activeProject.heroLoop.value,
-        negativePrompt: "misspelled labels, distorted packaging, fake text, extra logos",
-        batch: 1,
-        aspect: "3:2",
-        resolution: { width: 1536, height: 1024, label: "1536x1024" },
-        references: usesReferences
-          ? references.map((url) => ({ url, category: "product", strength: 0.85 }))
-          : [],
-        providerPref: provider,
-        modelHint: "glam-hero",
-        moduleId: "glam",
-        projectRef: { moduleId: "glam", projectId: activeProject.id },
-      });
-      const asset = addAsset({
-        entityId: activeProject.id,
-        entityKind: "glam",
-        entityName: activeProject.productName,
-        url,
-        filePath: url,
-        provider,
-        model: providerInfo(provider)?.name ?? provider,
-        prompt: activeProject.heroLoop.value,
-        aspectRatio: "3:2",
-        width: 1536,
-        height: 1024,
-        sheetType: "Glam campaign hero",
-      });
-      const nextProject = saveProject({
-        ...activeProject,
-        heroAssets: [asset, ...(activeProject.heroAssets ?? [])].slice(0, 12),
-        selectedHeroAssetId: asset.id,
-      });
-      deliverables.forEach((deliverable) =>
-        saveDeliverable({
-          ...deliverable,
-          status: "draft",
-          assetRefs: Array.from(new Set([...deliverable.assetRefs, asset.id])),
-        })
-      );
-      setProjects(readProjects());
-      setActiveProjectId(nextProject.id);
-      setGenerationNote(
-        usesReferences
-          ? `Product-faithful hero saved via ${providerInfo(provider)?.name ?? provider}.`
-          : `Hero saved via ${providerInfo(provider)?.name ?? provider}${references.length ? " in look-alike mode; verify product details before approval." : ""}.`
-      );
-    } catch (error) {
-      setGenerationNote(error instanceof Error ? error.message : "Hero generation failed.");
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   function exportPromptPack(format: "json" | "markdown") {
     if (!activeProject) return;
@@ -1411,24 +1399,55 @@ export function GlamStudioWorkspace() {
               onComplete={() => undefined}
             />
           ) : activeProject ? (
-            <ProjectPreview
-              project={activeProject}
-              deliverables={deliverables}
-              onImprove={improveHero}
-              onApprove={approveHero}
-              onGenerate={generateHero}
-              onExport={exportPromptPack}
-              generating={generating}
-              generationNote={generationNote}
-              onExportCampaign={exportCampaignPack}
-              exportingCampaign={exportingCampaign}
-              onSelectHero={selectHero}
-              onSaveLook={saveCurrentLook}
-              onSaveConcept={saveCurrentConcept}
-              onLayoutChange={updateFormatLayout}
-              onDownloadFormat={downloadCampaignFormat}
-              downloadingFormat={downloadingFormat}
-            />
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <ProjectPreview
+                project={activeProject}
+                deliverables={deliverables}
+                onImprove={improveHero}
+                onApprove={approveHero}
+                onExport={exportPromptPack}
+                generationNote={generationNote}
+                onExportCampaign={exportCampaignPack}
+                exportingCampaign={exportingCampaign}
+                onSelectHero={selectHero}
+                onSaveLook={saveCurrentLook}
+                onSaveConcept={saveCurrentConcept}
+                onLayoutChange={updateFormatLayout}
+                onDownloadFormat={downloadCampaignFormat}
+                downloadingFormat={downloadingFormat}
+              />
+              <div className="max-h-screen space-y-4 overflow-y-auto">
+                <UniversalGenerationPanel
+                  title="Generate Hero Image"
+                  prompt={activeProject.heroLoop.value}
+                  promptComposition={{
+                    userPrompt: activeProject.productDescription || "Product-focused luxury imagery",
+                    presetDirections: [
+                      activeProject.look?.lens,
+                      activeProject.look?.lighting,
+                      activeProject.look?.palette.join(", "),
+                    ].filter(Boolean) as string[],
+                    studioContext: `Luxury Look: ${activeProject.look.name}; Brand: ${activeProject.brand.name}; Campaign: ${activeProject.concept.territory}`,
+                    finalPrompt: activeProject.heroLoop.value,
+                    negativePrompt: "misspelled labels, distorted packaging, fake text, extra logos",
+                  }}
+                  selectedProvider={selectedProviderPref}
+                  onProviderChange={setSelectedProviderPref}
+                  generationState={generationState}
+                  onGenerationStateChange={(updates) =>
+                    setGenerationState((prev) => ({ ...prev, ...updates }))
+                  }
+                  onGenerate={generateHeroImage}
+                  capabilities={{
+                    supportsNegativePrompt: true,
+                    supportsSeed: true,
+                    supportsAspectRatio: true,
+                    supportsQuality: true,
+                  }}
+                  showAdvanced={studioMode === "creator"}
+                />
+              </div>
+            </div>
           ) : projects.length > 0 ? (
             <ProjectHome
               module="glam-studio"

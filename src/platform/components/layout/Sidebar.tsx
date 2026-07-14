@@ -25,6 +25,8 @@ import {
   Boxes,
   Search as SearchIcon,
   Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import { NAV_MODEL, moduleForView, type NavIcon, type NavItemModel } from "@/platform/lib/navModel";
@@ -67,6 +69,8 @@ export function Sidebar() {
   const studioMode = useAppStore((s) => s.studioMode);
   const setStudioMode = useAppStore((s) => s.setStudioMode);
   const openHelp = useAppStore((s) => s.openHelp);
+  const collapsed = useAppStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const navigateTo = useNavigateToView();
 
   const activeModule = moduleForView(view);
@@ -78,72 +82,100 @@ export function Sidebar() {
   return (
     <aside
       aria-label="Primary navigation"
-      className="flex w-60 shrink-0 flex-col border-r border-border bg-surface"
+      className={cn(
+        "flex shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-150",
+        collapsed ? "w-[64px]" : "w-60"
+      )}
     >
-      <button
-        type="button"
-        onClick={() => navigateTo("dashboard")}
-        className="flex items-center gap-2 px-4 py-4 text-left"
-      >
-        <div className="grad-primary flex h-8 w-8 items-center justify-center rounded-lg shadow-sm shadow-primary/30">
-          <Film className="h-4 w-4 text-white" />
-        </div>
-        <div className="leading-tight">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold">Director Studio</span>
-            <span className="rounded border border-primary/30 bg-primary/10 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-primary">
-              Pro
-            </span>
+      <div className={cn("flex items-center gap-1 px-3 py-3", collapsed ? "flex-col" : "justify-between px-4")}>
+        <button
+          type="button"
+          onClick={() => navigateTo("dashboard")}
+          className={cn("flex items-center gap-2 text-left", collapsed ? "" : "flex-1")}
+          title="MotionForge AI — Dashboard"
+        >
+          <div className="grad-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-primary/30">
+            <Film className="h-4 w-4 text-white" />
           </div>
-          <div className="text-[10px] text-muted">Wheelbarrow</div>
-        </div>
-      </button>
+          {!collapsed && (
+            <div className="leading-tight">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-semibold">MotionForge AI</span>
+              </div>
+              <div className="text-[10px] text-muted">v1.4.0</div>
+            </div>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-button)] text-muted transition hover:bg-elevated hover:text-foreground"
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </button>
+      </div>
 
-      <div className="space-y-1.5 px-3 pb-2">
+      <div className={cn("space-y-1.5 pb-2", collapsed ? "px-2" : "px-3")}>
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-button)] border border-border px-3 py-2 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:bg-elevated/60"
+          title="New production"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-[var(--radius-button)] border border-border text-sm font-semibold text-foreground transition hover:border-primary/40 hover:bg-elevated/60",
+            collapsed ? "justify-center px-2 py-2" : "justify-center px-3 py-2"
+          )}
         >
-          <Plus className="h-4 w-4" /> New production
+          <Plus className="h-4 w-4" /> {!collapsed && "New production"}
         </button>
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
-          className="flex w-full items-center gap-2 rounded-[var(--radius-button)] border border-border px-3 py-1.5 text-xs text-muted transition hover:border-primary/40 hover:text-foreground"
+          title="Search (Ctrl K)"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-[var(--radius-button)] border border-border text-xs text-muted transition hover:border-primary/40 hover:text-foreground",
+            collapsed ? "justify-center px-2 py-1.5" : "px-3 py-1.5"
+          )}
         >
-          <SearchIcon className="h-3.5 w-3.5" /> Search
-          <kbd className="ml-auto rounded bg-elevated px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
+          <SearchIcon className="h-3.5 w-3.5" />
+          {!collapsed && (
+            <>
+              Search
+              <kbd className="ml-auto rounded bg-elevated px-1.5 py-0.5 text-[10px]">Ctrl K</kbd>
+            </>
+          )}
         </button>
-        <div
-          role="tablist"
-          aria-label="Studio mode"
-          className="flex items-center gap-0.5 rounded-[var(--radius-button)] border border-border bg-background/40 p-0.5"
-        >
-          {STUDIO_MODES.map((mode) => (
-            <button
-              type="button"
-              key={mode.id}
-              role="tab"
-              aria-selected={studioMode === mode.id}
-              onClick={() => setStudioMode(mode.id)}
-              title={mode.hint}
-              className={cn(
-                "flex-1 rounded-[calc(var(--radius-button)-2px)] px-1.5 py-1 text-[11px] font-medium transition-colors",
-                studioMode === mode.id
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted hover:text-foreground"
-              )}
-            >
-              {mode.label}
-            </button>
-          ))}
-        </div>
+        {!collapsed && (
+          <div
+            role="tablist"
+            aria-label="Studio mode"
+            className="flex items-center gap-0.5 rounded-[var(--radius-button)] border border-border bg-background/40 p-0.5"
+          >
+            {STUDIO_MODES.map((mode) => (
+              <button
+                type="button"
+                key={mode.id}
+                role="tab"
+                aria-selected={studioMode === mode.id}
+                onClick={() => setStudioMode(mode.id)}
+                title={mode.hint}
+                className={cn(
+                  "flex-1 rounded-[calc(var(--radius-button)-2px)] px-1.5 py-1 text-[11px] font-medium transition-colors",
+                  studioMode === mode.id
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 pb-2">
+      <div className={cn("flex-1 overflow-y-auto pb-2", collapsed ? "px-1.5" : "px-2")}>
         {NAV_MODEL.map((section) => (
-          <NavGroup key={section.id} label={section.label}>
+          <NavGroup key={section.id} label={section.label} collapsed={collapsed}>
             {section.items.map((item) => (
               <NavTreeItem
                 key={item.id}
@@ -151,13 +183,14 @@ export function Sidebar() {
                 activeView={view}
                 activeModule={activeModule}
                 onNavigate={navigateTo}
+                collapsed={collapsed}
               />
             ))}
           </NavGroup>
         ))}
 
-        {projects.length > 0 && (
-          <NavGroup label="Projects">
+        {!collapsed && projects.length > 0 && (
+          <NavGroup label="Recent projects">
             {projects.map((project) => (
               <NavItem
                 key={project.id}
@@ -171,44 +204,53 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-border p-3">
+      <div className={cn("flex flex-col gap-2 border-t border-border p-3", collapsed && "items-center px-2")}>
         <button
           type="button"
           onClick={openHelp}
+          title="Help Center (F1)"
           className={cn(
-            "flex w-full items-center gap-2 rounded-[var(--radius-button)] px-3 py-2 text-sm font-medium transition-colors",
+            "flex w-full items-center gap-2 rounded-[var(--radius-button)] text-sm font-medium transition-colors",
+            collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
             view === "help"
               ? "bg-primary/12 text-primary"
               : "text-muted hover:bg-elevated hover:text-foreground"
           )}
-          title="Help Center (F1)"
         >
           <LifeBuoy className="h-4 w-4" />
-          Help &amp; learning
-          <span className="ml-auto text-[10px] text-muted">F1</span>
-        </button>
-        <ThemeToggle />
-        <div className="flex items-center gap-2 rounded-[var(--radius-button)] bg-elevated px-3 py-2 text-xs text-muted">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-          <span>{engineLabel()}</span>
-        </div>
-        <div
-          className="flex items-center gap-1.5 px-1 text-[11px] text-muted"
-          title="Your work autosaves continuously"
-        >
-          <Check className="h-3 w-3 text-success" />
-          {lastSavedAt ? (
-            <span>
-              Saved{" "}
-              {new Date(lastSavedAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          ) : (
-            <span>All changes saved</span>
+          {!collapsed && (
+            <>
+              Help &amp; learning
+              <span className="ml-auto text-[10px] text-muted">F1</span>
+            </>
           )}
-        </div>
+        </button>
+        {!collapsed && (
+          <>
+            <ThemeToggle />
+            <div className="flex items-center gap-2 rounded-[var(--radius-button)] bg-elevated px-3 py-2 text-xs text-muted">
+              <Sparkles className="h-3.5 w-3.5 text-accent" />
+              <span>{engineLabel()}</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-1 text-[11px] text-muted"
+              title="Your work autosaves continuously"
+            >
+              <Check className="h-3 w-3 text-success" />
+              {lastSavedAt ? (
+                <span>
+                  Saved{" "}
+                  {new Date(lastSavedAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              ) : (
+                <span>All changes saved</span>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );
@@ -237,6 +279,7 @@ function useNavigateToView(): (view: View) => void {
   const openGlamStudio = useAppStore((s) => s.openGlamStudio);
   const openWebStudio = useAppStore((s) => s.openWebStudio);
   const openCampaignStudio = useAppStore((s) => s.openCampaignStudio);
+  const openProjects = useAppStore((s) => s.openProjects);
 
   return (nextView: View) => {
     const actions: Partial<Record<View, () => void>> = {
@@ -247,6 +290,7 @@ function useNavigateToView(): (view: View) => void {
       timeline: openTimeline,
       templates: openTemplates,
       dashboard: openDashboard,
+      projects: openProjects,
       settings: openSettings,
       brandkits: openBrandKits,
       assets: openAssets,
@@ -279,15 +323,19 @@ function NavTreeItem({
   activeView,
   activeModule,
   onNavigate,
+  collapsed,
 }: {
   item: NavItemModel;
   activeView: View;
   activeModule: ReturnType<typeof moduleForView>;
   onNavigate: (view: View) => void;
+  collapsed?: boolean;
 }) {
-  const expanded = Boolean(
-    item.moduleId && item.moduleId === activeModule && item.subItems?.length
-  );
+  // Sub-item trees need label text to be legible, so they only ever show
+  // in the expanded rail — the icon-only rail still lets you jump straight
+  // to the module's home view via the parent icon.
+  const expanded =
+    !collapsed && Boolean(item.moduleId && item.moduleId === activeModule && item.subItems?.length);
   const active = item.moduleId ? item.moduleId === activeModule : item.view === activeView;
 
   return (
@@ -299,6 +347,7 @@ function NavTreeItem({
         tone={item.tone}
         badge={item.badge}
         onClick={() => onNavigate(item.view)}
+        collapsed={collapsed}
       />
       {expanded && (
         <div className="ml-4 mt-1 border-l border-primary/25 pl-2">
@@ -318,12 +367,22 @@ function NavTreeItem({
   );
 }
 
-function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function NavGroup({
+  label,
+  children,
+  collapsed,
+}: {
+  label: string;
+  children: React.ReactNode;
+  collapsed?: boolean;
+}) {
   return (
     <div className="mb-1.5 mt-3 first:mt-1">
-      <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
-        {label}
-      </div>
+      {!collapsed && (
+        <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
+          {label}
+        </div>
+      )}
       {children}
     </div>
   );
@@ -337,6 +396,7 @@ function NavItem({
   tone,
   compact,
   badge,
+  collapsed,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -345,6 +405,7 @@ function NavItem({
   tone?: "violet" | "cyan" | "gold" | "green" | "pink";
   compact?: boolean;
   badge?: string;
+  collapsed?: boolean;
 }) {
   const activeTone = {
     violet: "bg-violet-500/12 text-violet-400",
@@ -371,9 +432,10 @@ function NavItem({
     <button
       type="button"
       onClick={onClick}
+      title={collapsed ? label : undefined}
       className={cn(
         "group relative flex w-full items-center gap-2.5 rounded-[var(--radius-button)] text-sm transition-colors",
-        compact ? "px-2 py-1.5 text-xs" : "px-2.5 py-1.5",
+        collapsed ? "justify-center px-2 py-2" : compact ? "px-2 py-1.5 text-xs" : "px-2.5 py-1.5",
         active
           ? tone
             ? activeTone[tone]
@@ -398,8 +460,8 @@ function NavItem({
       >
         {icon}
       </span>
-      <span className="truncate">{label}</span>
-      {badge && (
+      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && badge && (
         <span className="ml-auto shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">
           {badge}
         </span>

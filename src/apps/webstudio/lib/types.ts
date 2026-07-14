@@ -25,6 +25,10 @@ export interface SectionInstance {
   patternId: string;
   copy: SectionCopy;
   mediaUrl?: string;
+  // Visual builder & positioning
+  role?: "hero" | "proof" | "trust" | "conversion";
+  hidden?: boolean;
+  locked?: boolean;
 }
 
 export interface DesignTokens {

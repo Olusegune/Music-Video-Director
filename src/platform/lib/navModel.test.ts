@@ -13,6 +13,7 @@ const ALL_VIEWS: View[] = [
   "templates",
   "help",
   "dashboard",
+  "projects",
   "project",
   "settings",
   "brandkits",

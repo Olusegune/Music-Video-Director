@@ -147,3 +147,46 @@ export function setLayer(
     layers: pipeline.layers.map((layer) => (layer.id === id ? { ...layer, ...patch } : layer)),
   };
 }
+
+/** Add a reference context layer to the pipeline from Reference Lab assets. */
+export function addReferenceLayer(
+  pipeline: PromptPipeline,
+  references: Array<{ name: string; description: string }>
+): PromptPipeline {
+  if (!references.length) return pipeline;
+
+  const referenceText =
+    "Visual references: " +
+    references
+      .map((r) => `${r.name} — ${r.description}`)
+      .join("; ");
+
+  const referenceLayer: PromptLayer = {
+    id: "reference-lab",
+    kind: "style",
+    label: "Reference Lab",
+    text: referenceText,
+    source: "Reference Lab",
+    editable: false,
+    muted: false,
+  };
+
+  // Insert after any DNA layers but before user layers
+  const layers = [...pipeline.layers];
+  const userLayerIndex = layers.findIndex((l) => l.kind === "user");
+  if (userLayerIndex === -1) {
+    layers.push(referenceLayer);
+  } else {
+    layers.splice(userLayerIndex, 0, referenceLayer);
+  }
+
+  return { ...pipeline, layers };
+}
+
+/** Remove reference layer from pipeline if present. */
+export function removeReferenceLayer(pipeline: PromptPipeline): PromptPipeline {
+  return {
+    ...pipeline,
+    layers: pipeline.layers.filter((l) => l.id !== "reference-lab"),
+  };
+}

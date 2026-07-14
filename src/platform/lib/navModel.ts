@@ -16,6 +16,7 @@ export const VIEW_MODULE: Record<View, ModuleId> = {
   templates: "musicvideo",
   help: null,
   dashboard: null,
+  projects: null,
   project: null,
   settings: null,
   brandkits: null,
@@ -120,6 +121,7 @@ export const NAV_MODEL: NavSectionModel[] = [
     label: "Manage",
     items: [
       { id: "dashboard", label: "Dashboard", view: "dashboard", icon: "dashboard", tone: "violet" },
+      { id: "projects", label: "Projects", view: "projects", icon: "file", tone: "pink" },
       { id: "assets", label: "Asset Library", view: "assets", icon: "library", tone: "cyan" },
       { id: "export", label: "Export Center", view: "export", icon: "book", tone: "green" },
     ],

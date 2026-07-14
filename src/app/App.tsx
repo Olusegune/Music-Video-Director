@@ -23,6 +23,7 @@ import { NotificationCenter } from "@/platform/components/layout/NotificationCen
 import { ShortcutSheet } from "@/platform/components/layout/ShortcutSheet";
 import { GlobalSearch } from "@/platform/features/search/GlobalSearch";
 import { useGlobalShortcuts } from "@/platform/lib/useGlobalShortcuts";
+import { useMenuBridge } from "@/platform/lib/useMenuBridge";
 import { installUndo } from "@/platform/lib/undo";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { installMusicVideoBindings } from "@/apps/music-video/musicVideoBindings";
@@ -52,6 +53,11 @@ const CampaignStudio = lazy(() =>
 const ProjectWorkspace = lazy(() =>
   import("@/platform/features/projects/ProjectWorkspace").then((module) => ({
     default: module.ProjectWorkspace,
+  }))
+);
+const ProjectsDashboard = lazy(() =>
+  import("@/platform/features/projects/ProjectsDashboard").then((module) => ({
+    default: module.ProjectsDashboard,
   }))
 );
 const SettingsView = lazy(() =>
@@ -134,6 +140,7 @@ export default function App() {
   const inspectorOpen = useAppStore((s) => s.inspectorOpen);
   const dataVersion = useAppStore((s) => s.dataVersion);
   useGlobalShortcuts();
+  useMenuBridge();
   useEffect(() => {
     installUndo();
     hydrateStartupStores();
@@ -166,6 +173,7 @@ export default function App() {
             {view === "templates" && <TemplatesView />}
             {view === "help" && <HelpCenter />}
             {view === "dashboard" && <Dashboard />}
+            {view === "projects" && <ProjectsDashboard />}
             {view === "project" && <ProjectWorkspace />}
             {view === "settings" && <SettingsView />}
             {view === "brandkits" && <BrandKitManager />}

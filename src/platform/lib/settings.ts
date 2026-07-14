@@ -23,6 +23,25 @@ export function setShowWelcome(show: boolean): void {
   }
 }
 
+const LS_SIDEBAR_COLLAPSED = "mf.sidebarCollapsed";
+
+/** Left nav rail collapsed to icon-only width. Defaults to false (expanded). */
+export function getSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LS_SIDEBAR_COLLAPSED) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setSidebarCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(LS_SIDEBAR_COLLAPSED, collapsed ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---------------------------------------------------------------------------
 // StudioMode — the one platform-wide progressive-disclosure tier.
 // (Decision D1, docs/DECISIONS.md.) Replaces the old per-surface flags

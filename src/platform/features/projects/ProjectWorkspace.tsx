@@ -55,7 +55,7 @@ import {
   applyStyleDna,
   type StyleDna,
 } from "@/platform/lib/styleDna";
-import { usePromptPack, type SaveStatus } from "./usePromptPack";
+import { usePromptPack } from "./usePromptPack";
 import { CreativeDirectionPanel } from "./CreativeDirectionPanel";
 import { StoryboardEditor } from "./StoryboardEditor";
 import { CameraDirector } from "./CameraDirector";
@@ -64,6 +64,12 @@ import { AudioDirector } from "./AudioDirector";
 import { PromptBuilder } from "./PromptBuilder";
 import { MoodboardPanel } from "./MoodboardPanel";
 import { ExportCenter } from "./ExportCenter";
+import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
+import type { GenerationState } from "@/platform/components/generation/types";
+import { routeProvider } from "@/platform/lib/providers";
+import type { ProviderId } from "@/platform/lib/types";
+import { useAutoSave } from "@/platform/hooks/useAutoSave";
+import { openProject, type DirectorProject } from "@/platform/lib/projectPersistence";
 
 const MODES: { id: WorkspaceMode; label: string; icon: React.ReactNode }[] = [
   { id: "storyboard", label: "Storyboard", icon: <LayoutGrid className="h-4 w-4" /> },
@@ -95,6 +101,12 @@ export function ProjectWorkspace() {
   const queryClient = useQueryClient();
   const { activeProjectId, workspaceMode, setWorkspaceMode, toggleInspector } = useAppStore();
   const [brief, setBrief] = useState("");
+  const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>();
+  const [generationState, setGenerationState] = useState<GenerationState>({
+    mode: "auto",
+    prompt: "",
+    status: "idle",
+  });
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
@@ -102,7 +114,34 @@ export function ProjectWorkspace() {
   });
   const project = projects.find((p) => p.id === activeProjectId);
 
-  const { pack, saveStatus, replace, update } = usePromptPack(activeProjectId ?? "");
+  const { pack, replace, update } = usePromptPack(activeProjectId ?? "");
+
+  // Load current project from persistence
+  const [persistedProject, setPersistedProject] = useState<DirectorProject | null>(null);
+  useEffect(() => {
+    if (activeProjectId) {
+      openProject(activeProjectId).then((proj) => {
+        if (proj) {
+          setPersistedProject(proj);
+          // Update the brief from persisted data
+          setBrief(proj.brief);
+        }
+      });
+    }
+  }, [activeProjectId]);
+
+  // Auto-save to persistence every 10 seconds
+  const directorProject: DirectorProject | null = persistedProject && pack ? {
+    ...persistedProject,
+    brief,
+    pack,
+    updatedAt: new Date().toISOString(),
+  } : null;
+
+  const { lastSaved, isSaving } = useAutoSave({
+    project: directorProject,
+    enabled: !!directorProject,
+  });
 
   // Brand kit applied to generation, remembered per project.
   const { data: brandKits = [] } = useQuery({
@@ -212,6 +251,64 @@ export function ProjectWorkspace() {
     },
   });
 
+  async function generateProjectShots() {
+    if (!pack || !activeProjectId) return;
+    setGenerationState((s) => ({ ...s, status: "validating" }));
+    try {
+      const routerConfig = loadRouterConfig();
+      const statuses = await api.getProviderKeyStatuses();
+      const configured = new Set(
+        statuses.filter((status) => status.configured).map((status) => status.provider as ProviderId)
+      );
+      const provider = routeProvider("image", routerConfig, configured);
+      if (!provider) throw new Error("No image provider configured");
+
+      setGenerationState((s) => ({ ...s, status: "queued" }));
+
+      // Generate image for each unlocked shot
+      let updated = 0;
+      const newShots = await Promise.all(
+        pack.shots.map(async (shot) => {
+          if (shot.locked) return shot;
+          try {
+            const prompt = generationState.prompt || `Director shot: ${shot.name}`;
+            const imageUrl = await api.generateImageFromSpec({
+              capability: "image",
+              prompt,
+              negativePrompt: generationState.negativePrompt,
+              batch: generationState.batch || 1,
+              aspect: generationState.aspectRatio,
+              resolution: generationState.resolution,
+              seed: generationState.seed,
+              references: [],
+              providerPref: provider,
+              modelHint: generationState.selectedModel,
+              moduleId: "director",
+              projectRef: { moduleId: "director", projectId: activeProjectId },
+            });
+            updated++;
+            return { ...shot, imageUrl };
+          } catch {
+            return shot;
+          }
+        })
+      );
+
+      if (updated > 0) {
+        update((p) => ({ ...p, shots: newShots }));
+        setGenerationState((s) => ({ ...s, status: "completed" }));
+      } else {
+        setGenerationState((s) => ({ ...s, status: "idle" }));
+      }
+    } catch (e) {
+      setGenerationState((s) => ({
+        ...s,
+        status: "failed",
+        error: (e as Error).message,
+      }));
+    }
+  }
+
   if (!project) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted">
@@ -228,7 +325,15 @@ export function ProjectWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="truncate text-lg font-semibold">{project.name}</h1>
             <Badge variant="primary">{project.type}</Badge>
-            <SaveIndicator status={saveStatus} />
+            {isSaving ? (
+              <span className="flex items-center gap-1 text-[11px] text-muted">
+                <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+              </span>
+            ) : lastSaved ? (
+              <span className="flex items-center gap-1 text-[11px] text-success">
+                <Check className="h-3 w-3" /> Saved
+              </span>
+            ) : null}
           </div>
           <p className="mt-0.5 text-xs text-muted">
             {project.aspectRatio} · {project.duration} · {project.status}
@@ -466,6 +571,34 @@ export function ProjectWorkspace() {
 
         {pack && workspaceMode === "storyboard" && (
           <div className="flex flex-col gap-6">
+            {/* Shot Generation Panel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-accent" /> Generate Shot Directions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UniversalGenerationPanel
+                  title="Shot Composition"
+                  prompt={generationState.prompt || "Generate cinematic shot composition for storyboard"}
+                  selectedProvider={selectedProviderPref}
+                  onProviderChange={setSelectedProviderPref}
+                  generationState={generationState}
+                  onGenerationStateChange={(updates) =>
+                    setGenerationState((prev) => ({ ...prev, ...updates }))
+                  }
+                  onGenerate={generateProjectShots}
+                  capabilities={{
+                    supportsNegativePrompt: true,
+                    supportsSeed: true,
+                    supportsAspectRatio: true,
+                    supportsQuality: true,
+                  }}
+                  showAdvanced={workspaceMode === "storyboard"}
+                />
+              </CardContent>
+            </Card>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] uppercase tracking-wide text-muted">
                 Creative assist:
@@ -536,22 +669,6 @@ export function ProjectWorkspace() {
   );
 }
 
-function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === "idle") return null;
-  return (
-    <span className="flex items-center gap-1 text-[11px] text-muted">
-      {status === "saving" ? (
-        <>
-          <Loader2 className="h-3 w-3 animate-spin" /> Saving…
-        </>
-      ) : (
-        <>
-          <Check className="h-3 w-3 text-success" /> Saved
-        </>
-      )}
-    </span>
-  );
-}
 
 function EmptyState() {
   return (

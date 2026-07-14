@@ -35,7 +35,7 @@ import {
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { api } from "@/platform/lib/ipc";
-import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
+import { loadRouterConfig, routeProvider, ROUTER_MODES } from "@/platform/lib/providers";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { ModeCards } from "@/platform/components/visual/ModeCards";
 import { STYLE_PRESETS } from "@/platform/lib/styles";
@@ -64,6 +64,9 @@ import {
 } from "./lib/templates";
 import type { MotionProject, MotionProjectDraft, MotionScene } from "./lib/types";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
+import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
+import type { GenerationState } from "@/platform/components/generation/types";
+import type { ProviderId } from "@/platform/lib/types";
 
 const emptyDraft: MotionProjectDraft = {
   name: "New Product Motion Film",
@@ -215,6 +218,12 @@ export function MotionStudio() {
   );
   usePendingProjectOpen("motion", (id) => setActiveProjectId(id));
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
+  const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
+  const [generationState, setGenerationState] = useState<GenerationState>({
+    mode: "auto",
+    status: "idle",
+    prompt: "",
+  });
   const platformProjects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
 
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? null;
@@ -250,6 +259,53 @@ export function MotionStudio() {
     setProjects(next);
     if (nextActiveId) setActiveProjectId(nextActiveId);
   };
+
+  async function generateMotionPrompt() {
+    if (!activeProject || !selectedScene) return;
+    try {
+      setGenerationState((prev) => ({ ...prev, status: "validating" }));
+
+      const statuses = await api.getProviderKeyStatuses();
+      const configured = new Set<ProviderId>(
+        statuses.filter((item) => item.configured).map((item) => item.provider)
+      );
+
+      const provider = selectedProviderPref ?? routeProvider("video", routerConfig, configured);
+      if (!provider) {
+        setGenerationState((prev) => ({
+          ...prev,
+          status: "failed",
+          error: "No video provider configured",
+        }));
+        return;
+      }
+
+      setGenerationState((prev) => ({ ...prev, status: "queued" }));
+
+      const prompt = selectedScene.promptOverride ||
+        `${selectedScene.headline} — Motion: ${selectedScene.motion}`;
+
+      const url = await api.generateVideoFromSpec({
+        capability: "video",
+        prompt,
+        negativePrompt: generationState.negativePrompt || "static, blurry, low quality",
+        providerPref: provider,
+        moduleId: "motion",
+        projectRef: { moduleId: "motion", projectId: activeProject.id, entityId: selectedScene.id },
+      });
+
+      setGenerationState((prev) => ({ ...prev, status: "completed", resultUrl: url }));
+
+      const updatedScenes = activeProject.scenes.map((scene) =>
+        scene.id === selectedScene.id ? { ...scene, videoUrl: url } : scene
+      );
+      updateMotionScenes(activeProject.id, updatedScenes);
+      refreshProjects(activeProject.id);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Video generation failed";
+      setGenerationState((prev) => ({ ...prev, status: "failed", error: errorMsg }));
+    }
+  }
 
   const handleCreateProject = () => {
     const type = productionType(draft.typeId);
@@ -794,6 +850,40 @@ export function MotionStudio() {
                             </CardContent>
                           </Card>
                         )}
+
+                        <UniversalGenerationPanel
+                          title="Generate Motion Prompt"
+                          prompt={
+                            selectedScene.promptOverride ||
+                            `${selectedScene.headline} — Motion: ${selectedScene.motion}`
+                          }
+                          promptComposition={{
+                            userPrompt: selectedScene.headline || "Motion scene",
+                            presetDirections: [
+                              selectedScene.motion,
+                              selectedScene.voiceover ? `VO: ${selectedScene.voiceover}` : "",
+                            ].filter(Boolean) as string[],
+                            studioContext: `Production: ${productionType(activeProject.typeId).name}; Style: ${visualStyle(activeProject.styleId).name}; Duration: ${selectedScene.end - selectedScene.start}s`,
+                            finalPrompt:
+                              selectedScene.promptOverride ||
+                              `${selectedScene.headline} — Motion: ${selectedScene.motion}`,
+                            negativePrompt: "static, blurry, low quality, distorted motion",
+                          }}
+                          selectedProvider={selectedProviderPref}
+                          onProviderChange={setSelectedProviderPref}
+                          generationState={generationState}
+                          onGenerationStateChange={(updates) =>
+                            setGenerationState((prev) => ({ ...prev, ...updates }))
+                          }
+                          onGenerate={generateMotionPrompt}
+                          capabilities={{
+                            supportsNegativePrompt: true,
+                            supportsSeed: true,
+                            supportsAspectRatio: true,
+                            supportsQuality: true,
+                          }}
+                          showAdvanced={studioMode === "creator"}
+                        />
                       </aside>
                     )}
                   </div>

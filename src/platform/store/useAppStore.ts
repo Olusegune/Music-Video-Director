@@ -5,6 +5,8 @@ import {
   setActiveSongId,
   getStudioMode,
   setStudioMode as persistStudioMode,
+  getSidebarCollapsed,
+  setSidebarCollapsed as persistSidebarCollapsed,
   type StudioMode,
 } from "@/platform/lib/settings";
 import { saveActiveTemplateId } from "@/platform/lib/templates";
@@ -30,6 +32,7 @@ export type View =
   | "templates"
   | "help"
   | "dashboard"
+  | "projects"
   | "project"
   | "settings"
   | "brandkits"
@@ -138,6 +141,10 @@ interface AppState {
   consumePendingProjectOpen: (moduleId: OpenableModuleId) => string | null;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
+  openProjects: () => void;
+  /** Left nav rail collapsed to icon-only width. Persisted across sessions. */
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 }
 
 const initialSongId = getActiveSongId();
@@ -288,4 +295,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   openProject: (id) => set({ view: "project", activeProjectId: id, workspaceMode: "storyboard" }),
   setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
   toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),
+  openProjects: () => set({ view: "projects" }),
+  sidebarCollapsed: getSidebarCollapsed(),
+  toggleSidebar: () =>
+    set((s) => {
+      const next = !s.sidebarCollapsed;
+      persistSidebarCollapsed(next);
+      return { sidebarCollapsed: next };
+    }),
 }));

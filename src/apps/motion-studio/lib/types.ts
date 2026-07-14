@@ -44,6 +44,11 @@ export interface MotionScene {
   promptOverride?: string;
   approved?: boolean;
   score?: number;
+  // Animation presets (optional)
+  animationTypePresetId?: string;
+  motionStylePresetIds?: string[];
+  choreographyPatternPresetId?: string;
+  referenceAssetIds?: string[];
 }
 
 export interface MotionProject {

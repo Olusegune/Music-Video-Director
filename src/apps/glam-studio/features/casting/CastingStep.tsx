@@ -14,6 +14,8 @@ import {
   ACCESSORY_PRESETS,
   type CastingOption,
 } from "@/apps/glam-studio/lib/castingPresets";
+import { getPresetImageUrl } from "@/apps/glam-studio/lib/presetImages";
+import { PresetImageDisplay } from "@/apps/glam-studio/features/PresetImageDisplay";
 
 type CastingKey =
   | "castingAgeId"
@@ -38,11 +40,31 @@ function CastingRow({
 }) {
   const selected = state[fieldKey];
   return (
-    <div>
-      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted/80">
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/80">
         {title}
       </p>
-      <div className="flex flex-wrap gap-1.5">
+
+      {/* Image grid preview */}
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {options.map((opt) => (
+          <button
+            key={`img-${opt.id}`}
+            type="button"
+            onClick={() => patch({ [fieldKey]: opt.id } as Partial<GlamFlowState>)}
+            className={cn(
+              "overflow-hidden rounded-lg border-2 transition hover:border-primary/50",
+              selected === opt.id ? "border-primary" : "border-border"
+            )}
+            title={opt.label}
+          >
+            <PresetImageDisplay imageUrl={getPresetImageUrl(opt.id)} label={opt.label} className="h-16 w-full" />
+          </button>
+        ))}
+      </div>
+
+      {/* Label buttons below images */}
+      <div className="flex flex-wrap gap-1.5 pt-1">
         <button
           type="button"
           onClick={() => patch({ [fieldKey]: undefined } as Partial<GlamFlowState>)}
@@ -57,7 +79,7 @@ function CastingRow({
         </button>
         {options.map((opt) => (
           <button
-            key={opt.id}
+            key={`label-${opt.id}`}
             type="button"
             onClick={() => patch({ [fieldKey]: opt.id } as Partial<GlamFlowState>)}
             className={cn(

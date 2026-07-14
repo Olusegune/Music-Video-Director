@@ -10,6 +10,8 @@ import { cn } from "@/platform/lib/utils";
 import type { GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import type { GlamFlowState } from "@/apps/glam-studio/lib/glamStore";
 import { CAMERA_PRESETS, LIGHTING_PRESETS } from "@/apps/glam-studio/lib/photoPresets";
+import { getPresetImageUrl } from "@/apps/glam-studio/lib/presetImages";
+import { PresetImageDisplay } from "@/apps/glam-studio/features/PresetImageDisplay";
 
 export function CameraLightingStep({ state, patch }: GuidedFlowStepComponentProps<GlamFlowState>) {
   return (
@@ -38,13 +40,14 @@ export function CameraLightingStep({ state, patch }: GuidedFlowStepComponentProp
               type="button"
               onClick={() => patch({ cameraPresetId: preset.id })}
               className={cn(
-                "rounded-[var(--radius-card)] border p-3 text-left text-xs transition hover:border-primary/50",
+                "overflow-hidden rounded-[var(--radius-card)] border p-3 text-left text-xs transition hover:border-primary/50",
                 state.cameraPresetId === preset.id
                   ? "border-primary bg-primary/10"
                   : "border-border bg-surface"
               )}
             >
-              <div className="flex items-center justify-between gap-2">
+              <PresetImageDisplay imageUrl={getPresetImageUrl(preset.id)} label={preset.name} className="h-32 w-full" />
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <span className="font-semibold">{preset.name}</span>
                 <Badge className="normal-case">{preset.family}</Badge>
               </div>
@@ -78,22 +81,16 @@ export function CameraLightingStep({ state, patch }: GuidedFlowStepComponentProp
               type="button"
               onClick={() => patch({ lightingPresetId: preset.id })}
               className={cn(
-                "rounded-[var(--radius-card)] border p-3 text-left text-xs transition hover:border-primary/50",
+                "overflow-hidden rounded-[var(--radius-card)] border p-3 text-left text-xs transition hover:border-primary/50",
                 state.lightingPresetId === preset.id
                   ? "border-primary bg-primary/10"
                   : "border-border bg-surface"
               )}
             >
-              <div className="flex items-center justify-between gap-2">
+              <PresetImageDisplay imageUrl={getPresetImageUrl(preset.id)} label={preset.name} className="h-32 w-full" />
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <span className="font-semibold">{preset.name}</span>
                 <Badge className="normal-case">{preset.family}</Badge>
-              </div>
-              {/* Lightweight CSS "diagram" instead of a real illustration —
-                  a small light-source dot positioned per the preset's angle,
-                  cheap to render and still visual rather than pure text. */}
-              <div className="relative mt-2 h-10 w-full overflow-hidden rounded bg-elevated/60">
-                <span className="absolute left-1/2 top-full h-6 w-6 -translate-x-1/2 rounded-full bg-muted/20" />
-                <LightDot presetId={preset.id} />
               </div>
               <p className="mt-1.5 text-muted">{preset.summary}</p>
             </button>
@@ -101,34 +98,5 @@ export function CameraLightingStep({ state, patch }: GuidedFlowStepComponentProp
         </div>
       </div>
     </div>
-  );
-}
-
-/** Positions a small "key light" dot on the mini diagram per preset angle. */
-function LightDot({ presetId }: { presetId: string }) {
-  const pos: Record<string, string> = {
-    "light-rembrandt": "left-[30%] top-1",
-    "light-butterfly": "left-1/2 top-0 -translate-x-1/2",
-    "light-loop": "left-[35%] top-1",
-    "light-split": "left-1 top-1/2 -translate-y-1/2",
-    "light-soft-beauty": "left-1/2 top-1 -translate-x-1/2",
-    "light-hard-editorial": "left-[20%] top-1",
-    "light-high-key": "left-1/2 top-1 -translate-x-1/2",
-    "light-low-key": "left-[15%] top-1",
-    "light-three-point": "left-1/2 top-1 -translate-x-1/2",
-    "light-window": "left-1 top-1/2 -translate-y-1/2",
-    "light-golden-hour": "right-1 bottom-1",
-    "light-blue-hour": "right-1 top-1",
-    "light-ring": "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-    "light-strip": "left-1 top-1",
-    "light-practical": "right-1/2 top-1/2",
-  };
-  return (
-    <span
-      className={cn(
-        "absolute h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_2px_var(--color-accent)]",
-        pos[presetId] ?? "left-1/2 top-1 -translate-x-1/2"
-      )}
-    />
   );
 }
