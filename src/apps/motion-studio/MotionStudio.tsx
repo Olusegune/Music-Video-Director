@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   Boxes,
@@ -91,6 +91,10 @@ const emptyDraft: MotionProjectDraft = {
 
 function sceneAccent(scene: MotionScene, project: MotionProject): string {
   return scene.accent || project.direction.colorPalette[2] || "#4F46E5";
+}
+
+function toast(message: string) {
+  window.dispatchEvent(new CustomEvent("mf-toast", { detail: message }));
 }
 
 /** Compose a scene's generation prompt: manual override wins outright (full
@@ -248,6 +252,11 @@ export function MotionStudio() {
   const [activeProjectId, setActiveProjectId] = useState<string>(
     () => listMotionProjects()[0]?.id ?? ""
   );
+  // Below the xl breakpoint, the "New Motion Project" form and the result
+  // stack vertically instead of side-by-side — the form is long (templates +
+  // three textareas + style grid), so a freshly generated storyboard can land
+  // well below the fold with no visual sign it happened. Scroll it into view.
+  const resultRef = useRef<HTMLDivElement>(null);
   usePendingProjectOpen("motion", (id) => setActiveProjectId(id));
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
@@ -278,6 +287,23 @@ export function MotionStudio() {
       setSelectedSceneId(activeProject.scenes[0]?.id ?? "");
     }
   }, [activeProject, selectedSceneId]);
+
+  // Scroll the result into view once React has actually committed it — a
+  // bare requestAnimationFrame in the click handler can fire before the new
+  // project's DOM (template cards etc. pushing the result far down) exists,
+  // landing the scroll short of the target. Instant, not smooth: the newly
+  // mounted result (scene tabs, the 32-button Motion Presets picker, etc.)
+  // keeps reflowing for a few frames after mount, which was silently
+  // cancelling/no-oping a smooth scroll mid-animation in testing — instant
+  // scroll captures the position at call time instead of chasing a moving
+  // target.
+  const scrollToResultRef = useRef(false);
+  useEffect(() => {
+    if (scrollToResultRef.current && activeProject) {
+      scrollToResultRef.current = false;
+      resultRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+  }, [activeProject]);
 
   const updateDraft = <K extends keyof MotionProjectDraft>(
     key: K,
@@ -349,6 +375,10 @@ export function MotionStudio() {
     });
     refreshProjects(project.id);
     setSelectedSceneId(project.scenes[0]?.id ?? "");
+    toast(`Storyboard generated — ${project.scenes.length} scenes`);
+    // Below xl, the form and result stack vertically — without this the new
+    // storyboard renders off-screen with no visible sign anything happened.
+    scrollToResultRef.current = true;
   };
 
   const regenerateStoryboard = () => {
@@ -379,6 +409,7 @@ export function MotionStudio() {
     });
     refreshProjects(activeProject.id);
     setSelectedSceneId(scenes[0]?.id ?? "");
+    toast(`Storyboard regenerated — ${scenes.length} scenes`);
   };
 
   const improveSelectedScene = () => {
@@ -652,7 +683,7 @@ export function MotionStudio() {
           </Card>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-5">
+        <div ref={resultRef} className="flex min-w-0 flex-col gap-5 scroll-mt-4">
           {!activeProject ? (
             <CreativeEmptyState
               icon={<Clapperboard />}
