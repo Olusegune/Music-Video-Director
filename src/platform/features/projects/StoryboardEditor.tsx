@@ -22,7 +22,7 @@ import { Card, CardContent } from "@/platform/components/ui/card";
 import { Button } from "@/platform/components/ui/button";
 import { Badge } from "@/platform/components/ui/badge";
 import { InlineInput, InlineTextarea } from "@/platform/components/ui/inline-edit";
-import { AssetImage } from "@/platform/components/ui/asset-image";
+import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { AssetPicker } from "@/platform/features/assets/AssetPicker";
 import { Users } from "lucide-react";
 
@@ -235,14 +235,14 @@ export function StoryboardEditor({
             {/* Storyboard frame / video */}
             <div className="group/thumb relative aspect-video overflow-hidden bg-elevated">
               {shot.videoUrl ? (
-                <video
+                <AssetVideo
                   src={shot.videoUrl}
-                  poster={shot.imageUrl || undefined}
+                  poster={shot.imageUrl}
                   controls
                   className="h-full w-full object-cover"
                 />
               ) : shot.imageUrl ? (
-                <img
+                <AssetImage
                   src={shot.imageUrl}
                   alt={`Shot ${shot.number}`}
                   className="h-full w-full object-cover"

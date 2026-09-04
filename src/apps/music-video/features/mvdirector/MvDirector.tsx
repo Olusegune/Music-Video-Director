@@ -219,13 +219,22 @@ export function MvDirector() {
   const [genPoseId, setGenPoseId] = useState<string | null>(null);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  const [directing, setDirecting] = useState(false);
   const qc = useQueryClient();
 
   const direct = () => {
     if (!song) return;
-    const t = directSong(song, getTemplate(activeTemplateId));
-    saveTreatment(t);
-    setTreatment(t);
+    setDirecting(true);
+    setGenError(null);
+    try {
+      const t = directSong(song, getTemplate(activeTemplateId));
+      saveTreatment(t);
+      setTreatment(t);
+    } catch (error) {
+      setGenError(error instanceof Error ? error.message : "Could not create the treatment. Check the song sections and try again.");
+    } finally {
+      setDirecting(false);
+    }
   };
 
   const patch = (next: MvTreatment) => {
@@ -935,6 +944,7 @@ export function MvDirector() {
           <div className="flex h-full items-center justify-center p-10">
             <button
               onClick={direct}
+              disabled={directing}
               className="flex max-w-md flex-col items-center gap-4 rounded-[var(--radius-card)] border border-dashed border-border bg-surface/60 px-10 py-14 text-center transition-colors hover:border-primary/50 hover:bg-elevated/40"
             >
               <div className="grad-primary flex h-14 w-14 items-center justify-center rounded-2xl">
@@ -948,7 +958,9 @@ export function MvDirector() {
                   Beat-synced. Fully editable.
                 </p>
               </div>
-              <span className="text-xs font-medium text-primary">Generate the treatment</span>
+              <span className="text-xs font-medium text-primary">
+                {directing ? "Creating the treatment…" : "Generate the treatment"}
+              </span>
             </button>
           </div>
         ) : viewMode === "simple" ? (

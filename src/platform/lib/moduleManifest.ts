@@ -1,6 +1,7 @@
 import type { View } from "@/platform/store/useAppStore";
 import type { Capability } from "@/platform/lib/providers";
 import type { ModuleId, NavIcon, NavTone } from "@/platform/lib/navModel";
+import { ENABLED_MODULES } from "@/platform/lib/productConfig";
 
 export type ConcreteModuleId = Exclude<ModuleId, null>;
 
@@ -74,7 +75,16 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
   },
 ];
 
+/** All studios this build ships. The single place every nav/search/help/
+ *  wizard surface should read the studio list from — see productConfig.ts. */
 export function listModuleManifests(): ModuleManifest[] {
+  return MODULE_MANIFESTS.filter((manifest) => ENABLED_MODULES.includes(manifest.id));
+}
+
+/** Unfiltered — every studio that exists in code, regardless of this build's
+ *  edition. Only for places that must reason about the whole platform (tests,
+ *  the manifest/nav parity check) — UI surfaces should use listModuleManifests(). */
+export function listAllModuleManifests(): ModuleManifest[] {
   return MODULE_MANIFESTS;
 }
 

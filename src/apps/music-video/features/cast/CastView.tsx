@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   loadCast,
+  loadCastForSong,
   savePerformer,
   deletePerformer,
   newPerformer,
@@ -37,6 +38,7 @@ import { Card, CardContent } from "@/platform/components/ui/card";
 import { CardPicker } from "@/platform/components/ui/card-picker";
 import { ROLE_META } from "@/apps/music-video/lib/roleMeta";
 import { DANCE_STYLE_META } from "@/apps/music-video/lib/danceStyleMeta";
+import { useAppStore } from "@/platform/store/useAppStore";
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -49,17 +51,30 @@ function readAsDataUrl(file: File): Promise<string> {
 
 export function CastView() {
   const queryClient = useQueryClient();
-  const [cast, setCast] = useState<Performer[]>(() => loadCast());
+  // Scoped to the active song — without this, every performer ever created
+  // showed up in every song's cast (see the project's Song/Cast/Treatment
+  // orphaning gap). No active song falls back to the full roster, since
+  // there's no song to scope to yet.
+  const activeSongId = useAppStore((s) => s.activeSongId);
+  const loadScopedCast = () => (activeSongId ? loadCastForSong(activeSongId) : loadCast());
+  const [cast, setCast] = useState<Performer[]>(loadScopedCast);
   const { data: characters = [] } = useQuery({
     queryKey: ["characters"],
     queryFn: api.listCharacters,
   });
   const refreshCharacters = () => queryClient.invalidateQueries({ queryKey: ["characters"] });
 
-  const refresh = () => setCast(loadCast());
+  const refresh = () => setCast(loadScopedCast());
+
+  // Reload when the active song changes (e.g. switching songs from the
+  // sidebar) — the initial useState only ran once on mount.
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSongId]);
 
   const add = (role?: PerformerRole) => {
-    savePerformer(newPerformer(role));
+    savePerformer(newPerformer(role, activeSongId ?? undefined));
     refresh();
   };
 
@@ -74,7 +89,7 @@ export function CastView() {
   };
 
   const importFromCharacter = (c: Character) => {
-    const p = newPerformer("Actor");
+    const p = newPerformer("Actor", activeSongId ?? undefined);
     p.name = c.name;
     p.characterId = c.id;
     p.wardrobe = c.primaryOutfit || "";

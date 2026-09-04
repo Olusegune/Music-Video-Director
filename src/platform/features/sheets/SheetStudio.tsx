@@ -12,6 +12,7 @@ import {
 } from "@/platform/lib/assetSheet";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 
 function hueFor(id: string): number {
   let h = 0;
@@ -168,7 +169,7 @@ export function SheetStudio(props: SheetStudioProps) {
               <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated">
                 <div className="aspect-video w-full">
                   {props.mediaSrc ? (
-                    <img src={props.mediaSrc} alt={name} className="h-full w-full object-cover" />
+                    <AssetImage src={props.mediaSrc} alt={name} className="h-full w-full object-cover" />
                   ) : (
                     <div
                       className="flex h-full w-full items-center justify-center text-3xl font-semibold text-white/90"
@@ -286,7 +287,7 @@ function PanelCell({
         )}
       >
         {url ? (
-          <img src={url} alt={cell.label} className="h-full w-full object-cover" />
+          <AssetImage src={url} alt={cell.label} className="h-full w-full object-cover" />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"

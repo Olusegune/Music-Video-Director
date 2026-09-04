@@ -33,6 +33,13 @@ export interface Performer {
   role: PerformerRole;
   /** Optional link to a Character Bible entry for visual DNA / consistency. */
   characterId?: string;
+  /**
+   * The song this performer was cast for. Absent on performers created before
+   * this field existed — those are grandfathered into every song's cast view
+   * (see loadCastForSong) rather than silently disappearing. Every performer
+   * created going forward gets one, so cast stops bleeding across songs.
+   */
+  songId?: string;
   danceStyle: string;
   wardrobe: string;
   performanceNotes: string;
@@ -50,12 +57,13 @@ export const VOCAL_ROLES: PerformerRole[] = [
   "Featured Artist",
 ];
 
-export function newPerformer(role: PerformerRole = "Lead Singer"): Performer {
+export function newPerformer(role: PerformerRole = "Lead Singer", songId?: string): Performer {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     name: "",
     role,
+    songId,
     danceStyle: role === "Dancer" ? "Hip Hop" : "",
     wardrobe: "",
     performanceNotes: "",
@@ -91,6 +99,21 @@ export function savePerformer(performer: Performer): void {
 
 export function deletePerformer(id: string): void {
   localStorage.setItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
+}
+
+/**
+ * The cast for one song: performers explicitly cast for it, plus any
+ * pre-migration performer that has no songId at all (grandfathered so old
+ * data doesn't vanish). Performers cast for a *different* song are excluded —
+ * this is what stops cast from bleeding across songs.
+ */
+export function loadCastForSong(songId: string): Performer[] {
+  return loadCast().filter((p) => !p.songId || p.songId === songId);
+}
+
+/** Cascade delete: called when a song is deleted, so its cast doesn't orphan. */
+export function deletePerformersForSong(songId: string): void {
+  localStorage.setItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.songId !== songId)));
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +183,7 @@ interface AutoCastSong {
  * Spoken Narrator are added when the lyrics or structure suggest them. The
  * "Direct This Music Video" magic flow uses this to populate an empty cast.
  */
-export function autoCastFromSong(song: AutoCastSong): Performer[] {
+export function autoCastFromSong(song: AutoCastSong, songId?: string): Performer[] {
   const sectionText = song.sections
     .map((s) => `${s.label} ${s.lyricsText ?? ""} ${s.lead ?? ""} ${s.backup ?? ""}`)
     .join(" ");
@@ -168,7 +191,7 @@ export function autoCastFromSong(song: AutoCastSong): Performer[] {
   const text = `${sectionText} ${lyricText}`.toLowerCase();
 
   const mk = (role: PerformerRole, name: string, patch: Partial<Performer> = {}) => {
-    const p = newPerformer(role);
+    const p = newPerformer(role, songId);
     p.name = name;
     return { ...p, ...patch };
   };

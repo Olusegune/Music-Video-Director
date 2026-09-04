@@ -95,6 +95,7 @@ import { RealismInspirationStep } from "@/apps/glam-studio/features/realism/Real
 import { FormatsStep } from "@/apps/glam-studio/features/pack/FormatsStep";
 import { ExportStep } from "@/apps/glam-studio/features/export/ExportStep";
 import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 import type { GenerationState } from "@/platform/components/generation/types";
 
 type ProductCategory = "beauty" | "fashion" | "jewelry" | "fragrance" | "wellness" | "tech-luxury";
@@ -683,7 +684,7 @@ function ProjectPreview({
         <CardContent className="space-y-4">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-elevated">
             {selectedHero?.url ? (
-              <img
+              <AssetImage
                 src={selectedHero.url}
                 alt={`${project.productName} campaign hero`}
                 className="absolute inset-0 h-full w-full object-cover"
@@ -735,7 +736,7 @@ function ProjectPreview({
                       : "border-border"
                   )}
                 >
-                  <img
+                  <AssetImage
                     src={asset.url}
                     alt="Hero variant"
                     className="aspect-square w-full object-cover"
@@ -778,7 +779,7 @@ function ProjectPreview({
                       style={{ aspectRatio: `${preset.width} / ${preset.height}` }}
                     >
                       {selectedHero?.url ? (
-                        <img
+                        <AssetImage
                           src={selectedHero.url}
                           alt={`${preset.title} preview`}
                           className="absolute inset-0 h-full w-full object-cover"

@@ -17,11 +17,13 @@ import {
 import { useAppStore } from "@/platform/store/useAppStore";
 import { getShowWelcome, setShowWelcome } from "@/platform/lib/settings";
 import { Button } from "@/platform/components/ui/button";
+import { isModuleEnabled } from "@/platform/lib/productConfig";
 import heroArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const modules = [
   {
     key: "music",
+    moduleId: "musicvideo",
     title: "Music Video Director",
     desc: "Songs into cinematic treatments",
     icon: Music,
@@ -29,6 +31,7 @@ const modules = [
   },
   {
     key: "motion",
+    moduleId: "motion",
     title: "Motion Studio",
     desc: "Animation, explainers & product motion",
     icon: Boxes,
@@ -36,6 +39,7 @@ const modules = [
   },
   {
     key: "glam",
+    moduleId: "glam",
     title: "Glam Studio",
     desc: "Luxury campaigns & product imagery",
     icon: WandSparkles,
@@ -43,6 +47,7 @@ const modules = [
   },
   {
     key: "web",
+    moduleId: "web",
     title: "Web Studio",
     desc: "Responsive campaign experiences",
     icon: Globe,
@@ -50,6 +55,7 @@ const modules = [
   },
   {
     key: "campaign",
+    moduleId: "campaign",
     title: "Campaign Studio",
     desc: "Strategy, channels & launch orchestration",
     icon: Megaphone,
@@ -151,7 +157,9 @@ export function WelcomeScreen() {
           </div>
 
           <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
-            {modules.map(({ key, title, desc, icon: Icon, accent }, index) => (
+            {modules
+              .filter((module) => isModuleEnabled(module.moduleId))
+              .map(({ key, title, desc, icon: Icon, accent }, index) => (
               <button
                 key={key}
                 onClick={() => close(destinations[key])}

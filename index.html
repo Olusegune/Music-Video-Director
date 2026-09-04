@@ -14,6 +14,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      // The native window title (Tauri desktop builds) comes from
+      // tauri.conf.json / tauri.mv.conf.json instead — this only covers the
+      // browser tab title for `npm run dev` / a web-exported build.
+      if (import.meta.env.VITE_PRODUCT_EDITION === "musicvideo") {
+        document.title = "Wheelbarrow Music Video Director";
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

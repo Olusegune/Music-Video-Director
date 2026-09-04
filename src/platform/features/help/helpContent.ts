@@ -1,4 +1,5 @@
 import type { View } from "@/platform/store/useAppStore";
+import { PRODUCT_EDITION, isModuleEnabled } from "@/platform/lib/productConfig";
 
 export type HelpSection =
   | "Welcome to Director Studio"
@@ -25,26 +26,36 @@ const updatedAt = "2026-07-08";
 export const HELP_ARTICLES: HelpArticle[] = [
   {
     id: "welcome",
-    title: "Welcome to Director Studio",
+    title: PRODUCT_EDITION === "musicvideo" ? "Welcome to Music Video Director" : "Welcome to Director Studio",
     section: "Welcome to Director Studio",
     relatedViews: ["dashboard"],
     updatedAt,
     keywords: "overview studios productions dashboard",
-    action: { label: "Open Director Studio home", view: "dashboard" },
+    action: { label: "Open Dashboard", view: "dashboard" },
     blocks: [
       {
-        body: "Director Studio brings five specialist creative studios together with shared libraries, production memory, and provider settings.",
+        body:
+          PRODUCT_EDITION === "musicvideo"
+            ? "Music Video Director turns a song into a directed, cast, choreographed production — with shared libraries, production memory, and provider settings underneath."
+            : "Director Studio brings five specialist creative studios together with shared libraries, production memory, and provider settings.",
       },
-      {
-        heading: "Five specialist studios",
-        steps: [
-          "Music Video Director — song-aware treatments, cast, choreography, shots, and timelines.",
-          "Motion Studio — explainers, commercials, product motion, and UI animation.",
-          "Glam Studio — luxury campaigns, product imagery, and film treatments.",
-          "Web Studio — responsive websites with multi-page export and SEO controls.",
-          "Campaign Studio — strategy, channel planning, production handoffs, calendars, and launch kits.",
-        ],
-      },
+      PRODUCT_EDITION === "musicvideo"
+        ? {
+            heading: "What it does",
+            steps: [
+              "Music Video Director — song-aware treatments, cast, choreography, shots, and timelines.",
+            ],
+          }
+        : {
+            heading: "Five specialist studios",
+            steps: [
+              "Music Video Director — song-aware treatments, cast, choreography, shots, and timelines.",
+              "Motion Studio — explainers, commercials, product motion, and UI animation.",
+              "Glam Studio — luxury campaigns, product imagery, and film treatments.",
+              "Web Studio — responsive websites with multi-page export and SEO controls.",
+              "Campaign Studio — strategy, channel planning, production handoffs, calendars, and launch kits.",
+            ],
+          },
     ],
   },
   {
@@ -127,28 +138,36 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     ],
   },
-  ...(["Motion Studio", "Glam Studio", "Web Studio", "Campaign Studio"] as const).map(
-    (title, index): HelpArticle => ({
-      id: `studio-${title.split(" ")[0].toLowerCase()}`,
-      title,
-      section: "The other studios",
-      relatedViews: [["motionstudio", "glamstudio", "webstudio", "campaignstudio"][index] as View],
-      updatedAt,
-      keywords: `${title} workflow export handoff`,
-      action: {
-        label: `Open ${title}`,
-        view: ["motionstudio", "glamstudio", "webstudio", "campaignstudio"][index] as View,
-      },
-      blocks: [
-        {
-          body: `${title} is a specialized creative workspace with its own templates, guided intake, production memory, and exports.`,
-        },
-        {
-          tip: "Campaign Studio can hand a strategy to the specialist studio that will produce the final creative.",
-        },
-      ],
-    })
-  ),
+  // Not shown at all in the Music Video Director edition — that build doesn't
+  // ship these studios, so an article pointing at one would be a dead end.
+  ...(
+    [
+      { title: "Motion Studio", view: "motionstudio", moduleId: "motion" },
+      { title: "Glam Studio", view: "glamstudio", moduleId: "glam" },
+      { title: "Web Studio", view: "webstudio", moduleId: "web" },
+      { title: "Campaign Studio", view: "campaignstudio", moduleId: "campaign" },
+    ] as const
+  )
+    .filter((studio) => isModuleEnabled(studio.moduleId))
+    .map(
+      ({ title, view }): HelpArticle => ({
+        id: `studio-${title.split(" ")[0].toLowerCase()}`,
+        title,
+        section: "The other studios",
+        relatedViews: [view],
+        updatedAt,
+        keywords: `${title} workflow export handoff`,
+        action: { label: `Open ${title}`, view },
+        blocks: [
+          {
+            body: `${title} is a specialized creative workspace with its own templates, guided intake, production memory, and exports.`,
+          },
+          {
+            tip: "Campaign Studio can hand a strategy to the specialist studio that will produce the final creative.",
+          },
+        ],
+      })
+    ),
   {
     id: "shared-creative-dna",
     title: "How studios share your creative DNA",

@@ -3,9 +3,10 @@
  * Reusable generation controls across all studios
  */
 
-import { Sparkles, Copy, ChevronDown } from "lucide-react";
+import { Sparkles, Copy, ChevronDown, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/platform/components/ui/button";
+import { Textarea } from "@/platform/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -27,10 +28,16 @@ interface UniversalGenerationPanelProps {
   title?: string;
   prompt: string;
   promptComposition?: PromptCompositionType;
+  /** When supplied, the composed prompt becomes an editable scene-level
+   * override rather than a read-only diagnostic. */
+  onPromptChange?: (prompt: string) => void;
+  onResetPrompt?: () => void;
   /** Which model list to show — image or video generators. Defaults to
    *  "image" (the panel's original, and still most common, use). */
   kind?: "image" | "video";
   selectedProvider?: ProviderId;
+  selectedModelId?: string;
+  onModelChange?: (modelId: string) => void;
   onProviderChange: (provider: ProviderId) => void;
   generationState: GenerationState;
   onGenerationStateChange: (updates: Partial<GenerationState>) => void;
@@ -50,8 +57,12 @@ export function UniversalGenerationPanel({
   title = "Generation",
   prompt,
   promptComposition,
+  onPromptChange,
+  onResetPrompt,
   kind = "image",
   selectedProvider,
+  selectedModelId,
+  onModelChange,
   onProviderChange,
   generationState,
   onGenerationStateChange,
@@ -66,7 +77,9 @@ export function UniversalGenerationPanel({
   const availableModels = MODEL_REGISTRY.filter((m) => m.kind === kind && m.available);
 
   // Get selected model info
-  const selectedModel = selectedProvider
+  const selectedModel = selectedModelId
+    ? availableModels.find((m) => m.id === selectedModelId)
+    : selectedProvider
     ? availableModels.find((m) => m.providerKey === selectedProvider)
     : availableModels[0];
 
@@ -151,6 +164,7 @@ export function UniversalGenerationPanel({
                     key={model.id}
                     type="button"
                     onClick={() => {
+                      onModelChange?.(model.id);
                       onProviderChange(model.providerKey as ProviderId);
                       setShowModelPicker(false);
                     }}
@@ -182,7 +196,29 @@ export function UniversalGenerationPanel({
         <PromptComposition composition={promptComposition} />
       )}
 
-      {!promptComposition && (
+      {onPromptChange && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Final prompt</CardTitle>
+            <CardDescription>Edit this scene's complete prompt before rendering.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Textarea value={prompt} onChange={(event) => onPromptChange(event.target.value)} rows={7} />
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={copyPrompt} className="flex-1">
+                <Copy className="h-3.5 w-3.5" /> {promptCopied ? "Copied!" : "Copy prompt"}
+              </Button>
+              {onResetPrompt && (
+                <Button size="sm" variant="ghost" onClick={onResetPrompt}>
+                  <RotateCcw className="h-3.5 w-3.5" /> Reset
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!promptComposition && !onPromptChange && (
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Prompt</CardTitle>

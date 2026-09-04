@@ -10,7 +10,10 @@ import { cn } from "@/platform/lib/utils";
  * URLs (http/https), existing data:/blob: URLs, and empty values pass through.
  */
 const cache = new Map<string, string>();
-const PASSTHROUGH = /^(https?:|data:|blob:)/i;
+// Vite's bundled/public assets are root-relative in production. They are not
+// generated local files and must stay browser URLs instead of being sent to
+// Rust's file reader.
+const PASSTHROUGH = /^(https?:|data:|blob:|\/)/i;
 
 export async function resolveAssetSrc(src?: string): Promise<string> {
   if (!src) return "";

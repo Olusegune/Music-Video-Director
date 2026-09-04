@@ -6,7 +6,10 @@
   "description": "Director Studio — local-first AI creative-production studio",
   "scripts": {
     "dev": "vite",
+    "dev:mv": "vite --mode musicvideo",
     "build": "tsc --noEmit && vite build",
+    "build:mv": "tsc --noEmit && vite build --mode musicvideo",
+    "tauri:build:mv": "tauri build --config src-tauri/tauri.mv.conf.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run test",

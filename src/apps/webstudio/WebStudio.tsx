@@ -393,6 +393,10 @@ function BuildStep({ state }: GuidedFlowStepComponentProps<WebFlowState>) {
   );
 }
 
+function webUid(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `web-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+}
+
 function createProject(state: WebFlowState): WebProject {
   const positioning = positioningFor(state);
   const brand =
@@ -416,7 +420,7 @@ function createProject(state: WebFlowState): WebProject {
       : section
   );
   const project = saveWebProject({
-    id: crypto.randomUUID(),
+    id: webUid(),
     name: state.projectName || `${state.businessName} Website`,
     businessName: state.businessName,
     businessDescription: state.businessDescription,
@@ -428,7 +432,7 @@ function createProject(state: WebFlowState): WebProject {
     sections,
     pages: [
       {
-        id: crypto.randomUUID(),
+        id: webUid(),
         title: "Home",
         slug: "index",
         description: positioning.promise,

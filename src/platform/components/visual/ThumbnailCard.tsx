@@ -3,6 +3,7 @@ import { ImageIcon } from "lucide-react";
 import { Badge } from "@/platform/components/ui/badge";
 import { cn } from "@/platform/lib/utils";
 import { VISUAL_MODULE_THEME, type VisualModule } from "@/platform/components/visual/visualTheme";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 
 export interface ThumbnailCardProps {
   title: string;
@@ -37,7 +38,7 @@ export function ThumbnailCard({
         )}
       >
         {thumbUrl ? (
-          <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+          <AssetImage src={thumbUrl} alt="" className="h-full w-full object-cover" />
         ) : (
           <span className="creative-grid absolute inset-0 flex items-center justify-center">
             <span

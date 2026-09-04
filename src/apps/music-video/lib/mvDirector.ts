@@ -530,3 +530,13 @@ export function deleteTreatment(songId: string, templateId?: string | null): voi
     JSON.stringify(loadAll().filter((t) => !sameSlot(t, songId, templateId)))
   );
 }
+
+/**
+ * Cascade delete: a song can have one treatment per template it was ever
+ * directed with. Deleting the song must clear all of them, not just the
+ * (song, "none") slot — otherwise every non-default template's treatment
+ * survives as an orphan with no song to belong to.
+ */
+export function deleteTreatmentsForSong(songId: string): void {
+  localStorage.setItem(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
+}

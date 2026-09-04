@@ -10,8 +10,6 @@ import type { GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
 import type { GlamFlowState } from "@/apps/glam-studio/lib/glamStore";
 import { REALISM_PRESETS } from "@/apps/glam-studio/lib/realismPresets";
 import { INSPIRATION_PRESETS } from "@/apps/glam-studio/lib/inspirationPresets";
-import { getPresetImageUrl } from "@/apps/glam-studio/lib/presetImages";
-import { PresetImageDisplay } from "@/apps/glam-studio/features/PresetImageDisplay";
 
 export function RealismInspirationStep({
   state,
@@ -69,7 +67,6 @@ export function RealismInspirationStep({
                     active ? "border-primary bg-primary/10" : "border-border bg-surface"
                   )}
                 >
-                  <PresetImageDisplay imageUrl={getPresetImageUrl(preset.id)} label={preset.label} className="h-32 w-full" />
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="font-semibold">{preset.label}</span>
                     <Badge className="normal-case">{preset.group}</Badge>
@@ -113,7 +110,6 @@ export function RealismInspirationStep({
                   : "border-border bg-surface"
               )}
             >
-              <PresetImageDisplay imageUrl={getPresetImageUrl(preset.id)} label={preset.name} className="h-32 w-full" />
               <div className="mt-3 flex items-center justify-between gap-2">
                 <span className="font-semibold">{preset.name}</span>
                 <Badge className="normal-case">{preset.group}</Badge>

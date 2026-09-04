@@ -29,6 +29,8 @@ import { loadAllTreatments } from "@/apps/music-video/lib/mvDirector";
 import { allTemplates } from "@/platform/lib/templates";
 import { Input } from "@/platform/components/ui/input";
 import { cn } from "@/platform/lib/utils";
+import { isModuleEnabled } from "@/platform/lib/productConfig";
+import type { ConcreteModuleId } from "@/platform/lib/moduleManifest";
 
 interface Hit {
   type: string;
@@ -94,13 +96,14 @@ export function GlobalSearch() {
   const index = useMemo<Hit[]>(() => {
     if (!open) return [];
     const hits: Hit[] = [];
-    hits.push(
+    const studioHits: (Hit & { moduleId?: ConcreteModuleId })[] = [
       {
         type: "Studio",
         icon: <Music className="h-4 w-4" />,
         label: "Music Video Director",
         sub: "Direct a complete music video",
         go: openSong,
+        moduleId: "musicvideo",
       },
       {
         type: "Studio",
@@ -108,6 +111,7 @@ export function GlobalSearch() {
         label: "Motion Studio",
         sub: "Motion concepts and production prompts",
         go: openMotionStudio,
+        moduleId: "motion",
       },
       {
         type: "Studio",
@@ -115,6 +119,7 @@ export function GlobalSearch() {
         label: "Glam Studio",
         sub: "Luxury campaign looks and hero assets",
         go: openGlamStudio,
+        moduleId: "glam",
       },
       {
         type: "Studio",
@@ -122,6 +127,7 @@ export function GlobalSearch() {
         label: "Web Studio",
         sub: "Responsive campaign sites",
         go: openWebStudio,
+        moduleId: "web",
       },
       {
         type: "Studio",
@@ -129,8 +135,10 @@ export function GlobalSearch() {
         label: "Campaign Studio",
         sub: "Cross-channel launch orchestration",
         go: openCampaignStudio,
-      }
-    );
+        moduleId: "campaign",
+      },
+    ];
+    hits.push(...studioHits.filter((hit) => !hit.moduleId || isModuleEnabled(hit.moduleId)));
     hits.push(
       {
         type: "Music Video",

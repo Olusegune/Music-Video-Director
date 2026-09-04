@@ -1,13 +1,13 @@
 import type { CreativeDirection, Typography } from "./types";
-import aeExplainerImage from "@/assets/motion-templates/ae-explainer.png";
-import c4dCommercialImage from "@/assets/motion-templates/c4d-commercial.png";
-import kineticTypographyImage from "@/assets/motion-templates/kinetic-typography.png";
-import mixedMediaAnimationImage from "@/assets/motion-templates/mixed-media-animation.png";
-import productLaunchImage from "@/assets/motion-templates/product-launch.png";
-import productRevealImage from "@/assets/motion-templates/product-reveal.png";
-import saasExplainerImage from "@/assets/motion-templates/saas-explainer.png";
-import socialAdImage from "@/assets/motion-templates/social-ad.png";
-import uiAnimationImage from "@/assets/motion-templates/ui-animation.png";
+import aeExplainerImage from "@/assets/motion-templates/ae-explainer.jpg";
+import c4dCommercialImage from "@/assets/motion-templates/c4d-commercial.jpg";
+import kineticTypographyImage from "@/assets/motion-templates/kinetic-typography.jpg";
+import mixedMediaAnimationImage from "@/assets/motion-templates/mixed-media-animation.jpg";
+import productLaunchImage from "@/assets/motion-templates/product-launch.jpg";
+import productRevealImage from "@/assets/motion-templates/product-reveal.jpg";
+import saasExplainerImage from "@/assets/motion-templates/saas-explainer.jpg";
+import socialAdImage from "@/assets/motion-templates/social-ad.jpg";
+import uiAnimationImage from "@/assets/motion-templates/ui-animation.jpg";
 
 export interface ProductionType {
   id: string;

@@ -5,9 +5,21 @@
 // AI generators are allowed to treat it. The composed instruction is injected
 // into every image and video prompt so models keep on-screen words sharp,
 // correctly spelled, and behaving exactly as the director intends.
+//
+// NOTE: this used to re-export from the separate "@wheelbarrow/forge-engine"
+// package (`file:../Wheelbarrow Forge Engine/packages/ts-engine`), a planned
+// split so Storymaker could share this module too. That sibling repo isn't
+// present on this machine, which broke every dev build. Restored inline from
+// a pre-split backup until the Forge Engine repo actually exists here and the
+// split can be redone for real.
 
 export type TextLockState =
-  "locked" | "animated" | "optional" | "final-frame" | "hidden-motion" | "visible-final";
+  | "locked"
+  | "animated"
+  | "optional"
+  | "final-frame"
+  | "hidden-motion"
+  | "visible-final";
 
 export interface TextLockItem {
   id: string;
@@ -87,7 +99,9 @@ export function lockInstructionFor(items: TextLockItem[]): string {
     );
   }
 
-  const finalOnly = clean.filter((i) => i.state === "final-frame" || i.state === "visible-final");
+  const finalOnly = clean.filter(
+    (i) => i.state === "final-frame" || i.state === "visible-final"
+  );
   if (finalOnly.length) {
     lines.push(
       `Show only on the final still frame (absent during motion): ${finalOnly
@@ -98,7 +112,11 @@ export function lockInstructionFor(items: TextLockItem[]): string {
 
   const hidden = clean.filter((i) => i.state === "hidden-motion");
   if (hidden.length) {
-    lines.push(`Keep hidden while motion plays: ${hidden.map((i) => `"${i.text}"`).join(", ")}.`);
+    lines.push(
+      `Keep hidden while motion plays: ${hidden
+        .map((i) => `"${i.text}"`)
+        .join(", ")}.`
+    );
   }
 
   const animated = clean.filter((i) => i.state === "animated");

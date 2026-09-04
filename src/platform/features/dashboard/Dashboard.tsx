@@ -37,6 +37,7 @@ import { recentProjects, type HubModuleId, type HubProject } from "@/platform/li
 import { umbrellaFor } from "@/platform/lib/directorProject";
 import { importBundle, parseBundle } from "@/platform/lib/projectBundle";
 import { notifyStorage } from "@/platform/lib/storage";
+import { isModuleEnabled } from "@/platform/lib/productConfig";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -220,39 +221,47 @@ export function Dashboard() {
               tone="violet"
               onClick={openSong}
             />
-            <StudioCard
-              icon={<Boxes className="h-5 w-5" />}
-              title="Motion Studio"
-              desc="Build motion concepts, shots, and production prompts."
-              capability="Boards · Motion · Audio"
-              tone="cyan"
-              onClick={openMotionStudio}
-            />
-            <StudioCard
-              icon={<WandSparkles className="h-5 w-5" />}
-              title="Glam Studio"
-              desc="Create luxury campaign looks and product films."
-              capability="Looks · Heroes · Formats"
-              tone="gold"
-              onClick={openGlamStudio}
-            />
-            <StudioCard
-              icon={<Globe className="h-5 w-5" />}
-              title="Web Studio"
-              desc="Design and export a responsive campaign site."
-              capability="Pages · Preview · SEO"
-              tone="green"
-              onClick={openWebStudio}
-            />
-            <StudioCard
-              icon={<Megaphone className="h-5 w-5" />}
-              title="Campaign Studio"
-              desc="Orchestrate every channel through launch."
-              capability="Strategy · Plan · Calendar"
-              tone="pink"
-              onClick={openCampaignStudio}
-              featured
-            />
+            {isModuleEnabled("motion") && (
+              <StudioCard
+                icon={<Boxes className="h-5 w-5" />}
+                title="Motion Studio"
+                desc="Build motion concepts, shots, and production prompts."
+                capability="Boards · Motion · Audio"
+                tone="cyan"
+                onClick={openMotionStudio}
+              />
+            )}
+            {isModuleEnabled("glam") && (
+              <StudioCard
+                icon={<WandSparkles className="h-5 w-5" />}
+                title="Glam Studio"
+                desc="Create luxury campaign looks and product films."
+                capability="Looks · Heroes · Formats"
+                tone="gold"
+                onClick={openGlamStudio}
+              />
+            )}
+            {isModuleEnabled("web") && (
+              <StudioCard
+                icon={<Globe className="h-5 w-5" />}
+                title="Web Studio"
+                desc="Design and export a responsive campaign site."
+                capability="Pages · Preview · SEO"
+                tone="green"
+                onClick={openWebStudio}
+              />
+            )}
+            {isModuleEnabled("campaign") && (
+              <StudioCard
+                icon={<Megaphone className="h-5 w-5" />}
+                title="Campaign Studio"
+                desc="Orchestrate every channel through launch."
+                capability="Strategy · Plan · Calendar"
+                tone="pink"
+                onClick={openCampaignStudio}
+                featured
+              />
+            )}
           </div>
         </section>
 

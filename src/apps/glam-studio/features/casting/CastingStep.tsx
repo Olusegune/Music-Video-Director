@@ -14,8 +14,6 @@ import {
   ACCESSORY_PRESETS,
   type CastingOption,
 } from "@/apps/glam-studio/lib/castingPresets";
-import { getPresetImageUrl } from "@/apps/glam-studio/lib/presetImages";
-import { PresetImageDisplay } from "@/apps/glam-studio/features/PresetImageDisplay";
 
 type CastingKey =
   | "castingAgeId"
@@ -58,7 +56,9 @@ function CastingRow({
             )}
             title={opt.label}
           >
-            <PresetImageDisplay imageUrl={getPresetImageUrl(opt.id)} label={opt.label} className="h-16 w-full" />
+            <span className="flex h-16 items-center justify-center rounded-md bg-elevated/60 px-2 text-center text-xs font-medium text-foreground">
+              {opt.label}
+            </span>
           </button>
         ))}
       </div>

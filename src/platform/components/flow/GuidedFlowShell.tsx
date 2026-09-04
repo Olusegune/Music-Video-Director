@@ -41,6 +41,7 @@ export function GuidedFlowShell<TState>({
 }: GuidedFlowShellProps<TState>) {
   const mode = useAppStore((state) => state.studioMode);
   const [error, setError] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
   const [session, setSession] = useState<GuidedFlowSession<TState>>(() => {
     const existing = sessionId ? getGuidedFlowSession<TState>(sessionId) : null;
     return existing ?? createGuidedFlowSession(definition, { projectId });
@@ -64,8 +65,16 @@ export function GuidedFlowShell<TState>({
   }
 
   async function complete(currentSession: GuidedFlowSession<TState>) {
-    await definition.onComplete?.(currentSession.state, currentSession);
-    onComplete?.(currentSession);
+    setCompleting(true);
+    setError(null);
+    try {
+      await definition.onComplete?.(currentSession.state, currentSession);
+      onComplete?.(currentSession);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not complete this flow. Your draft is still available.");
+    } finally {
+      setCompleting(false);
+    }
   }
 
   async function goNext() {
@@ -193,9 +202,9 @@ export function GuidedFlowShell<TState>({
                 </Button>
                 <Button
                   onClick={() => void goNext()}
-                  disabled={validation !== true && !step?.skippable}
+                  disabled={completing || (validation !== true && !step?.skippable)}
                 >
-                  {session.stepIndex >= definition.steps.length - 1 ? "Approve" : "Continue"}
+                  {completing ? "Creating…" : session.stepIndex >= definition.steps.length - 1 ? "Approve & open studio" : "Continue"}
                   <ChevronRight />
                 </Button>
               </div>

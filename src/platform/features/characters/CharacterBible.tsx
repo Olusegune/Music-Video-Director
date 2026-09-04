@@ -53,6 +53,7 @@ import {
   type GenerateOpts,
 } from "@/platform/components/generation/GenerationPanel";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
+import { CharacterSheetView } from "@/platform/features/characters/CharacterSheetView";
 import { AssetImage } from "@/platform/components/ui/asset-image";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
@@ -77,6 +78,7 @@ export function CharacterBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [turnaroundId, setTurnaroundId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
@@ -113,6 +115,7 @@ export function CharacterBible() {
     });
 
   const sheetChar = characters.find((c) => c.id === sheetId) ?? null;
+  const turnaroundChar = characters.find((c) => c.id === turnaroundId) ?? null;
   const cardChar = characters.find((c) => c.id === cardId) ?? null;
   const profileChar = characters.find((c) => c.id === profileId) ?? null;
   const selected = characters.find((c) => c.id === selectedId) ?? null;
@@ -180,6 +183,16 @@ export function CharacterBible() {
     );
   }
 
+  if (turnaroundChar) {
+    return (
+      <CharacterSheetView
+        key={turnaroundChar.id}
+        character={turnaroundChar}
+        onBack={() => setTurnaroundId(null)}
+      />
+    );
+  }
+
   if (selected) {
     return (
       <CharacterSheet
@@ -187,6 +200,7 @@ export function CharacterBible() {
         character={selected}
         onBack={() => setSelectedId(null)}
         onOpenSheet={() => setSheetId(selected.id)}
+        onOpenTurnaround={() => setTurnaroundId(selected.id)}
       />
     );
   }
@@ -258,6 +272,7 @@ export function CharacterBible() {
                   if (confirm(`Delete "${c.name}" from Character Designer?`))
                     removeChar.mutate(c.id);
                 }}
+                onOpenTurnaround={() => setTurnaroundId(c.id)}
               />
             ))}
           </div>
@@ -374,10 +389,12 @@ function CastCard({
   character,
   onClick,
   onDelete,
+  onOpenTurnaround,
 }: {
   character: Character;
   onClick: () => void;
   onDelete: () => void;
+  onOpenTurnaround: () => void;
 }) {
   const subtitle =
     [character.role, character.occupation].filter(Boolean).join(" · ") || "Undefined role";
@@ -417,6 +434,17 @@ function CastCard({
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenTurnaround();
+          }}
+          title="Turnaround Sheet"
+          aria-label="Open turnaround sheet"
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/90 opacity-0 transition-opacity hover:bg-primary group-hover:opacity-100"
+        >
+          <Images className="h-3.5 w-3.5" />
+        </button>
       </div>
       <div className="p-3">
         <div className="truncate text-sm font-semibold">{character.name}</div>
@@ -432,10 +460,12 @@ function CharacterSheet({
   character,
   onBack,
   onOpenSheet,
+  onOpenTurnaround,
 }: {
   character: Character;
   onBack: () => void;
   onOpenSheet: () => void;
+  onOpenTurnaround: () => void;
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Character>(character);
@@ -706,6 +736,9 @@ function CharacterSheet({
           />
           <Button onClick={onOpenSheet}>
             <LayoutGrid className="h-4 w-4" /> Character Sheet
+          </Button>
+          <Button variant="secondary" onClick={onOpenTurnaround}>
+            <Images className="h-4 w-4" /> Turnaround Sheet
           </Button>
           <Button
             variant="ghost"

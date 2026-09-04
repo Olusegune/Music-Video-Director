@@ -49,6 +49,13 @@ export interface MotionScene {
   motionStylePresetIds?: string[];
   choreographyPatternPresetId?: string;
   referenceAssetIds?: string[];
+  /** First-class render outputs, kept with the scene so Motion Studio is a
+   * complete image-to-video workspace rather than a planning-only surface. */
+  imageUrl?: string;
+  videoUrl?: string;
+  referenceImages?: string[];
+  imageModelId?: string;
+  videoModelId?: string;
 }
 
 export interface MotionProject {

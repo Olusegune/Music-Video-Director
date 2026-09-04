@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Palette, Plus, Trash2, X } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
 import { listDeliverables } from "@/platform/lib/deliverables";
+import { isModuleEnabled } from "@/platform/lib/productConfig";
 import type { BrandKit } from "@/platform/lib/types";
 import { Button } from "@/platform/components/ui/button";
 import { Label } from "@/platform/components/ui/label";
@@ -68,13 +69,15 @@ function BrandKitCard({ kit }: { kit: BrandKit }) {
   const [saved, setSaved] = useState(false);
   const deliverables = listDeliverables();
   const usage = [
-    { label: "Glam", ids: ["glam-studio"] },
-    { label: "Web", ids: ["webstudio"] },
-    { label: "Campaign", ids: ["campaignstudio"] },
-  ].map((item) => ({
-    ...item,
-    count: deliverables.filter((deliverable) => item.ids.includes(deliverable.moduleId)).length,
-  }));
+    { label: "Glam", ids: ["glam-studio"], moduleId: "glam" as const },
+    { label: "Web", ids: ["webstudio"], moduleId: "web" as const },
+    { label: "Campaign", ids: ["campaignstudio"], moduleId: "campaign" as const },
+  ]
+    .filter((item) => isModuleEnabled(item.moduleId))
+    .map((item) => ({
+      ...item,
+      count: deliverables.filter((deliverable) => item.ids.includes(deliverable.moduleId)).length,
+    }));
   const save = useMutation({
     mutationFn: () => api.saveBrandKit(draft),
     onSuccess: () => {

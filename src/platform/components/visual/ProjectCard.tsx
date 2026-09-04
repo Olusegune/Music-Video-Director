@@ -3,6 +3,7 @@ import { ArrowRight, Clock3 } from "lucide-react";
 import { Badge } from "@/platform/components/ui/badge";
 import { cn } from "@/platform/lib/utils";
 import { VISUAL_MODULE_THEME, type VisualModule } from "@/platform/components/visual/visualTheme";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 
 export interface ProjectCardProps {
   title: string;
@@ -59,7 +60,7 @@ export function ProjectCard({
           )}
         >
           {thumbUrl ? (
-            <img
+            <AssetImage
               src={thumbUrl}
               alt={`${title} thumbnail`}
               className="h-full w-full object-cover transition duration-200 ease-out group-hover:scale-[1.02]"

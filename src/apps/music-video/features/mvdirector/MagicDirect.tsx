@@ -8,12 +8,13 @@
 // Director UI. Director Mode is reached only via that screen's own button.
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Check, Loader2 } from "lucide-react";
+import { Sparkles, Check, Loader2, RefreshCw, X } from "lucide-react";
+import { Button } from "@/platform/components/ui/button";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { loadSongs } from "@/apps/music-video/lib/songBrain";
 import { directSong, saveTreatment } from "@/apps/music-video/lib/mvDirector";
 import { getTemplate } from "@/platform/lib/templates";
-import { loadCast, savePerformer, autoCastFromSong } from "@/apps/music-video/lib/cast";
+import { loadCastForSong, savePerformer, autoCastFromSong } from "@/apps/music-video/lib/cast";
 import { choreographSong, saveChoreo, getChoreo } from "@/apps/music-video/lib/choreography";
 import { applyVideoTypeBias } from "@/apps/music-video/lib/videoTypes";
 
@@ -31,8 +32,10 @@ export function MagicDirect() {
 
   const [stepIndex, setStepIndex] = useState(0);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [retryKey, setRetryKey] = useState(0);
   const running = useRef(false);
-  const steps = useRef<Step[]>([]);
 
   useEffect(() => {
     if (!magicSongId || running.current) return;
@@ -44,12 +47,13 @@ export function MagicDirect() {
     running.current = true;
     setDone(false);
     setStepIndex(0);
+    setError(null);
 
     const template = applyVideoTypeBias(
       getTemplate(song.templateId ?? activeTemplateId),
       song.videoType
     );
-    steps.current = [
+    const nextSteps: Step[] = [
       {
         label: "Reading the song — tempo, sections & lyrics",
         run: () => {},
@@ -57,8 +61,12 @@ export function MagicDirect() {
       {
         label: "Assigning performers to the cast",
         run: () => {
-          if (loadCast().length === 0) {
-            for (const p of autoCastFromSong(song)) savePerformer(p);
+          // Scoped to this song, not the whole app's cast — otherwise Magic
+          // Mode only auto-casts the very first song you ever direct, and
+          // every song after that silently gets an empty cast because some
+          // unrelated song already has performers.
+          if (loadCastForSong(song.id).length === 0) {
+            for (const p of autoCastFromSong(song, song.id)) savePerformer(p);
           }
         },
       },
@@ -77,10 +85,11 @@ export function MagicDirect() {
         run: () => {},
       },
     ];
+    setSteps(nextSteps);
 
     let i = 0;
     const tick = () => {
-      if (i >= steps.current.length) {
+      if (i >= nextSteps.length) {
         setDone(true);
         // Land on the friendly Magic Output Screen — never the full Director UI.
         setTimeout(() => {
@@ -95,18 +104,21 @@ export function MagicDirect() {
       }
       setStepIndex(i);
       try {
-        steps.current[i].run();
-      } catch {
+        nextSteps[i].run();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Directing could not complete.");
+        running.current = false;
+        return;
         /* step failed — keep going so the user still gets a partial treatment */
       }
       i += 1;
       setTimeout(tick, 620);
     };
     setTimeout(tick, 350);
-  }, [magicSongId, activeTemplateId, openMagicOutput, setActiveSong, setMagicSongId]);
+  }, [magicSongId, activeTemplateId, openMagicOutput, setActiveSong, setMagicSongId, retryKey]);
 
   if (!magicSongId) return null;
-  const all = steps.current;
+  const all = steps;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/85 p-6 backdrop-blur">
@@ -156,6 +168,19 @@ export function MagicDirect() {
               }}
             />
           </div>
+          {error ? (
+            <div className="mt-4 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              <p>{error}</p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={() => setRetryKey((key) => key + 1)}>
+                  <RefreshCw className="h-3.5 w-3.5" /> Retry
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setMagicSongId(null)}>
+                  <X className="h-3.5 w-3.5" /> Close
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -36,6 +36,8 @@ import {
 } from "@/platform/lib/propDna";
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
+import { SheetStudio } from "@/platform/features/sheets/SheetStudio";
+import { propSheetSections, PROP_PROMPT_TAIL } from "@/platform/lib/assetSheet";
 import { AssetImage } from "@/platform/components/ui/asset-image";
 import {
   GradientFill,
@@ -139,6 +141,7 @@ export function PropBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [coverageId, setCoverageId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("All");
@@ -257,6 +260,40 @@ export function PropBible() {
       />
     );
 
+  const coverageProp = props.find((p) => p.id === coverageId) ?? null;
+  if (coverageProp) {
+    const dna = coverageProp.promptDna.trim() || composePropDna(coverageProp).promptDna;
+    return (
+      <SheetStudio
+        key={coverageProp.id}
+        kind="prop"
+        id={coverageProp.id}
+        name={coverageProp.name}
+        title={`${coverageProp.name} — Turnaround Sheet`}
+        mediaSrc={coverageProp.heroUrl ?? ""}
+        sections={propSheetSections(coverageProp)}
+        promptTail={PROP_PROMPT_TAIL}
+        composeDna={() => dna}
+        generate={(id, prompt) =>
+          api.generateImageFromSpec({
+            capability: "image",
+            prompt,
+            aspect: "3:4",
+            moduleId: "musicvideo",
+            projectRef: { moduleId: "musicvideo", entityId: id },
+          })
+        }
+        profile={[
+          { label: "Materials", value: coverageProp.materials ?? "" },
+          { label: "Condition", value: coverageProp.condition ?? "" },
+        ]}
+        palette={(coverageProp.colorPalette ?? []).map((hex) => ({ hex }))}
+        locked={coverageProp.locked}
+        onBack={() => setCoverageId(null)}
+      />
+    );
+  }
+
   const selected = props.find((p) => p.id === selectedId) ?? null;
   if (selected)
     return (
@@ -265,6 +302,7 @@ export function PropBible() {
         prop={selected}
         onBack={() => setSelectedId(null)}
         onOpenSheet={() => setSheetId(selected.id)}
+        onOpenCoverage={() => setCoverageId(selected.id)}
       />
     );
 
@@ -316,6 +354,7 @@ export function PropBible() {
                 key={p.id}
                 prop={p}
                 onClick={() => setSelectedId(p.id)}
+                onOpenCoverage={() => setCoverageId(p.id)}
                 onDelete={() => {
                   if (confirm(`Delete "${p.name}" from Props & Vehicles?`)) removeProp.mutate(p.id);
                 }}
@@ -332,10 +371,12 @@ function PropCard({
   prop,
   onClick,
   onDelete,
+  onOpenCoverage,
 }: {
   prop: Prop;
   onClick: () => void;
   onDelete: () => void;
+  onOpenCoverage: () => void;
 }) {
   return (
     <div
@@ -378,6 +419,17 @@ function PropCard({
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenCoverage();
+          }}
+          title="Turnaround Sheet"
+          aria-label="Open turnaround sheet"
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/90 opacity-0 transition-opacity hover:bg-primary group-hover:opacity-100"
+        >
+          <Images className="h-3.5 w-3.5" />
+        </button>
       </div>
       <div className="p-3">
         <div className="truncate text-sm font-semibold">{prop.name}</div>
@@ -393,10 +445,12 @@ function PropSheet({
   prop,
   onBack,
   onOpenSheet,
+  onOpenCoverage,
 }: {
   prop: Prop;
   onBack: () => void;
   onOpenSheet: () => void;
+  onOpenCoverage: () => void;
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Prop>(prop);
@@ -624,6 +678,9 @@ function PropSheet({
           />
           <Button onClick={onOpenSheet}>
             <LayoutGrid className="h-4 w-4" /> Prop Sheet
+          </Button>
+          <Button variant="secondary" onClick={onOpenCoverage}>
+            <Images className="h-4 w-4" /> Turnaround Sheet
           </Button>
           <Button
             variant="ghost"

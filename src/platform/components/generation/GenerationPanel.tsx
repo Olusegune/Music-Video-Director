@@ -643,7 +643,16 @@ export function GenerationPanel({
               {READY_META[activeReadiness].label}
             </span>
             {(activeReadiness === "no-key" || activeReadiness === "invalid") && (
-              <span className="text-muted"> — add/fix the key in API Keys</span>
+              <>
+                {" — "}
+                <button
+                  type="button"
+                  onClick={() => useAppStore.getState().openApiKeys()}
+                  className="text-muted underline decoration-dotted hover:text-foreground"
+                >
+                  add/fix the key in API Keys
+                </button>
+              </>
             )}
           </p>
           {!isManual && caps.size > 0 && (

@@ -16,6 +16,7 @@ import {
 import { findPreset } from "@/platform/lib/styles";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
+import { AssetImage } from "@/platform/components/ui/asset-image";
 
 function hueFor(id: string): number {
   let h = 0;
@@ -172,7 +173,7 @@ export function CharacterSheetView({
               <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-elevated">
                 <div className="aspect-[4/5] w-full">
                   {character.portraitUrl ? (
-                    <img
+                    <AssetImage
                       src={character.portraitUrl}
                       alt={character.name}
                       className="h-full w-full object-cover"
@@ -328,7 +329,7 @@ function PanelCell({
         )}
       >
         {url ? (
-          <img src={url} alt={cell.label} className="h-full w-full object-cover" />
+          <AssetImage src={url} alt={cell.label} className="h-full w-full object-cover" />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"

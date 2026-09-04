@@ -125,7 +125,7 @@ function SongImportStep({ state, patch }: GuidedFlowStepComponentProps<MusicVide
         songId: song.id,
         songName: song.name,
         songSummary: summarizeSong(song),
-        cast: autoCastFromSong(song),
+        cast: autoCastFromSong(song, song.id),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not analyze that song.");
@@ -309,6 +309,44 @@ function CastStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowS
   );
 }
 
+// Golden-path merge: song import, lyrics, and cast used to be three separate
+// steps a user had to click "Continue" through even though lyrics/cast only
+// exist once a song does. One screen instead: drop the file, and both lyrics
+// and the auto-cast roster appear live underneath, already editable — nothing
+// hidden behind an extra click, nothing lost (each piece is still the exact
+// same component, just composed together).
+function SongCastStep(props: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+  const { state } = props;
+  return (
+    <div className="space-y-6">
+      <SongImportStep {...props} />
+      {state.songId ? (
+        <>
+          <div className="space-y-3 border-t border-border pt-5">
+            <div>
+              <h3 className="text-sm font-semibold">Lyrics / script</h3>
+              <p className="text-xs text-muted">
+                Optional — source text for story, hooks, and section staging. Skip for a
+                performance-only plan.
+              </p>
+            </div>
+            <LyricsStep {...props} />
+          </div>
+          <div className="space-y-3 border-t border-border pt-5">
+            <div>
+              <h3 className="text-sm font-semibold">Performers</h3>
+              <p className="text-xs text-muted">
+                Auto-cast from the song — confirm names, roles, and vibe, or add more.
+              </p>
+            </div>
+            <CastStep {...props} />
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function VideoTypeStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   return (
     <PickCardStep
@@ -438,29 +476,12 @@ export function MusicVideoGuidedFlow() {
       steps: [
         {
           id: "song",
-          title: "Import Song",
-          subtitle: "Analyze tempo, sections, waveform, and energy locally.",
-          component: SongImportStep,
+          title: "Song, Lyrics & Cast",
+          subtitle: "Import a track — lyrics and the cast roster populate live, both editable.",
+          component: SongCastStep,
           validate: (state) => Boolean(state.songId) || "Import a song first.",
-          technicalComponent: CreatorControls,
-        },
-        {
-          id: "lyrics",
-          title: "Lyrics / Script",
-          subtitle: "Optional source text for story, hooks, and section staging.",
-          component: LyricsStep,
           advancedComponent: CreativeControls,
           technicalComponent: CreatorControls,
-          skippable: true,
-        },
-        {
-          id: "performers",
-          title: "Performers",
-          subtitle: "Confirm or edit the auto-cast roster.",
-          component: CastStep,
-          advancedComponent: CreativeControls,
-          technicalComponent: CreatorControls,
-          skippable: true,
         },
         {
           id: "video-type",

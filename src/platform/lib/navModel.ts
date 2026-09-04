@@ -1,4 +1,8 @@
 import type { View } from "@/platform/store/useAppStore";
+// Value import of the manifest list (not just types) so the studio doors
+// below are derived, not duplicated — moduleManifest.ts only imports *types*
+// from this file, so this stays a type-level cycle only, not a runtime one.
+import { listModuleManifests, type ConcreteModuleId } from "@/platform/lib/moduleManifest";
 
 export type ModuleId = "musicvideo" | "motion" | "glam" | "web" | "campaign" | null;
 
@@ -72,38 +76,39 @@ export interface NavSectionModel {
   items: NavItemModel[];
 }
 
-// The Director Studio section mirrors the module manifests (MODULE_MANIFESTS):
-// id / label / view / icon / tone per studio door, in the same order. The
-// navModel test enforces that parity, so the manifest stays the source of truth
-// without a runtime import cycle (moduleManifest imports nav *types*). A new
-// module therefore needs a manifest entry plus a door here.
+// Music Video is the only studio with its own workflow sub-doors today; a new
+// module can add an entry here once it has one.
+const STUDIO_SUB_ITEMS: Partial<Record<ConcreteModuleId, NavItemModel[]>> = {
+  musicvideo: [
+    { id: "song", label: "Song Studio", view: "song", icon: "music" },
+    { id: "direct", label: "Direct", view: "mvdirector", icon: "video" },
+    { id: "templates", label: "Templates", view: "templates", icon: "templates" },
+    { id: "cast", label: "Cast", view: "cast", icon: "users" },
+    { id: "choreography", label: "Choreography", view: "choreography", icon: "footprints" },
+    { id: "timeline", label: "Timeline", view: "timeline", icon: "list" },
+    { id: "animation", label: "Animation Lab", view: "animation", icon: "clapperboard" },
+  ],
+};
+
+// The Director Studio section mirrors listModuleManifests() — one door per
+// enabled studio, in manifest order, filtered to this build's product edition
+// (productConfig.ts). The navModel test enforces id/label/view parity against
+// the full manifest list, so the manifest stays the single source of truth. A
+// new module needs a manifest entry (and, if it has sub-workflows, an entry in
+// STUDIO_SUB_ITEMS above) — nothing else here.
 export const NAV_MODEL: NavSectionModel[] = [
   {
     id: "studios",
     label: "Director Studio",
-    items: [
-      {
-        id: "musicvideo",
-        label: "Music Video Director",
-        view: "song",
-        icon: "music",
-        moduleId: "musicvideo",
-        tone: "violet",
-        subItems: [
-          { id: "song", label: "Song Studio", view: "song", icon: "music" },
-          { id: "direct", label: "Direct", view: "mvdirector", icon: "video" },
-          { id: "templates", label: "Templates", view: "templates", icon: "templates" },
-          { id: "cast", label: "Cast", view: "cast", icon: "users" },
-          { id: "choreography", label: "Choreography", view: "choreography", icon: "footprints" },
-          { id: "timeline", label: "Timeline", view: "timeline", icon: "list" },
-          { id: "animation", label: "Animation Lab", view: "animation", icon: "clapperboard" },
-        ],
-      },
-      { id: "motion", label: "Motion Studio", view: "motionstudio", icon: "motion", moduleId: "motion", tone: "cyan" },
-      { id: "glam", label: "Glam Studio", view: "glamstudio", icon: "sparkles", moduleId: "glam", tone: "gold" },
-      { id: "web", label: "Web Studio", view: "webstudio", icon: "globe", moduleId: "web", tone: "green" },
-      { id: "campaign", label: "Campaign Studio", view: "campaignstudio", icon: "megaphone", moduleId: "campaign", tone: "pink" },
-    ],
+    items: listModuleManifests().map((manifest) => ({
+      id: manifest.id,
+      label: manifest.label,
+      view: manifest.homeView,
+      icon: manifest.icon,
+      moduleId: manifest.id,
+      tone: manifest.tone,
+      subItems: STUDIO_SUB_ITEMS[manifest.id],
+    })),
   },
   {
     id: "library",

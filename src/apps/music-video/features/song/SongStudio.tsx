@@ -18,6 +18,9 @@ import {
 } from "@/apps/music-video/lib/songBrain";
 import { api, isTauri } from "@/platform/lib/ipc";
 import { OnboardingChecklist } from "@/apps/music-video/features/onboarding/OnboardingChecklist";
+import { deleteTreatmentsForSong } from "@/apps/music-video/lib/mvDirector";
+import { deleteChoreo } from "@/apps/music-video/lib/choreography";
+import { deletePerformersForSong } from "@/apps/music-video/lib/cast";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
@@ -148,6 +151,14 @@ export function SongStudio() {
     const s = loadSongs().find((x) => x.id === id);
     if (!confirm(`Delete "${s?.name ?? "this song"}"? This can't be undone.`)) return;
     deleteSong(id);
+    // Cascade: a song's treatments (per template) and choreography plan are
+    // keyed by songId with no owning song left to reach them once it's gone
+    // — orphaned forever otherwise. Cast members explicitly scoped to this
+    // song go too; performers with no songId are shared/grandfathered and
+    // survive.
+    deleteTreatmentsForSong(id);
+    deleteChoreo(id);
+    deletePerformersForSong(id);
     const remaining = loadSongs();
     setSongs(remaining);
     if (useAudioPlayer.getState().songId === id) useAudioPlayer.getState().unload();

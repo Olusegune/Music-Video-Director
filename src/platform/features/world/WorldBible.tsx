@@ -34,6 +34,8 @@ import {
 } from "@/platform/lib/environmentDna";
 import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
+import { SheetStudio } from "@/platform/features/sheets/SheetStudio";
+import { environmentSheetSections, ENVIRONMENT_PROMPT_TAIL } from "@/platform/lib/assetSheet";
 import { AssetImage } from "@/platform/components/ui/asset-image";
 import {
   GradientFill,
@@ -69,6 +71,7 @@ export function WorldBible() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [coverageId, setCoverageId] = useState<string | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [conjure, setConjure] = useState("");
@@ -164,6 +167,36 @@ export function WorldBible() {
       />
     );
 
+  const coverageEnv = environments.find((e) => e.id === coverageId) ?? null;
+  if (coverageEnv) {
+    const dna = coverageEnv.promptDna.trim() || composeEnvironmentDna(coverageEnv).promptDna;
+    return (
+      <SheetStudio
+        key={coverageEnv.id}
+        kind="environment"
+        id={coverageEnv.id}
+        name={coverageEnv.name}
+        title={`${coverageEnv.name} — Coverage Sheet`}
+        mediaSrc={coverageEnv.establishingUrl ?? ""}
+        sections={environmentSheetSections(coverageEnv)}
+        promptTail={ENVIRONMENT_PROMPT_TAIL}
+        composeDna={() => dna}
+        generate={(id, prompt) =>
+          api.generateImageFromSpec({
+            capability: "image",
+            prompt,
+            aspect: "16:9",
+            moduleId: "world",
+            projectRef: { moduleId: "world", entityId: id },
+          })
+        }
+        profile={[{ label: "Description", value: coverageEnv.description ?? "" }]}
+        locked={coverageEnv.locked}
+        onBack={() => setCoverageId(null)}
+      />
+    );
+  }
+
   const selected = environments.find((e) => e.id === selectedId) ?? null;
   if (selected)
     return (
@@ -172,6 +205,7 @@ export function WorldBible() {
         environment={selected}
         onBack={() => setSelectedId(null)}
         onOpenSheet={() => setSheetId(selected.id)}
+        onOpenCoverage={() => setCoverageId(selected.id)}
       />
     );
 
@@ -237,6 +271,7 @@ export function WorldBible() {
                 key={e.id}
                 env={e}
                 onClick={() => setSelectedId(e.id)}
+                onOpenCoverage={() => setCoverageId(e.id)}
                 onDelete={() => {
                   if (confirm(`Delete "${e.name}" from World Designer?`)) removeEnv.mutate(e.id);
                 }}
@@ -313,10 +348,12 @@ function EnvCard({
   env,
   onClick,
   onDelete,
+  onOpenCoverage,
 }: {
   env: Environment;
   onClick: () => void;
   onDelete: () => void;
+  onOpenCoverage: () => void;
 }) {
   const subtitle = [env.timeOfDay, env.mood].filter(Boolean).join(" · ") || "Undefined mood";
   return (
@@ -357,6 +394,17 @@ function EnvCard({
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenCoverage();
+          }}
+          title="Coverage Sheet"
+          aria-label="Open coverage sheet"
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white/90 opacity-0 transition-opacity hover:bg-primary group-hover:opacity-100"
+        >
+          <Images className="h-3.5 w-3.5" />
+        </button>
       </div>
       <div className="p-3">
         <div className="truncate text-sm font-semibold">{env.name}</div>
@@ -370,10 +418,12 @@ function EnvironmentSheet({
   environment,
   onBack,
   onOpenSheet,
+  onOpenCoverage,
 }: {
   environment: Environment;
   onBack: () => void;
   onOpenSheet: () => void;
+  onOpenCoverage: () => void;
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Environment>(environment);
@@ -599,6 +649,9 @@ function EnvironmentSheet({
           />
           <Button onClick={onOpenSheet}>
             <LayoutGrid className="h-4 w-4" /> Location Sheet
+          </Button>
+          <Button variant="secondary" onClick={onOpenCoverage}>
+            <Images className="h-4 w-4" /> Coverage Sheet
           </Button>
           <Button
             variant="ghost"

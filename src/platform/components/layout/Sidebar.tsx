@@ -79,6 +79,15 @@ export function Sidebar() {
     queryFn: api.listProjects,
   });
 
+  // Golden path: Director mode (the default for new users) shows only the
+  // studio doors — Production Library / Manage / System stay reachable via
+  // the Studio-mode switch above, not as a standing 28-item wall. Studio and
+  // Creator mode (explicitly asked for) get the full nav back, unchanged.
+  // Sub-item fan-out (Song Studio / Timeline / …) is Magic Flow's own
+  // internals, so it only expands once the user has asked to see more.
+  const showFullNav = studioMode !== "director";
+  const visibleSections = showFullNav ? NAV_MODEL : NAV_MODEL.filter((s) => s.id === "studios");
+
   return (
     <aside
       aria-label="Primary navigation"
@@ -174,7 +183,7 @@ export function Sidebar() {
       </div>
 
       <div className={cn("flex-1 overflow-y-auto pb-2", collapsed ? "px-1.5" : "px-2")}>
-        {NAV_MODEL.map((section) => (
+        {visibleSections.map((section) => (
           <NavGroup key={section.id} label={section.label} collapsed={collapsed}>
             {section.items.map((item) => (
               <NavTreeItem
@@ -184,6 +193,7 @@ export function Sidebar() {
                 activeModule={activeModule}
                 onNavigate={navigateTo}
                 collapsed={collapsed}
+                allowSubItems={showFullNav}
               />
             ))}
           </NavGroup>
@@ -324,18 +334,24 @@ function NavTreeItem({
   activeModule,
   onNavigate,
   collapsed,
+  allowSubItems = true,
 }: {
   item: NavItemModel;
   activeView: View;
   activeModule: ReturnType<typeof moduleForView>;
   onNavigate: (view: View) => void;
   collapsed?: boolean;
+  /** False in Director mode: Song Studio / Timeline / etc. are Magic Flow's
+   *  own internals, not separate doors, until the user asks to see more. */
+  allowSubItems?: boolean;
 }) {
   // Sub-item trees need label text to be legible, so they only ever show
   // in the expanded rail — the icon-only rail still lets you jump straight
   // to the module's home view via the parent icon.
   const expanded =
-    !collapsed && Boolean(item.moduleId && item.moduleId === activeModule && item.subItems?.length);
+    allowSubItems &&
+    !collapsed &&
+    Boolean(item.moduleId && item.moduleId === activeModule && item.subItems?.length);
   const active = item.moduleId ? item.moduleId === activeModule : item.view === activeView;
 
   return (

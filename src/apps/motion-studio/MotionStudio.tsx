@@ -9,6 +9,7 @@ import {
   Film,
   Image,
   Layers3,
+  Loader2,
   Palette,
   Play,
   RefreshCw,
@@ -67,6 +68,10 @@ import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-stat
 import { UniversalGenerationPanel } from "@/platform/components/generation/UniversalGenerationPanel";
 import type { GenerationState } from "@/platform/components/generation/types";
 import type { ProviderId } from "@/platform/lib/types";
+import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
+import { AssetPicker } from "@/platform/features/assets/AssetPicker";
+import { collectRefs } from "@/platform/lib/refs";
+import { findVariant } from "@/platform/lib/modelRegistry";
 import { AnimationTypePresetPicker } from "./components/AnimationPresetPicker";
 import { MotionStylePresetPicker } from "./components/MotionStylePresetPicker";
 import { ChoreographyPatternPicker } from "./components/ChoreographyPatternPicker";
@@ -140,24 +145,20 @@ function ScenePreview({
         active && "border-primary shadow-[0_0_0_1px_rgba(96,165,250,0.35)]"
       )}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(135deg, ${project.direction.colorPalette[0]}, ${project.direction.colorPalette[1]} 46%, ${accent})`,
-        }}
-      />
-      <div className="absolute left-[8%] top-[18%] h-[52%] w-[32%] rounded-lg bg-white/18 ring-1 ring-white/25 backdrop-blur-sm" />
-      <div className="absolute right-[8%] top-[22%] h-[16%] w-[38%] rounded-full bg-white/75" />
-      <div className="absolute right-[14%] top-[46%] h-[10%] w-[30%] rounded-full bg-white/35" />
-      <div
-        className="absolute bottom-[16%] right-[10%] h-[12%] w-[44%] rounded-full"
-        style={{ background: accent }}
-      />
-      {style.family === "3d" && (
-        <div className="absolute left-[18%] top-[28%] h-[28%] w-[28%] rounded-full bg-white/45 shadow-2xl" />
-      )}
-      {style.family === "typography" && (
-        <div className="absolute left-[10%] top-[18%] text-3xl font-black text-white/85">Aa</div>
+      {scene.videoUrl ? (
+        <AssetVideo src={scene.videoUrl} poster={scene.imageUrl} controls={false} muted className="absolute inset-0 h-full w-full object-cover" />
+      ) : scene.imageUrl ? (
+        <AssetImage src={scene.imageUrl} alt={`${scene.role} storyboard frame`} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <>
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${project.direction.colorPalette[0]}, ${project.direction.colorPalette[1]} 46%, ${accent})` }} />
+          <div className="absolute left-[8%] top-[18%] h-[52%] w-[32%] rounded-lg bg-white/18 ring-1 ring-white/25 backdrop-blur-sm" />
+          <div className="absolute right-[8%] top-[22%] h-[16%] w-[38%] rounded-full bg-white/75" />
+          <div className="absolute right-[14%] top-[46%] h-[10%] w-[30%] rounded-full bg-white/35" />
+          <div className="absolute bottom-[16%] right-[10%] h-[12%] w-[44%] rounded-full" style={{ background: accent }} />
+          {style.family === "3d" && <div className="absolute left-[18%] top-[28%] h-[28%] w-[28%] rounded-full bg-white/45 shadow-2xl" />}
+          {style.family === "typography" && <div className="absolute left-[10%] top-[18%] text-3xl font-black text-white/85">Aa</div>}
+        </>
       )}
       <div className="absolute bottom-2 left-2 right-2 rounded-md bg-black/45 px-2 py-1 text-[11px] font-semibold text-white">
         {scene.role} / {scene.start}-{scene.end}s
@@ -260,6 +261,10 @@ export function MotionStudio() {
   usePendingProjectOpen("motion", (id) => setActiveProjectId(id));
   const [selectedSceneId, setSelectedSceneId] = useState<string>("");
   const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
+  const [renderKind, setRenderKind] = useState<"image" | "video">("image");
+  const [showReferencePicker, setShowReferencePicker] = useState(false);
+  const [creatingStoryboard, setCreatingStoryboard] = useState(false);
+  const [storyboardError, setStoryboardError] = useState<string | null>(null);
   const [generationState, setGenerationState] = useState<GenerationState>({
     mode: "auto",
     status: "idle",
@@ -318,7 +323,7 @@ export function MotionStudio() {
     if (nextActiveId) setActiveProjectId(nextActiveId);
   };
 
-  async function generateMotionPrompt() {
+  async function generateSceneRender() {
     if (!activeProject || !selectedScene) return;
     try {
       setGenerationState((prev) => ({ ...prev, status: "validating" }));
@@ -328,12 +333,14 @@ export function MotionStudio() {
         statuses.filter((item) => item.configured).map((item) => item.provider)
       );
 
-      const provider = selectedProviderPref ?? routeProvider("video", routerConfig, configured);
+      const selectedModelId = renderKind === "image" ? selectedScene.imageModelId : selectedScene.videoModelId;
+      const selectedModel = selectedModelId ? findVariant(selectedModelId) : undefined;
+      const provider = selectedModel?.providerKey as ProviderId | undefined ?? selectedProviderPref ?? routeProvider(renderKind, routerConfig, configured);
       if (!provider) {
         setGenerationState((prev) => ({
           ...prev,
           status: "failed",
-          error: "No video provider configured",
+          error: `No ${renderKind} provider configured`,
         }));
         return;
       }
@@ -341,44 +348,76 @@ export function MotionStudio() {
       setGenerationState((prev) => ({ ...prev, status: "queued" }));
 
       const prompt = buildScenePrompt(selectedScene);
-
-      const url = await api.generateVideoFromSpec({
-        capability: "video",
+      const refs = await collectRefs(selectedScene.referenceImages);
+      const spec = {
+        capability: renderKind,
         prompt,
-        negativePrompt: generationState.negativePrompt || "static, blurry, low quality",
+        negativePrompt: generationState.negativePrompt || (renderKind === "video" ? "static, blurry, low quality" : "blurry, low quality, distorted, extra text"),
         providerPref: provider,
+        modelHint: selectedModel?.id,
+        references: refs.map((url) => ({ url, category: "scene" as const, strength: 0.8 })),
+        aspect: activeProject.aspect,
         moduleId: "motion",
         projectRef: { moduleId: "motion", projectId: activeProject.id, entityId: selectedScene.id },
-      });
+      } as const;
+      const url = renderKind === "image"
+        ? await api.generateImageFromSpec({ ...spec, capability: "image" })
+        : await api.generateVideoFromSpec({ ...spec, capability: "video" });
 
       setGenerationState((prev) => ({ ...prev, status: "completed", resultUrl: url }));
 
       const updatedScenes = activeProject.scenes.map((scene) =>
-        scene.id === selectedScene.id ? { ...scene, videoUrl: url } : scene
+        scene.id === selectedScene.id
+          ? renderKind === "image"
+            ? { ...scene, imageUrl: url, imageModelId: selectedModel?.id }
+            : { ...scene, videoUrl: url, videoModelId: selectedModel?.id }
+          : scene
       );
       updateMotionScenes(activeProject.id, updatedScenes);
       refreshProjects(activeProject.id);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Video generation failed";
+      const errorMsg = error instanceof Error ? error.message : `${renderKind} generation failed`;
       setGenerationState((prev) => ({ ...prev, status: "failed", error: errorMsg }));
     }
   }
 
   const handleCreateProject = () => {
-    const type = productionType(draft.typeId);
-    const project = createMotionProject({
-      ...draft,
-      durationSec: draft.durationSec || type.defaultDuration,
-      brief: [draft.businessInput, draft.marketingBrief, draft.script, draft.brief]
-        .filter(Boolean)
-        .join("\n\n"),
-    });
-    refreshProjects(project.id);
-    setSelectedSceneId(project.scenes[0]?.id ?? "");
-    toast(`Storyboard generated — ${project.scenes.length} scenes`);
-    // Below xl, the form and result stack vertically — without this the new
-    // storyboard renders off-screen with no visible sign anything happened.
-    scrollToResultRef.current = true;
+    if (creatingStoryboard) return;
+    setCreatingStoryboard(true);
+    setStoryboardError(null);
+    try {
+      const type = productionType(draft.typeId);
+      const project = createMotionProject({
+        ...draft,
+        durationSec: draft.durationSec || type.defaultDuration,
+        brief: [draft.businessInput, draft.marketingBrief, draft.script, draft.brief]
+          .filter(Boolean)
+          .join("\n\n"),
+      });
+      refreshProjects(project.id);
+      setSelectedSceneId(project.scenes[0]?.id ?? "");
+      toast(`Storyboard generated — ${project.scenes.length} scenes`);
+      // Below xl, the form and result stack vertically — without this the new
+      // storyboard renders off-screen with no visible sign anything happened.
+      scrollToResultRef.current = true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Storyboard generation failed";
+      setStoryboardError(message);
+      toast(message);
+    } finally {
+      setCreatingStoryboard(false);
+    }
+  };
+
+  const patchSelectedScene = (patch: Partial<MotionScene>) => {
+    if (!activeProject || !selectedScene) return;
+    updateMotionScenes(
+      activeProject.id,
+      activeProject.scenes.map((scene) =>
+        scene.id === selectedScene.id ? { ...scene, ...patch } : scene
+      )
+    );
+    refreshProjects(activeProject.id);
   };
 
   const regenerateStoryboard = () => {
@@ -639,9 +678,11 @@ export function MotionStudio() {
                   </Button>
                 ))}
               </div>
-              <Button variant="gold" className="w-full" onClick={handleCreateProject}>
-                <Sparkles /> Generate storyboard
+              <Button variant="gold" className="w-full" onClick={handleCreateProject} disabled={creatingStoryboard}>
+                {creatingStoryboard ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                {creatingStoryboard ? "Creating storyboard…" : "Generate storyboard"}
               </Button>
+              {storyboardError ? <p className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">{storyboardError}</p> : null}
             </CardContent>
           </Card>
 
@@ -965,9 +1006,62 @@ export function MotionStudio() {
                           </Card>
                         )}
 
+                        <Card className="border-primary/25 bg-elevated">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Film className="size-4 text-primary" /> Scene render lab
+                            </CardTitle>
+                            <CardDescription>
+                              Build the frame, attach your reference images, then animate the approved frame — all here.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="grid grid-cols-2 gap-2 rounded-lg bg-surface p-1">
+                              {(["image", "video"] as const).map((kind) => (
+                                <button
+                                  key={kind}
+                                  type="button"
+                                  onClick={() => setRenderKind(kind)}
+                                  className={cn(
+                                    "rounded-md px-3 py-2 text-sm font-semibold transition",
+                                    renderKind === kind ? "bg-primary text-primary-foreground shadow" : "text-muted hover:text-foreground"
+                                  )}
+                                >
+                                  {kind === "image" ? "1. Frame" : "2. Motion clip"}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button size="sm" variant="secondary" onClick={() => setShowReferencePicker(true)}>
+                                <Image className="size-3.5" /> Add reference images
+                              </Button>
+                              {(selectedScene.referenceImages ?? []).length > 0 ? (
+                                <span className="text-xs text-muted">{selectedScene.referenceImages!.length} reference{selectedScene.referenceImages!.length === 1 ? "" : "s"} attached</span>
+                              ) : (
+                                <span className="text-xs text-muted">No references yet — add product, character, or style frames.</span>
+                              )}
+                            </div>
+                            {(selectedScene.referenceImages ?? []).length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {selectedScene.referenceImages!.map((src, index) => (
+                                  <button
+                                    key={`${src}-${index}`}
+                                    type="button"
+                                    onClick={() => patchSelectedScene({ referenceImages: selectedScene.referenceImages!.filter((_, i) => i !== index) })}
+                                    title="Remove reference"
+                                    className="relative h-14 w-14 overflow-hidden rounded-md border border-border hover:border-danger"
+                                  >
+                                    <AssetImage src={src} alt={`Reference ${index + 1}`} className="h-full w-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
                         <UniversalGenerationPanel
-                          title="Generate Motion Prompt"
-                          kind="video"
+                          title={renderKind === "image" ? "Render storyboard frame" : "Render motion clip"}
+                          kind={renderKind}
                           prompt={buildScenePrompt(selectedScene)}
                           promptComposition={{
                             userPrompt: selectedScene.headline || "Motion scene",
@@ -988,21 +1082,38 @@ export function MotionStudio() {
                             finalPrompt: buildScenePrompt(selectedScene),
                             negativePrompt: "static, blurry, low quality, distorted motion",
                           }}
+                          onPromptChange={(promptOverride) => patchSelectedScene({ promptOverride })}
+                          onResetPrompt={() => patchSelectedScene({ promptOverride: "" })}
                           selectedProvider={selectedProviderPref}
+                          selectedModelId={renderKind === "image" ? selectedScene.imageModelId : selectedScene.videoModelId}
+                          onModelChange={(modelId) => patchSelectedScene(renderKind === "image" ? { imageModelId: modelId } : { videoModelId: modelId })}
                           onProviderChange={setSelectedProviderPref}
                           generationState={generationState}
                           onGenerationStateChange={(updates) =>
                             setGenerationState((prev) => ({ ...prev, ...updates }))
                           }
-                          onGenerate={generateMotionPrompt}
+                          onGenerate={generateSceneRender}
                           capabilities={{
                             supportsNegativePrompt: true,
                             supportsSeed: true,
                             supportsAspectRatio: true,
                             supportsQuality: true,
                           }}
-                          showAdvanced={studioMode === "creator"}
+                          showAdvanced
                         />
+                        {showReferencePicker && (
+                          <AssetPicker
+                            onClose={() => setShowReferencePicker(false)}
+                            onAdd={(srcs) => {
+                              patchSelectedScene({
+                                referenceImages: [...(selectedScene.referenceImages ?? []), ...srcs]
+                                  .filter((src, index, all) => all.indexOf(src) === index)
+                                  .slice(0, 8),
+                              });
+                              setShowReferencePicker(false);
+                            }}
+                          />
+                        )}
                       </aside>
                     )}
                   </div>

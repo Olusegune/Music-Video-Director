@@ -8,10 +8,13 @@ import {
   Globe,
   Megaphone,
   WandSparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { Button } from "@/platform/components/ui/button";
 import { cn } from "@/platform/lib/utils";
+import { isModuleEnabled } from "@/platform/lib/productConfig";
+import type { ConcreteModuleId } from "@/platform/lib/moduleManifest";
 
 export function NewProjectWizard() {
   const store = useAppStore();
@@ -20,13 +23,25 @@ export function NewProjectWizard() {
     store.setWizardOpen(false);
     then?.();
   };
-  const options = [
+  // Annotated on its own (not chained straight into .filter()) so each
+  // literal's `moduleId` narrows to ConcreteModuleId via contextual typing —
+  // chaining .filter() directly onto the array literal loses that context.
+  const allOptions: {
+    icon: LucideIcon;
+    title: string;
+    desc: string;
+    go: () => void;
+    accent: string;
+    badge?: string;
+    moduleId?: ConcreteModuleId;
+  }[] = [
     {
       icon: Music,
       title: "Music Video Director",
       desc: "Direct a song-aware film with cast, choreography, shots, and timeline.",
       go: store.openMusicVideoGuidedFlow,
       accent: "violet",
+      moduleId: "musicvideo",
     },
     {
       icon: Boxes,
@@ -34,6 +49,7 @@ export function NewProjectWizard() {
       desc: "Create an explainer, commercial, UI animation, or product reveal.",
       go: store.openMotionStudio,
       accent: "cyan",
+      moduleId: "motion",
     },
     {
       icon: WandSparkles,
@@ -41,6 +57,7 @@ export function NewProjectWizard() {
       desc: "Art-direct luxury imagery, exact formats, and a product-film treatment.",
       go: store.openGlamStudio,
       accent: "amber",
+      moduleId: "glam",
     },
     {
       icon: Globe,
@@ -48,6 +65,7 @@ export function NewProjectWizard() {
       desc: "Build a positioned, responsive multi-page campaign experience.",
       go: store.openWebStudio,
       accent: "emerald",
+      moduleId: "web",
     },
     {
       icon: Megaphone,
@@ -56,6 +74,7 @@ export function NewProjectWizard() {
       go: store.openCampaignStudio,
       accent: "gold",
       badge: "All channels",
+      moduleId: "campaign",
     },
     {
       icon: LayoutTemplate,
@@ -65,6 +84,9 @@ export function NewProjectWizard() {
       accent: "default",
     },
   ];
+  const options = allOptions.filter(
+    (option) => !option.moduleId || isModuleEnabled(option.moduleId)
+  );
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-background/85 p-6 backdrop-blur-md">
       <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
