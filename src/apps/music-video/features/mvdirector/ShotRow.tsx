@@ -1095,6 +1095,18 @@ function ShotPreview({
   const src = kind === "image" ? shot.imageUrl : shot.videoUrl;
   const [zoom, setZoom] = useState(1); // 1 = fit-to-screen
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Escape closes the preview — the media stage below intentionally stops
+  // click propagation (so scrubbing/zooming doesn't dismiss it), which makes
+  // Escape the only reliable close path when the media fills most of the screen.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   if (!src) return null;
 
   const fit = zoom === 1;

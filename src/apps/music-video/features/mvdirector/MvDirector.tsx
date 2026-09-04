@@ -218,6 +218,7 @@ export function MvDirector() {
   const [genClipId, setGenClipId] = useState<string | null>(null);
   const [genPoseId, setGenPoseId] = useState<string | null>(null);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+  const [clipBatch, setClipBatch] = useState<{ done: number; total: number } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
   const [directing, setDirecting] = useState(false);
   const qc = useQueryClient();
@@ -492,6 +493,37 @@ export function MvDirector() {
     ]
   );
 
+  // Bulk counterpart to generateAll (frames): turns every Performance-tagged
+  // shot's still frame into an actual clip, one at a time. Scoped to
+  // Performance shots (not Abstract/Narrative b-roll) — those are the ones
+  // that actually need a performer on camera and a real generated clip is
+  // the only way this app produces motion/performance rather than a
+  // pan-and-cut slideshow of stills.
+  const generateAllClips = useCallback(async () => {
+    if (!treatment) return;
+    const jobs = treatment.sections
+      .filter((s) => s.approach === "Performance")
+      .flatMap((s) =>
+        s.shots
+          .filter((sh) => sh.imageUrl && !sh.videoUrl)
+          .map((sh) => ({ section: s, shot: sh }))
+      );
+    if (jobs.length === 0) return;
+    setGenError(null);
+    setClipBatch({ done: 0, total: jobs.length });
+    for (let i = 0; i < jobs.length; i++) {
+      try {
+        await generateClip(jobs[i].section, jobs[i].shot);
+      } catch (e) {
+        setGenError(
+          e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed."
+        );
+      }
+      setClipBatch({ done: i + 1, total: jobs.length });
+    }
+    setClipBatch(null);
+  }, [treatment, generateClip]);
+
   // Generate a pose / model sheet for the shot's assigned performer + moves, and
   // save it to the library — where it returns as a thumbnail in the move browser.
   const generatePoseSheet = useCallback(
@@ -569,6 +601,20 @@ export function MvDirector() {
   const imageReady = isReady(imageModel.keyIds);
   const videoReady = isReady(videoModel.keyIds);
   const activeTemplate = getTemplate(activeTemplateId);
+
+  // Sections with no performer assigned (and no confident auto-detection) end
+  // up with nobody on camera for their shots — surfaced here, not just in
+  // Song Studio, because this is the screen where you'd otherwise render a
+  // "finished" video without ever seeing that gap.
+  const sectionsNeedingPerformer = song
+    ? song.sections.filter((s) => !s.performerRole && !detectSectionPerformer(s).confident).length
+    : 0;
+  const performanceShotsMissingClip = treatment
+    ? treatment.sections
+        .filter((s) => s.approach === "Performance")
+        .flatMap((s) => s.shots)
+        .filter((sh) => sh.imageUrl && !sh.videoUrl).length
+    : 0;
 
   // Flat, ordered shot list for cross-shot continuity analysis.
   const flatShots = useMemo(() => {
@@ -901,6 +947,27 @@ export function MvDirector() {
                 )}
                 {batch ? `Generating ${batch.done}/${batch.total}` : "Generate all frames"}
               </Button>
+              {performanceShotsMissingClip > 0 && (
+                <Button
+                  variant="accent"
+                  onClick={generateAllClips}
+                  disabled={clipBatch !== null || batch !== null || !videoReady}
+                  title={
+                    videoReady
+                      ? "Turn every Performance shot's still frame into a real clip"
+                      : `No key for ${videoModel.label} — add one in API Keys`
+                  }
+                >
+                  {clipBatch ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Video className="h-4 w-4" />
+                  )}
+                  {clipBatch
+                    ? `Generating clip ${clipBatch.done}/${clipBatch.total}`
+                    : `Generate all clips (${performanceShotsMissingClip})`}
+                </Button>
+              )}
             </>
           )}
           <Button variant="primary" onClick={direct} disabled={batch !== null}>
@@ -922,6 +989,33 @@ export function MvDirector() {
             className="ml-auto font-semibold underline hover:no-underline"
           >
             Open API Keys
+          </button>
+        </div>
+      )}
+
+      {treatment && sectionsNeedingPerformer > 0 && (
+        <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
+          <span>
+            {sectionsNeedingPerformer} section{sectionsNeedingPerformer === 1 ? "" : "s"} of this
+            song {sectionsNeedingPerformer === 1 ? "has" : "have"} no performer assigned — those
+            shots will render with nobody on camera. Assign a performer for each section in Song
+            Studio.
+          </span>
+        </div>
+      )}
+
+      {treatment && performanceShotsMissingClip > 0 && (
+        <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
+          <span>
+            {performanceShotsMissingClip} performance shot
+            {performanceShotsMissingClip === 1 ? "" : "s"} still {performanceShotsMissingClip === 1 ? "has" : "have"} only a still frame, not a moving clip — the final render will show a static image for {performanceShotsMissingClip === 1 ? "it" : "them"} instead of a performance.
+          </span>
+          <button
+            onClick={generateAllClips}
+            disabled={clipBatch !== null || batch !== null || !videoReady}
+            className="ml-auto font-semibold underline hover:no-underline disabled:no-underline disabled:opacity-50"
+          >
+            Generate all clips
           </button>
         </div>
       )}

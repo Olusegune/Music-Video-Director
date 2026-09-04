@@ -10,6 +10,7 @@ import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { TemplateCard, NoStyleCard } from "@/platform/components/templates/TemplateCard";
 import { api, isTauri } from "@/platform/lib/ipc";
+import { newCharacter } from "@/platform/lib/characterDna";
 import { parseScript } from "@/platform/lib/scriptParser";
 import { allTemplates } from "@/platform/lib/templates";
 import type { GuidedFlowDefinition, GuidedFlowStepComponentProps } from "@/platform/lib/guidedFlow";
@@ -72,6 +73,31 @@ function toB64(bytes: Uint8Array): string {
 function findSong(id: string | null): SongMap | null {
   if (!id) return null;
   return loadSongs().find((song) => song.id === id) ?? null;
+}
+
+// A performer typed into the guided flow is just a name/role until it's
+// linked to a Character Bible entry — without that link, "Performance" shots
+// have nobody consistent to render (a different anonymous face each time).
+// Reuse an existing character with a matching name if one exists (avoids
+// creating a duplicate of a character the user already built), otherwise
+// create a minimal placeholder character so there's at least a stable
+// identity to lock the DNA to; the user can flesh out the portrait later.
+async function linkPerformerToCharacter(performer: Performer): Promise<Performer> {
+  if (performer.characterId || !performer.name.trim()) return performer;
+  try {
+    const characters = await api.listCharacters();
+    const existing = characters.find(
+      (c) => c.name.trim().toLowerCase() === performer.name.trim().toLowerCase()
+    );
+    if (existing) return { ...performer, characterId: existing.id };
+    const created = { ...newCharacter(performer.name.trim()), role: "Supporting" };
+    await api.saveCharacter(created);
+    return { ...performer, characterId: created.id };
+  } catch {
+    // Character Bible lookup/creation is best-effort — a performer without a
+    // link still saves fine, it just won't have a locked visual identity yet.
+    return performer;
+  }
 }
 
 function applyLyrics(song: SongMap, lyrics: string): SongMap {
@@ -518,7 +544,7 @@ export function MusicVideoGuidedFlow() {
           technicalComponent: CreatorControls,
         },
       ],
-      onComplete: (state) => {
+      onComplete: async (state) => {
         const song = findSong(state.songId);
         if (!song) return;
         const withLyrics = applyLyrics(song, state.lyrics);
@@ -537,7 +563,9 @@ export function MusicVideoGuidedFlow() {
           storyBeats,
         };
         saveSong(finalSong);
-        state.cast.forEach(savePerformer);
+        await Promise.all(
+          state.cast.map(async (performer) => savePerformer(await linkPerformerToCharacter(performer)))
+        );
         setActiveSong(finalSong.id);
         setActiveTemplate(state.styleId);
         setMagicSongId(finalSong.id);
