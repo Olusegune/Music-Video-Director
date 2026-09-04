@@ -206,7 +206,8 @@ function pick<T>(pool: T[], i: number): T {
 function approachFor(
   kind: SectionKind,
   energy: number,
-  lean: MvTemplate["lean"] = "balanced"
+  lean: MvTemplate["lean"] = "balanced",
+  hasLead = false
 ): ShotApproach {
   switch (kind) {
     case "Chorus":
@@ -214,14 +215,21 @@ function approachFor(
       return "Performance";
     case "Intro":
     case "Outro":
+      // Deliberately performer-free even when a lead is assigned — most
+      // music videos open/close on b-roll before the artist appears.
       return "Abstract";
     case "Instrumental":
       return energy >= 0.6 ? "Performance" : "Abstract";
     case "Bridge":
-      return "Hybrid";
+      return hasLead ? "Performance" : "Hybrid";
     case "Verse":
     case "Pre-Chorus":
     default:
+      // A named lead vocalist for this section is a direct instruction to
+      // put a performer on camera — it overrides the energy/lean guess a
+      // song with no chorus (or no lyrics to detect one) would otherwise
+      // fall back to.
+      if (hasLead) return energy >= 0.5 ? "Performance" : "Hybrid";
       // A template can push verses toward performance or pull them to story.
       if (lean === "performance") return energy >= 0.5 ? "Performance" : "Hybrid";
       if (lean === "narrative") return "Narrative";
@@ -345,7 +353,12 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
 
   const sections: MvSectionPlan[] = song.sections.map((section, si) => {
     const dur = Math.max(0.1, section.end - section.start);
-    const approach = approachFor(section.kind, section.energy, template?.lean);
+    const approach = approachFor(
+      section.kind,
+      section.energy,
+      template?.lean,
+      Boolean(section.lead?.trim())
+    );
     const pool = shotPoolFor(approach);
 
     const cutLen = cutLengthFor(section.energy, template?.cutBias ?? 1);

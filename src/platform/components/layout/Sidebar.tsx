@@ -31,6 +31,7 @@ import {
 import { api, isTauri } from "@/platform/lib/ipc";
 import { NAV_MODEL, moduleForView, type NavIcon, type NavItemModel } from "@/platform/lib/navModel";
 import { loadRouterConfig, ROUTER_MODES } from "@/platform/lib/providers";
+import { PRODUCT_NAME } from "@/platform/lib/productConfig";
 import { STUDIO_MODES } from "@/platform/lib/settings";
 import { cn } from "@/platform/lib/utils";
 import { useAppStore, type View } from "@/platform/store/useAppStore";
@@ -101,7 +102,7 @@ export function Sidebar() {
           type="button"
           onClick={() => navigateTo("dashboard")}
           className={cn("flex items-center gap-2 text-left", collapsed ? "" : "flex-1")}
-          title="MotionForge AI — Dashboard"
+          title={`${PRODUCT_NAME} — Dashboard`}
         >
           <div className="grad-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-primary/30">
             <Film className="h-4 w-4 text-white" />
@@ -109,7 +110,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="leading-tight">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold">MotionForge AI</span>
+                <span className="text-sm font-semibold">{PRODUCT_NAME}</span>
               </div>
               <div className="text-[10px] text-muted">v1.4.0</div>
             </div>
