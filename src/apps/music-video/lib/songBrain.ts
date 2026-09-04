@@ -318,6 +318,18 @@ function levelThresholds(bars: number[]): { lo: number; hi: number } {
   return { lo: at(0.4), hi: at(0.7) };
 }
 
+/** Simple centered moving average — smooths bar-to-bar noise while keeping
+ *  multi-bar structural swings (verse/chorus energy shifts) intact. */
+function movingAverage(values: number[], window: number): number[] {
+  const half = Math.floor(window / 2);
+  return values.map((_, i) => {
+    const lo = Math.max(0, i - half);
+    const hi = Math.min(values.length, i + half + 1);
+    const slice = values.slice(lo, hi);
+    return slice.reduce((a, x) => a + x, 0) / slice.length;
+  });
+}
+
 function energyLevel(e: number, thresholds: { lo: number; hi: number }): 0 | 1 | 2 {
   if (e < thresholds.lo) return 0;
   if (e < thresholds.hi) return 1;
@@ -341,8 +353,16 @@ export function segmentSections(bars: number[], barDur: number, duration: number
   }
 
   const minBars = 4; // don't cut sections shorter than ~4 bars
-  const thresholds = levelThresholds(bars);
-  const levels = bars.map((e) => energyLevel(e, thresholds));
+  // Percentile thresholds are relative to the song's own distribution, which
+  // reflects real structure (a verse-vs-chorus swing) far more than bar-to-bar
+  // performance noise — but raw per-bar energy oscillates on both timescales
+  // at once, so quantizing it directly fragments into many short alternating
+  // runs that the merge step below collapses into one giant blob instead of
+  // real sections. Smoothing first keeps the structural swings and damps the
+  // noise, so the percentile thresholds land on genuine multi-bar plateaus.
+  const smoothed = movingAverage(bars, 3);
+  const thresholds = levelThresholds(smoothed);
+  const levels = smoothed.map((e) => energyLevel(e, thresholds));
 
   // 1) Greedy grouping into runs of equal level.
   const runs: RawSegment[] = [];

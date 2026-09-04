@@ -29,6 +29,28 @@ describe("segmentSections", () => {
     expect(sections.some((s) => s.kind === "Chorus")).toBe(true);
   });
 
+  it("doesn't collapse a noisy but structured song into one giant section", () => {
+    // Real bar-to-bar energy oscillates on top of the slower verse/chorus
+    // swing (percussion hits, breaths, mix noise) — percentile thresholds
+    // applied directly to that raw noise fragment into many <minBars runs
+    // that the merge step then collapses into one segment covering the
+    // whole song. A jittered version of the same three-part shape as the
+    // first test should still resolve into multiple sections.
+    let seed = 7;
+    const jitter = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return (seed / 2147483648 - 0.5) * 0.1;
+    };
+    const bars = [
+      ...Array(10).fill(0).map(() => 0.2 + jitter()),
+      ...Array(10).fill(0).map(() => 0.85 + jitter()),
+      ...Array(10).fill(0).map(() => 0.2 + jitter()),
+    ].map((v) => Math.max(0, Math.min(1, v)));
+    const sections = segmentSections(bars, BAR_DUR, bars.length * BAR_DUR);
+    expect(sections.length).toBeGreaterThan(1);
+    expect(sections.some((s) => s.kind === "Chorus")).toBe(true);
+  });
+
   it("never produces a zero-length or out-of-order section", () => {
     const bars = [0.1, 0.9, 0.9, 0.9, 0.2, 0.2, 0.2, 0.2, 0.6, 0.6, 0.6, 0.6];
     const duration = bars.length * BAR_DUR;
