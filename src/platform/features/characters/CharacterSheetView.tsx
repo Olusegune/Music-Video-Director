@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Sparkles, Download, Loader2, ImagePlus, RefreshCw } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
@@ -37,6 +38,25 @@ export function CharacterSheetView({
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  // Turnaround/expression panels generated here are otherwise orphaned in
+  // per-character localStorage (characterSheet.ts) and never reach the
+  // referenceImages this character's future generations condition on — so a
+  // "consistent" sheet ships zero actual consistency. Feed each new panel
+  // back into the real character record as it's generated.
+  const referenceImagesRef = useRef<string[]>(character.referenceImages ?? []);
+  const addReference = async (url: string) => {
+    if (referenceImagesRef.current.includes(url)) return;
+    const next = [...referenceImagesRef.current, url].slice(-8);
+    referenceImagesRef.current = next;
+    try {
+      await api.saveCharacter({ ...character, referenceImages: next });
+      queryClient.invalidateQueries({ queryKey: ["characters"] });
+    } catch {
+      // Best-effort — the sheet cell itself is already saved locally even
+      // if this write fails.
+    }
+  };
 
   const sections = sheetSections(character);
   const palette = characterPalette(character);
@@ -51,6 +71,7 @@ export function CharacterSheetView({
       );
       saveSheetCell(character.id, cell.key, url);
       setSheet((s) => ({ ...s, [cell.key]: url }));
+      await addReference(url);
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "Generation failed.");
     } finally {
@@ -71,6 +92,7 @@ export function CharacterSheetView({
         );
         saveSheetCell(character.id, cells[i].key, url);
         setSheet((s) => ({ ...s, [cells[i].key]: url }));
+        await addReference(url);
       } catch (e) {
         setNotice(e instanceof Error ? e.message : "Generation failed.");
         break;
