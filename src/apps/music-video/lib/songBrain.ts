@@ -301,10 +301,26 @@ function barEnergies(
   return out;
 }
 
-/** Quantize 0..1 energy into 3 perceptual levels. */
-function energyLevel(e: number): 0 | 1 | 2 {
-  if (e < 0.4) return 0;
-  if (e < 0.72) return 1;
+/**
+ * Quantize energy into 3 perceptual levels using thresholds computed from
+ * the song's own energy distribution (percentiles), not fixed magnitudes.
+ * A fixed cutoff like "level 2 = 0.72+" works for songs with a big, loud
+ * chorus but silently produces zero level-2 bars — and so never labels a
+ * Chorus at all — for a ballad or an already-loud/compressed mix whose peak
+ * bar never clears an absolute bar. Percentile thresholds guarantee the
+ * loudest ~30% of any song's own bars register as "high," so there's always
+ * a strongest section to surface as a Chorus candidate.
+ */
+function levelThresholds(bars: number[]): { lo: number; hi: number } {
+  if (bars.length === 0) return { lo: 0.4, hi: 0.72 };
+  const sorted = [...bars].sort((a, b) => a - b);
+  const at = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+  return { lo: at(0.4), hi: at(0.7) };
+}
+
+function energyLevel(e: number, thresholds: { lo: number; hi: number }): 0 | 1 | 2 {
+  if (e < thresholds.lo) return 0;
+  if (e < thresholds.hi) return 1;
   return 2;
 }
 
@@ -319,13 +335,14 @@ interface RawSegment {
  * Segment the bar-energy curve into contiguous runs of similar energy level,
  * enforcing a musical minimum length, then label each run by energy + position.
  */
-function segmentSections(bars: number[], barDur: number, duration: number): SongSection[] {
+export function segmentSections(bars: number[], barDur: number, duration: number): SongSection[] {
   if (bars.length === 0) {
     return [makeSection("Verse", 0, duration, 0.5)];
   }
 
   const minBars = 4; // don't cut sections shorter than ~4 bars
-  const levels = bars.map(energyLevel);
+  const thresholds = levelThresholds(bars);
+  const levels = bars.map((e) => energyLevel(e, thresholds));
 
   // 1) Greedy grouping into runs of equal level.
   const runs: RawSegment[] = [];
@@ -352,7 +369,7 @@ function segmentSections(bars: number[], barDur: number, duration: number): Song
       prev.endBar = run.endBar;
       const slice = bars.slice(prev.startBar, prev.endBar);
       prev.energy = slice.reduce((a, x) => a + x, 0) / slice.length;
-      prev.level = energyLevel(prev.energy);
+      prev.level = energyLevel(prev.energy, thresholds);
     } else {
       merged.push({ ...run });
     }

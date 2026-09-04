@@ -22,8 +22,10 @@ import {
 import {
   formatTime,
   sectionColor,
+  SECTION_KINDS,
   type SongMap,
   type SongSection,
+  type SectionKind,
   type LyricLine,
 } from "@/apps/music-video/lib/songBrain";
 import {
@@ -117,6 +119,32 @@ export function SongView({
   const togglePlay = () => player.toggle();
 
   const setSections = (sections: SongSection[]) => onChange({ ...song, sections });
+
+  // Manual override for auto-detection: split one section into two at a
+  // chosen moment — e.g. "the chorus actually starts here", which the
+  // energy-based detector can miss on flatter-dynamic songs (ballads,
+  // already-loud mixes). The second half starts as a copy of the first
+  // (same kind/energy/brief) so nothing is lost; retag it via the kind
+  // dropdown once split.
+  const splitSectionAt = (sectionId: string, time: number) => {
+    const idx = song.sections.findIndex((s) => s.id === sectionId);
+    if (idx === -1) return;
+    const original = song.sections[idx];
+    if (time <= original.start + 0.25 || time >= original.end - 0.25) return;
+    const second: SongSection = {
+      ...original,
+      id: crypto.randomUUID(),
+      start: time,
+      label: SECTION_KINDS.includes(original.label as SectionKind)
+        ? original.label
+        : `${original.label} (2)`,
+    };
+    const first: SongSection = { ...original, end: time };
+    const sections = [...song.sections];
+    sections.splice(idx, 1, first, second);
+    setSections(sections);
+    setSelectedSectionId(second.id);
+  };
 
   // Fill confident performer roles; leave unclear ones unset so they still prompt.
   const autoDetectPerformers = () => {
@@ -372,6 +400,11 @@ export function SongView({
                 onSeek={() => seek(s.start + 0.01)}
                 onChange={(next) =>
                   setSections(song.sections.map((x) => (x.id === s.id ? next : x)))
+                }
+                onSplit={
+                  hasAudio && currentTime > s.start + 0.25 && currentTime < s.end - 0.25
+                    ? () => splitSectionAt(s.id, currentTime)
+                    : undefined
                 }
                 onDelete={
                   song.sections.length > 1

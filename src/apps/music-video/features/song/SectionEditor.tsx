@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   SlidersHorizontal,
+  Scissors,
 } from "lucide-react";
 import {
   formatTime,
@@ -32,6 +33,7 @@ export function SectionRow({
   onDelete,
   onSeek,
   onSelect,
+  onSplit,
   selected,
   hasLyrics,
   active,
@@ -42,6 +44,9 @@ export function SectionRow({
   onDelete?: () => void;
   onSeek: () => void;
   onSelect: () => void;
+  /** Split this section in two at the current playhead time (only offered
+   *  while playback is inside this section, away from its own edges). */
+  onSplit?: () => void;
   selected: boolean;
   hasLyrics: boolean;
   active: boolean;
@@ -106,12 +111,30 @@ export function SectionRow({
       <span className="shrink-0 text-[11px] tabular-nums text-muted">
         {formatTime(section.start)}–{formatTime(section.end)}
       </span>
+      {onSplit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSplit();
+          }}
+          aria-label="Split section at playhead"
+          title="Split here — e.g. mark where a chorus actually starts"
+        >
+          <Scissors className="h-3.5 w-3.5" />
+        </Button>
+      )}
       {onDelete && (
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7 shrink-0"
-          onClick={onDelete}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           aria-label="Delete section"
         >
           <Trash2 className="h-3.5 w-3.5" />
