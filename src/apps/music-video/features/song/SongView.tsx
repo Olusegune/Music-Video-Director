@@ -162,24 +162,25 @@ export function SongView({
   // only the section split itself.
   const [redetecting, setRedetecting] = useState(false);
   const [redetectError, setRedetectError] = useState<string | null>(null);
-  const redetectSections = async () => {
-    const edited = song.sections.filter(
-      (s) =>
-        s.lyricsText?.trim() ||
-        s.performerRole ||
-        s.lead ||
-        s.backup ||
-        s.mood ||
-        s.cameraNote ||
-        s.choreoNote ||
-        s.storyNote ||
-        s.visualStyle
-    ).length;
-    const warning = edited
-      ? `\n\n${edited} section${edited === 1 ? " has" : "s have"} lyrics, a performer, or creative notes. That work moves to whichever new section covers the same moment, but the section boundaries themselves will change.`
-      : "";
-    if (!confirm(`Re-analyze "${song.name}" and rebuild its section list?${warning}`)) return;
+  // Confirmation is rendered in-app rather than via window.confirm(): inside the
+  // Tauri webview confirm() does not block and returns false, so a handler
+  // gated on it silently does nothing.
+  const [confirmRedetect, setConfirmRedetect] = useState(false);
+  const editedSections = song.sections.filter(
+    (s) =>
+      s.lyricsText?.trim() ||
+      s.performerRole ||
+      s.lead ||
+      s.backup ||
+      s.mood ||
+      s.cameraNote ||
+      s.choreoNote ||
+      s.storyNote ||
+      s.visualStyle
+  ).length;
 
+  const redetectSections = async () => {
+    setConfirmRedetect(false);
     setRedetecting(true);
     setRedetectError(null);
     try {
@@ -439,9 +440,9 @@ export function SongView({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={redetectSections}
-                  disabled={redetecting}
-                  title="Re-run section detection on this track's audio, keeping lyrics, briefs, and performers."
+                  onClick={() => setConfirmRedetect(true)}
+                  disabled={redetecting || confirmRedetect}
+                  title="Re-run section detection on this track's audio, keeping lyrics, notes, and performers."
                 >
                   <Radio className={cn("h-3.5 w-3.5", redetecting && "animate-pulse")} />
                   {redetecting ? "Re-detecting…" : "Re-detect sections"}
@@ -466,6 +467,26 @@ export function SongView({
               )}
               {redetectError && <span className="ml-1 text-danger">{redetectError}</span>}
             </CardDescription>
+            {confirmRedetect && (
+              <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+                <p className="text-sm font-medium">
+                  Re-analyze “{song.name}” and rebuild its section list?
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  {editedSections > 0
+                    ? `${editedSections} section${editedSections === 1 ? " has" : "s have"} lyrics, a performer, or creative notes. That work moves to whichever new section covers the same moment, but the section boundaries themselves will change.`
+                    : "Section boundaries and labels will be recomputed from the audio."}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" onClick={redetectSections}>
+                    Re-detect
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setConfirmRedetect(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {song.sections.map((s, i) => (

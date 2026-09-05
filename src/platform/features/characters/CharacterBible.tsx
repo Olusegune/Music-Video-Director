@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
@@ -76,6 +77,7 @@ import {
 } from "@/platform/lib/smartImport";
 
 export function CharacterBible() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
@@ -269,8 +271,14 @@ export function CharacterBible() {
                 key={c.id}
                 character={c}
                 onClick={() => setSelectedId(c.id)}
-                onDelete={() => {
-                  if (confirm(`Delete "${c.name}" from Character Designer?`))
+                onDelete={async () => {
+                  if (
+                    await confirm({
+                      title: `Delete "${c.name}" from Character Designer?`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                    })
+                  )
                     removeChar.mutate(c.id);
                 }}
                 onOpenTurnaround={() => setTurnaroundId(c.id)}
@@ -468,6 +476,7 @@ function CharacterSheet({
   onOpenSheet: () => void;
   onOpenTurnaround: () => void;
 }) {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Character>(character);
   const [savedTick, setSavedTick] = useState(false);
@@ -1414,8 +1423,15 @@ function CharacterSheet({
               icon={<Trash2 className="h-4 w-4" />}
               label="Delete Character"
               danger
-              onClick={() => {
-                if (confirm(`Delete "${draft.name}" from Character Designer?`)) remove.mutate();
+              onClick={async () => {
+                if (
+                  await confirm({
+                    title: `Delete "${draft.name}" from Character Designer?`,
+                    confirmLabel: "Delete",
+                    destructive: true,
+                  })
+                )
+                  remove.mutate();
               }}
             />
             {quickError && (

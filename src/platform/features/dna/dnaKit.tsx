@@ -3,6 +3,7 @@
 // lock toggle, media panel, Prompt DNA editor, and field/section layout.
 
 import { useEffect, useRef, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import {
   Fingerprint,
   Sparkles,
@@ -180,6 +181,7 @@ export function MoveAssetMenu({
   /** Called after a cross-Bible move completes (navigate away). */
   onCrossMoved: () => void;
 }) {
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const handle = async (target: string) => {
     if (!target) return;
@@ -188,7 +190,14 @@ export function MoveAssetMenu({
       if (fromKind === "Prop") onPropCategory?.(target);
       return; // Character/Environment have no sub-types — nothing to do
     }
-    if (!confirm(`Move "${name}" to "${target}"? It moves to the ${targetBible} Bible.`)) return;
+    if (
+      !(await confirm({
+        title: `Move "${name}" to "${target}"?`,
+        body: `It moves to the ${targetBible} Bible.`,
+        confirmLabel: "Move",
+      }))
+    )
+      return;
     setBusy(true);
     try {
       await moveAssetAcrossBibles(fromKind, fromId, target, name, primaryImage, refs);

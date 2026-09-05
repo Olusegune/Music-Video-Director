@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Copy, Download, Upload, Clock } from "lucide-react";
 import { api } from "@/platform/lib/ipc";
@@ -44,6 +45,7 @@ interface JsonExport {
 }
 
 export function ProjectsDashboard() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const openProjectView = useAppStore((s) => s.openProject);
   const [showNewProject, setShowNewProject] = useState(false);
@@ -83,8 +85,16 @@ export function ProjectsDashboard() {
     openProjectView(projectId);
   }
 
-  function handleDelete(id: string) {
-    if (!confirm("Delete this project? This cannot be undone.")) return;
+  async function handleDelete(id: string) {
+    if (
+      !(await confirm({
+        title: "Delete this project?",
+        body: "This cannot be undone.",
+        confirmLabel: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     deleteMutation.mutate(id);
   }
 

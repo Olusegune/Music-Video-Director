@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -362,14 +363,18 @@ function AboutCard() {
 
 /** Session snapshots — manual restore points captured by the autosave heartbeat. */
 function SnapshotsCard() {
+  const confirm = useConfirm();
   const [snaps, setSnaps] = useState<Snapshot[]>(() => loadSnapshots());
   const refresh = () => setSnaps(loadSnapshots());
 
-  const restore = (s: Snapshot) => {
+  const restore = async (s: Snapshot) => {
     if (
-      confirm(
-        `Restore the snapshot from ${new Date(s.ts).toLocaleString()}? This replaces your current production state.`
-      )
+      await confirm({
+        title: `Restore the snapshot from ${new Date(s.ts).toLocaleString()}?`,
+        body: "This replaces your current production state.",
+        confirmLabel: "Restore",
+        destructive: true,
+      })
     ) {
       restoreSnapshot(s.id);
       window.location.reload();

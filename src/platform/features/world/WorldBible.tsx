@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Globe,
@@ -68,6 +69,7 @@ import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dn
 import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
 
 export function WorldBible() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
@@ -272,8 +274,15 @@ export function WorldBible() {
                 env={e}
                 onClick={() => setSelectedId(e.id)}
                 onOpenCoverage={() => setCoverageId(e.id)}
-                onDelete={() => {
-                  if (confirm(`Delete "${e.name}" from World Designer?`)) removeEnv.mutate(e.id);
+                onDelete={async () => {
+                  if (
+                    await confirm({
+                      title: `Delete "${e.name}" from World Designer?`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                    })
+                  )
+                    removeEnv.mutate(e.id);
                 }}
               />
             ))}
@@ -425,6 +434,7 @@ function EnvironmentSheet({
   onOpenSheet: () => void;
   onOpenCoverage: () => void;
 }) {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Environment>(environment);
   const [section, setSection] = useState<"overview" | "place" | "atmosphere" | "style">(
@@ -1051,8 +1061,15 @@ function EnvironmentSheet({
               icon={<Trash2 className="h-4 w-4" />}
               label="Delete Location"
               danger
-              onClick={() => {
-                if (confirm(`Delete "${draft.name}" from World Designer?`)) remove.mutate();
+              onClick={async () => {
+                if (
+                  await confirm({
+                    title: `Delete "${draft.name}" from World Designer?`,
+                    confirmLabel: "Delete",
+                    destructive: true,
+                  })
+                )
+                  remove.mutate();
               }}
             />
             {quickError && (

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -78,6 +79,7 @@ const TABS: ("All" | LibKind)[] = [
 ];
 
 export function AssetLibrary() {
+  const confirm = useConfirm();
   const openCharacters = useAppStore((s) => s.openCharacters);
   const openWorld = useAppStore((s) => s.openWorld);
   const openProps = useAppStore((s) => s.openProps);
@@ -182,16 +184,28 @@ export function AssetLibrary() {
     qc.invalidateQueries({ queryKey: ["cast"] });
   };
 
-  const removeItem = (item: LibItem) => {
+  const removeItem = async (item: LibItem) => {
     if (item.kind === "Glam" && item.generatedId) {
-      if (confirm(`Delete Glam asset “${item.label}”?`)) {
+      if (
+        await confirm({
+          title: `Delete Glam asset “${item.label}”?`,
+          confirmLabel: "Delete",
+          destructive: true,
+        })
+      ) {
         deleteAsset(item.generatedId);
         setTick((n) => n + 1);
       }
       return;
     }
     if (item.kind === "Motion test" && item.motionId) {
-      if (confirm(`Delete motion test “${item.label}”?`)) {
+      if (
+        await confirm({
+          title: `Delete motion test “${item.label}”?`,
+          confirmLabel: "Delete",
+          destructive: true,
+        })
+      ) {
         deleteMotionTest(item.motionId);
         setTick((n) => n + 1);
       }

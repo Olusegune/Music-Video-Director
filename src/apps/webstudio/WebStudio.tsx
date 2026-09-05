@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import {
   Code2,
   Download,
@@ -989,6 +990,7 @@ function WebWorkbench({
 }
 
 export function WebStudio() {
+  const confirm = useConfirm();
   const { studioMode, setStudioMode } = useAppStore();
   const [selectedProviderPref, setSelectedProviderPref] = useState<ProviderId | undefined>(undefined);
   const [generationState, setGenerationState] = useState<GenerationState>({
@@ -1099,12 +1101,15 @@ export function WebStudio() {
     setActiveId(project.id);
   };
   const allDeliverables = listDeliverables({ moduleId: "webstudio" });
-  const removeActiveProject = () => {
+  const removeActiveProject = async () => {
     if (
       !active ||
-      !confirm(
-        `Delete web project “${active.name}”? This removes its local site specification and deliverable record.`
-      )
+      !(await confirm({
+        title: `Delete web project “${active.name}”?`,
+        body: "This removes its local site specification and deliverable record.",
+        confirmLabel: "Delete",
+        destructive: true,
+      }))
     )
       return;
     deleteWebProject(active.id);

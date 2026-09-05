@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import {
   BadgeCheck,
   CalendarDays,
@@ -770,6 +771,7 @@ function CampaignWorkbench({
 }
 
 export function CampaignStudio() {
+  const confirm = useConfirm();
   const { studioMode, setStudioMode } = useAppStore();
   const [projects, setProjects] = useState(() => listCampaigns());
   const [activeId, setActiveId] = useState(() => listCampaigns()[0]?.id ?? "");
@@ -854,8 +856,17 @@ export function CampaignStudio() {
     setActiveId(project.id);
   };
   const allDeliverables = listDeliverables();
-  const removeActive = () => {
-    if (!active || !confirm(`Delete campaign “${active.name}” and its deliverable plan?`)) return;
+  const removeActive = async () => {
+    if (
+      !active ||
+      !(await confirm({
+        title: `Delete campaign “${active.name}”?`,
+        body: "Its deliverable plan goes with it.",
+        confirmLabel: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     deleteCampaign(active.id);
     deleteDeliverables({ projectId: active.id });
     const remaining = listCampaigns();

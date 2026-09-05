@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunk = 0x8000;
@@ -28,6 +29,7 @@ import { useAudioPlayer } from "@/apps/music-video/lib/audioPlayer";
 import { SongView } from "./SongView";
 
 export function SongStudio() {
+  const confirm = useConfirm();
   const [songs, setSongs] = useState<SongMap[]>(() => loadSongs());
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,9 +149,17 @@ export function SongStudio() {
     setSongs(loadSongs());
   }, []);
 
-  const removeSong = (id: string) => {
+  const removeSong = async (id: string) => {
     const s = loadSongs().find((x) => x.id === id);
-    if (!confirm(`Delete "${s?.name ?? "this song"}"? This can't be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete "${s?.name ?? "this song"}"?`,
+        body: "Its treatments, choreography, and song-specific cast go too. This can't be undone.",
+        confirmLabel: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     deleteSong(id);
     // Cascade: a song's treatments (per template) and choreography plan are
     // keyed by songId with no owning song left to reach them once it's gone

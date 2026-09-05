@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 // A standing guard against the bug class that produced most of this session's
 // hand-found bugs: a control that renders and does nothing.
@@ -135,5 +136,41 @@ describe("no dead controls", () => {
         "nothing. Either wire the prop at the call sites, or pass the handler conditionally " +
         "(`onX={maybeUnset ? handler : undefined}`) so the control isn't rendered at all."
     ).toEqual([]);
+  });
+});
+
+// Browser dialog globals are banned in app code. `confirm()` is drawn by the
+// OS, so it can't be themed and doesn't match the app's own language — and in
+// the desktop webview a click on a confirm-gated control was seen to do
+// nothing at all, making every guarded delete a silent no-op. useConfirm()
+// from confirm-dialog.tsx renders in-app and returns a real answer.
+describe("no browser dialog globals", () => {
+  it("uses useConfirm() instead of window.confirm/alert/prompt", () => {
+    const calls = grep([
+      "-rn",
+      "--include=*.tsx",
+      "--include=*.ts",
+      "-E",
+      // A call, not a property or an identifier that merely ends in these
+      // (setConfirmOpen, onConfirm, confirmLabel are all fine).
+      "(^|[^.a-zA-Z])(confirm|alert|prompt)[(]",
+      "src",
+    ]).filter(
+      (line) =>
+        // Tests carry these strings as fixtures (escaping cases, for one).
+        !/\.test\.tsx?:/.test(line) &&
+        !line.includes("confirm-dialog.tsx") &&
+        !/^\S+:\d+:\s*(\/\/|\*)/.test(line)
+    );
+
+    // `await confirm({...})` is the hook's value, not the global. What makes it
+    // the hook is that the file obtained one, so that is what gets asserted --
+    // matching on "await" alone would pass an awaited global just as happily.
+    const offenders = calls.filter((line) => {
+      const file = line.split(":")[0];
+      const source = readFileSync(file, "utf8");
+      return !source.includes("useConfirm()");
+    });
+    expect(offenders).toEqual([]);
   });
 });

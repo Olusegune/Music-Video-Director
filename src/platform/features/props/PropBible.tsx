@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/platform/components/ui/confirm-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Package,
@@ -138,6 +139,7 @@ function PropProfile({ prop, onDone }: { prop: Prop; onDone: (saved: Prop | null
 }
 
 export function PropBible() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetId, setSheetId] = useState<string | null>(null);
@@ -355,8 +357,15 @@ export function PropBible() {
                 prop={p}
                 onClick={() => setSelectedId(p.id)}
                 onOpenCoverage={() => setCoverageId(p.id)}
-                onDelete={() => {
-                  if (confirm(`Delete "${p.name}" from Props & Vehicles?`)) removeProp.mutate(p.id);
+                onDelete={async () => {
+                  if (
+                    await confirm({
+                      title: `Delete "${p.name}" from Props & Vehicles?`,
+                      confirmLabel: "Delete",
+                      destructive: true,
+                    })
+                  )
+                    removeProp.mutate(p.id);
                 }}
               />
             ))}
@@ -452,6 +461,7 @@ function PropSheet({
   onOpenSheet: () => void;
   onOpenCoverage: () => void;
 }) {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Prop>(prop);
   const [section, setSection] = useState<"overview" | "physical" | "usage" | "style">("overview");
@@ -1070,8 +1080,15 @@ function PropSheet({
               icon={<Trash2 className="h-4 w-4" />}
               label="Delete Prop"
               danger
-              onClick={() => {
-                if (confirm(`Delete "${draft.name}" from Props & Vehicles?`)) remove.mutate();
+              onClick={async () => {
+                if (
+                  await confirm({
+                    title: `Delete "${draft.name}" from Props & Vehicles?`,
+                    confirmLabel: "Delete",
+                    destructive: true,
+                  })
+                )
+                  remove.mutate();
               }}
             />
             {quickError && (
