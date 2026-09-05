@@ -68,30 +68,29 @@ export function MusicVideoWelcomeScreen() {
           <X className="h-4 w-4" />
         </button>
 
-        {/* Hero — the art has no baked-in title (unlike earlier drafts), so
-            the name and tagline are set directly over it here, in the clear
-            lower-left the gradient opens up. Everything interactive lives
-            in the panel below so nothing competes with the artwork itself. */}
+        {/* Hero — the art carries the identity on its own (wordmark is
+            baked in, bottom-left) and does the visual work; a short seam
+            fade blends it into the panel below without dimming it, so
+            nothing dilutes the artwork's own color and energy. */}
         <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden">
           <img
             src={heroArt}
-            alt="Three performers mid-performance on a concert stage, directed by the app"
+            alt="Music Video Director — three performers mid-performance on a concert stage"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-            <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-lg sm:text-4xl">
-              Music Video Director
-            </h1>
-            <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/80 drop-shadow sm:text-base">
-              Import a song and direct a fully cast, choreographed music video — start to
-              render, in one connected flow.
-            </p>
-          </div>
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#101216] to-transparent" />
         </div>
 
         <section className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5 sm:px-9 sm:pb-8">
-          <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+            AI creative director for music videos
+          </p>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base">
+            Import a song and direct a fully cast, choreographed music video — start to render,
+            in one connected flow.
+          </p>
+
+          <div className="mt-6 rounded-xl border border-primary/25 bg-gradient-to-br from-primary/15 via-white/[0.03] to-transparent p-5">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
                 <p className="font-semibold text-white">Ready to direct your first video?</p>
