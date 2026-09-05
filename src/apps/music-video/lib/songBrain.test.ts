@@ -146,3 +146,61 @@ describe("carrySectionEdits", () => {
     expect(got[0].lyricsText).toBeUndefined();
   });
 });
+
+describe("segmentSections — chorus labelling", () => {
+  // Bar energies rebuilt from a real imported track: a loud, compressed hip-hop
+  // mix whose sections all sit in a narrow 0.70–0.80 band above a quiet intro.
+  // The shipped detector labelled every one of these Verse and found no Chorus,
+  // which left the Director with no performance shots to plan.
+  const REAL_TRACK: [number, number][] = [
+    [0, 0.48],
+    [86.8, 0.701],
+    [112.3, 0.802],
+    [130.2, 0.549],
+    [145.5, 0.723],
+    [176.2, 0.781],
+    [217.0, 0.785],
+    [240, 0.8],
+    [280.9, 0.755],
+  ];
+  const DURATION = 302;
+  const REAL_BAR = (60 / 94) * 4;
+
+  const barsFor = (plan: [number, number][], duration: number, barDur: number) => {
+    const bars: number[] = [];
+    for (let b = 0; b < Math.ceil(duration / barDur); b++) {
+      const t = b * barDur;
+      let e = plan[0][1];
+      for (const [start, energy] of plan) if (t >= start) e = energy;
+      bars.push(e);
+    }
+    return bars;
+  };
+
+  it("finds a chorus in a loud, narrow-dynamic-range mix", () => {
+    const sections = segmentSections(barsFor(REAL_TRACK, DURATION, REAL_BAR), REAL_BAR, DURATION);
+    expect(sections.filter((s) => s.kind === "Chorus").length).toBeGreaterThan(0);
+  });
+
+  it("never labels a section Verse while a quieter one is a Chorus", () => {
+    const sections = segmentSections(barsFor(REAL_TRACK, DURATION, REAL_BAR), REAL_BAR, DURATION);
+    const quietestChorus = Math.min(
+      ...sections.filter((s) => s.kind === "Chorus").map((s) => s.energy)
+    );
+    for (const verse of sections.filter((s) => s.kind === "Verse")) {
+      expect(verse.energy).toBeLessThan(quietestChorus);
+    }
+  });
+
+  it("still opens on an Intro and closes on an Outro", () => {
+    const sections = segmentSections(barsFor(REAL_TRACK, DURATION, REAL_BAR), REAL_BAR, DURATION);
+    expect(sections[0].kind).toBe("Intro");
+    expect(sections[sections.length - 1].kind).toBe("Outro");
+  });
+
+  it("reports no chorus on a genuinely flat track rather than inventing one", () => {
+    const flat = Array(60).fill(0.5);
+    const sections = segmentSections(flat, 2, 120);
+    expect(sections.some((s) => s.kind === "Chorus")).toBe(false);
+  });
+});

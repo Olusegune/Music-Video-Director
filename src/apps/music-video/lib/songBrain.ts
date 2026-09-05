@@ -417,20 +417,43 @@ function labelSegments(runs: RawSegment[], barDur: number, duration: number): So
   let verseCount = 0;
   let bridgeUsed = false;
 
+  // Which sections count as "loud" is decided among the sections we actually
+  // ended up with, not by the per-bar level they were quantized at.
+  //
+  // `level` is assigned before merging, and merging averages a short run into
+  // its neighbour and re-quantizes the blend. On a track whose bars sit in a
+  // narrow band — a loud, compressed mix, which is most modern pop and hip-hop
+  // — that averaging walks every run down to level 1, so nothing is ever a
+  // Chorus. Observed on a real track: nine sections, all Verse, one of them at
+  // energy 0.80 while another song's Chorus sat at 0.74. A section cannot be
+  // quieter than a Chorus elsewhere and still outrank it here.
+  const sorted = runs.map((r) => r.energy).sort((a, b) => a - b);
+  const percentile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+  const loudFloor = percentile(0.7);
+  const peak = sorted[sorted.length - 1];
+  // A genuinely flat song (a drone, an ambient piece) has no chorus to find,
+  // and forcing one would be a worse lie than reporting none.
+  const hasContrast = peak - sorted[0] > 0.06;
+  const isLoud = (run: RawSegment) => hasContrast && run.energy >= loudFloor;
+
   return runs.map((run, i) => {
     const start = run.startBar * barDur;
     const end = i === n - 1 ? duration : run.endBar * barDur;
     const isFirst = i === 0;
     const isLast = i === n - 1;
+    // The opening and closing sections stay Intro/Outro unless the song's peak
+    // moment happens to be one of them — a big final chorus is real, but a
+    // merely loud outro is still an outro.
+    const bookend = (isFirst || isLast) && run.energy < peak;
 
     let kind: SectionKind;
-    if (isFirst && run.level <= 1) {
+    if (isFirst && bookend) {
       kind = "Intro";
-    } else if (isLast && run.level <= 1) {
+    } else if (isLast && bookend) {
       kind = "Outro";
-    } else if (run.level === 2) {
+    } else if (isLoud(run)) {
       kind = "Chorus";
-    } else if (run.level === 1) {
+    } else if (run.level >= 1) {
       // A distinct mid-energy run late in the song, after a chorus, reads as a bridge.
       if (!bridgeUsed && chorusCount >= 1 && i >= n - 3 && !isLast) {
         kind = "Bridge";
