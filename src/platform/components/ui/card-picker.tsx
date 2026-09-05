@@ -4,7 +4,7 @@
 // Reach for this instead of a native <select> whenever the options are a
 // small, fixed, human-recognizable set (not an open-ended/user-generated list).
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
@@ -38,6 +38,7 @@ export function CardPicker({
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.key === value);
 
   // Rendered via a portal (see below) so the popover escapes any ancestor
@@ -53,6 +54,30 @@ export function CardPicker({
     }
     setOpen(true);
   };
+
+  // The panel's height depends on its content (2 vs 3 columns, tagline
+  // length, option count), so it can't be known before it's actually
+  // mounted. Once it is, re-clamp: flip above the trigger when there isn't
+  // room below, and never let the top edge scroll off-screen either — a
+  // trigger near the bottom of a scrolling card (Cast's Dance style picker,
+  // reported as "clips inside the box") was opening a panel whose bottom
+  // ran past the window edge with nothing to pull it back on-screen.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    const panel = panelRef.current;
+    if (!trigger || !panel) return;
+    const rect = trigger.getBoundingClientRect();
+    const panelHeight = panel.offsetHeight;
+    const fitsBelow = rect.bottom + 6 + panelHeight <= window.innerHeight - 8;
+    const top = fitsBelow
+      ? rect.bottom + 6
+      : Math.max(8, rect.top - 6 - panelHeight);
+    setPos((prev) => (prev && prev.top === top ? prev : { ...prev!, top }));
+    // Only re-measure when the panel opens or its own size changes — not on
+    // every `pos` update this effect itself causes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
     <div className="relative">
@@ -74,6 +99,7 @@ export function CardPicker({
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
             <div
+              ref={panelRef}
               style={{ top: pos.top, left: pos.left }}
               className={cn(
                 "fixed z-50 grid w-[28rem] max-w-[90vw] gap-2 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-card",

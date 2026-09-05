@@ -22,6 +22,7 @@ export interface HelpArticle {
 }
 
 const updatedAt = "2026-07-08";
+const performanceGuideUpdatedAt = "2026-09-05";
 
 export const HELP_ARTICLES: HelpArticle[] = [
   {
@@ -112,9 +113,59 @@ export const HELP_ARTICLES: HelpArticle[] = [
         steps: [
           "Inside Music Video Director, open Song Studio and import a track.",
           "Add lyrics or a script, confirm sections, and choose performers.",
+          "In Cast, link each performer's Character DNA to a character with a generated portrait or Turnaround Sheet — this is what keeps them looking like the same person in every shot.",
           "Open Direct to create the treatment and shot plan.",
           "Refine Cast and Choreography, then finish in Timeline and Export.",
         ],
+      },
+      {
+        tip: "If a render comes back as landscapes with nobody performing, see “Getting real performances, not just b-roll” below — it's almost always one specific, fixable thing.",
+      },
+    ],
+  },
+  {
+    id: "mv-performance-guide",
+    title: "Getting real performances, not just b-roll",
+    section: "Music Video Director",
+    relatedViews: ["song", "cast", "choreography", "mvdirector"],
+    updatedAt: performanceGuideUpdatedAt,
+    keywords:
+      "performance lip sync chorus detection performer character dna seed consistency choreography b-roll slideshow",
+    action: { label: "Open Song Studio", view: "song" },
+    blocks: [
+      {
+        body: "A music video needs someone to actually perform in it. If a render comes back as nothing but landscapes and lighting — no singing, no dancing, nobody on camera — it's almost always one of these three things, in order of how often it happens.",
+      },
+      {
+        heading: "1. No Chorus was detected",
+        body: "Only Chorus/Drop sections (and loud Instrumentals) are directed as performance shots — Intro and Outro are meant to be pure b-roll, the way most real music videos open and close. If a song comes back with only Intro/Verse/Outro and no Chorus, the detector had nothing to work with — it partly relies on lyrics to find the repeated phrase that marks a chorus.",
+        steps: [
+          "In Song Studio, paste the song's lyrics if you haven't — even a rough transcript helps.",
+          "If a song still won't split into a real Chorus, select the section in the song structure list and use the manual split control to mark the loudest, most repeated stretch as Chorus yourself.",
+          "Direct (or re-direct) the treatment — Direct shows a red banner naming exactly this problem whenever a treatment has zero performance shots, so you don't find out after rendering.",
+        ],
+      },
+      {
+        heading: "2. Nobody was assigned to the section",
+        body: "A Chorus can exist and still render with nobody on camera if no performer is linked to it.",
+        steps: [
+          "Open Cast and confirm each performer has a role (Lead Singer, Featured Artist, Dancer).",
+          "Link Character DNA on that performer to an actual character with a generated portrait — without a reference portrait, the AI reinvents what they look like in every single shot, which is the most common cause of a performer looking like a different person from scene to scene.",
+          "In Song Studio, open each section and confirm a performer is chosen — Direct also flags any section left on “— choose performer —” before you render.",
+        ],
+      },
+      {
+        heading: "3. Only stills were generated, not clips",
+        body: "“Generate all frames” produces still images. A performance shot only actually moves — dances, sings, gestures — once its clip is generated too.",
+        steps: [
+          "In Direct, use “Generate all clips” to turn every performance shot's still into a real clip.",
+          "Changed the seed, a reference image, or the style after clips already existed? Use “Regenerate all clips” to re-run them — the first button only fills shots that don't have a clip yet.",
+        ],
+      },
+      {
+        heading: "Choreography and lip-sync",
+        body: "Choreography is planned automatically from the song's tempo and energy, and it reads each section's lyrics plus any choreography/story notes to bias the moves it picks — “reach for the sky” in a lyric line will favor an arms-raised move over an unrelated one in the same style. Clip generation also slices the song's own audio to each shot's exact time range and hands it to the video model, so “lip-sync” has real audio to work with rather than only a text instruction.",
+        tip: "None of this guarantees frame-perfect lip-sync — that still depends on the video model's own quality — but it's the difference between the model having real signal to follow and having none.",
       },
     ],
   },
