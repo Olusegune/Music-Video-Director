@@ -501,6 +501,85 @@ function coarseEnvelope(
 // Public: analyze a file into a SongMap
 // ---------------------------------------------------------------------------
 
+/**
+ * Re-run only the structural analysis over already-imported audio.
+ *
+ * Section detection used to be a one-shot side effect of import: once a track
+ * was analyzed its sections were frozen for the life of the song, and even
+ * "Replace audio" deliberately preserves them. That meant any improvement to
+ * the detector never reached songs already in the library — a track imported
+ * before a fix kept its old breakdown (e.g. all-Verse with no Chorus, which
+ * then starves the Director of performance shots) with no way to refresh it.
+ */
+export async function detectSectionsFromBuffer(arrayBuffer: ArrayBuffer): Promise<{
+  sections: SongSection[];
+  bpm: number;
+  beatOffsetSec: number;
+  durationSec: number;
+}> {
+  const { buffer } = await decode(arrayBuffer);
+  const mono = toMono(buffer);
+  const { onset, energy, frameRate } = computeOnset(mono, buffer.sampleRate);
+  const bpm = estimateTempo(onset, frameRate);
+  const beatOffsetSec = estimateBeatOffset(onset, frameRate, bpm);
+  const barDur = (60 / bpm) * 4;
+  const bars = barEnergies(energy, frameRate, barDur, buffer.duration);
+  return {
+    sections: segmentSections(bars, barDur, buffer.duration),
+    bpm,
+    beatOffsetSec,
+    durationSec: buffer.duration,
+  };
+}
+
+/**
+ * Move each old section's creative work onto the freshly-detected section that
+ * covers the same moment.
+ *
+ * Matching is by time overlap, not by index: re-detection changes how many
+ * sections there are and where they start, so the third section before and the
+ * third section after are frequently different parts of the song. Overlap keeps
+ * a verse's lyrics with that verse even when the split around it moves.
+ */
+export function carrySectionEdits(
+  previous: SongSection[],
+  detected: SongSection[]
+): SongSection[] {
+  return detected.map((next) => {
+    let best: SongSection | null = null;
+    let bestOverlap = 0;
+    for (const old of previous) {
+      const overlap = Math.min(next.end, old.end) - Math.max(next.start, old.start);
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = old;
+      }
+    }
+    if (!best) return next;
+    return {
+      ...next,
+      lyricsText: best.lyricsText,
+      lead: best.lead,
+      backup: best.backup,
+      mood: best.mood,
+      cameraNote: best.cameraNote,
+      choreoNote: best.choreoNote,
+      storyNote: best.storyNote,
+      visualStyle: best.visualStyle,
+      performerRole: best.performerRole,
+    };
+  });
+}
+
+async function decode(arrayBuffer: ArrayBuffer): Promise<{ buffer: AudioBuffer }> {
+  const ctx = getAudioContext();
+  try {
+    return { buffer: await ctx.decodeAudioData(arrayBuffer.slice(0)) };
+  } finally {
+    void ctx.close();
+  }
+}
+
 export async function analyzeAudioFile(file: File): Promise<SongMap> {
   const arrayBuffer = await file.arrayBuffer();
   const ctx = getAudioContext();

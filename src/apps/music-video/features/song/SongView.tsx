@@ -27,6 +27,8 @@ import {
   type SongSection,
   type SectionKind,
   type LyricLine,
+  detectSectionsFromBuffer,
+  carrySectionEdits,
 } from "@/apps/music-video/lib/songBrain";
 import {
   detectSectionPerformer,
@@ -47,6 +49,7 @@ import { useAudioPlayer } from "@/apps/music-video/lib/audioPlayer";
 import { VoiceLab } from "./VoiceLab";
 import { SectionRow, SectionEditor } from "./SectionEditor";
 import { SongMapCanvas } from "./SongMapCanvas";
+import { cn } from "@/platform/lib/utils";
 
 /** Build timed lyric lines from each section's lyricsText (spread across its span). */
 function lyricsFromSections(sections: SongSection[]): LyricLine[] {
@@ -144,6 +147,62 @@ export function SongView({
     sections.splice(idx, 1, first, second);
     setSections(sections);
     setSelectedSectionId(second.id);
+  };
+
+  // Re-run section detection over the already-imported audio.
+  //
+  // Detection used to happen once, at import, and never again — "Replace audio"
+  // deliberately keeps the existing sections. So a track analyzed by an older
+  // detector kept its old breakdown forever; a song stuck with no Chorus at all
+  // starves the Director of performance shots and there was no way to refresh
+  // it short of deleting and re-importing (losing lyrics, briefs, and cast).
+  //
+  // Boundaries are recomputed, but the creative work is carried across to
+  // whichever new section overlaps each old one most, so re-detecting costs
+  // only the section split itself.
+  const [redetecting, setRedetecting] = useState(false);
+  const [redetectError, setRedetectError] = useState<string | null>(null);
+  const redetectSections = async () => {
+    const edited = song.sections.filter(
+      (s) =>
+        s.lyricsText?.trim() ||
+        s.performerRole ||
+        s.lead ||
+        s.backup ||
+        s.mood ||
+        s.cameraNote ||
+        s.choreoNote ||
+        s.storyNote ||
+        s.visualStyle
+    ).length;
+    const warning = edited
+      ? `\n\n${edited} section${edited === 1 ? " has" : "s have"} lyrics, a performer, or creative notes. That work moves to whichever new section covers the same moment, but the section boundaries themselves will change.`
+      : "";
+    if (!confirm(`Re-analyze "${song.name}" and rebuild its section list?${warning}`)) return;
+
+    setRedetecting(true);
+    setRedetectError(null);
+    try {
+      const src = await resolveAssetSrc(song.audioPath || "");
+      if (!src) throw new Error("This track's audio file couldn't be found.");
+      const bytes = await (await fetch(src)).arrayBuffer();
+      const fresh = await detectSectionsFromBuffer(bytes);
+
+      const carried = carrySectionEdits(song.sections, fresh.sections);
+
+      onChange({
+        ...song,
+        sections: carried,
+        bpm: fresh.bpm,
+        beatOffsetSec: fresh.beatOffsetSec,
+        updatedAt: new Date().toISOString(),
+      });
+      setSelectedSectionId(carried[0]?.id ?? "");
+    } catch (e) {
+      setRedetectError(e instanceof Error ? e.message : "Couldn't re-analyze this track.");
+    } finally {
+      setRedetecting(false);
+    }
   };
 
   // Fill confident performer roles; leave unclear ones unset so they still prompt.
@@ -376,9 +435,21 @@ export function SongView({
                 <Wand2 className="h-4 w-4 text-accent" />
                 Song structure
               </CardTitle>
-              <Button variant="secondary" size="sm" onClick={autoDetectPerformers}>
-                <Mic2 className="h-3.5 w-3.5" /> Auto-detect performers
-              </Button>
+              <div className="flex shrink-0 gap-1.5">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={redetectSections}
+                  disabled={redetecting}
+                  title="Re-run section detection on this track's audio, keeping lyrics, briefs, and performers."
+                >
+                  <Radio className={cn("h-3.5 w-3.5", redetecting && "animate-pulse")} />
+                  {redetecting ? "Re-detecting…" : "Re-detect sections"}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={autoDetectPerformers}>
+                  <Mic2 className="h-3.5 w-3.5" /> Auto-detect performers
+                </Button>
+              </div>
             </div>
             <CardDescription>
               Pick a section to add lyrics, performer, mood, and camera direction.
@@ -387,6 +458,13 @@ export function SongView({
                   {needsPerformer} section{needsPerformer === 1 ? "" : "s"} need a performer.
                 </span>
               )}
+              {!song.sections.some((s) => s.kind === "Chorus") && (
+                <span className="ml-1 text-warning">
+                  No chorus detected — the Director won't plan performance shots. Try “Re-detect
+                  sections”, or retag a section as Chorus.
+                </span>
+              )}
+              {redetectError && <span className="ml-1 text-danger">{redetectError}</span>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">

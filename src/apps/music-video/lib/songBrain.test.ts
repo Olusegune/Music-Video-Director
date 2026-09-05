@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { segmentSections } from "@/apps/music-video/lib/songBrain";
+import {
+  segmentSections,
+  carrySectionEdits,
+  type SongSection,
+} from "@/apps/music-video/lib/songBrain";
 
 const BAR_DUR = 2; // seconds per bar, arbitrary for this test
 
@@ -70,5 +74,75 @@ describe("segmentSections", () => {
     expect(sections[0].kind).toBe("Verse");
     expect(sections[0].start).toBe(0);
     expect(sections[0].end).toBe(30);
+  });
+});
+
+describe("carrySectionEdits", () => {
+  const sec = (over: Partial<SongSection> & { start: number; end: number }): SongSection => ({
+    id: `s${over.start}`,
+    kind: "Verse",
+    label: "Verse",
+    energy: 0.5,
+    ...over,
+  });
+
+  it("keeps a section's lyrics with the moment they belong to when boundaries move", () => {
+    const previous = [
+      sec({ start: 0, end: 30, lyricsText: "first verse" }),
+      sec({ start: 30, end: 60, lyricsText: "the hook" }),
+    ];
+    // Re-detection splits the song differently: three sections, not two.
+    const detected = [sec({ start: 0, end: 20 }), sec({ start: 20, end: 45 }), sec({ start: 45, end: 60 })];
+
+    const got = carrySectionEdits(previous, detected);
+    expect(got[0].lyricsText).toBe("first verse"); // 0-20 sits wholly inside the old first
+    // 20-45 straddles the old split: 10s of the verse, 15s of the hook. It
+    // takes the hook's words because that's the larger share — index-based
+    // matching would have handed it the verse's.
+    expect(got[1].lyricsText).toBe("the hook");
+    expect(got[2].lyricsText).toBe("the hook");
+  });
+
+  it("carries every creative field, not just lyrics", () => {
+    const previous = [
+      sec({
+        start: 0,
+        end: 60,
+        lyricsText: "words",
+        lead: "Neo",
+        backup: "crew",
+        mood: "defiant",
+        cameraNote: "push in",
+        choreoNote: "step touch",
+        storyNote: "he arrives",
+        visualStyle: "neon",
+        performerRole: "lead",
+      }),
+    ];
+    const got = carrySectionEdits(previous, [sec({ start: 0, end: 60 })]);
+    expect(got[0]).toMatchObject({
+      lyricsText: "words",
+      lead: "Neo",
+      backup: "crew",
+      mood: "defiant",
+      cameraNote: "push in",
+      choreoNote: "step touch",
+      storyNote: "he arrives",
+      visualStyle: "neon",
+      performerRole: "lead",
+    });
+  });
+
+  it("uses the detected kind and timing, not the old one", () => {
+    const previous = [sec({ start: 0, end: 60, kind: "Verse", label: "Verse 1" })];
+    const detected = [sec({ start: 0, end: 60, kind: "Chorus", label: "Chorus 1", energy: 0.9 })];
+    const got = carrySectionEdits(previous, detected);
+    expect(got[0].kind).toBe("Chorus");
+    expect(got[0].label).toBe("Chorus 1");
+  });
+
+  it("leaves a new section untouched when nothing overlaps it", () => {
+    const got = carrySectionEdits([], [sec({ start: 0, end: 30 })]);
+    expect(got[0].lyricsText).toBeUndefined();
   });
 });
