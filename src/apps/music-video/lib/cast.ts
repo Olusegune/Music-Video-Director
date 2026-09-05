@@ -6,6 +6,8 @@
 // music-video-specific direction — performer role, dance style, lip-sync, and
 // performance notes. Stored locally; no API.
 
+import { safeSetItem } from "@/platform/lib/storage";
+
 export type PerformerRole =
   | "Lead Singer"
   | "Backing Singer"
@@ -94,11 +96,11 @@ export function savePerformer(performer: Performer): void {
   const i = all.findIndex((p) => p.id === performer.id);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  localStorage.setItem(LS_CAST, JSON.stringify(all));
+  safeSetItem(LS_CAST, JSON.stringify(all));
 }
 
 export function deletePerformer(id: string): void {
-  localStorage.setItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
+  safeSetItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
 }
 
 /**
@@ -113,7 +115,7 @@ export function loadCastForSong(songId: string): Performer[] {
 
 /** Cascade delete: called when a song is deleted, so its cast doesn't orphan. */
 export function deletePerformersForSong(songId: string): void {
-  localStorage.setItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.songId !== songId)));
+  safeSetItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.songId !== songId)));
 }
 
 // ---------------------------------------------------------------------------

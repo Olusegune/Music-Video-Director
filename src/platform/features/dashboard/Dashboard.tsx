@@ -32,6 +32,7 @@ import {
 } from "@/platform/components/ui/card";
 import { ProjectCard } from "@/platform/components/visual";
 import { SpendCreditsPanel } from "./SpendCreditsPanel";
+import { StoragePressureBanner } from "./StoragePressureBanner";
 import { ProjectActionsMenu } from "@/platform/components/visual/ProjectActionsMenu";
 import type { VisualModule } from "@/platform/components/visual/visualTheme";
 import { recentProjects, type HubModuleId, type HubProject } from "@/platform/lib/projectHub";
@@ -193,6 +194,8 @@ export function Dashboard() {
       </header>
 
       <div className="space-y-8 p-8">
+        <StoragePressureBanner />
+
         {/* Director Studio hero - broad app identity, with Music Video as one module. */}
         <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-gold)]/30">
           <img

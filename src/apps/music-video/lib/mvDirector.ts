@@ -7,6 +7,7 @@
 // intros/bridges. Beat-synced shot boundaries. NO API call — pure local
 // reasoning, fully editable downstream.
 
+import { safeSetItem } from "@/platform/lib/storage";
 import {
   beatTimes,
   sectionColor,
@@ -546,11 +547,11 @@ export function saveTreatment(treatment: MvTreatment): void {
   const i = all.findIndex((t) => sameSlot(t, treatment.songId, treatment.templateId));
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  localStorage.setItem(LS_TREATMENTS, JSON.stringify(all));
+  safeSetItem(LS_TREATMENTS, JSON.stringify(all));
 }
 
 export function deleteTreatment(songId: string, templateId?: string | null): void {
-  localStorage.setItem(
+  safeSetItem(
     LS_TREATMENTS,
     JSON.stringify(loadAll().filter((t) => !sameSlot(t, songId, templateId)))
   );
@@ -563,5 +564,5 @@ export function deleteTreatment(songId: string, templateId?: string | null): voi
  * survives as an orphan with no song to belong to.
  */
 export function deleteTreatmentsForSong(songId: string): void {
-  localStorage.setItem(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
+  safeSetItem(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
 }

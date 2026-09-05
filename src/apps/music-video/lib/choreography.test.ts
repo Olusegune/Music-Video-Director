@@ -66,3 +66,32 @@ describe("choreographSong lyric/script-aware selection", () => {
     expect(plan.sections[0].formation.length).toBeGreaterThan(0);
   });
 });
+
+describe("choreographSong per-song variation", () => {
+  // Picks used to be keyed on section index alone, so section 0 of every
+  // song got pool[0] — identical camera moves and lighting in every music
+  // video the app ever produced. Two different songs must not choreograph
+  // to the same camera/lighting plan.
+  it("gives two different songs different camera and lighting plans", () => {
+    const sections = [section({ lyricsText: "la la la nothing special here" })];
+    const a = choreographSong({ ...songWith(sections), id: "song-aaa" }, "Hip Hop");
+    const b = choreographSong({ ...songWith(sections), id: "song-zzz" }, "Hip Hop");
+
+    const sig = (p: ReturnType<typeof choreographSong>) =>
+      [...(p.sections[0].cameraMoves ?? []), ...(p.sections[0].lightingMoves ?? [])].join("|");
+
+    expect(sig(a)).not.toBe(sig(b));
+  });
+
+  it("is deterministic — re-choreographing the same song gives the same plan", () => {
+    const sections = [section({ lyricsText: "la la la nothing special here" })];
+    const song = { ...songWith(sections), id: "song-stable" };
+    const first = choreographSong(song, "Hip Hop");
+    const second = choreographSong(song, "Hip Hop");
+
+    const sig = (p: ReturnType<typeof choreographSong>) =>
+      [...(p.sections[0].cameraMoves ?? []), ...(p.sections[0].lightingMoves ?? [])].join("|");
+
+    expect(sig(first)).toBe(sig(second));
+  });
+});

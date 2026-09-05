@@ -6,6 +6,7 @@
 // and writes continuity notes. Output is a "pose sheet" starting point that the
 // user edits and that downstream image/video generation can reference.
 
+import { safeSetItem } from "@/platform/lib/storage";
 import {
   barTimes,
   type SongMap,
@@ -335,6 +336,17 @@ function pick<T>(pool: T[], i: number): T {
   return pool[((i % pool.length) + pool.length) % pool.length];
 }
 
+// A stable per-song offset into every pool. Without it these picks are keyed
+// on section index alone, so section 0 of every song gets pool[0] — identical
+// camera moves, lighting, formations, and poses in every music video ever
+// choreographed. Same fix (and same hash) as directSong() in mvDirector.ts.
+// Deterministic per song: re-choreographing one song gives the same plan.
+function songSeed(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 // --- lyric/script-aware move selection --------------------------------------
 //
 // The vocab pools below (moves/accents/formations/poses) already use plain,
@@ -405,7 +417,8 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
   const bars = barTimes(song);
   const barDur = (60 / Math.max(1, song.bpm)) * song.beatsPerBar;
 
-  let moveIdx = 0;
+  const seed = songSeed(song.id);
+  let moveIdx = seed;
   const sections: ChoreoSection[] = [];
   const freeSections: string[] = [];
 
@@ -450,25 +463,25 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
       end: section.end,
       energy: section.energy,
       intensity: intensityFor(section.energy),
-      formation: lyricAwarePick(vocab.formations, words, si),
+      formation: lyricAwarePick(vocab.formations, words, si + seed),
       eightCounts,
       keyPoses: [
-        lyricAwarePick(vocab.poses, words, si),
-        lyricAwarePick(vocab.poses, words, si + 1),
-        lyricAwarePick(vocab.poses, words, si + 2),
+        lyricAwarePick(vocab.poses, words, si + seed),
+        lyricAwarePick(vocab.poses, words, si + seed + 1),
+        lyricAwarePick(vocab.poses, words, si + seed + 2),
       ],
       continuity:
         "Keep facing and levels consistent with the previous chorus; the hook move repeats so it reads as the signature.",
       performance: defaultPerformance(section.kind, section.energy),
       cameraMoves: [
-        pick(CHOREO_CAMERA_MOVES, si),
-        pick(CHOREO_CAMERA_MOVES, si + 2),
-        pick(CHOREO_CAMERA_MOVES, si + 4),
+        pick(CHOREO_CAMERA_MOVES, si + seed),
+        pick(CHOREO_CAMERA_MOVES, si + seed + 2),
+        pick(CHOREO_CAMERA_MOVES, si + seed + 4),
       ],
       lightingMoves: [
-        pick(CHOREO_LIGHTING, si),
-        pick(CHOREO_LIGHTING, si + 1),
-        pick(CHOREO_LIGHTING, si + 3),
+        pick(CHOREO_LIGHTING, si + seed),
+        pick(CHOREO_LIGHTING, si + seed + 1),
+        pick(CHOREO_LIGHTING, si + seed + 3),
       ],
     });
   });
@@ -509,9 +522,9 @@ export function saveChoreo(plan: ChoreoPlan): void {
   const i = all.findIndex((c) => c.songId === plan.songId);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  localStorage.setItem(LS_CHOREO, JSON.stringify(all));
+  safeSetItem(LS_CHOREO, JSON.stringify(all));
 }
 
 export function deleteChoreo(songId: string): void {
-  localStorage.setItem(LS_CHOREO, JSON.stringify(loadAll().filter((c) => c.songId !== songId)));
+  safeSetItem(LS_CHOREO, JSON.stringify(loadAll().filter((c) => c.songId !== songId)));
 }

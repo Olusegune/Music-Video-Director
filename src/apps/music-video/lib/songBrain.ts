@@ -13,6 +13,7 @@
 // Domain types
 // ---------------------------------------------------------------------------
 
+import { safeSetItem } from "@/platform/lib/storage";
 import type { SectionKind } from "@/platform/lib/songSections";
 export { SECTION_KINDS, type SectionKind } from "@/platform/lib/songSections";
 
@@ -629,11 +630,11 @@ export function saveSong(song: SongMap): void {
   const i = all.findIndex((s) => s.id === song.id);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  localStorage.setItem(LS_SONGS, JSON.stringify(all));
+  safeSetItem(LS_SONGS, JSON.stringify(all));
 }
 
 export function deleteSong(id: string): void {
-  localStorage.setItem(LS_SONGS, JSON.stringify(loadSongs().filter((s) => s.id !== id)));
+  safeSetItem(LS_SONGS, JSON.stringify(loadSongs().filter((s) => s.id !== id)));
 }
 
 // ---------------------------------------------------------------------------
