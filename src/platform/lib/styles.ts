@@ -3,7 +3,7 @@
 // generation and every image/video prompt. Each preset carries hint fragments
 // the local creative engine uses to bias camera, lighting, and motion.
 
-export type StyleGroup = "2D" | "3D" | "Rubberhose";
+export type StyleGroup = "2D" | "3D" | "Rubberhose" | "Anime" | "Painterly" | "Photoreal" | "Comic";
 
 export interface StylePreset {
   id: string;
@@ -269,10 +269,175 @@ export const STYLE_PRESETS: StylePreset[] = [
       "elastic tubular limb stretch, exaggerated squash and stretch, cartoon overshoot, springy settle",
     negative: "rigid skeleton, realistic anatomy, stiff mechanical motion, harsh noir lighting",
   },
+  // ---- Anime ---------------------------------------------------------------
+  {
+    id: "anime-shonen",
+    label: "Shonen Action Anime",
+    group: "Anime",
+    fragment:
+      "shonen action anime style, bold ink linework, dynamic speed lines, saturated cel-shaded color, dramatic sharp-angle poses, energy FX aura",
+    cameraHint: "extreme dynamic angles, dutch tilts, whip pans into impact frames",
+    lightingHint: "hard rim light, high contrast cel shadow, glowing energy highlights",
+    motionHint: "smear frames, impact freeze-holds, speed-line bursts, snap zoom on hits",
+    negative: "photorealism, soft painterly blending, muted desaturated color",
+  },
+  {
+    id: "anime-ghibli",
+    label: "Studio Ghibli-Inspired",
+    group: "Anime",
+    fragment:
+      "Ghibli-inspired hand-painted anime, soft watercolor backgrounds, gentle character line art, lush natural detail, warm nostalgic light, whimsical charm",
+    cameraHint: "slow gentle pans, quiet static holds, unhurried establishing wides",
+    lightingHint: "soft natural daylight, warm golden ambience, diffuse cloud-filtered sun",
+    motionHint: "unhurried naturalistic movement, wind in grass and hair, calm idle animation",
+    negative: "harsh cel shading, neon color, aggressive camera motion, CGI gloss",
+  },
+  {
+    id: "anime-noir",
+    label: "Neo-Noir Anime",
+    group: "Anime",
+    fragment:
+      "neo-noir anime, moody cinematic anime shading, rain-slicked neon streets, heavy shadow, restrained desaturated palette with one accent color",
+    cameraHint: "low slow tracking shots, silhouette framing, held wide establishing beats",
+    lightingHint: "hard directional neon key, deep shadow fill, wet-surface reflections",
+    motionHint: "deliberate slow movement, dramatic pause holds, rain and smoke particle drift",
+    negative: "bright saturated palette, chibi proportions, comedic bounce",
+  },
+  {
+    id: "anime-idol-pop",
+    label: "Idol / Pop Anime",
+    group: "Anime",
+    fragment:
+      "bright idol pop anime, glossy cel shading, sparkle and bloom FX, vivid candy palette, expressive large eyes, concert stage energy",
+    cameraHint: "swirling crowd-level orbits, snap cuts to the beat, confetti-framed pushes",
+    lightingHint: "colorful stage spotlights, glitter bloom, rim-lit hair highlights",
+    motionHint: "bouncy idol choreography, sparkle burst on beat, hair and ribbon physics",
+    negative: "gritty realism, muted palette, static staging",
+  },
+  {
+    id: "manga-inkwash",
+    label: "Manga Ink Wash (B&W)",
+    group: "Anime",
+    fragment:
+      "black-and-white manga ink wash, screentone shading, expressive brush linework, high-contrast panel-ready composition",
+    cameraHint: "panel-style framing, dramatic close-up on eyes, decisive hard cuts",
+    lightingHint: "graphic black-and-white contrast, screentone gradient shadow",
+    motionHint: "held dramatic beats, ink-splash transitions, minimal in-betweens",
+    negative: "full color, photoreal shading, soft gradients",
+  },
+
+  // ---- Painterly (Arcane-style hybrid) --------------------------------------
+  {
+    id: "painterly-arcane",
+    label: "Painterly Hybrid (Arcane-Style)",
+    group: "Painterly",
+    fragment:
+      "painterly hybrid 2D/3D animation in the style of Arcane, visible brushstroke texture over dimensional forms, dramatic graphic-novel lighting, richly saturated moody palette, sculpted painterly faces",
+    cameraHint: "cinematic dynamic camera, dramatic low angles, graphic-novel push-ins",
+    lightingHint: "high-contrast painterly rim light, saturated colored shadow, dramatic key",
+    motionHint: "smeared painterly in-betweens, weighty grounded motion, dramatic held poses",
+    negative: "flat vector shading, clean cel outlines, photoreal skin texture",
+  },
+  {
+    id: "painterly-fantasy",
+    label: "Digital Painting Fantasy",
+    group: "Painterly",
+    fragment:
+      "epic digital painting, fantasy concept art rendering, painterly brushwork, dramatic atmospheric depth, rich color grading, matte-painting backdrops",
+    cameraHint: "sweeping establishing pans, slow epic push-ins on heroes",
+    lightingHint: "dramatic god-rays, painterly atmospheric haze, warm rim against cool shadow",
+    motionHint: "slow majestic movement, particle dust and embers drifting",
+    negative: "flat cel shading, clean vector lines, low detail",
+  },
+  {
+    id: "watercolor-storybook",
+    label: "Watercolor Storybook",
+    group: "Painterly",
+    fragment:
+      "watercolor storybook illustration, soft bleeding pigment edges, visible paper texture, gentle pastel palette, whimsical children's-book charm",
+    cameraHint: "gentle page-turn style reveals, soft static holds",
+    lightingHint: "soft diffuse light, no hard shadow, warm paper tone",
+    motionHint: "gentle drift, paint-bleed transitions, soft fades between beats",
+    negative: "hard vector edges, neon color, mechanical precision",
+  },
+  {
+    id: "oil-painting-classic",
+    label: "Classical Oil Painting",
+    group: "Painterly",
+    fragment:
+      "classical oil painting rendering, visible canvas texture, chiaroscuro lighting, rich impasto brushwork, old-master color palette",
+    cameraHint: "still-life framing, slow reverent push-ins",
+    lightingHint: "dramatic chiaroscuro, single warm key, deep umber shadow",
+    motionHint: "near-still with subtle painterly shimmer, slow crossfades",
+    negative: "flat modern color, digital sharpness, neon accents",
+  },
+
+  // ---- Photoreal -------------------------------------------------------------
+  {
+    id: "photoreal-cinematic",
+    label: "Photoreal Cinematic",
+    group: "Photoreal",
+    fragment:
+      "photorealistic cinematic live-action, natural skin texture, filmic color grade, shallow depth of field, real-world lighting physics",
+    cameraHint: "handheld and dolly coverage, natural rack focus, real lens characteristics",
+    lightingHint: "motivated practical lighting, natural falloff, filmic contrast curve",
+    motionHint: "naturalistic human motion, believable physics, subtle camera imperfection",
+    negative: "cartoon shading, flat vector color, stylized proportions",
+  },
+  {
+    id: "photoreal-editorial",
+    label: "Editorial Fashion Photography",
+    group: "Photoreal",
+    fragment:
+      "high-fashion editorial photography look, crisp studio detail, bold directional light, glossy magazine finish, striking confident posing",
+    cameraHint: "static hero framing, slow push on key beauty shots",
+    lightingHint: "hard directional studio strobe, deep contrast, controlled specular highlight",
+    motionHint: "poised held poses, minimal deliberate movement",
+    negative: "soft diffuse lighting, cartoon rendering, casual snapshot feel",
+  },
+  {
+    id: "photoreal-documentary",
+    label: "Documentary Realism",
+    group: "Photoreal",
+    fragment:
+      "observational documentary realism, natural available light, unposed candid framing, true-to-life color, handheld authenticity",
+    cameraHint: "handheld observational coverage, natural imperfect framing",
+    lightingHint: "available natural light, no artificial glamor, true color balance",
+    motionHint: "unscripted natural movement, real-time pacing",
+    negative: "stylized color grade, cartoon rendering, overt polish",
+  },
+
+  // ---- Comic / Graphic Novel --------------------------------------------------
+  {
+    id: "comic-western",
+    label: "Western Comic Book",
+    group: "Comic",
+    fragment:
+      "western comic book illustration, bold ink outlines, Ben-Day dot halftone shading, dynamic panel composition, saturated primary palette",
+    cameraHint: "panel-style dramatic angles, dutch tilts, hard cut framing",
+    lightingHint: "graphic high-contrast shading, halftone shadow texture",
+    motionHint: "held dramatic poses, action-line motion streaks, panel-to-panel snap cuts",
+    negative: "soft photoreal shading, painterly blending, muted palette",
+  },
+  {
+    id: "graphic-novel-noir",
+    label: "Graphic Novel Noir",
+    group: "Comic",
+    fragment:
+      "gritty graphic novel noir, high-contrast black-and-white ink with a single spot color, heavy cross-hatching, rain and shadow texture",
+    cameraHint: "low dramatic angles, silhouette-heavy framing, static panel holds",
+    lightingHint: "extreme chiaroscuro, hard-edged shadow shapes, single spot-color accent",
+    motionHint: "held dramatic stillness, ink-splatter transitions",
+    negative: "bright full color, soft gradients, cartoon bounce",
+  },
 ];
 
 /** Grouped for optgroup rendering in the style selector. */
 export const STYLE_GROUPS: { group: StyleGroup; label: string }[] = [
+  { group: "Photoreal", label: "Photoreal" },
+  { group: "Anime", label: "Anime" },
+  { group: "Painterly", label: "Painterly" },
+  { group: "Comic", label: "Comic / Graphic Novel" },
   { group: "Rubberhose", label: "Rubberhose Presets" },
   { group: "2D", label: "2D Styles" },
   { group: "3D", label: "3D Styles" },
