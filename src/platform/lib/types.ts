@@ -71,6 +71,29 @@ export interface ProviderKeyStatus {
   configured: boolean;
 }
 
+/** One self-tracked generation-spend entry (mirrors Rust UsageEntry). */
+export interface UsageEntry {
+  id: string;
+  provider: string;
+  model: string;
+  capability: string;
+  moduleId: string;
+  projectId: string;
+  units: number;
+  costUsd: number;
+  createdAt: string;
+}
+
+/** Real account balance/usage from a provider's own API (mirrors Rust
+ *  ProviderBalance) — only available for the couple of providers that
+ *  expose one through the same key used for generation. */
+export interface ProviderBalance {
+  provider: string;
+  label: string;
+  remaining: number;
+  unit: string;
+}
+
 /** Outcome of a Test Connection probe (mirrors Rust ConnectionResult). */
 export type ConnectionStatus = "connected" | "invalid" | "offline" | "untested" | "not_configured";
 

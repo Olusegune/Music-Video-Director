@@ -156,9 +156,94 @@ pub fn init(conn: &Connection) -> Result<()> {
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        -- Self-tracked generation spend. One row per generation call, with an
+        -- estimated cost from the frontend's pricing table (pricing.ts) —
+        -- provider APIs don't uniformly expose real per-call cost, so this is
+        -- the only way to show a running total for every provider, not just
+        -- the couple with a real balance/usage endpoint.
+        CREATE TABLE IF NOT EXISTS usage_log (
+            id         TEXT PRIMARY KEY,
+            provider   TEXT NOT NULL,
+            model      TEXT NOT NULL,
+            capability TEXT NOT NULL,
+            module_id  TEXT NOT NULL DEFAULT '',
+            project_id TEXT NOT NULL DEFAULT '',
+            units      REAL NOT NULL DEFAULT 1,
+            cost_usd   REAL NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_usage_log_created_at ON usage_log (created_at);
         "#,
     )?;
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageEntry {
+    pub id: String,
+    pub provider: String,
+    pub model: String,
+    pub capability: String,
+    pub module_id: String,
+    pub project_id: String,
+    pub units: f64,
+    pub cost_usd: f64,
+    pub created_at: String,
+}
+
+pub fn record_usage(
+    conn: &Connection,
+    provider: &str,
+    model: &str,
+    capability: &str,
+    module_id: &str,
+    project_id: &str,
+    units: f64,
+    cost_usd: f64,
+) -> Result<()> {
+    conn.execute(
+        "INSERT INTO usage_log (id, provider, model, capability, module_id, project_id, units, cost_usd, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        rusqlite::params![
+            Uuid::new_v4().to_string(),
+            provider,
+            model,
+            capability,
+            module_id,
+            project_id,
+            units,
+            cost_usd,
+            Utc::now().to_rfc3339(),
+        ],
+    )?;
+    Ok(())
+}
+
+/// `since` is an RFC3339 lower bound (inclusive) on created_at; None returns
+/// everything. Newest first.
+pub fn list_usage(conn: &Connection, since: Option<String>) -> Result<Vec<UsageEntry>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, provider, model, capability, module_id, project_id, units, cost_usd, created_at
+         FROM usage_log
+         WHERE (?1 IS NULL OR created_at >= ?1)
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![since], |r| {
+        Ok(UsageEntry {
+            id: r.get(0)?,
+            provider: r.get(1)?,
+            model: r.get(2)?,
+            capability: r.get(3)?,
+            module_id: r.get(4)?,
+            project_id: r.get(5)?,
+            units: r.get(6)?,
+            cost_usd: r.get(7)?,
+            created_at: r.get(8)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
 }
 
 pub fn list_projects(conn: &Connection) -> Result<Vec<Project>> {

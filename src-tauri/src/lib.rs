@@ -87,6 +87,9 @@ pub fn run() {
             commands::add_recent_project,
             commands::write_project_to_disk,
             commands::read_project_from_disk,
+            commands::record_usage,
+            commands::list_usage,
+            commands::check_provider_balance,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

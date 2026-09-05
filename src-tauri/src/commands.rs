@@ -88,6 +88,107 @@ pub async fn generate_structured_text(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn record_usage(
+    db: State<Db>,
+    provider: String,
+    model: String,
+    capability: String,
+    module_id: Option<String>,
+    project_id: Option<String>,
+    units: Option<f64>,
+    cost_usd: f64,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(err)?;
+    db::record_usage(
+        &conn,
+        &provider,
+        &model,
+        &capability,
+        module_id.as_deref().unwrap_or(""),
+        project_id.as_deref().unwrap_or(""),
+        units.unwrap_or(1.0),
+        cost_usd,
+    )
+    .map_err(err)
+}
+
+#[tauri::command]
+pub fn list_usage(db: State<Db>, since: Option<String>) -> Result<Vec<db::UsageEntry>, String> {
+    let conn = db.0.lock().map_err(err)?;
+    db::list_usage(&conn, since).map_err(err)
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderBalance {
+    pub provider: String,
+    pub label: String,
+    pub remaining: f64,
+    pub unit: String,
+}
+
+/// Real account balance/usage for the small set of providers that expose one
+/// through their normal API key (most providers don't — billing lives behind
+/// a separate dashboard-only login, not the generation key). Every other
+/// provider's spend is estimate-only, from usage_log.
+#[tauri::command]
+pub async fn check_provider_balance(provider: String) -> Result<Option<ProviderBalance>, String> {
+    let client = reqwest::Client::new();
+    match provider.as_str() {
+        "stability" => {
+            let Some(key) = secrets::get_key("stability").map_err(err)? else {
+                return Ok(None);
+            };
+            let resp = client
+                .get("https://api.stability.ai/v1/user/balance")
+                .bearer_auth(&key)
+                .send()
+                .await
+                .map_err(|e| format!("Stability balance check failed: {e}"))?;
+            if !resp.status().is_success() {
+                return Err(format!("Stability balance check failed: HTTP {}", resp.status()));
+            }
+            let body: serde_json::Value = resp.json().await.map_err(err)?;
+            let credits = body.get("credits").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            Ok(Some(ProviderBalance {
+                provider,
+                label: "Stability AI".into(),
+                remaining: credits,
+                unit: "credits".into(),
+            }))
+        }
+        "elevenlabs" => {
+            let Some(key) = secrets::get_key("elevenlabs").map_err(err)? else {
+                return Ok(None);
+            };
+            let resp = client
+                .get("https://api.elevenlabs.io/v1/user/subscription")
+                .header("xi-api-key", &key)
+                .send()
+                .await
+                .map_err(|e| format!("ElevenLabs usage check failed: {e}"))?;
+            if !resp.status().is_success() {
+                return Err(format!("ElevenLabs usage check failed: HTTP {}", resp.status()));
+            }
+            let body: serde_json::Value = resp.json().await.map_err(err)?;
+            let used = body.get("character_count").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let limit = body.get("character_limit").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            Ok(Some(ProviderBalance {
+                provider,
+                label: "ElevenLabs".into(),
+                remaining: (limit - used).max(0.0),
+                unit: "characters".into(),
+            }))
+        }
+        // Every other provider (Gemini, OpenAI, fal.ai, Kie, Replicate, Google
+        // Veo/Imagen, WaveSpeed...) doesn't expose account balance through the
+        // same key used for generation — billing is dashboard-only there.
+        _ => Ok(None),
+    }
+}
+
+#[tauri::command]
 pub fn list_brand_kits(db: State<Db>) -> Result<Vec<BrandKit>, String> {
     let conn = db.0.lock().map_err(err)?;
     db::list_brand_kits(&conn).map_err(err)

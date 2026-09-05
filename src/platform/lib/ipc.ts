@@ -15,7 +15,9 @@ import type {
   Prop,
   ProviderId,
   ProviderKeyStatus,
+  ProviderBalance,
   PromptPack,
+  UsageEntry,
 } from "@/platform/lib/types";
 import { packToMarkdown, normalizePack } from "@/platform/lib/pack";
 import { buildBibleMarkdown, buildBibleJson } from "@/platform/lib/bibleExport";
@@ -31,6 +33,28 @@ import { runWithProviderFallback, type GenerationSpec } from "@/platform/lib/gen
 import { resolveReferences } from "@/platform/lib/referenceSystem";
 import { generationSupportForProviderKey } from "@/platform/lib/modelRegistry";
 import { notifyStorage } from "@/platform/lib/storage";
+import { estimateCost } from "@/platform/lib/pricing";
+
+/** Fire-and-forget spend tracking — computed from pricing.ts's estimate table,
+ *  never awaited by the caller and never allowed to throw. Centralized here
+ *  rather than at every generation call site; see generateImagePro,
+ *  generateMvShotVideo, and generateMvAudio below for where it's invoked. */
+function trackUsage(
+  provider: string,
+  model: string | undefined,
+  capability: "image" | "video" | "audio" | "text",
+  extra?: { moduleId?: string; projectId?: string }
+): void {
+  const { perUnit } = estimateCost(provider, model ?? "", capability, 1);
+  void api.recordUsage({
+    provider,
+    model: model || "default",
+    capability,
+    moduleId: extra?.moduleId,
+    projectId: extra?.projectId,
+    costUsd: perUnit,
+  });
+}
 
 /** Context the local engine needs; passed by the workspace so it works in Tauri too. */
 export interface GenerateContext {
@@ -573,24 +597,26 @@ export const api = {
     operation?: GenerationSpec["operation"],
     mask?: string,
     batch?: number
-  ): Promise<string> =>
-    isTauri
-      ? toAssetSrc(
-          await invoke<string>("generate_image_pro", {
-            provider,
-            prompt,
-            width,
-            height,
-            refs,
-            seed,
-            model,
-            negativePrompt,
-            operation,
-            mask,
-            batch,
-          })
-        )
-      : mock.generateImagePro(provider, width, height),
+  ): Promise<string> => {
+    if (!isTauri) return mock.generateImagePro(provider, width, height);
+    const url = await toAssetSrc(
+      await invoke<string>("generate_image_pro", {
+        provider,
+        prompt,
+        width,
+        height,
+        refs,
+        seed,
+        model,
+        negativePrompt,
+        operation,
+        mask,
+        batch,
+      })
+    );
+    trackUsage(provider, model, "image");
+    return url;
+  },
 
   generateImageFromSpec: async (spec: GenerationSpec): Promise<string> => {
     if (spec.capability !== "image") {
@@ -669,25 +695,30 @@ export const api = {
       resolution?: string;
       generateAudio?: boolean;
     }
-  ): Promise<string> =>
-    isTauri
-      ? toAssetSrc(
-          await invoke<string>("generate_mv_shot_video", {
-            songId,
-            shotId,
-            prompt,
-            provider,
-            refs,
-            model,
-            endFrame: extras?.endFrame,
-            audioRefs: extras?.audioRefs,
-            videoRefs: extras?.videoRefs,
-            duration: extras?.duration,
-            resolution: extras?.resolution,
-            generateAudio: extras?.generateAudio,
-          })
-        )
-      : mock.generateShotVideo(),
+  ): Promise<string> => {
+    if (!isTauri) return mock.generateShotVideo();
+    const url = await toAssetSrc(
+      await invoke<string>("generate_mv_shot_video", {
+        songId,
+        shotId,
+        prompt,
+        provider,
+        refs,
+        model,
+        endFrame: extras?.endFrame,
+        audioRefs: extras?.audioRefs,
+        videoRefs: extras?.videoRefs,
+        duration: extras?.duration,
+        resolution: extras?.resolution,
+        generateAudio: extras?.generateAudio,
+      })
+    );
+    trackUsage(provider ?? "unknown", model, "video", {
+      moduleId: "musicvideo",
+      projectId: songId,
+    });
+    return url;
+  },
 
   generateVideoFromSpec: async (
     spec: GenerationSpec,
@@ -748,10 +779,17 @@ export const api = {
     text: string,
     voice?: string,
     provider?: string
-  ): Promise<string> =>
-    isTauri
-      ? toAssetSrc(await invoke<string>("generate_mv_audio", { songId, text, voice, provider }))
-      : mock.generateVoiceover(),
+  ): Promise<string> => {
+    if (!isTauri) return mock.generateVoiceover();
+    const url = await toAssetSrc(
+      await invoke<string>("generate_mv_audio", { songId, text, voice, provider })
+    );
+    trackUsage(provider ?? "elevenlabs", voice, "audio", {
+      moduleId: "musicvideo",
+      projectId: songId,
+    });
+    return url;
+  },
 
   /** Persist imported song audio to disk (Tauri only). Returns its file path. */
   importSongAudio: async (songId: string, dataBase64: string, ext: string): Promise<string> =>
@@ -834,4 +872,45 @@ export const api = {
 
   deleteBrandKit: (id: string) =>
     isTauri ? invoke<void>("delete_brand_kit", { id }) : Promise.resolve(mock.deleteBrandKit(id)),
+
+  // ----- Spend tracking ----------------------------------------------------
+
+  /** Append one self-tracked usage entry (see pricing.ts). Fire-and-forget —
+   *  never throws, so a tracking hiccup can't break generation. Browser dev
+   *  mode has no local DB to log to, so it's a no-op there. */
+  recordUsage: async (entry: {
+    provider: string;
+    model: string;
+    capability: string;
+    moduleId?: string;
+    projectId?: string;
+    units?: number;
+    costUsd: number;
+  }): Promise<void> => {
+    if (!isTauri) return;
+    try {
+      await invoke<void>("record_usage", {
+        provider: entry.provider,
+        model: entry.model,
+        capability: entry.capability,
+        moduleId: entry.moduleId,
+        projectId: entry.projectId,
+        units: entry.units,
+        costUsd: entry.costUsd,
+      });
+    } catch {
+      /* tracking must never break generation */
+    }
+  },
+
+  /** `since`: RFC3339 lower bound (inclusive), e.g. start of the current month. */
+  listUsage: (since?: string): Promise<UsageEntry[]> =>
+    isTauri ? invoke<UsageEntry[]>("list_usage", { since }) : Promise.resolve([]),
+
+  /** Real account balance for the couple of providers that expose one
+   *  (Stability, ElevenLabs today) — null if unavailable or not configured. */
+  checkProviderBalance: (provider: string): Promise<ProviderBalance | null> =>
+    isTauri
+      ? invoke<ProviderBalance | null>("check_provider_balance", { provider })
+      : Promise.resolve(null),
 };

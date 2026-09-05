@@ -31,6 +31,7 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { ProjectCard } from "@/platform/components/visual";
+import { SpendCreditsPanel } from "./SpendCreditsPanel";
 import { ProjectActionsMenu } from "@/platform/components/visual/ProjectActionsMenu";
 import type { VisualModule } from "@/platform/components/visual/visualTheme";
 import { recentProjects, type HubModuleId, type HubProject } from "@/platform/lib/projectHub";
@@ -231,6 +232,8 @@ export function Dashboard() {
             </div>
           </div>
         </section>
+
+        <SpendCreditsPanel />
 
         <section>
           <div className="mb-3">
