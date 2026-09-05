@@ -235,8 +235,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       // No song yet — guide the user to import one, then auto-continue.
       return { welcomeOpen: false, view: "song", pendingMagic: true };
     }),
-  openMusicVideoGuidedFlow: () =>
-    set({ directorOpen: true, welcomeOpen: false, wizardOpen: false }),
+  openMusicVideoGuidedFlow: () => {
+    // Clear the previously active song immediately, not just the guided
+    // flow's own (separate) initial state — otherwise leaving the flow
+    // before finishing it (closing the overlay, clicking a sidebar item)
+    // falls straight back to whatever song was last active, which reads as
+    // "New production" silently reopening the old project instead of
+    // starting fresh. Persisted too, so a restart mid-flow doesn't resurrect
+    // the old song either.
+    setActiveSongId(null);
+    set({ directorOpen: true, welcomeOpen: false, wizardOpen: false, activeSongId: null });
+  },
   setDirectorOpen: (directorOpen) => set({ directorOpen }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   openDemoProject: () => {
