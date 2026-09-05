@@ -6,7 +6,7 @@
 // music-video-specific direction — performer role, dance style, lip-sync, and
 // performance notes. Stored locally; no API.
 
-import { safeSetItem } from "@/platform/lib/storage";
+import { getDoc, setDoc } from "@/platform/lib/durableStore";
 
 export type PerformerRole =
   | "Lead Singer"
@@ -83,7 +83,7 @@ const LS_CAST = "mf.cast";
 
 export function loadCast(): Performer[] {
   try {
-    const raw = localStorage.getItem(LS_CAST);
+    const raw = getDoc(LS_CAST);
     return raw ? (JSON.parse(raw) as Performer[]) : [];
   } catch {
     return [];
@@ -96,11 +96,11 @@ export function savePerformer(performer: Performer): void {
   const i = all.findIndex((p) => p.id === performer.id);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  safeSetItem(LS_CAST, JSON.stringify(all));
+  setDoc(LS_CAST, JSON.stringify(all));
 }
 
 export function deletePerformer(id: string): void {
-  safeSetItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
+  setDoc(LS_CAST, JSON.stringify(loadCast().filter((p) => p.id !== id)));
 }
 
 /**
@@ -115,7 +115,7 @@ export function loadCastForSong(songId: string): Performer[] {
 
 /** Cascade delete: called when a song is deleted, so its cast doesn't orphan. */
 export function deletePerformersForSong(songId: string): void {
-  safeSetItem(LS_CAST, JSON.stringify(loadCast().filter((p) => p.songId !== songId)));
+  setDoc(LS_CAST, JSON.stringify(loadCast().filter((p) => p.songId !== songId)));
 }
 
 // ---------------------------------------------------------------------------

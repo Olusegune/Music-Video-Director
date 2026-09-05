@@ -90,6 +90,9 @@ pub fn run() {
             commands::record_usage,
             commands::list_usage,
             commands::check_provider_balance,
+            commands::doc_get_all,
+            commands::doc_set,
+            commands::doc_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

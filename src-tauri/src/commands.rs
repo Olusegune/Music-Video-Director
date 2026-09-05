@@ -119,6 +119,27 @@ pub fn list_usage(db: State<Db>, since: Option<String>) -> Result<Vec<db::UsageE
     db::list_usage(&conn, since).map_err(err)
 }
 
+/// Whole doc_store, read once at startup to hydrate the frontend's in-memory
+/// cache (durableStore.ts). Returned as pairs rather than a map so the
+/// frontend controls its own ordering/shape.
+#[tauri::command]
+pub fn doc_get_all(db: State<Db>) -> Result<Vec<(String, String)>, String> {
+    let conn = db.0.lock().map_err(err)?;
+    db::doc_get_all(&conn).map_err(err)
+}
+
+#[tauri::command]
+pub fn doc_set(db: State<Db>, key: String, value: String) -> Result<(), String> {
+    let conn = db.0.lock().map_err(err)?;
+    db::doc_set(&conn, &key, &value).map_err(err)
+}
+
+#[tauri::command]
+pub fn doc_delete(db: State<Db>, key: String) -> Result<(), String> {
+    let conn = db.0.lock().map_err(err)?;
+    db::doc_delete(&conn, &key).map_err(err)
+}
+
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderBalance {

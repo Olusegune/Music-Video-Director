@@ -174,8 +174,41 @@ pub fn init(conn: &Connection) -> Result<()> {
             created_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_usage_log_created_at ON usage_log (created_at);
+
+        -- Durable document store for the app's larger JSON records (songs,
+        -- treatments, choreography plans, cast). These used to live in
+        -- localStorage, which has a hard ~5-10MB per-origin ceiling that a
+        -- couple of real productions is enough to hit — and past it, writes
+        -- fail. SQLite has no such ceiling. Kept as opaque JSON keyed by the
+        -- same string the frontend already used, so the migration is a move
+        -- rather than a reshape (see durableStore.ts).
+        CREATE TABLE IF NOT EXISTS doc_store (
+            key        TEXT PRIMARY KEY,
+            value      TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
         "#,
     )?;
+    Ok(())
+}
+
+pub fn doc_get_all(conn: &Connection) -> Result<Vec<(String, String)>> {
+    let mut stmt = conn.prepare("SELECT key, value FROM doc_store")?;
+    let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
+pub fn doc_set(conn: &Connection, key: &str, value: &str) -> Result<()> {
+    conn.execute(
+        "INSERT INTO doc_store (key, value, updated_at) VALUES (?1, ?2, ?3)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+        rusqlite::params![key, value, Utc::now().to_rfc3339()],
+    )?;
+    Ok(())
+}
+
+pub fn doc_delete(conn: &Connection, key: &str) -> Result<()> {
+    conn.execute("DELETE FROM doc_store WHERE key = ?1", rusqlite::params![key])?;
     Ok(())
 }
 

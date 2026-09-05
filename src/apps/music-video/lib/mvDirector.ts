@@ -7,7 +7,7 @@
 // intros/bridges. Beat-synced shot boundaries. NO API call — pure local
 // reasoning, fully editable downstream.
 
-import { safeSetItem } from "@/platform/lib/storage";
+import { getDoc, setDoc } from "@/platform/lib/durableStore";
 import {
   beatTimes,
   sectionColor,
@@ -512,14 +512,14 @@ export function approachColor(approach: ShotApproach): string {
 export { sectionColor };
 
 // ---------------------------------------------------------------------------
-// Persistence (localStorage, keyed by song id)
+// Persistence (durable doc store, keyed by song id)
 // ---------------------------------------------------------------------------
 
 const LS_TREATMENTS = "mf.treatments";
 
 function loadAll(): MvTreatment[] {
   try {
-    const raw = localStorage.getItem(LS_TREATMENTS);
+    const raw = getDoc(LS_TREATMENTS);
     return raw ? (JSON.parse(raw) as MvTreatment[]) : [];
   } catch {
     return [];
@@ -547,11 +547,11 @@ export function saveTreatment(treatment: MvTreatment): void {
   const i = all.findIndex((t) => sameSlot(t, treatment.songId, treatment.templateId));
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  safeSetItem(LS_TREATMENTS, JSON.stringify(all));
+  setDoc(LS_TREATMENTS, JSON.stringify(all));
 }
 
 export function deleteTreatment(songId: string, templateId?: string | null): void {
-  safeSetItem(
+  setDoc(
     LS_TREATMENTS,
     JSON.stringify(loadAll().filter((t) => !sameSlot(t, songId, templateId)))
   );
@@ -564,5 +564,5 @@ export function deleteTreatment(songId: string, templateId?: string | null): voi
  * survives as an orphan with no song to belong to.
  */
 export function deleteTreatmentsForSong(songId: string): void {
-  safeSetItem(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
+  setDoc(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
 }

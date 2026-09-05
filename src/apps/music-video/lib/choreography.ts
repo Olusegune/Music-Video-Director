@@ -6,7 +6,7 @@
 // and writes continuity notes. Output is a "pose sheet" starting point that the
 // user edits and that downstream image/video generation can reference.
 
-import { safeSetItem } from "@/platform/lib/storage";
+import { getDoc, setDoc } from "@/platform/lib/durableStore";
 import {
   barTimes,
   type SongMap,
@@ -498,14 +498,14 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
 }
 
 // ---------------------------------------------------------------------------
-// Persistence (localStorage, keyed by song id)
+// Persistence (durable doc store, keyed by song id)
 // ---------------------------------------------------------------------------
 
 const LS_CHOREO = "mf.choreo";
 
 function loadAll(): ChoreoPlan[] {
   try {
-    const raw = localStorage.getItem(LS_CHOREO);
+    const raw = getDoc(LS_CHOREO);
     return raw ? (JSON.parse(raw) as ChoreoPlan[]) : [];
   } catch {
     return [];
@@ -522,9 +522,9 @@ export function saveChoreo(plan: ChoreoPlan): void {
   const i = all.findIndex((c) => c.songId === plan.songId);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  safeSetItem(LS_CHOREO, JSON.stringify(all));
+  setDoc(LS_CHOREO, JSON.stringify(all));
 }
 
 export function deleteChoreo(songId: string): void {
-  safeSetItem(LS_CHOREO, JSON.stringify(loadAll().filter((c) => c.songId !== songId)));
+  setDoc(LS_CHOREO, JSON.stringify(loadAll().filter((c) => c.songId !== songId)));
 }

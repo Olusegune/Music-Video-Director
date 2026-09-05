@@ -13,7 +13,7 @@
 // Domain types
 // ---------------------------------------------------------------------------
 
-import { safeSetItem } from "@/platform/lib/storage";
+import { getDoc, setDoc } from "@/platform/lib/durableStore";
 import type { SectionKind } from "@/platform/lib/songSections";
 export { SECTION_KINDS, type SectionKind } from "@/platform/lib/songSections";
 
@@ -610,14 +610,14 @@ export function distributeLyrics(text: string, sections: SongSection[]): LyricLi
 }
 
 // ---------------------------------------------------------------------------
-// Persistence (localStorage; audio file itself is not persisted)
+// Persistence (durable doc store; audio file itself is not persisted)
 // ---------------------------------------------------------------------------
 
 const LS_SONGS = "mf.songs";
 
 export function loadSongs(): SongMap[] {
   try {
-    const raw = localStorage.getItem(LS_SONGS);
+    const raw = getDoc(LS_SONGS);
     return raw ? (JSON.parse(raw) as SongMap[]) : [];
   } catch {
     return [];
@@ -630,11 +630,11 @@ export function saveSong(song: SongMap): void {
   const i = all.findIndex((s) => s.id === song.id);
   if (i >= 0) all[i] = next;
   else all.unshift(next);
-  safeSetItem(LS_SONGS, JSON.stringify(all));
+  setDoc(LS_SONGS, JSON.stringify(all));
 }
 
 export function deleteSong(id: string): void {
-  safeSetItem(LS_SONGS, JSON.stringify(loadSongs().filter((s) => s.id !== id)));
+  setDoc(LS_SONGS, JSON.stringify(loadSongs().filter((s) => s.id !== id)));
 }
 
 // ---------------------------------------------------------------------------
