@@ -201,6 +201,17 @@ function pick<T>(pool: T[], i: number): T {
   return pool[((i % pool.length) + pool.length) % pool.length];
 }
 
+// A stable per-song offset into every pick() pool. Without this, shot index 0
+// of the first (always-Abstract Intro) section picks pool[0] for every song —
+// every track opened with the literal same shot idea, location, and wardrobe
+// regardless of what the song actually sounds like. Deterministic (same song
+// re-directed gets the same plan) but different per song.
+function songSeed(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 // --- per-section direction --------------------------------------------------
 
 function approachFor(
@@ -347,6 +358,7 @@ function shotBoundaries(start: number, end: number, count: number, beats: number
 
 export function directSong(song: SongMap, template?: MvTemplate | null): MvTreatment {
   const beats = beatTimes(song);
+  const seed = songSeed(song.id);
   let shotIndex = 0;
   const locationPool = template?.locations?.length ? template.locations : LOCATIONS;
   const wardrobePool = template?.wardrobePool?.length ? template.wardrobePool : WARDROBE;
@@ -374,7 +386,7 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
       const s = bounds[k];
       const e = bounds[k + 1];
       const lyric = sectionLyrics.find((l) => l.start >= s && l.start < e)?.text;
-      const shotType = pick(pool, shotIndex);
+      const shotType = pick(pool, shotIndex + seed);
       const idea = lyric
         ? `“${lyric}” — ${shotType.toLowerCase()}`
         : `${shotType}${approach === "Abstract" ? "" : `, ${CONCEPTS[section.kind].split("—")[0].trim().toLowerCase()}`}`;
@@ -385,10 +397,10 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
         lyric,
         idea,
         shotType,
-        movement: moveFor(section.energy, shotIndex),
-        lighting: lightFor(section.energy, shotIndex),
-        performanceNote: performanceNoteFor(approach, Boolean(lyric), shotIndex),
-        transition: transitionFor(section.energy, shotIndex, k === count - 1),
+        movement: moveFor(section.energy, shotIndex + seed),
+        lighting: lightFor(section.energy, shotIndex + seed),
+        performanceNote: performanceNoteFor(approach, Boolean(lyric), shotIndex + seed),
+        transition: transitionFor(section.energy, shotIndex + seed, k === count - 1),
       });
       shotIndex++;
     }
@@ -407,8 +419,8 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
       energy: section.energy,
       approach,
       concept: CONCEPTS[section.kind],
-      location: pick(locationPool, si),
-      wardrobe: pick(wardrobePool, si),
+      location: pick(locationPool, si + seed),
+      wardrobe: pick(wardrobePool, si + seed),
       cutPace: `${paceWord} · ~${avgCut.toFixed(1)}s / shot · ${count} shot${count === 1 ? "" : "s"}`,
       shots,
     };

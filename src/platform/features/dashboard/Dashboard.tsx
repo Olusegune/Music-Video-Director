@@ -112,6 +112,17 @@ export function Dashboard() {
     web: "Web Studio",
     campaign: "Campaign Studio",
   };
+  // Fallback icon a card shows in place of a thumbnail — a project only gets
+  // a real thumbnail once something's been exported, so most cards live here
+  // day to day. Without a per-module icon this was rendering as an empty,
+  // blurry rounded square (no icon prop was ever passed for these cards).
+  const HUB_ICON: Record<HubModuleId, React.ReactNode> = {
+    musicvideo: <Music className="h-5 w-5" />,
+    motion: <Boxes className="h-5 w-5" />,
+    glam: <WandSparkles className="h-5 w-5" />,
+    web: <Globe className="h-5 w-5" />,
+    campaign: <Megaphone className="h-5 w-5" />,
+  };
   const openModuleProject = useAppStore((s) => s.openModuleProject);
 
   const openDirectorMode = () => {
@@ -299,6 +310,7 @@ export function Dashboard() {
                   title={project.name}
                   subtitle={subtitleFor(project)}
                   thumbUrl={project.thumbUrl}
+                  icon={HUB_ICON[project.moduleId]}
                   onResume={() => openModuleProject(project.moduleId, project.id)}
                   actions={
                     <ProjectActionsMenu
