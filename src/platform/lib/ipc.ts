@@ -760,6 +760,22 @@ export const api = {
       : Promise.resolve(""),
 
   /**
+   * Cut a slice of the song's own imported audio for one shot's time range,
+   * so clip generation can hand the video model real audio to lip-sync
+   * against instead of nothing. Returns a file path (Tauri only — no FFmpeg
+   * in the browser, so the mock returns null and callers fall back to
+   * whatever audioRefs the shot already has, usually none).
+   */
+  sliceSongAudio: async (
+    songId: string,
+    startSec: number,
+    durationSec: number
+  ): Promise<string | null> =>
+    isTauri
+      ? invoke<string>("slice_song_audio", { songId, startSec, durationSec })
+      : Promise.resolve(null),
+
+  /**
    * Render the timeline segments + audio into one MP4 via the Rust/FFmpeg core.
    * Returns a displayable src for the finished video. In the browser there is no
    * FFmpeg, so the mock returns a sample clip so the UI flow is exercisable.

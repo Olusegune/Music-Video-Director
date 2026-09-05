@@ -710,6 +710,73 @@ pub fn import_song_audio(
     Ok(file_path.to_string_lossy().to_string())
 }
 
+/// Cut a `duration_sec`-long slice of the song's own imported audio starting
+/// at `start_sec`, so a shot's clip-generation call can hand the video model
+/// the actual vocal/instrumental audio for its time range instead of nothing
+/// at all. Without this, "lip-sync" was a text-prompt instruction with zero
+/// audio signal behind it — the model had nothing real to lock a mouth to.
+/// Returns a file path under assets/mv/<song>/clip-audio/, reused if the
+/// exact same range was sliced before.
+#[tauri::command]
+pub fn slice_song_audio(
+    app: AppHandle,
+    song_id: String,
+    start_sec: f64,
+    duration_sec: f64,
+) -> Result<String, String> {
+    let dir = crate::paths::base_dir(&app)?
+        .join("assets")
+        .join("mv")
+        .join(&song_id);
+    let source = std::fs::read_dir(&dir)
+        .map_err(err)?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .find(|p| p.file_stem().and_then(|s| s.to_str()) == Some("source"))
+        .ok_or_else(|| "No song audio imported for this project yet.".to_string())?;
+
+    let ffmpeg = crate::ffmpeg::resolve(&app).ok_or(
+        "Audio slicing needs FFmpeg. Open Help → \u{201C}Install FFmpeg\u{201D} to set it up in one click.",
+    )?;
+
+    let clips_dir = dir.join("clip-audio");
+    std::fs::create_dir_all(&clips_dir).map_err(err)?;
+    let out_path = clips_dir.join(format!(
+        "{}-{}.m4a",
+        (start_sec * 1000.0).round() as i64,
+        (duration_sec * 1000.0).round() as i64
+    ));
+    if out_path.exists() {
+        return Ok(out_path.to_string_lossy().to_string());
+    }
+
+    let mut cmd = std::process::Command::new(&ffmpeg);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    let output = cmd
+        .arg("-y")
+        .arg("-ss")
+        .arg(format!("{start_sec}"))
+        .arg("-t")
+        .arg(format!("{duration_sec}"))
+        .arg("-i")
+        .arg(&source)
+        .args(["-vn", "-c:a", "aac", "-b:a", "192k"])
+        .arg(&out_path)
+        .output()
+        .map_err(|e| format!("Could not launch FFmpeg: {e}."))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let tail: Vec<&str> = stderr.lines().rev().take(10).collect();
+        let tail: Vec<&str> = tail.into_iter().rev().collect();
+        return Err(format!("FFmpeg failed to slice audio:\n{}", tail.join("\n")));
+    }
+    Ok(out_path.to_string_lossy().to_string())
+}
+
 /// Assemble the timeline segments (stills/clips) into one MP4 muxed to the song
 /// audio, via FFmpeg. The blocking ffmpeg work runs off the async runtime.
 /// Returns the rendered file path under assets/mv/<song>/.

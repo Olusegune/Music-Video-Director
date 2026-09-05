@@ -438,10 +438,25 @@ export function MvDirector() {
         );
         const refs = await collectRefs(refSrcs);
         const vModel = findVideoModel(shot.videoProvider ?? videoModelId);
+        // If nobody manually attached reference audio, cut the song's own
+        // audio to this shot's time range and use that — otherwise the video
+        // model gets a text instruction to lip-sync with no actual audio to
+        // lock onto, which is exactly why "lip-sync" clips never moved a
+        // mouth in time with anything. Best-effort: if FFmpeg isn't set up,
+        // fall back to no audio ref rather than failing the whole clip.
+        let audioSrcs = shot.refAudio;
+        if (!audioSrcs?.length) {
+          try {
+            const sliced = await api.sliceSongAudio(song.id, shot.start, duration);
+            if (sliced) audioSrcs = [sliced];
+          } catch {
+            /* fall back to no audio ref */
+          }
+        }
         // Omni references (only used by models that support them, e.g. Seedance).
         const [endFrameArr, audioRefs, videoRefs] = await Promise.all([
           collectRefs(shot.endFrame ? [shot.endFrame] : []),
-          collectRefs(shot.refAudio),
+          collectRefs(audioSrcs),
           collectRefs(shot.refVideo),
         ]);
         const url = await api.generateVideoFromSpec(

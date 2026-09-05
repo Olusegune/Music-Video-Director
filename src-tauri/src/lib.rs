@@ -75,6 +75,7 @@ pub fn run() {
             commands::generate_mv_shot_video,
             commands::generate_mv_audio,
             commands::import_song_audio,
+            commands::slice_song_audio,
             commands::render_music_video,
             commands::check_ffmpeg,
             commands::install_ffmpeg,
