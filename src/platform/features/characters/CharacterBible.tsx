@@ -38,7 +38,7 @@ import {
   newCharacter,
   CHARACTER_ROLES,
 } from "@/platform/lib/characterDna";
-import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
+import { STYLE_GROUPS, STYLE_PRESETS, presetsByGroup } from "@/platform/lib/styles";
 import type { PromptLayer } from "@/platform/lib/promptPipeline";
 import { bibleEntityLayers } from "@/platform/lib/bibleLayers";
 import {
@@ -739,6 +739,9 @@ function CharacterSheet({
           </Button>
           <Button variant="secondary" onClick={onOpenTurnaround}>
             <Images className="h-4 w-4" /> Turnaround Sheet
+            <Badge variant="accent" className="px-1.5 py-0">
+              New
+            </Badge>
           </Button>
           <Button
             variant="ghost"
@@ -1345,6 +1348,11 @@ function CharacterSheet({
                       </optgroup>
                     ))}
                   </Select>
+                  <p className="mt-1 text-[11px] text-muted">
+                    {STYLE_PRESETS.length} looks across {STYLE_GROUPS.length} groups — Photoreal,
+                    Anime, Painterly, Comic, 2D, 3D &amp; Rubberhose. Locking one here carries it
+                    into every image this character generates.
+                  </p>
                 </Field>
               </Section>
             </>

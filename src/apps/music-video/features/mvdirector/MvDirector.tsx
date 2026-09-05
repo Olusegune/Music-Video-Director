@@ -499,30 +499,33 @@ export function MvDirector() {
   // that actually need a performer on camera and a real generated clip is
   // the only way this app produces motion/performance rather than a
   // pan-and-cut slideshow of stills.
-  const generateAllClips = useCallback(async () => {
-    if (!treatment) return;
-    const jobs = treatment.sections
-      .filter((s) => s.approach === "Performance")
-      .flatMap((s) =>
-        s.shots
-          .filter((sh) => sh.imageUrl && !sh.videoUrl)
-          .map((sh) => ({ section: s, shot: sh }))
-      );
-    if (jobs.length === 0) return;
-    setGenError(null);
-    setClipBatch({ done: 0, total: jobs.length });
-    for (let i = 0; i < jobs.length; i++) {
-      try {
-        await generateClip(jobs[i].section, jobs[i].shot);
-      } catch (e) {
-        setGenError(
-          e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed."
+  const generateAllClips = useCallback(
+    async (force = false) => {
+      if (!treatment) return;
+      const jobs = treatment.sections
+        .filter((s) => s.approach === "Performance")
+        .flatMap((s) =>
+          s.shots
+            .filter((sh) => sh.imageUrl && (force || !sh.videoUrl))
+            .map((sh) => ({ section: s, shot: sh }))
         );
+      if (jobs.length === 0) return;
+      setGenError(null);
+      setClipBatch({ done: 0, total: jobs.length });
+      for (let i = 0; i < jobs.length; i++) {
+        try {
+          await generateClip(jobs[i].section, jobs[i].shot);
+        } catch (e) {
+          setGenError(
+            e instanceof Error ? e.message : typeof e === "string" ? e : "Clip generation failed."
+          );
+        }
+        setClipBatch({ done: i + 1, total: jobs.length });
       }
-      setClipBatch({ done: i + 1, total: jobs.length });
-    }
-    setClipBatch(null);
-  }, [treatment, generateClip]);
+      setClipBatch(null);
+    },
+    [treatment, generateClip]
+  );
 
   // Generate a pose / model sheet for the shot's assigned performer + moves, and
   // save it to the library — where it returns as a thumbnail in the move browser.
@@ -626,6 +629,7 @@ export function MvDirector() {
         .flatMap((s) => s.shots)
         .filter((sh) => sh.imageUrl && !sh.videoUrl).length
     : 0;
+  const performanceShotsWithClip = performanceShotCount - performanceShotsMissingClip;
 
   // Flat, ordered shot list for cross-shot continuity analysis.
   const flatShots = useMemo(() => {
@@ -961,7 +965,7 @@ export function MvDirector() {
               {performanceShotsMissingClip > 0 && (
                 <Button
                   variant="accent"
-                  onClick={generateAllClips}
+                  onClick={() => generateAllClips()}
                   disabled={clipBatch !== null || batch !== null || !videoReady}
                   title={
                     videoReady
@@ -977,6 +981,23 @@ export function MvDirector() {
                   {clipBatch
                     ? `Generating clip ${clipBatch.done}/${clipBatch.total}`
                     : `Generate all clips (${performanceShotsMissingClip})`}
+                </Button>
+              )}
+              {performanceShotsWithClip > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => generateAllClips(true)}
+                  disabled={clipBatch !== null || batch !== null || !videoReady}
+                  title="Re-run every Performance shot's clip — use this after changing the seed, style, or a reference image so already-generated clips pick up the change"
+                >
+                  {clipBatch ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {clipBatch
+                    ? `Generating clip ${clipBatch.done}/${clipBatch.total}`
+                    : `Regenerate all clips (${performanceShotsWithClip})`}
                 </Button>
               )}
             </>
@@ -1040,7 +1061,7 @@ export function MvDirector() {
             {performanceShotsMissingClip === 1 ? "" : "s"} still {performanceShotsMissingClip === 1 ? "has" : "have"} only a still frame, not a moving clip — the final render will show a static image for {performanceShotsMissingClip === 1 ? "it" : "them"} instead of a performance.
           </span>
           <button
-            onClick={generateAllClips}
+            onClick={() => generateAllClips()}
             disabled={clipBatch !== null || batch !== null || !videoReady}
             className="ml-auto font-semibold underline hover:no-underline disabled:no-underline disabled:opacity-50"
           >

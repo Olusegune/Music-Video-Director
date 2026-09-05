@@ -34,7 +34,7 @@ import {
   newProp,
   PROP_CATEGORIES,
 } from "@/platform/lib/propDna";
-import { STYLE_GROUPS, presetsByGroup } from "@/platform/lib/styles";
+import { STYLE_GROUPS, STYLE_PRESETS, presetsByGroup } from "@/platform/lib/styles";
 import { ImageStudio } from "@/platform/features/imagestudio/ImageStudio";
 import { SheetStudio } from "@/platform/features/sheets/SheetStudio";
 import { propSheetSections, PROP_PROMPT_TAIL } from "@/platform/lib/assetSheet";
@@ -681,6 +681,9 @@ function PropSheet({
           </Button>
           <Button variant="secondary" onClick={onOpenCoverage}>
             <Images className="h-4 w-4" /> Turnaround Sheet
+            <Badge variant="accent" className="px-1.5 py-0">
+              New
+            </Badge>
           </Button>
           <Button
             variant="ghost"
@@ -1018,6 +1021,10 @@ function PropSheet({
                       </optgroup>
                     ))}
                   </DnaSelect>
+                  <p className="mt-1 text-[11px] text-muted">
+                    {STYLE_PRESETS.length} looks across {STYLE_GROUPS.length} groups — Photoreal,
+                    Anime, Painterly, Comic, 2D, 3D &amp; Rubberhose.
+                  </p>
                 </Field>
               </Section>
             </>
