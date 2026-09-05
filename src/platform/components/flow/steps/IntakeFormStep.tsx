@@ -1,6 +1,7 @@
 import { Input } from "@/platform/components/ui/input";
 import { Label } from "@/platform/components/ui/label";
 import { Textarea } from "@/platform/components/ui/textarea";
+import { Select } from "@/platform/components/ui/select";
 
 export type IntakeField =
   | {
@@ -53,10 +54,10 @@ export function IntakeFormStep({ fields, value, onChange }: IntakeFormStepProps)
               className="mt-2"
             />
           ) : field.type === "select" ? (
-            <select
+            <Select
               id={field.id}
               value={value[field.id] ?? ""}
-              onChange={(event) => setField(field.id, event.target.value)}
+              onChange={(value: string) => setField(field.id, value)}
               className="mt-2 h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
             >
               <option value="">Choose...</option>
@@ -65,7 +66,7 @@ export function IntakeFormStep({ fields, value, onChange }: IntakeFormStepProps)
                   {option.label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <Input
               id={field.id}

@@ -4,6 +4,7 @@ import { type MvShot, type ChoreoAssignment } from "@/apps/music-video/lib/mvDir
 import { cn } from "@/platform/lib/utils";
 import { AssetImage } from "@/platform/components/ui/asset-image";
 import { CHOREO_ENERGY, CHOREO_ROLES, mapCastRole } from "./shotHelpers";
+import { Select } from "@/platform/components/ui/select";
 
 export interface PerformerOption {
   name: string;
@@ -138,9 +139,9 @@ export function ChoreoPanel({
                 className={inputCls}
                 placeholder="Performer (or pick above)"
               />
-              <select
+              <Select
                 value={a.role}
-                onChange={(e) => onUpdate(i, { role: e.target.value })}
+                onChange={(value: string) => onUpdate(i, { role: value })}
                 className={inputCls}
               >
                 {CHOREO_ROLES.map((r) => (
@@ -148,7 +149,7 @@ export function ChoreoPanel({
                     {r}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             {/* Pose-sheet thumbnails — generated in Choreography (visual moves) */}
             {poseSheets.length > 0 && (
@@ -212,9 +213,9 @@ export function ChoreoPanel({
               }
             />
             <div className="mt-1 grid grid-cols-3 gap-1">
-              <select
+              <Select
                 value={a.energy ?? ""}
-                onChange={(e) => onUpdate(i, { energy: e.target.value || undefined })}
+                onChange={(value: string) => onUpdate(i, { energy: value || undefined })}
                 className={inputCls}
                 title="Energy"
               >
@@ -223,7 +224,7 @@ export function ChoreoPanel({
                     {en || "Energy…"}
                   </option>
                 ))}
-              </select>
+              </Select>
               <input
                 value={a.expression ?? ""}
                 onChange={(e) => onUpdate(i, { expression: e.target.value || undefined })}

@@ -34,6 +34,7 @@ import { FormationStage } from "./FormationStage";
 import { GuidedSectionPrompt } from "./GuidedSectionPrompt";
 import { AiDirectorPanel } from "./AiDirectorPanel";
 import { MotionPreview } from "./MotionPreview";
+import { Select } from "@/platform/components/ui/select";
 
 export function ChoreoCard({
   section,
@@ -316,9 +317,9 @@ export function ChoreoCard({
                     />
                     <div className="mt-1.5 flex items-center gap-1">
                       <Camera className="h-3 w-3 shrink-0 text-muted" />
-                      <select
+                      <Select
                         value={cameraMoves[i] ?? ""}
-                        onChange={(e) => setCamera(i, e.target.value)}
+                        onChange={(value: string) => setCamera(i, value)}
                         aria-label={`Camera for pose ${i + 1}`}
                         className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
                       >
@@ -327,13 +328,13 @@ export function ChoreoCard({
                             {m}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     <div className="mt-1 flex items-center gap-1">
                       <Lightbulb className="h-3 w-3 shrink-0 text-muted" />
-                      <select
+                      <Select
                         value={lightingMoves[i] ?? ""}
-                        onChange={(e) => setLighting(i, e.target.value)}
+                        onChange={(value: string) => setLighting(i, value)}
                         aria-label={`Lighting for pose ${i + 1}`}
                         className="w-full rounded border border-transparent bg-transparent text-[11px] text-muted hover:border-border focus-visible:border-primary focus-visible:outline-none"
                       >
@@ -342,7 +343,7 @@ export function ChoreoCard({
                             {m}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     {/* Per-pose generation */}
                     <div className="mt-1.5 flex gap-1">

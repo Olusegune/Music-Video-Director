@@ -9,6 +9,7 @@ import { useAppStore } from "@/platform/store/useAppStore";
 import { api } from "@/platform/lib/ipc";
 import { Button } from "@/platform/components/ui/button";
 import { AssetVideo } from "@/platform/components/ui/asset-image";
+import { Select } from "@/platform/components/ui/select";
 
 const RES_PRESETS = [
   { id: "720", label: "720p · 16:9", w: 1280, h: 720 },
@@ -52,9 +53,9 @@ export function RenderSettings({
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
               Resolution
             </span>
-            <select
+            <Select
               value={resId}
-              onChange={(e) => setResId(e.target.value)}
+              onChange={(value: string) => setResId(value)}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
             >
               {RES_PRESETS.map((r) => (
@@ -62,21 +63,21 @@ export function RenderSettings({
                   {r.label} — {r.w}×{r.h}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
           <label className="block">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted">
               Frame rate
             </span>
-            <select
-              value={fps}
-              onChange={(e) => setFps(Number(e.target.value))}
+            <Select
+              value={String(fps)}
+              onChange={(value: string) => setFps(Number(value))}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
             >
               <option value={24}>24 fps (cinematic)</option>
               <option value={30}>30 fps</option>
-            </select>
+            </Select>
           </label>
 
           {/* Audio summary */}

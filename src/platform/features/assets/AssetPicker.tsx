@@ -14,6 +14,7 @@ import { AssetImage } from "@/platform/components/ui/asset-image";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
+import { Select } from "@/platform/components/ui/select";
 
 const KIND_ICON: Record<AssetKind, React.ReactNode> = {
   Character: <Users className="h-3.5 w-3.5" />,
@@ -193,9 +194,9 @@ export function AssetPicker({
               {pending.length} upload{pending.length === 1 ? "" : "s"} ready to use ✓ — optionally
               also save to:
             </span>
-            <select
+            <Select
               value={uploadCat}
-              onChange={(e) => setUploadCat(e.target.value)}
+              onChange={(value: string) => setUploadCat(value)}
               className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
               aria-label="Upload category"
             >
@@ -204,7 +205,7 @@ export function AssetPicker({
                   {c.label}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button size="sm" variant="secondary" onClick={confirmUpload} disabled={saving}>
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

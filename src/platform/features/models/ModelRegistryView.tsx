@@ -35,6 +35,7 @@ import { Input } from "@/platform/components/ui/input";
 import { Badge } from "@/platform/components/ui/badge";
 import { Button } from "@/platform/components/ui/button";
 import { cn } from "@/platform/lib/utils";
+import { Select } from "@/platform/components/ui/select";
 
 const LS_FAVORITES = "mf.modelFavorites";
 
@@ -183,9 +184,9 @@ export function ModelRegistryView() {
             {k === "all" ? "All" : k === "image" ? "Image" : "Video"}
           </button>
         ))}
-        <select
+        <Select
           value={workflow}
-          onChange={(e) => setWorkflow(e.target.value as "all" | Workflow)}
+          onChange={(value: string) => setWorkflow(value as "all" | Workflow)}
           aria-label="Filter by workflow"
           className="h-7 rounded-md border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
         >
@@ -195,7 +196,7 @@ export function ModelRegistryView() {
               {w}
             </option>
           ))}
-        </select>
+        </Select>
         <label className="ml-1 flex items-center gap-1.5 text-xs text-muted">
           <input
             type="checkbox"

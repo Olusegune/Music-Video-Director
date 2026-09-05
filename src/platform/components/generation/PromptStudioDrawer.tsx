@@ -22,6 +22,7 @@ import {
 } from "@/platform/lib/promptPipeline";
 import { describeEntry, type PromptHistoryEntry } from "@/platform/lib/promptHistory";
 import { comparePipelines, type LayerChange } from "@/platform/lib/promptCompare";
+import { Select } from "@/platform/components/ui/select";
 
 const LAYER_CHANGE_TONE: Record<LayerChange["kind"], string> = {
   unchanged: "text-muted",
@@ -233,14 +234,14 @@ export function PromptStudioDrawer({
                   className="space-y-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted"
                 >
                   Variant {slot === 0 ? "A" : "B"}
-                  <select
+                  <Select
                     value={compareIds[slot] ?? ""}
-                    onChange={(event) => {
+                    onChange={(value: string) => {
                       const next: [string | null, string | null] = [...compareIds] as [
                         string | null,
                         string | null,
                       ];
-                      next[slot] = event.target.value || null;
+                      next[slot] = value || null;
                       setCompareIds(next);
                       setCompareResults(null);
                     }}
@@ -252,7 +253,7 @@ export function PromptStudioDrawer({
                         {entry.title || entry.prompt.slice(0, 48)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               ))}
             </div>

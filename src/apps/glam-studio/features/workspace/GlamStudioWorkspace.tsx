@@ -1,3 +1,4 @@
+import { Select } from "@/platform/components/ui/select";
 import { useMemo, useState } from "react";
 import {
   BadgeCheck,
@@ -809,12 +810,12 @@ function ProjectPreview({
                   <div className="grid grid-cols-2 gap-2">
                     <label className="text-[10px] text-muted">
                       Crop
-                      <select
+                      <Select
                         value={layout.cropPosition}
-                        onChange={(event) =>
+                        onChange={(value: string) =>
                           onLayoutChange(deliverable.format, {
                             ...layout,
-                            cropPosition: event.target.value as GlamFormatLayout["cropPosition"],
+                            cropPosition: value as GlamFormatLayout["cropPosition"],
                           })
                         }
                         className="mt-1 h-8 w-full rounded-md border border-border bg-surface px-2 text-xs text-foreground"
@@ -822,16 +823,16 @@ function ProjectPreview({
                         <option value="left">Left</option>
                         <option value="center">Center</option>
                         <option value="right">Right</option>
-                      </select>
+                      </Select>
                     </label>
                     <label className="text-[10px] text-muted">
                       Headline
-                      <select
+                      <Select
                         value={layout.copyPosition}
-                        onChange={(event) =>
+                        onChange={(value: string) =>
                           onLayoutChange(deliverable.format, {
                             ...layout,
-                            copyPosition: event.target.value as GlamFormatLayout["copyPosition"],
+                            copyPosition: value as GlamFormatLayout["copyPosition"],
                           })
                         }
                         className="mt-1 h-8 w-full rounded-md border border-border bg-surface px-2 text-xs text-foreground"
@@ -840,7 +841,7 @@ function ProjectPreview({
                         <option value="top-right">Top right</option>
                         <option value="bottom-left">Bottom left</option>
                         <option value="bottom-right">Bottom right</option>
-                      </select>
+                      </Select>
                     </label>
                   </div>
                   <Button

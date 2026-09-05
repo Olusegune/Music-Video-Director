@@ -1,3 +1,4 @@
+import { Select } from "@/platform/components/ui/select";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -385,12 +386,12 @@ function PerformerCard({
             <span className="mb-1 flex items-center gap-1 text-[11px] font-medium text-muted">
               <Link2 className="h-3 w-3" /> Character DNA
             </span>
-            <select
+            <Select
               value={performer.characterId ?? ""}
-              onChange={(e) =>
+              onChange={(value: string) =>
                 onChange({
                   ...performer,
-                  characterId: e.target.value || undefined,
+                  characterId: value || undefined,
                 })
               }
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
@@ -402,7 +403,7 @@ function PerformerCard({
                   {c.name || "Unnamed character"}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
           {isDancerish && (

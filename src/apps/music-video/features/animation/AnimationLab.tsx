@@ -20,6 +20,7 @@ import {
 import { cn } from "@/platform/lib/utils";
 import { Label } from "@/platform/components/ui/label";
 import { AssetVideo } from "@/platform/components/ui/asset-image";
+import { Select } from "@/platform/components/ui/select";
 
 // Video models, shaped for the unified panel (drop the "auto" blank-provider id
 // in favour of an explicit "Auto" that maps to first-configured = "custom").
@@ -31,7 +32,7 @@ const VIDEO_GEN_MODELS: GenModel[] = VIDEO_MODELS.map((m) => ({
   keyIds: m.keyIds,
 }));
 
-function Select({
+function IconSelect({
   value,
   onChange,
   icon,
@@ -47,13 +48,13 @@ function Select({
       <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted">
         {icon}
       </span>
-      <select
+      <Select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface pl-8 pr-3 text-sm text-foreground transition-colors focus-visible:border-primary focus-visible:outline-none"
       >
         {children}
-      </select>
+      </Select>
     </div>
   );
 }
@@ -177,7 +178,7 @@ export function AnimationLab() {
         <div className="flex flex-col gap-4 overflow-y-auto border-r border-border p-6">
           <div className="flex flex-col gap-1.5">
             <Label>Character</Label>
-            <Select
+            <IconSelect
               value={characterId}
               onChange={setCharacterId}
               icon={<Users className="h-3.5 w-3.5" />}
@@ -188,12 +189,12 @@ export function AnimationLab() {
                   {c.name}
                 </option>
               ))}
-            </Select>
+            </IconSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Environment</Label>
-            <Select
+            <IconSelect
               value={environmentId}
               onChange={setEnvironmentId}
               icon={<Globe className="h-3.5 w-3.5" />}
@@ -204,19 +205,19 @@ export function AnimationLab() {
                   {e.name}
                 </option>
               ))}
-            </Select>
+            </IconSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Prop / Vehicle</Label>
-            <Select value={propId} onChange={setPropId} icon={<Package className="h-3.5 w-3.5" />}>
+            <IconSelect value={propId} onChange={setPropId} icon={<Package className="h-3.5 w-3.5" />}>
               <option value="">None</option>
               {props.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.category})
                 </option>
               ))}
-            </Select>
+            </IconSelect>
           </div>
 
           <div className="flex flex-col gap-1.5">

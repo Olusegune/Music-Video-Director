@@ -42,6 +42,7 @@ import { Button } from "@/platform/components/ui/button";
 import { AssetImage } from "@/platform/components/ui/asset-image";
 import { Label } from "@/platform/components/ui/label";
 import { Input } from "@/platform/components/ui/input";
+import { Select } from "@/platform/components/ui/select";
 
 type Entity = Character | Environment | Prop;
 
@@ -265,9 +266,9 @@ export function ImageStudio({
           {/* Template */}
           <div className="flex flex-col gap-1.5">
             <Label>Sheet template</Label>
-            <select
+            <Select
               value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
+              onChange={(value: string) => setTemplateId(value)}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
             >
               {templates.map((t) => (
@@ -275,7 +276,7 @@ export function ImageStudio({
                   {t.label}
                 </option>
               ))}
-            </select>
+            </Select>
             <p className="text-[11px] text-muted">{template.desc}</p>
           </div>
 
@@ -303,9 +304,9 @@ export function ImageStudio({
           {/* Size */}
           <div className="flex flex-col gap-1.5">
             <Label>Image size</Label>
-            <select
+            <Select
               value={sizeId}
-              onChange={(e) => setSizeId(e.target.value)}
+              onChange={(value: string) => setSizeId(value)}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
             >
               {SIZE_PRESETS.map((s) => (
@@ -313,7 +314,7 @@ export function ImageStudio({
                   {s.label}
                 </option>
               ))}
-            </select>
+            </Select>
             {sizePreset.id === "custom" ? (
               <div className="flex items-center gap-2">
                 <Input

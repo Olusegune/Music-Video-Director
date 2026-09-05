@@ -15,6 +15,7 @@ import type {
 } from "@/platform/lib/generationSpec";
 import type { ReferenceSupport } from "@/platform/lib/modelRegistry";
 import { resolveReferences } from "@/platform/lib/referenceSystem";
+import { Select } from "@/platform/components/ui/select";
 
 export const REFERENCE_CATEGORIES: GenerationReferenceCategory[] = [
   "character",
@@ -84,12 +85,12 @@ export function ReferenceTray({
 
             {showControls ? (
               <div className="min-w-0 flex-1 space-y-1">
-                <select
+                <Select
                   aria-label={`Reference ${index + 1} category`}
                   value={reference.category ?? "asset"}
-                  onChange={(event) =>
+                  onChange={(value: string) =>
                     onChange(reference.url, {
-                      category: event.target.value as GenerationReferenceCategory,
+                      category: value as GenerationReferenceCategory,
                     })
                   }
                   className="h-6 w-full rounded border border-border bg-surface px-1 text-[10px] capitalize text-foreground focus-visible:border-primary focus-visible:outline-none"
@@ -99,7 +100,7 @@ export function ReferenceTray({
                       {category}
                     </option>
                   ))}
-                </select>
+                </Select>
 
                 <div className="flex items-center gap-1.5">
                   <input

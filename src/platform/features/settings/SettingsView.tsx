@@ -38,6 +38,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
+import { Select } from "@/platform/components/ui/select";
 import {
   Card,
   CardContent,
@@ -156,14 +157,14 @@ export function SettingsView() {
                     <Label className="text-[11px] uppercase tracking-wide text-muted">
                       {CAPABILITY_LABEL[cap]}
                     </Label>
-                    <select
+                    <Select
                       value={router.manual[cap] ?? ""}
-                      onChange={(e) =>
+                      onChange={(value: string) =>
                         updateRouter({
                           ...router,
                           manual: {
                             ...router.manual,
-                            [cap]: e.target.value as ProviderId,
+                            [cap]: value as ProviderId,
                           },
                         })
                       }
@@ -175,7 +176,7 @@ export function SettingsView() {
                           {p.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 ))}
               </div>

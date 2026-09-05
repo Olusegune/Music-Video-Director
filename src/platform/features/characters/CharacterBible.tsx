@@ -67,6 +67,7 @@ import { BibleProfileStage } from "@/platform/features/dna/BibleProfileStage";
 import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dna/bibleProfileAi";
 import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
 import { extractTextFromFile } from "@/platform/lib/docParse";
+import { Select } from "@/platform/components/ui/select";
 import {
   extractCharacterFields,
   CHARACTER_IMPORT_FIELDS,
@@ -1448,22 +1449,7 @@ function Field({
   );
 }
 
-function Select({
-  value,
-  onChange,
-  children,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm text-foreground transition-colors focus-visible:border-primary focus-visible:outline-none"
-    >
-      {children}
-    </select>
-  );
-}
+// The local Select wrapper that used to live here was a native <select> with
+// this file's styling. The shared ui/select does the same job (and renders
+// into a portal so it can't be clipped), with the same value/onChange/children
+// API — so the wrapper is gone and call sites use the shared one directly.

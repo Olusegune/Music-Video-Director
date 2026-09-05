@@ -70,6 +70,7 @@ import { routeProvider } from "@/platform/lib/providers";
 import type { ProviderId } from "@/platform/lib/types";
 import { useAutoSave } from "@/platform/hooks/useAutoSave";
 import { openProject, type DirectorProject } from "@/platform/lib/projectPersistence";
+import { Select } from "@/platform/components/ui/select";
 
 const MODES: { id: WorkspaceMode; label: string; icon: React.ReactNode }[] = [
   { id: "storyboard", label: "Storyboard", icon: <LayoutGrid className="h-4 w-4" /> },
@@ -476,10 +477,10 @@ export function ProjectWorkspace() {
                 <label htmlFor="style" className="text-xs text-muted">
                   Style:
                 </label>
-                <select
+                <Select
                   id="style"
                   value={style.preset}
-                  onChange={(e) => updateStyle({ ...style, preset: e.target.value })}
+                  onChange={(value: string) => updateStyle({ ...style, preset: value })}
                   className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                 >
                   <option value="">None</option>
@@ -493,7 +494,7 @@ export function ProjectWorkspace() {
                     </optgroup>
                   ))}
                   <option value="custom">Custom…</option>
-                </select>
+                </Select>
                 {style.preset === "custom" && (
                   <input
                     aria-label="Custom style description"
@@ -508,10 +509,10 @@ export function ProjectWorkspace() {
                 <label htmlFor="brandkit" className="text-xs text-muted">
                   Brand Kit:
                 </label>
-                <select
+                <Select
                   id="brandkit"
                   value={brandKitId}
-                  onChange={(e) => chooseBrandKit(e.target.value)}
+                  onChange={(value: string) => chooseBrandKit(value)}
                   className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                 >
                   <option value="">None</option>
@@ -520,16 +521,16 @@ export function ProjectWorkspace() {
                       {k.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="template" className="text-xs text-muted">
                   Storyboard:
                 </label>
-                <select
+                <Select
                   id="template"
                   value={template}
-                  onChange={(e) => setTemplate(e.target.value)}
+                  onChange={(value: string) => setTemplate(value)}
                   className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                 >
                   {STORYBOARD_TEMPLATES.map((t) => (
@@ -537,7 +538,7 @@ export function ProjectWorkspace() {
                       {t.label}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {template === "custom" && (
                   <input
                     aria-label="Custom panel count"
@@ -626,13 +627,14 @@ export function ProjectWorkspace() {
                 <Dna className="h-4 w-4" /> Save Style DNA
               </Button>
               {dnas.length > 0 && (
-                <select
+                <Select
                   aria-label="Apply Style DNA"
-                  defaultValue=""
-                  onChange={(e) => {
-                    applyDna(e.target.value);
-                    e.target.value = "";
-                  }}
+                  // An action menu, not a stored choice: it stays on the
+                  // placeholder so the same DNA can be applied twice. The
+                  // original tried to reset by assigning to the handler
+                  // parameter, which never did anything.
+                  value=""
+                  onChange={(value: string) => applyDna(value)}
                   className="h-8 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
                 >
                   <option value="">Apply Style DNA…</option>
@@ -641,7 +643,7 @@ export function ProjectWorkspace() {
                       {d.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
               {magicMsg && <span className="text-xs text-success">{magicMsg}</span>}
             </div>

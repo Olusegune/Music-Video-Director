@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@/platform/components/ui/card";
 import { useAssetSrc } from "@/platform/components/ui/asset-image";
+import { Select } from "@/platform/components/ui/select";
 
 export function VoiceLab({ song, onChange }: { song: SongMap; onChange: (next: SongMap) => void }) {
   const [kind, setKind] = useState<AudioTrackKind>("Intro tag");
@@ -88,9 +89,9 @@ export function VoiceLab({ song, onChange }: { song: SongMap; onChange: (next: S
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <select
+          <Select
             value={kind}
-            onChange={(e) => setKind(e.target.value as AudioTrackKind)}
+            onChange={(value: string) => setKind(value as AudioTrackKind)}
             className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
             aria-label="Audio kind"
           >
@@ -99,7 +100,7 @@ export function VoiceLab({ song, onChange }: { song: SongMap; onChange: (next: S
                 {k}
               </option>
             ))}
-          </select>
+          </Select>
           <Input
             value={voice}
             onChange={(e) => setVoice(e.target.value)}

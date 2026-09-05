@@ -46,6 +46,7 @@ import {
 } from "@/platform/components/generation/GenerationPanel";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
+import { Select } from "@/platform/components/ui/select";
 import { AssetImage, AssetVideo } from "@/platform/components/ui/asset-image";
 import { collectRefs } from "@/platform/lib/refs";
 import { GEN_MODELS } from "./shotHelpers";
@@ -757,9 +758,9 @@ export function MvDirector() {
         <div className="flex flex-wrap items-center gap-2">
           {treatment && (
             <>
-              <select
+              <Select
                 value={modelId}
-                onChange={(e) => setModelId(e.target.value)}
+                onChange={(value: string) => setModelId(value)}
                 className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                 aria-label="Image model"
                 title="Image provider"
@@ -770,10 +771,10 @@ export function MvDirector() {
                     {m.label}
                   </option>
                 ))}
-              </select>
-              <select
+              </Select>
+              <Select
                 value={aspect}
-                onChange={(e) => setAspect(e.target.value)}
+                onChange={(value: string) => setAspect(value)}
                 className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                 aria-label="Aspect ratio"
                 title="Frame aspect ratio"
@@ -783,7 +784,7 @@ export function MvDirector() {
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
               {/* Display tier follows the platform-wide Director / Studio /
                   Creator switch in the Sidebar (StudioMode, decision D1). */}
               {advanced && (
@@ -804,9 +805,9 @@ export function MvDirector() {
               )}
               {advanced && showClipSettings && (
                 <>
-                  <select
+                  <Select
                     value={sizeId}
-                    onChange={(e) => setSizeId(e.target.value)}
+                    onChange={(value: string) => setSizeId(value)}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Image quality"
                     title="Frame resolution / quality"
@@ -816,7 +817,7 @@ export function MvDirector() {
                         {SIZE_LABEL[s.id] ?? s.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <input
                     value={seed}
                     onChange={(e) => setSeed(e.target.value.replace(/[^0-9]/g, ""))}
@@ -826,9 +827,9 @@ export function MvDirector() {
                     aria-label="Seed"
                     title="Seed (fal / Stability) — repeat for consistent results"
                   />
-                  <select
-                    value={variations}
-                    onChange={(e) => setVariations(Number(e.target.value))}
+                  <Select
+                    value={String(variations)}
+                    onChange={(value: string) => setVariations(Number(value))}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Variations"
                     title="Frame variations to generate per shot"
@@ -838,10 +839,10 @@ export function MvDirector() {
                         {n}×
                       </option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
                     value={videoModelId}
-                    onChange={(e) => setVideoModelId(e.target.value)}
+                    onChange={(value: string) => setVideoModelId(value)}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Video model"
                     title="Video provider for per-shot clips"
@@ -852,10 +853,10 @@ export function MvDirector() {
                         {m.label}
                       </option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
                     value={motion}
-                    onChange={(e) => setMotion(e.target.value)}
+                    onChange={(value: string) => setMotion(value)}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Motion intensity"
                     title="Clip camera-motion intensity"
@@ -865,10 +866,10 @@ export function MvDirector() {
                         Motion: {m}
                       </option>
                     ))}
-                  </select>
-                  <select
-                    value={fps}
-                    onChange={(e) => setFps(Number(e.target.value))}
+                  </Select>
+                  <Select
+                    value={String(fps)}
+                    onChange={(value: string) => setFps(Number(value))}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Frame rate"
                     title="Clip target frame rate"
@@ -878,10 +879,10 @@ export function MvDirector() {
                         {f} fps
                       </option>
                     ))}
-                  </select>
-                  <select
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
+                  </Select>
+                  <Select
+                    value={String(duration)}
+                    onChange={(value: string) => setDuration(Number(value))}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Clip duration"
                     title="Clip length in seconds (model-dependent; Seedance up to 15s)"
@@ -891,10 +892,10 @@ export function MvDirector() {
                         {d}s
                       </option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
                     value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
+                    onChange={(value: string) => setResolution(value)}
                     className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
                     aria-label="Clip resolution"
                     title="Output resolution (model-dependent)"
@@ -904,7 +905,7 @@ export function MvDirector() {
                         {r}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <div
                     className="flex items-center gap-1 rounded-[var(--radius-input)] border border-border bg-surface px-2"
                     title="Which audio the model should generate (where supported)"
@@ -1268,11 +1269,11 @@ export function MvDirector() {
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted">
                       Video / clip
                     </p>
-                    <select
+                    <Select
                       value={liveShot.videoProvider ?? ""}
-                      onChange={(e) =>
+                      onChange={(value: string) =>
                         patchShot(liveSection.sectionId, liveShot.id, {
-                          videoProvider: e.target.value || undefined,
+                          videoProvider: value || undefined,
                         })
                       }
                       className="h-8 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs text-foreground focus-visible:border-primary focus-visible:outline-none"
@@ -1285,7 +1286,7 @@ export function MvDirector() {
                           {m.label}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     <Button
                       variant="secondary"
                       size="sm"

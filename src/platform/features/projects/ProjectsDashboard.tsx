@@ -16,6 +16,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Badge } from "@/platform/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/platform/components/ui/card";
 import { cn } from "@/platform/lib/utils";
+import { Select } from "@/platform/components/ui/select";
 
 function toast(message: string) {
   window.dispatchEvent(new CustomEvent("mf-toast", { detail: message }));
@@ -198,9 +199,9 @@ export function ProjectsDashboard() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted mb-1">Project Type</label>
-                <select
+                <Select
                   value={newProjectType}
-                  onChange={(e) => setNewProjectType(e.target.value as ProjectType)}
+                  onChange={(value: string) => setNewProjectType(value as ProjectType)}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {TYPE_OPTIONS.map((t) => (
@@ -208,7 +209,7 @@ export function ProjectsDashboard() {
                       {t.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="flex gap-2">
                 <Button

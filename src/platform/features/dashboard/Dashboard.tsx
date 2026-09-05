@@ -41,6 +41,7 @@ import { importBundle, parseBundle } from "@/platform/lib/projectBundle";
 import { notifyStorage } from "@/platform/lib/storage";
 import { isModuleEnabled, PRODUCT_EDITION, PRODUCT_NAME } from "@/platform/lib/productConfig";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
+import { Select } from "@/platform/components/ui/select";
 
 const PROJECT_TYPES: ProjectType[] = [
   "SaaS Product",
@@ -432,12 +433,12 @@ export function Dashboard() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="type">Type</Label>
-                    <select
+                    <Select
                       id="type"
                       className="h-9 rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
                       value={form.type}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, type: e.target.value as ProjectType }))
+                      onChange={(value: string) =>
+                        setForm((f) => ({ ...f, type: value as ProjectType }))
                       }
                     >
                       {PROJECT_TYPES.map((t) => (
@@ -445,7 +446,7 @@ export function Dashboard() {
                           {t}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="desc">Concept / brief</Label>

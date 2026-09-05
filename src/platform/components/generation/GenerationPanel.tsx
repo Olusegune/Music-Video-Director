@@ -51,6 +51,7 @@ import {
 } from "@/platform/lib/promptPipeline";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { createPromptCompareRun } from "@/platform/lib/loopEngine";
+import { Select } from "@/platform/components/ui/select";
 import {
   deletePromptHistory,
   listPromptHistory,
@@ -614,9 +615,9 @@ export function GenerationPanel({
       {(!compact || advanced) && (
         <label className="block">
           <Label>Model / provider</Label>
-          <select
+          <Select
             value={modelId}
-            onChange={(e) => setModelId(e.target.value)}
+            onChange={(value: string) => setModelId(value)}
             className={selectCls}
             aria-label={isVideo ? "Video model" : "Image model"}
           >
@@ -636,7 +637,7 @@ export function GenerationPanel({
                 </option>
               );
             })}
-          </select>
+          </Select>
           <p className="mt-1 flex items-center gap-1.5 text-[10px]">
             <span className={cn("h-1.5 w-1.5 rounded-full", READY_META[activeReadiness].dot)} />
             <span className={READY_META[activeReadiness].text}>
@@ -682,9 +683,9 @@ export function GenerationPanel({
           {can("aspect") && (
             <label className="block">
               <Label>Aspect</Label>
-              <select
+              <Select
                 value={aspect}
-                onChange={(e) => setAspect(e.target.value)}
+                onChange={(value: string) => setAspect(value)}
                 className={selectCls}
                 aria-label="Aspect ratio"
               >
@@ -693,15 +694,15 @@ export function GenerationPanel({
                     {a}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           {can("resolution") && (
             <label className="block">
               <Label>Size / quality</Label>
-              <select
+              <Select
                 value={sizeId}
-                onChange={(e) => setSizeId(e.target.value)}
+                onChange={(value: string) => setSizeId(value)}
                 className={selectCls}
                 aria-label="Image size"
               >
@@ -710,7 +711,7 @@ export function GenerationPanel({
                     {s.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
         </div>
@@ -719,9 +720,9 @@ export function GenerationPanel({
       {!isVideo && supportedOperations.length > 1 && (
         <label className="block">
           <Label>Image operation</Label>
-          <select
+          <Select
             value={operation}
-            onChange={(event) => setOperation(event.target.value as GenerationOperation)}
+            onChange={(value: string) => setOperation(value as GenerationOperation)}
             className={selectCls}
             aria-label="Image operation"
           >
@@ -730,7 +731,7 @@ export function GenerationPanel({
                 {item === "generate" ? "Generate" : item[0].toUpperCase() + item.slice(1)}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       )}
       {!isVideo && operation === "inpaint" && (
@@ -769,9 +770,9 @@ export function GenerationPanel({
               {can("fps") && (
                 <label className="block">
                   <Label>FPS</Label>
-                  <select
-                    value={fps}
-                    onChange={(e) => setFps(Number(e.target.value))}
+                  <Select
+                    value={String(fps)}
+                    onChange={(value: string) => setFps(Number(value))}
                     className={selectCls}
                     aria-label="FPS"
                   >
@@ -780,7 +781,7 @@ export function GenerationPanel({
                         {f}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               )}
             </div>
@@ -788,9 +789,9 @@ export function GenerationPanel({
           {can("camera") && (
             <label className="block">
               <Label>Camera movement</Label>
-              <select
+              <Select
                 value={camera}
-                onChange={(e) => setCamera(e.target.value)}
+                onChange={(value: string) => setCamera(value)}
                 className={selectCls}
                 aria-label="Camera movement"
               >
@@ -799,7 +800,7 @@ export function GenerationPanel({
                     {c}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           {can("motion") && (

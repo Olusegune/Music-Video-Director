@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/platform/components/ui/card";
 import { Button } from "@/platform/components/ui/button";
 import { InlineInput, InlineTextarea } from "@/platform/components/ui/inline-edit";
+import { Select } from "@/platform/components/ui/select";
 
 type Update = (updater: (prev: PromptPack) => PromptPack) => void;
 
@@ -290,14 +291,14 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
               placeholder="role (e.g. CTA)"
               className="h-8 w-36 rounded-[var(--radius-input)] border border-border bg-surface px-2 text-xs focus-visible:border-primary focus-visible:outline-none"
             />
-            <select
+            <Select
               aria-label="Lock state"
               value={item.state}
               title={LOCK_STATE_HELP[item.state]}
-              onChange={(e) =>
+              onChange={(value: string) =>
                 setLocks(
                   locks.map((l, i) =>
-                    i === idx ? { ...l, state: e.target.value as TextLockState } : l
+                    i === idx ? { ...l, state: value as TextLockState } : l
                   )
                 )
               }
@@ -308,7 +309,7 @@ function TextLockCard({ pack, update }: { pack: PromptPack; update: Update }) {
                   {LOCK_STATE_LABEL[s]}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button
               variant="ghost"
               size="icon"

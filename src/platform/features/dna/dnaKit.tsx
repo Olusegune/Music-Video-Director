@@ -29,6 +29,7 @@ import {
 } from "@/platform/lib/assets";
 import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
+import { Select } from "@/platform/components/ui/select";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Label } from "@/platform/components/ui/label";
 import { Badge } from "@/platform/components/ui/badge";
@@ -203,9 +204,9 @@ export function MoveAssetMenu({
       ) : (
         <FolderInput className="h-4 w-4 text-muted" />
       )}
-      <select
+      <Select
         value=""
-        onChange={(e) => handle(e.target.value)}
+        onChange={(value: string) => handle(value)}
         disabled={busy}
         aria-label="Move asset to category"
         title="Move to another category / Bible"
@@ -219,7 +220,7 @@ export function MoveAssetMenu({
             {c.label}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }
@@ -423,6 +424,9 @@ export function Field({
   );
 }
 
+/** Thin alias kept so existing call sites don't churn — the themed,
+ *  portal-rendered Select does the work now, which is what stops a picker
+ *  near the bottom of a panel from looking clipped. */
 export function DnaSelect({
   value,
   onChange,
@@ -433,13 +437,9 @@ export function DnaSelect({
   children: React.ReactNode;
 }) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm text-foreground transition-colors focus-visible:border-primary focus-visible:outline-none"
-    >
+    <Select value={value} onChange={onChange}>
       {children}
-    </select>
+    </Select>
   );
 }
 

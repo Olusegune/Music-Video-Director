@@ -26,6 +26,7 @@ import { Button } from "@/platform/components/ui/button";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Card, CardContent } from "@/platform/components/ui/card";
+import { Select } from "@/platform/components/ui/select";
 
 export function SectionRow({
   section,
@@ -82,10 +83,10 @@ export function SectionRow({
           />
         )}
       </button>
-      <select
+      <Select
         value={section.kind}
-        onChange={(e) => {
-          const kind = e.target.value as SectionKind;
+        onChange={(value: string) => {
+          const kind = value as SectionKind;
           onChange({
             ...section,
             kind,
@@ -101,7 +102,7 @@ export function SectionRow({
             {k}
           </option>
         ))}
-      </select>
+      </Select>
       <Input
         value={section.label}
         onChange={(e) => onChange({ ...section, label: e.target.value })}
@@ -233,9 +234,9 @@ export function SectionEditor({
                   </span>
                 )}
               </span>
-              <select
+              <Select
                 value={assigned ?? ""}
-                onChange={(e) => onPatch({ performerRole: e.target.value || undefined })}
+                onChange={(value: string) => onPatch({ performerRole: value || undefined })}
                 className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-none"
                 aria-label={`Performer for ${section.label}`}
               >
@@ -247,7 +248,7 @@ export function SectionEditor({
                     {r}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           );
         })()}

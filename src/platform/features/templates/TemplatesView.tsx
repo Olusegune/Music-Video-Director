@@ -52,6 +52,7 @@ import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Badge } from "@/platform/components/ui/badge";
 import { TemplateHeroImage } from "@/platform/components/templates/TemplateCard";
+import { Select } from "@/platform/components/ui/select";
 
 /** Pick an elegant genre/style icon for a template by matching its name/tags. */
 function templateIcon(t: MvTemplate): React.ReactNode {
@@ -558,9 +559,9 @@ function TemplateEditor({
               <Input value={t.name} onChange={(e) => set({ name: e.target.value })} />
             </EF>
             <EF label="Category">
-              <select
+              <Select
                 value={t.category}
-                onChange={(e) => set({ category: e.target.value as TemplateCategory })}
+                onChange={(value: string) => set({ category: value as TemplateCategory })}
                 className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm focus-visible:border-primary focus-visible:outline-none"
               >
                 {TEMPLATE_CATEGORIES.map((c) => (
@@ -568,7 +569,7 @@ function TemplateEditor({
                     {c}
                   </option>
                 ))}
-              </select>
+              </Select>
             </EF>
             <EF label="Mood">
               <Input value={t.mood} onChange={(e) => set({ mood: e.target.value })} />
@@ -655,15 +656,15 @@ function TemplateEditor({
               />
             </EF>
             <EF label="Performance lean">
-              <select
+              <Select
                 value={t.lean}
-                onChange={(e) => set({ lean: e.target.value as MvTemplate["lean"] })}
+                onChange={(value: string) => set({ lean: value as MvTemplate["lean"] })}
                 className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-2 text-sm focus-visible:border-primary focus-visible:outline-none"
               >
                 <option value="balanced">Balanced</option>
                 <option value="performance">Performance-forward</option>
                 <option value="narrative">Narrative-forward</option>
-              </select>
+              </Select>
             </EF>
           </div>
         </div>

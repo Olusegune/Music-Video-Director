@@ -1,3 +1,4 @@
+import { Select } from "@/platform/components/ui/select";
 import { useMemo, useState } from "react";
 import { Clapperboard, FileText, Loader2, Music, UserPlus } from "lucide-react";
 import { GuidedFlowShell } from "@/platform/components/flow";
@@ -287,9 +288,9 @@ function CastStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowS
               placeholder="Performer name"
               className="mb-2"
             />
-            <select
+            <Select
               value={performer.role}
-              onChange={(event) => update(index, { role: event.target.value as PerformerRole })}
+              onChange={(value: string) => update(index, { role: value as PerformerRole })}
               className="h-9 w-full rounded-[var(--radius-input)] border border-border bg-surface px-3 text-sm"
             >
               {PERFORMER_ROLES.map((role) => (
@@ -297,7 +298,7 @@ function CastStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowS
                   {role}
                 </option>
               ))}
-            </select>
+            </Select>
             <Input
               value={performer.performanceNotes}
               onChange={(event) => update(index, { performanceNotes: event.target.value })}

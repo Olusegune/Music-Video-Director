@@ -42,6 +42,7 @@ import {
   fileToDataUrl,
 } from "./shotHelpers";
 import { ChoreoPanel, type PerformerOption, type ContinuityInfo } from "./ChoreoPanel";
+import { Select } from "@/platform/components/ui/select";
 
 function OmniSlot({
   label,
@@ -898,9 +899,9 @@ export function ShotRow({
           </button>
           {showModelOverrides && (
             <>
-              <select
+              <Select
                 value={shot.imageProvider ?? ""}
-                onChange={(e) => onChange({ ...shot, imageProvider: e.target.value || undefined })}
+                onChange={(value: string) => onChange({ ...shot, imageProvider: value || undefined })}
                 className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
                 aria-label={`Shot ${index + 1} image model`}
                 title="Override the image provider for this shot"
@@ -911,10 +912,10 @@ export function ShotRow({
                     {m.label}
                   </option>
                 ))}
-              </select>
-              <select
+              </Select>
+              <Select
                 value={shot.videoProvider ?? ""}
-                onChange={(e) => onChange({ ...shot, videoProvider: e.target.value || undefined })}
+                onChange={(value: string) => onChange({ ...shot, videoProvider: value || undefined })}
                 className="mt-1 h-7 w-full rounded-[var(--radius-input)] border border-border bg-surface px-1.5 text-[10px] text-muted focus-visible:border-primary focus-visible:outline-none"
                 aria-label={`Shot ${index + 1} video model`}
                 title="Override the video provider for this shot"
@@ -925,7 +926,7 @@ export function ShotRow({
                     {m.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
 
