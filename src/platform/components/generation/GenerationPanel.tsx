@@ -906,14 +906,25 @@ export function GenerationPanel({
           support={refSupport}
           showControls={can("referenceStrength") || allRefs.length > 1}
           onChange={patchRefMeta}
-          onRemove={(src: string) => {
-            if (libRefs.includes(src) && !references.includes(src)) {
-              setLibRefs((r) => r.filter((x) => x !== src));
-            } else {
-              onRemoveReference?.(src);
-            }
-            setRefMeta(({ [src]: _dropped, ...rest }) => rest);
-          }}
+          // Only hand the tray a remover when one can actually remove
+          // something. ReferenceTray hides its X unless it gets `onRemove`,
+          // but that guard is defeated by passing an always-truthy arrow
+          // whose body is `onRemoveReference?.(src)` — with the prop unwired
+          // that renders a live-looking X that silently does nothing, which
+          // is exactly what shipped. Undefined here means no X at all, so an
+          // unwired host is visible instead of quietly broken.
+          onRemove={
+            onRemoveReference || libRefs.length > 0
+              ? (src: string) => {
+                  if (libRefs.includes(src) && !references.includes(src)) {
+                    setLibRefs((r) => r.filter((x) => x !== src));
+                  } else {
+                    onRemoveReference?.(src);
+                  }
+                  setRefMeta(({ [src]: _dropped, ...rest }) => rest);
+                }
+              : undefined
+          }
         />
         <button
           onClick={() => (onAddReferences ? onAddReferences() : setPickerOpen(true))}
