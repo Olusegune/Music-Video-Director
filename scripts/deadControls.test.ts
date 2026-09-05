@@ -57,8 +57,6 @@ function grep(args: string[]): string[] {
 const ALLOWED_UNWIRED: Record<string, string> = {
   onUserPromptChange:
     "PromptComposition renders read-only unless BOTH `editable` and this are passed — no dead control.",
-  onFiles: "MediaIntakeStep is not mounted anywhere (orphan component, slated for removal).",
-  onRevise: "ReviewGateStep is not mounted anywhere (orphan component, slated for removal).",
 };
 
 describe("no dead controls", () => {
