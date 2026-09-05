@@ -720,6 +720,12 @@ function EnvironmentSheet({
             historyScope={{ moduleId: "world", entityId: draft.id }}
             onGenerate={runGenerate}
             onPick={pickEstablishing}
+            onRemoveReference={(src) =>
+              setDraft((d) => ({
+                ...d,
+                referenceImages: d.referenceImages.filter((r) => r !== src),
+              }))
+            }
             pickLabel="Use as establishing"
             defaultAspect="16:9"
           />

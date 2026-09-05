@@ -749,6 +749,12 @@ function PropSheet({
             historyScope={{ moduleId: "props", entityId: draft.id }}
             onGenerate={runGenerate}
             onPick={pickHero}
+            onRemoveReference={(src) =>
+              setDraft((d) => ({
+                ...d,
+                referenceImages: d.referenceImages.filter((r) => r !== src),
+              }))
+            }
             pickLabel="Use as hero"
             defaultAspect="1:1"
           />

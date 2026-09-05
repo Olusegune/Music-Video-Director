@@ -816,6 +816,12 @@ function CharacterSheet({
             references={draft.referenceImages}
             onGenerate={runGenerate}
             onPick={pickPortrait}
+            onRemoveReference={(src) =>
+              setDraft((d) => ({
+                ...d,
+                referenceImages: d.referenceImages.filter((r) => r !== src),
+              }))
+            }
             pickLabel="Use as portrait"
           />
           {!isTauri && (
@@ -956,9 +962,12 @@ function CharacterSheet({
                 ))}
               </div>
               <p className="mt-2 text-[11px] text-muted">
-                Previews reuse the current portrait until distinct art is generated per category
-                from the Character Sheet.
+                These previews reuse the current portrait — they're not separate generations. For
+                real wardrobe, expression, and pose variations, generate a full turnaround sheet.
               </p>
+              <Button variant="secondary" className="mt-2 w-full" onClick={onOpenTurnaround}>
+                <Images className="h-4 w-4" /> Generate Turnaround Sheet
+              </Button>
             </div>
 
             <div className="flex items-start gap-2.5 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-card">
