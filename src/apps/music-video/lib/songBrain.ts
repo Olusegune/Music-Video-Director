@@ -108,6 +108,9 @@ export interface SongMap {
   templateId?: string;
   /** Magic Mode's "Video Type" pick (Performance/Narrative/Dance/…), per-song. */
   videoType?: string;
+  /** Optional director style the production is inspired by, per-song. Absent
+   *  means the user skipped it, which must stay a genuine no-op. */
+  directorStyleId?: string;
   /** Magic Mode's Story Mode — the chosen story feeling, per-song. */
   storyFeeling?: string;
   /** User-written custom story idea (only meaningful when storyFeeling === "custom"). */

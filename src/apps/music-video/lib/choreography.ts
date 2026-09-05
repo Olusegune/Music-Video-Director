@@ -7,6 +7,7 @@
 // user edits and that downstream image/video generation can reference.
 
 import { getDoc, setDoc } from "@/platform/lib/durableStore";
+import { getDirectorStyle } from "@/apps/music-video/lib/directorStyles";
 import {
   barTimes,
   type SongMap,
@@ -413,7 +414,15 @@ function intensityFor(energy: number): string {
 
 export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
   const style = styleName && STYLES[styleName] ? styleName : inferStyle(song);
-  const vocab = STYLES[style] ?? STYLES[DEFAULT_STYLE];
+  const base = STYLES[style] ?? STYLES[DEFAULT_STYLE];
+  // A director style contributes movement *quality* on top of the dance
+  // vocabulary — the same steps read differently when the brief asks for
+  // jointed inhuman articulation rather than clean tight unison. Its terms go
+  // first so they lead, without discarding the dance style's own range.
+  const directorFlavor = getDirectorStyle(song.directorStyleId)?.choreoFlavor;
+  const vocab: StyleVocab = directorFlavor?.length
+    ? { ...base, moves: [...directorFlavor, ...base.moves], formations: [...directorFlavor, ...base.formations] }
+    : base;
   const bars = barTimes(song);
   const barDur = (60 / Math.max(1, song.bpm)) * song.beatsPerBar;
 

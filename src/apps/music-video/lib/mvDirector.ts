@@ -16,6 +16,11 @@ import {
   type SectionKind,
 } from "@/apps/music-video/lib/songBrain";
 import type { MvTemplate } from "@/platform/lib/templates";
+import {
+  getDirectorStyle,
+  blendPool,
+  type DirectorStyle,
+} from "@/apps/music-video/lib/directorStyles";
 
 export type ShotApproach = "Performance" | "Narrative" | "Abstract" | "Hybrid";
 
@@ -101,6 +106,9 @@ export interface MvTreatment {
   /** The template this treatment was directed from, if any. */
   templateId?: string;
   templateName?: string;
+  /** Which director style shaped this treatment, if any. */
+  directorStyleId?: string;
+  directorStyleName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -275,14 +283,16 @@ function bandFor(energy: number): "high" | "mid" | "low" {
   return "low";
 }
 
-function moveFor(energy: number, i: number): string {
+function moveFor(energy: number, i: number, flavor?: string[]): string {
   const band = bandFor(energy);
-  return pick(band === "high" ? MOVE_HIGH : band === "mid" ? MOVE_MID : MOVE_LOW, i);
+  const base = band === "high" ? MOVE_HIGH : band === "mid" ? MOVE_MID : MOVE_LOW;
+  return pick(blendPool(base, flavor), i);
 }
 
-function lightFor(energy: number, i: number): string {
+function lightFor(energy: number, i: number, flavor?: string[]): string {
   const band = bandFor(energy);
-  return pick(band === "high" ? LIGHT_HIGH : band === "mid" ? LIGHT_MID : LIGHT_LOW, i);
+  const base = band === "high" ? LIGHT_HIGH : band === "mid" ? LIGHT_MID : LIGHT_LOW;
+  return pick(blendPool(base, flavor), i);
 }
 
 function transitionFor(energy: number, i: number, isSectionEnd: boolean): string {
@@ -357,10 +367,18 @@ function shotBoundaries(start: number, end: number, count: number, beats: number
 
 // --- main ------------------------------------------------------------------
 
-export function directSong(song: SongMap, template?: MvTemplate | null): MvTreatment {
+export function directSong(
+  song: SongMap,
+  template?: MvTemplate | null,
+  styleOverride?: DirectorStyle | null
+): MvTreatment {
   const beats = beatTimes(song);
   const seed = songSeed(song.id);
   let shotIndex = 0;
+  // The style is an inspiration layer over the template, not a replacement:
+  // its pools go in front of the template's so the director's vocabulary leads
+  // while the genre's variety still shows through.
+  const style = styleOverride ?? getDirectorStyle(song.directorStyleId);
   const locationPool = template?.locations?.length ? template.locations : LOCATIONS;
   const wardrobePool = template?.wardrobePool?.length ? template.wardrobePool : WARDROBE;
 
@@ -369,12 +387,15 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
     const approach = approachFor(
       section.kind,
       section.energy,
-      template?.lean,
+      style?.lean ?? template?.lean,
       Boolean(section.lead?.trim())
     );
-    const pool = shotPoolFor(approach);
+    const pool = blendPool(shotPoolFor(approach), style?.shotFlavor);
 
-    const cutLen = cutLengthFor(section.energy, template?.cutBias ?? 1);
+    const cutLen = cutLengthFor(
+      section.energy,
+      (template?.cutBias ?? 1) * (style?.cutBias ?? 1)
+    );
     const count = Math.max(1, Math.min(16, Math.round(dur / cutLen)));
     const bounds = shotBoundaries(section.start, section.end, count, beats);
 
@@ -398,8 +419,8 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
         lyric,
         idea,
         shotType,
-        movement: moveFor(section.energy, shotIndex + seed),
-        lighting: lightFor(section.energy, shotIndex + seed),
+        movement: moveFor(section.energy, shotIndex + seed, style?.cameraMoves),
+        lighting: lightFor(section.energy, shotIndex + seed, style?.lighting),
         performanceNote: performanceNoteFor(approach, Boolean(lyric), shotIndex + seed),
         transition: transitionFor(section.energy, shotIndex + seed, k === count - 1),
       });
@@ -434,6 +455,8 @@ export function directSong(song: SongMap, template?: MvTemplate | null): MvTreat
     visualWorld: template
       ? `${template.visualStyle} Palette: ${template.palette.join(", ")}. ${template.setDirection}`
       : buildVisualWorld(song),
+    directorStyleId: style?.id,
+    directorStyleName: style?.name,
     energyArc: buildEnergyArc(song.sections),
     sections,
     templateId: template?.id,

@@ -10,6 +10,10 @@ import type { MvShot, MvSectionPlan, MvTreatment } from "@/apps/music-video/lib/
 import type { Performer } from "@/apps/music-video/lib/cast";
 import type { Character } from "@/platform/lib/types";
 import { composeCharacterDna, identityAnchor } from "@/platform/lib/characterDna";
+import {
+  getDirectorStyle,
+  styleDirectionFragment,
+} from "@/apps/music-video/lib/directorStyles";
 
 const VOCAL_FRONT = ["Lead Singer", "Featured Artist", "Rapper"];
 
@@ -133,6 +137,10 @@ export function buildShotImagePrompt(ctx: GenContext): string {
     shot.storyIntent ? `Story intent: ${shot.storyIntent}.` : "",
     ...briefFragments(brief),
     `Visual world: ${treatment.visualWorld}`,
+    // Craft direction from the chosen director style, resolved off the
+    // treatment so every existing call site picks it up. Empty when none was
+    // chosen, so skipping leaves the prompt exactly as it was before.
+    styleDirectionFragment(getDirectorStyle(treatment.directorStyleId)),
     featuring,
     rules,
     `Single music-video still frame, cinematic, ${aspect} aspect ratio, professional color grade, high detail.`,
@@ -165,6 +173,7 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
     ...briefFragments(brief),
     featuring,
     `Visual world: ${treatment.visualWorld}`,
+    styleDirectionFragment(getDirectorStyle(treatment.directorStyleId)),
     `${dur}s music-video clip, cinematic motion, smooth, high detail.`,
   ]
     .filter(Boolean)

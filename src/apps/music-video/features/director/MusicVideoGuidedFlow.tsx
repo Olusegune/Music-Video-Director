@@ -32,6 +32,7 @@ import {
   VOCAL_ROLES,
 } from "@/apps/music-video/lib/cast";
 import { stylePicksFor, VIDEO_TYPES, type VideoTypeKey } from "@/apps/music-video/lib/videoTypes";
+import { DirectorStylePicker } from "@/apps/music-video/features/director/DirectorStyleStep";
 import {
   buildStoryBeats,
   STORY_FEELINGS,
@@ -49,6 +50,8 @@ interface MusicVideoFlowState {
   storyFeeling: StoryFeelingKey | null;
   storyIdea: string;
   styleId: string | null;
+  /** null = "my own look". A deliberate choice, not an unset field. */
+  directorStyleId: string | null;
 }
 
 const INITIAL_STATE: MusicVideoFlowState = {
@@ -61,6 +64,7 @@ const INITIAL_STATE: MusicVideoFlowState = {
   storyFeeling: null,
   storyIdea: "",
   styleId: null,
+  directorStyleId: null,
 };
 
 function toB64(bytes: Uint8Array): string {
@@ -412,6 +416,15 @@ function StoryStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlow
   );
 }
 
+function DirectorStyleStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
+  return (
+    <DirectorStylePicker
+      value={state.directorStyleId}
+      onChange={(id) => patch({ directorStyleId: id })}
+    />
+  );
+}
+
 function StyleStep({ state, patch }: GuidedFlowStepComponentProps<MusicVideoFlowState>) {
   const stylePicks = stylePicksFor(state.videoType, allTemplates());
   return (
@@ -538,6 +551,13 @@ export function MusicVideoGuidedFlow() {
           skippable: true,
         },
         {
+          id: "director-style",
+          title: "Director Inspiration",
+          subtitle: "Optional — borrow a great director's craft, or keep your own look.",
+          component: DirectorStyleStep,
+          skippable: true,
+        },
+        {
           id: "direct",
           title: "Direct",
           subtitle: "Approve and hand off to the existing MagicDirect pipeline.",
@@ -558,6 +578,7 @@ export function MusicVideoGuidedFlow() {
         const finalSong: SongMap = {
           ...withLyrics,
           templateId: state.styleId ?? undefined,
+          directorStyleId: state.directorStyleId ?? undefined,
           videoType: state.videoType ?? undefined,
           storyFeeling,
           storyIdea: storyFeeling === "custom" ? state.storyIdea.trim() || undefined : undefined,
