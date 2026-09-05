@@ -77,7 +77,10 @@ export function MusicVideoWelcomeScreen() {
             alt="Music Video Director — three performers on stage, directed by the app"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#101216] via-transparent to-black/10" />
+          {/* A short, sharp fade right at the seam so the panel below reads
+              as one continuous surface — not a wash over the artwork itself,
+              which would dim the baked-in wordmark it's meant to set off. */}
+          <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#101216] to-transparent" />
         </div>
 
         <section className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5 sm:px-9 sm:pb-8">
