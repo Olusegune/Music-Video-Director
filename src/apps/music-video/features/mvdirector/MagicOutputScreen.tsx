@@ -101,7 +101,7 @@ export function MagicOutputScreen() {
       <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
         <RevealStage revealed title="Treatment premiere" className="border-warning/30 p-0">
           <div className="relative min-h-[360px] overflow-hidden rounded-xl bg-black">
-            <ShotBoard shot={keyMoments[0] ?? allShots[0]} index={0} hero />
+            <ShotBoard shot={keyMoments[0] ?? allShots[0]} hero />
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
               <div className="text-xs font-semibold uppercase tracking-[0.3em] text-warning">
@@ -116,9 +116,9 @@ export function MagicOutputScreen() {
         </RevealStage>
 
         <Filmstrip label="Storyboard filmstrip">
-          {keyMoments.map((shot, index) => (
+          {keyMoments.map((shot) => (
             <FilmstripItem key={shot.id} className="animate-[studio-enter_220ms_ease-out_both]">
-              <ShotBoard shot={shot} index={index} />
+              <ShotBoard shot={shot} />
             </FilmstripItem>
           ))}
         </Filmstrip>
@@ -209,21 +209,21 @@ function Stat({ value, label }: { value: number; label: string }) {
   );
 }
 
-const ACCENTS = ["#7c5cff", "#c2557f", "#2557c2", "#c28a25", "#25a3c2", "#8d5bd1"];
-function ShotBoard({
+/** Exported for tests: an empty slot must never look like a generated frame. */
+export function ShotBoard({
   shot,
-  index,
   hero = false,
 }: {
   shot?: { imageUrl?: string; idea: string; start: number; shotType?: string; movement?: string };
-  index: number;
   hero?: boolean;
 }) {
   if (!shot)
     return (
-      <div className="h-full min-h-[360px] bg-gradient-to-br from-primary/30 via-slate-950 to-black" />
+      <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-2 bg-surface text-muted">
+        <Clapperboard className="h-7 w-7 opacity-40" />
+        <span className="text-xs">No shot here yet</span>
+      </div>
     );
-  const accent = ACCENTS[index % ACCENTS.length];
   const camera = [shot.shotType, shot.movement].filter(Boolean).join(" · ");
   return (
     <div
@@ -241,19 +241,13 @@ function ShotBoard({
             label="Frame"
           />
         ) : (
-          <div
-            className="relative flex h-full w-full items-center justify-center overflow-hidden"
-            style={{
-              backgroundImage: `radial-gradient(120% 100% at ${15 + index * 11}% ${index % 2 ? 90 : 0}%, ${accent}66, transparent 58%), linear-gradient(${135 + index * 12}deg, ${accent}30, #070910 84%)`,
-            }}
-          >
-            <div className="absolute left-[12%] top-[18%] h-[44%] w-[34%] rotate-[-7deg] rounded-full border border-white/20 bg-white/5" />
-            <div className="absolute right-[10%] top-[14%] h-[62%] w-[28%] skew-x-[-10deg] border border-white/15 bg-black/25" />
-            <div
-              className="absolute bottom-[18%] left-[24%] h-px w-[58%]"
-              style={{ background: accent }}
-            />
-            <Clapperboard className="relative h-8 w-8" style={{ color: accent, opacity: 0.7 }} />
+          // Deliberately plain. This slot used to render a per-shot gradient with
+          // abstract shapes laid out like a composition, which read as a real
+          // generated frame — each tile a different colour made the board look
+          // like finished work that didn't exist. An empty slot should look empty.
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-surface text-muted">
+            <Clapperboard className="h-6 w-6 opacity-40" />
+            <span className="text-[10px]">Not generated yet</span>
           </div>
         )}
         <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] tabular-nums text-white">
