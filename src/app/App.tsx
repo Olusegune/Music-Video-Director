@@ -12,7 +12,7 @@ import { MagicOutputScreen } from "@/apps/music-video/features/mvdirector/MagicO
 import { CastView } from "@/apps/music-video/features/cast/CastView";
 import { ChoreographyView } from "@/apps/music-video/features/choreography/ChoreographyView";
 import { TimelineView } from "@/apps/music-video/features/timeline/TimelineView";
-import { WelcomeScreen } from "@/platform/features/welcome/WelcomeScreen";
+import { ActiveWelcomeScreen } from "@/platform/features/welcome/ActiveWelcomeScreen";
 import { NewProjectWizard } from "@/platform/features/projects/NewProjectWizard";
 import { MagicDirect } from "@/apps/music-video/features/mvdirector/MagicDirect";
 import { SessionGuard } from "@/platform/features/recovery/SessionGuard";
@@ -193,8 +193,12 @@ export default function App() {
       {/* RIGHT — inspector (only in project view) */}
       {view === "project" && inspectorOpen && <Inspector />}
 
-      {/* First-run welcome overlay + new-project wizard */}
-      <WelcomeScreen />
+      {/* First-run welcome overlay + new-project wizard. ActiveWelcomeScreen
+          resolves to the suite's five-studio picker or the standalone MV
+          edition's own splash (own art, own copy, single destination) at
+          build time via vite.config.ts — same welcomeOpen/wizard state
+          underneath either way. */}
+      <ActiveWelcomeScreen />
       <NewProjectWizard />
       <MagicDirect />
       <MusicVideoGuidedFlow />

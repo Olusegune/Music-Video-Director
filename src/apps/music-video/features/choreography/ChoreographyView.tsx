@@ -333,7 +333,8 @@ export function ChoreographyView() {
             <h1 className="text-lg font-semibold leading-tight">Choreography</h1>
             <p className="text-xs text-muted">
               Routines for the performance sections of{" "}
-              <span className="text-foreground">{song.name}</span> · {song.bpm} BPM
+              <span className="text-foreground">{song.name}</span> · {song.bpm} BPM · reads each
+              section&rsquo;s lyrics and director&rsquo;s notes to pick matching moves
             </p>
           </div>
           {/* Display tier follows the platform-wide Director / Studio /
@@ -341,7 +342,11 @@ export function ChoreographyView() {
         </div>
         <div className="flex items-center gap-2">
           <StylePicker value={style} onChange={setStyle} />
-          <Button variant="primary" onClick={() => generate()}>
+          <Button
+            variant="primary"
+            onClick={() => generate()}
+            title="Plans moves, formations, and poses from each section's tempo and energy — biased toward its lyrics and any choreography/story notes when they suggest a gesture (e.g. 'reach for the sky', 'kneel and pray')"
+          >
             {plan ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
             {plan ? "Re-choreograph" : "Choreograph"}
           </Button>

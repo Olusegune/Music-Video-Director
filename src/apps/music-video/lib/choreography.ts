@@ -335,6 +335,55 @@ function pick<T>(pool: T[], i: number): T {
   return pool[((i % pool.length) + pool.length) % pool.length];
 }
 
+// --- lyric/script-aware move selection --------------------------------------
+//
+// The vocab pools below (moves/accents/formations/poses) already use plain,
+// descriptive language — "praise hands raise", "kneel with hands open",
+// "spin into a lift" — so the words that would show up in a lyric line or a
+// director's note ("reach for the sky", "kneel and pray") already overlap
+// with the words used to describe the matching gesture. That overlap is
+// enough to bias selection toward what the section is actually about,
+// without needing real NLP: group trigger words into themes, and prefer any
+// vocab entry that shares a theme word with the section's own text.
+
+const GESTURE_THEMES: Record<string, string[]> = {
+  reachUp: ["sky", "up", "high", "rise", "reach", "heaven", "light", "raise"],
+  point: ["you", "point", "aim"],
+  spin: ["spin", "turn", "round", "twirl", "circle"],
+  travel: ["walk", "strut", "move", "run", "chase", "step"],
+  chest: ["heart", "love", "chest", "soul"],
+  low: ["down", "low", "fall", "ground", "floor", "kneel"],
+  explosive: ["fire", "burn", "power", "jump", "wild", "explode"],
+  praise: ["pray", "praise", "glory", "worship", "amen", "hallelujah"],
+};
+
+/** Every trigger word from every theme found in `text` — the pool a matching
+ *  vocab entry can share a word with. Empty when nothing matches, so callers
+ *  fall back to their normal behavior for instrumental or lyric-free songs. */
+function activeThemeWords(text: string): string[] {
+  const lower = text.toLowerCase();
+  const words: string[] = [];
+  for (const themeWords of Object.values(GESTURE_THEMES)) {
+    if (themeWords.some((w) => lower.includes(w))) words.push(...themeWords);
+  }
+  return words;
+}
+
+/** Like pick(), but prefers pool entries that share a theme word with the
+ *  section's lyrics/notes — e.g. "reach for the sky" biases toward
+ *  "praise hands raise" over an unrelated move in the same style. Falls back
+ *  to plain round-robin pick() when nothing in the pool matches. */
+function lyricAwarePick<T extends string>(pool: T[], words: string[], i: number): T {
+  if (words.length) {
+    const matches = pool.filter((item) => {
+      const lower = item.toLowerCase();
+      return words.some((w) => lower.includes(w));
+    });
+    if (matches.length) return matches[((i % matches.length) + matches.length) % matches.length];
+  }
+  return pick(pool, i);
+}
+
 function isPerformanceSection(s: SongSection): boolean {
   if (s.kind === "Chorus" || s.kind === "Drop" || s.kind === "Pre-Chorus") return true;
   if (s.kind === "Instrumental" && s.energy >= 0.5) return true;
@@ -371,6 +420,15 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
     // One 8-count per 2 bars (a typical phrase), clamped.
     const phraseCount = Math.max(2, Math.min(8, Math.round(sectionBars.length / 2) || 2));
 
+    // Whatever text exists to read intent from: the lyrics for this section,
+    // plus any director's/story notes — the same fields Direct already
+    // reads for shot prompts (briefForSection), so a "script" pasted into
+    // those notes shapes the choreography exactly the way it shapes the shots.
+    const sourceText = [section.lyricsText, section.choreoNote, section.storyNote]
+      .filter(Boolean)
+      .join(" ");
+    const words = activeThemeWords(sourceText);
+
     const eightCounts: EightCount[] = [];
     for (let p = 0; p < phraseCount; p++) {
       const barAt = sectionBars[p * 2] ?? section.start + p * 2 * barDur;
@@ -378,8 +436,8 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
       eightCounts.push({
         bar: Math.max(1, barNo),
         startSec: barAt,
-        phraseA: `${pick(vocab.moves, moveIdx)}, ${pick(vocab.accents, moveIdx)}`,
-        phraseB: `${pick(vocab.moves, moveIdx + 1)} → ${pick(vocab.accents, moveIdx + 2)}`,
+        phraseA: `${lyricAwarePick(vocab.moves, words, moveIdx)}, ${lyricAwarePick(vocab.accents, words, moveIdx)}`,
+        phraseB: `${lyricAwarePick(vocab.moves, words, moveIdx + 1)} → ${lyricAwarePick(vocab.accents, words, moveIdx + 2)}`,
       });
       moveIdx += 2;
     }
@@ -392,9 +450,13 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
       end: section.end,
       energy: section.energy,
       intensity: intensityFor(section.energy),
-      formation: pick(vocab.formations, si),
+      formation: lyricAwarePick(vocab.formations, words, si),
       eightCounts,
-      keyPoses: [pick(vocab.poses, si), pick(vocab.poses, si + 1), pick(vocab.poses, si + 2)],
+      keyPoses: [
+        lyricAwarePick(vocab.poses, words, si),
+        lyricAwarePick(vocab.poses, words, si + 1),
+        lyricAwarePick(vocab.poses, words, si + 2),
+      ],
       continuity:
         "Keep facing and levels consistent with the previous chorus; the hook move repeats so it reads as the signature.",
       performance: defaultPerformance(section.kind, section.energy),

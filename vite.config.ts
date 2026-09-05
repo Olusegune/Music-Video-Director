@@ -30,6 +30,14 @@ const disabledStudioAliases = {
     __dirname,
     "./src/platform/lib/disabledStudioStub.tsx"
   ),
+  // Same mechanism, different reason: this build shows its own splash
+  // (MusicVideoWelcomeScreen), so the suite's five-studio welcome screen
+  // — and the ~330KB hero image only it imports — should never enter this
+  // build's module graph at all, not just go unrendered at runtime.
+  "@/platform/features/welcome/ActiveWelcomeScreen": path.resolve(
+    __dirname,
+    "./src/platform/features/welcome/ActiveWelcomeScreen.musicvideo.tsx"
+  ),
 };
 
 export default defineConfig(({ mode }) => ({
