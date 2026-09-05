@@ -609,6 +609,17 @@ export function MvDirector() {
   const sectionsNeedingPerformer = song
     ? song.sections.filter((s) => !s.performerRole && !detectSectionPerformer(s).confident).length
     : 0;
+  // Only Chorus/Drop sections (and high-energy Instrumentals) ever get the
+  // "Performance" treatment that puts a performer on camera with lip-sync —
+  // see approachFor() in mvDirector.ts. A song with no Chorus detected (often
+  // because no lyrics were provided, so the detector has nothing to match
+  // repeated phrases against) silently produces a treatment that is 100%
+  // b-roll: no singing, no dancing, nobody in frame, anywhere. That's exactly
+  // the failure this flag exists to catch before you render and find out.
+  const performanceShotCount = treatment
+    ? treatment.sections.filter((s) => s.approach === "Performance").flatMap((s) => s.shots).length
+    : 0;
+  const hasNoPerformanceShots = Boolean(treatment) && performanceShotCount === 0;
   const performanceShotsMissingClip = treatment
     ? treatment.sections
         .filter((s) => s.approach === "Performance")
@@ -989,6 +1000,24 @@ export function MvDirector() {
             className="ml-auto font-semibold underline hover:no-underline"
           >
             Open API Keys
+          </button>
+        </div>
+      )}
+
+      {hasNoPerformanceShots && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-danger/30 bg-danger/10 px-6 py-2 text-xs text-danger">
+          <span>
+            No Chorus was detected in this song, so none of the {treatment?.sections.flatMap((s) => s.shots).length ?? 0} shots
+            are directed as a performance — this will render as b-roll only,
+            with nobody singing, dancing, or on camera anywhere in the video.
+            Paste the song's lyrics or manually mark a section as Chorus in
+            Song Studio, then re-direct.
+          </span>
+          <button
+            onClick={openSong}
+            className="ml-auto font-semibold underline hover:no-underline"
+          >
+            Open Song Studio
           </button>
         </div>
       )}
