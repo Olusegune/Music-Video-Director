@@ -37,7 +37,7 @@ import { recentProjects, type HubModuleId, type HubProject } from "@/platform/li
 import { umbrellaFor } from "@/platform/lib/directorProject";
 import { importBundle, parseBundle } from "@/platform/lib/projectBundle";
 import { notifyStorage } from "@/platform/lib/storage";
-import { isModuleEnabled } from "@/platform/lib/productConfig";
+import { isModuleEnabled, PRODUCT_EDITION, PRODUCT_NAME } from "@/platform/lib/productConfig";
 import splashArt from "@/assets/director-studio-splash-afrofuturist-v1.jpg";
 
 const PROJECT_TYPES: ProjectType[] = [
@@ -61,6 +61,7 @@ export function Dashboard() {
   const setActiveSong = useAppStore((s) => s.setActiveSong);
   const setActiveTemplate = useAppStore((s) => s.setActiveTemplate);
   const setWizardOpen = useAppStore((s) => s.setWizardOpen);
+  const openHelp = useAppStore((s) => s.openHelp);
   const openDemoProject = useAppStore((s) => s.openDemoProject);
   const openMotionStudio = useAppStore((s) => s.openMotionStudio);
   const openGlamStudio = useAppStore((s) => s.openGlamStudio);
@@ -190,15 +191,32 @@ export function Dashboard() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-[var(--color-gold)]/10" />
           <div className="relative flex flex-col items-center gap-4 px-8 py-12 text-center">
-            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Director Studio</h2>
-            <p className="max-w-md text-sm text-muted">Every idea. Every style. One vision.</p>
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{PRODUCT_NAME}</h2>
+            <p className="max-w-md text-sm text-muted">
+              {PRODUCT_EDITION === "musicvideo"
+                ? "Song to screen — direct your next music video."
+                : "Every idea. Every style. One vision."}
+            </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button size="lg" onClick={() => setWizardOpen(true)}>
-                <Clapperboard className="h-4 w-4" /> Start with Director
-              </Button>
-              <Button variant="secondary" size="lg" onClick={openDirectorMode}>
-                Open Director Studio
-              </Button>
+              {PRODUCT_EDITION === "musicvideo" ? (
+                <>
+                  <Button size="lg" onClick={() => setWizardOpen(true)}>
+                    <Clapperboard className="h-4 w-4" /> New Music Video
+                  </Button>
+                  <Button variant="secondary" size="lg" onClick={openHelp}>
+                    Docs &amp; guides
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="lg" onClick={() => setWizardOpen(true)}>
+                    <Clapperboard className="h-4 w-4" /> Start with Director
+                  </Button>
+                  <Button variant="secondary" size="lg" onClick={openDirectorMode}>
+                    Open Director Studio
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -206,10 +224,12 @@ export function Dashboard() {
         <section>
           <div className="mb-3">
             <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-              Creative studios
+              {PRODUCT_EDITION === "musicvideo" ? "Start a production" : "Creative studios"}
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Choose a focused workflow or orchestrate the whole launch.
+              {PRODUCT_EDITION === "musicvideo"
+                ? "Jump straight into Song Studio for a new video."
+                : "Choose a focused workflow or orchestrate the whole launch."}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
