@@ -55,7 +55,20 @@ import { ScriptAlignPanel } from "./ScriptAlignPanel";
 import { cn } from "@/platform/lib/utils";
 
 /** Build timed lyric lines from each section's lyricsText (spread across its span). */
-function lyricsFromSections(sections: SongSection[]): LyricLine[] {
+/**
+ * The song as it should be once its sections change.
+ *
+ * `directSong` reads `song.lyrics` — a separate timed list — not
+ * `section.lyricsText`. Anything that edits sections and forgets to rebuild it
+ * leaves the Director working from the previous words: bulk transcription
+ * rewrote nine sections and not one of them reached a prompt. Deriving both
+ * together here means no caller has to remember.
+ */
+export function songWithSections(song: SongMap, sections: SongSection[]): SongMap {
+  return { ...song, sections, lyrics: lyricsFromSections(sections) };
+}
+
+export function lyricsFromSections(sections: SongSection[]): LyricLine[] {
   const out: LyricLine[] = [];
   for (const s of sections) {
     const lines = (s.lyricsText ?? "")
@@ -124,7 +137,7 @@ export function SongView({
   };
   const togglePlay = () => player.toggle();
 
-  const setSections = (sections: SongSection[]) => onChange({ ...song, sections });
+  const setSections = (sections: SongSection[]) => onChange(songWithSections(song, sections));
 
   const [scriptOpen, setScriptOpen] = useState(false);
 
@@ -291,13 +304,7 @@ export function SongView({
     song.sections.find((s) => s.id === selectedSectionId) ?? song.sections[0] ?? null;
   const patchSection = (patch: Partial<SongSection>) => {
     if (!selectedSection) return;
-    const sections = song.sections.map((x) =>
-      x.id === selectedSection.id ? { ...x, ...patch } : x
-    );
-    // When section lyrics change, rebuild the timed lyric list the Timeline and
-    // MV Director read from — so per-section lyrics flow through the pipeline.
-    const lyrics = patch.lyricsText !== undefined ? lyricsFromSections(sections) : song.lyrics;
-    onChange({ ...song, sections, lyrics });
+    setSections(song.sections.map((x) => (x.id === selectedSection.id ? { ...x, ...patch } : x)));
   };
 
   const currentSection = song.sections.find((s) => currentTime >= s.start && currentTime < s.end);

@@ -48,14 +48,18 @@ function trackUsage(
   // Most capabilities bill per generation, so one unit is the right default.
   // Transcription bills per second of audio sent, hence the override.
   const units = Math.max(1, extra?.units ?? 1);
-  const { perUnit } = estimateCost(provider, model ?? "", capability, units);
+  // estimateCost already multiplies its table rate by `units` and returns the
+  // total under the name `perUnit`. Multiplying again here billed a 87-second
+  // transcription as 87 x 87 x the rate.
+  const { perUnit: total } = estimateCost(provider, model ?? "", capability, units);
   void api.recordUsage({
     provider,
     model: model || "default",
     capability,
     moduleId: extra?.moduleId,
     projectId: extra?.projectId,
-    costUsd: perUnit * units,
+    units,
+    costUsd: total,
   });
 }
 
