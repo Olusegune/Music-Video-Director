@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ImageIcon,
   Video as VideoIcon,
   Sparkles,
@@ -77,6 +78,13 @@ export function DirectConsole({
     section.shots.map((shot) => ({ section, shot }))
   );
   const [selectedId, setSelectedId] = useState<string>(flat[0]?.shot.id ?? "");
+  // A section's thumbnail grid used to always render in full — nine sections
+  // meant nine always-expanded grids, the full shot count on screen at once
+  // regardless of where you actually were in the song. Only explicit user
+  // choices are stored here; a section with no entry follows selection
+  // (expanded exactly when it holds the current shot), so moving to a new
+  // section opens it without leaving every previous one open behind it.
+  const [sectionOverride, setSectionOverride] = useState<Map<string, boolean>>(new Map());
   useEffect(() => {
     // If the treatment reloads (new song / re-direct) with a shot id that no
     // longer exists, fall back to the first shot instead of a blank console.
@@ -127,18 +135,35 @@ export function DirectConsole({
           {treatment.sections.map((s) => {
             const sColor = sectionColor(s.kind);
             const hasSelected = s.sectionId === section.sectionId;
+            const expanded = sectionOverride.get(s.sectionId) ?? hasSelected;
             return (
               <div key={s.sectionId}>
-                <div
-                  className="mb-1 flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-semibold"
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSectionOverride((prev) => {
+                      const next = new Map(prev);
+                      next.set(s.sectionId, !expanded);
+                      return next;
+                    })
+                  }
+                  aria-expanded={expanded}
+                  className="mb-1 flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-[11px] font-semibold hover:bg-elevated/60"
                   style={{ color: sColor }}
                 >
+                  <ChevronDown
+                    className={cn("h-3 w-3 shrink-0 transition-transform", !expanded && "-rotate-90")}
+                  />
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: sColor }} />
                   {s.label}
+                  <span className="font-normal tabular-nums text-muted/70">
+                    · {s.shots.length} {s.shots.length === 1 ? "shot" : "shots"}
+                  </span>
                   <span className="ml-auto font-normal tabular-nums text-muted">
                     {formatTime(s.start)}
                   </span>
-                </div>
+                </button>
+                {expanded && (
                 <div className="grid grid-cols-4 gap-1">
                   {s.shots.map((sh, i) => {
                     const active = sh.id === shot.id;
@@ -179,6 +204,7 @@ export function DirectConsole({
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}
