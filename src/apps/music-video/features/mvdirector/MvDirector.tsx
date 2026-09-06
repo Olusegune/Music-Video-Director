@@ -642,6 +642,7 @@ export function MvDirector() {
     ? treatment.sections.filter((s) => s.approach === "Performance").flatMap((s) => s.shots).length
     : 0;
   const hasNoPerformanceShots = Boolean(treatment) && performanceShotCount === 0;
+  const treatmentStale = Boolean(treatment && song && isTreatmentStale(treatment, song));
   const performanceShotsMissingClip = treatment
     ? treatment.sections
         .filter((s) => s.approach === "Performance")
@@ -1048,7 +1049,28 @@ export function MvDirector() {
           ProductionHealth for why. */}
       <ProductionHealth
         issues={[
-          ...(hasNoPerformanceShots
+          // A stale shot list invalidates everything derived from it, so it
+          // leads and the derived claims below stand down. Reporting "no
+          // Chorus was detected" off a treatment that predates the song is
+          // simply false — the song had three — and it sends the user to
+          // re-detect sections that are already correct.
+          ...(treatmentStale
+            ? [
+                {
+                  id: "stale-treatment",
+                  level: "blocking" as const,
+                  summary: "This shot list no longer matches the song.",
+                  detail:
+                    (generatedShotCount(treatment) > 0
+                      ? `Re-directing rebuilds it and discards ${generatedShotCount(
+                          treatment
+                        )} generated frame/clip${generatedShotCount(treatment) === 1 ? "" : "s"}. `
+                      : "Re-direct to rebuild it. ") +
+                    "Until then its per-section lyrics, performers and notes are not reaching the prompts, and the checks below are measured against the old plan.",
+                },
+              ]
+            : []),
+          ...(!treatmentStale && hasNoPerformanceShots
             ? [
                 {
                   id: "no-performance",
@@ -1061,22 +1083,7 @@ export function MvDirector() {
                 },
               ]
             : []),
-          ...(treatment && song && isTreatmentStale(treatment, song)
-            ? [
-                {
-                  id: "stale-treatment",
-                  level: "warning" as const,
-                  summary: "This shot list predates the song's current sections.",
-                  detail:
-                    generatedShotCount(treatment) > 0
-                      ? `Per-section lyrics, performers and notes are no longer reaching it. Re-directing rebuilds the list and discards ${generatedShotCount(
-                          treatment
-                        )} generated frame/clip${generatedShotCount(treatment) === 1 ? "" : "s"}.`
-                      : "Per-section lyrics, performers and notes are no longer reaching it. Re-direct to rebuild it.",
-                },
-              ]
-            : []),
-          ...(treatment && sectionsNeedingPerformer > 0
+          ...(treatment && !treatmentStale && sectionsNeedingPerformer > 0
             ? [
                 {
                   id: "needs-performer",
@@ -1089,7 +1096,7 @@ export function MvDirector() {
                 },
               ]
             : []),
-          ...(treatment && performanceShotsMissingClip > 0
+          ...(treatment && !treatmentStale && performanceShotsMissingClip > 0
             ? [
                 {
                   id: "missing-clips",
