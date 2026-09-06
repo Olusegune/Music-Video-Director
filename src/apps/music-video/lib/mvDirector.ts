@@ -608,6 +608,35 @@ export function getTreatment(songId: string, templateId?: string | null): MvTrea
   return loadAll().find((t) => sameSlot(t, songId, templateId)) ?? null;
 }
 
+/**
+ * Every treatment stored for a song, richest in generated work first.
+ *
+ * Treatments are scoped to a (song, template) pair on purpose, so switching
+ * template never bleeds one plan's frames into another's. The cost is that
+ * changing a song's template strands the previous plan in a slot nothing looks
+ * at: a real production here had 54 generated shots saved under "no template"
+ * and, once the song gained one, Direct offered to generate from scratch as
+ * though none of it existed. Directing uses this to find that work and carry
+ * it forward rather than leaving it unreachable.
+ */
+export function treatmentsForSong(songId: string): MvTreatment[] {
+  return loadAll()
+    .filter((t) => t.songId === songId)
+    .sort((a, b) => generatedShotCount(b) - generatedShotCount(a));
+}
+
+/** The best previous plan to carry work from: this slot, else the richest other. */
+export function bestPriorTreatment(
+  songId: string,
+  templateId?: string | null
+): MvTreatment | null {
+  return (
+    getTreatment(songId, templateId) ??
+    treatmentsForSong(songId).find((t) => generatedShotCount(t) > 0) ??
+    null
+  );
+}
+
 export function saveTreatment(treatment: MvTreatment): void {
   const next = { ...treatment, updatedAt: new Date().toISOString() };
   const all = loadAll();
@@ -632,4 +661,111 @@ export function deleteTreatment(songId: string, templateId?: string | null): voi
  */
 export function deleteTreatmentsForSong(songId: string): void {
   setDoc(LS_TREATMENTS, JSON.stringify(loadAll().filter((t) => t.songId !== songId)));
+}
+
+/** What a shot carries that was generated or hand-set, as opposed to directed. */
+const CARRIED_KEYS = [
+  "imageUrl",
+  "imageCandidates",
+  "videoUrl",
+  "imageProvider",
+  "videoProvider",
+  "refImages",
+  "endFrame",
+  "refAudio",
+  "refVideo",
+  "promptOverride",
+] as const;
+
+function hasCarriableWork(shot: MvShot): boolean {
+  return CARRIED_KEYS.some((k) => {
+    const v = shot[k];
+    return Array.isArray(v) ? v.length > 0 : Boolean(v);
+  });
+}
+
+function overlap(a: MvShot, b: MvShot): number {
+  return Math.max(0, Math.min(a.end, b.end) - Math.max(a.start, b.start));
+}
+
+export interface CarryResult {
+  treatment: MvTreatment;
+  /** Shots whose generated work found a home in the new plan. */
+  carried: number;
+  /** Shots whose work had nowhere to go — the moment they covered is gone. */
+  dropped: number;
+}
+
+/**
+ * Move generated frames, clips and hand-set references from an old shot list
+ * onto a new one.
+ *
+ * Re-directing used to throw all of it away, which put the user between
+ * keeping a plan that no longer matches the song and discarding frames they
+ * paid for. Shots are timed, so the old work can be matched to the new plan by
+ * the moment it covers rather than by an id that was regenerated.
+ *
+ * Matching is greedy on overlap, best pair first, one-to-one: a re-direct that
+ * splits one shot into three gives the frame to whichever of the three covers
+ * most of the original, instead of duplicating it across all three. Work whose
+ * moment no longer exists in the new plan is reported as dropped rather than
+ * silently lost, and only shots in the same section kind are considered so a
+ * chorus frame never lands on a verse.
+ */
+export function carryGeneratedWork(previous: MvTreatment | null, next: MvTreatment): CarryResult {
+  if (!previous) return { treatment: next, carried: 0, dropped: 0 };
+
+  const sourcesByKind = new Map<string, MvShot[]>();
+  for (const section of previous.sections) {
+    for (const shot of section.shots) {
+      if (!hasCarriableWork(shot)) continue;
+      const list = sourcesByKind.get(section.kind) ?? [];
+      list.push(shot);
+      sourcesByKind.set(section.kind, list);
+    }
+  }
+  const total = [...sourcesByKind.values()].reduce((n, list) => n + list.length, 0);
+  if (total === 0) return { treatment: next, carried: 0, dropped: 0 };
+
+  const pairs: { from: MvShot; to: MvShot; secs: number }[] = [];
+  for (const section of next.sections) {
+    for (const target of section.shots) {
+      for (const source of sourcesByKind.get(section.kind) ?? []) {
+        const secs = overlap(source, target);
+        if (secs > 0) pairs.push({ from: source, to: target, secs });
+      }
+    }
+  }
+  pairs.sort((a, b) => b.secs - a.secs);
+
+  const takenSources = new Set<MvShot>();
+  const filledTargets = new Set<MvShot>();
+  const assign = new Map<MvShot, MvShot>();
+  for (const pair of pairs) {
+    if (takenSources.has(pair.from) || filledTargets.has(pair.to)) continue;
+    takenSources.add(pair.from);
+    filledTargets.add(pair.to);
+    assign.set(pair.to, pair.from);
+  }
+
+  const treatment: MvTreatment = {
+    ...next,
+    sections: next.sections.map((section) => ({
+      ...section,
+      shots: section.shots.map((shot) => {
+        const source = assign.get(shot);
+        if (!source) return shot;
+        const carried: Partial<MvShot> = {};
+        for (const k of CARRIED_KEYS) {
+          const v = source[k];
+          if (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== "") {
+            (carried as Record<string, unknown>)[k] = v;
+          }
+        }
+        return { ...shot, ...carried };
+      }),
+    })),
+  };
+
+  return { treatment, carried: takenSources.size, dropped: total - takenSources.size };
 }

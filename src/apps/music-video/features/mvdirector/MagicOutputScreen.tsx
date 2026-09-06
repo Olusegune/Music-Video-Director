@@ -11,7 +11,12 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { loadSongs, saveSong, type SongMap } from "@/apps/music-video/lib/songBrain";
-import { getTreatment, directSong, saveTreatment } from "@/apps/music-video/lib/mvDirector";
+import {
+  getTreatment,
+  directSong,
+  saveTreatment,
+  carryGeneratedWork,
+} from "@/apps/music-video/lib/mvDirector";
 import { getTemplate } from "@/platform/lib/templates";
 import { loadCast } from "@/apps/music-video/lib/cast";
 import { applyVideoTypeBias } from "@/apps/music-video/lib/videoTypes";
@@ -72,7 +77,12 @@ export function MagicOutputScreen() {
   const regenerate = () => {
     setRegenerating(true);
     try {
-      saveTreatment(directSong(song, applyVideoTypeBias(template, song.videoType)));
+      saveTreatment(
+        carryGeneratedWork(
+          treatment,
+          directSong(song, applyVideoTypeBias(template, song.videoType))
+        ).treatment
+      );
     } finally {
       setRegenerating(false);
       setRefreshTick((value) => value + 1);

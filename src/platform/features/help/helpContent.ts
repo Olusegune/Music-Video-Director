@@ -203,13 +203,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
         heading: "What you will see",
         steps: [
           "Direct shows a health strip listing what needs attention, worst first. Anything blocking opens it; you can fold it back to its headline once you have read it, but it will not disappear while the problem is real.",
-          "“This shot list no longer matches the song” means the sections changed after it was built. Re-direct rebuilds it. It names how many generated frames or clips that will discard, so you can decide.",
+          "“This shot list no longer matches the song” means the sections changed after it was built. Re-direct rebuilds it, and your generated frames and clips move across to whichever new shot covers the same moment — so changing your mind about a section no longer costs you the frames you paid for. Anything whose moment no longer exists is reported rather than quietly dropped.",
           "Choreography shows its own banner when a routine was planned against older sections, with one button to re-plan it.",
         ],
       },
       {
         heading: "Why it warns instead of fixing it for you",
-        body: "Rebuilding a shot list discards frames and clips you may have paid for. Re-planning choreography discards hand edits. Where nothing is at stake the app just does it — choreography re-plans itself on the automated path. Where something is, it tells you and waits.",
+        body: "Re-planning choreography discards hand edits, so that one asks first. Rebuilding a shot list no longer costs you generated frames — they are carried across by timing — but it does replace every directed idea, so it still tells you before it runs. Where nothing is at stake the app just does it: choreography re-plans itself on the automated path.",
       },
       {
         tip: "If a check reads oddly — for instance claiming no chorus was detected on a song that plainly has three — look first at whether the shot list is stale. Everything measured against an old plan describes the old plan.",

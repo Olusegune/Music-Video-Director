@@ -12,7 +12,12 @@ import { Sparkles, Check, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/platform/components/ui/button";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { loadSongs } from "@/apps/music-video/lib/songBrain";
-import { directSong, saveTreatment } from "@/apps/music-video/lib/mvDirector";
+import {
+  directSong,
+  saveTreatment,
+  getTreatment,
+  carryGeneratedWork,
+} from "@/apps/music-video/lib/mvDirector";
 import { getTemplate } from "@/platform/lib/templates";
 import { loadCastForSong, savePerformer, autoCastFromSong } from "@/apps/music-video/lib/cast";
 import {
@@ -77,7 +82,11 @@ export function MagicDirect() {
       },
       {
         label: "Planning the beat-synced shot list",
-        run: () => saveTreatment(directSong(song, template)),
+        run: () =>
+          saveTreatment(
+            carryGeneratedWork(getTreatment(song.id, template?.id), directSong(song, template))
+              .treatment
+          ),
       },
       {
         label: "Choreographing the chorus",

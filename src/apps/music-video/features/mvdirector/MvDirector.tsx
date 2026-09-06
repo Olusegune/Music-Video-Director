@@ -25,6 +25,8 @@ import {
   type MvTreatment,
   type MvSectionPlan,
   type MvShot,
+  carryGeneratedWork,
+  bestPriorTreatment,
 } from "@/apps/music-video/lib/mvDirector";
 import { loadSongs, type SongMap } from "@/apps/music-video/lib/songBrain";
 import { loadCast, productionReferenceImages } from "@/apps/music-video/lib/cast";
@@ -225,6 +227,7 @@ export function MvDirector() {
   const [clipBatch, setClipBatch] = useState<{ done: number; total: number } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
   const [directing, setDirecting] = useState(false);
+  const [carryNote, setCarryNote] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const direct = () => {
@@ -232,9 +235,25 @@ export function MvDirector() {
     setDirecting(true);
     setGenError(null);
     try {
-      const t = directSong(song, getTemplate(activeTemplateId));
+      // Re-directing rebuilds the shot list, but frames and clips were paid
+      // for — they move to whichever new shot covers the same moment.
+      // Prefer this slot's plan, but fall back to any other plan for the song
+      // that still holds generated work — changing a song's template otherwise
+      // strands those frames where nothing can reach them.
+      const prior = bestPriorTreatment(song.id, activeTemplateId);
+      const { treatment: t, carried, dropped } = carryGeneratedWork(
+        prior,
+        directSong(song, getTemplate(activeTemplateId))
+      );
       saveTreatment(t);
       setTreatment(t);
+      setCarryNote(
+        carried || dropped
+          ? `Rebuilt the shot list. ${carried} generated frame/clip${carried === 1 ? "" : "s"} moved across${
+              dropped ? `; ${dropped} had no matching moment left and ${dropped === 1 ? "was" : "were"} dropped` : ""
+            }.`
+          : null
+      );
     } catch (error) {
       setGenError(error instanceof Error ? error.message : "Could not create the treatment. Check the song sections and try again.");
     } finally {
@@ -1047,6 +1066,11 @@ export function MvDirector() {
 
       {/* One health strip instead of four stacked banners — see
           ProductionHealth for why. */}
+      {carryNote && (
+        <div className="border-b border-success/30 bg-success/10 px-6 py-2 text-xs text-success">
+          {carryNote}
+        </div>
+      )}
       <ProductionHealth
         issues={[
           // A stale shot list invalidates everything derived from it, so it
@@ -1062,9 +1086,9 @@ export function MvDirector() {
                   summary: "This shot list no longer matches the song.",
                   detail:
                     (generatedShotCount(treatment) > 0
-                      ? `Re-directing rebuilds it and discards ${generatedShotCount(
+                      ? `Re-directing rebuilds it. Your ${generatedShotCount(
                           treatment
-                        )} generated frame/clip${generatedShotCount(treatment) === 1 ? "" : "s"}. `
+                        )} generated frame/clip${generatedShotCount(treatment) === 1 ? "" : "s"} move to whichever new shot covers the same moment; anything whose moment is gone is reported, not lost quietly. `
                       : "Re-direct to rebuild it. ") +
                     "Until then its per-section lyrics, performers and notes are not reaching the prompts, and the checks below are measured against the old plan.",
                 },
