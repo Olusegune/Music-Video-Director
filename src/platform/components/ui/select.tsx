@@ -30,6 +30,24 @@ interface GroupItem {
 }
 type Item = OptionItem | GroupItem;
 
+/**
+ * Flatten an option's children to plain text.
+ *
+ * `String(children)` looks right until an option interpolates anything —
+ * `<option>{a} — {b}</option>` gives React an array, and Array.toString joins
+ * it with commas, so the label rendered as "Intro, — ,neon hums". Walk the
+ * node instead.
+ */
+function textOf(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (React.isValidElement(node)) {
+    return textOf((node.props as { children?: React.ReactNode }).children);
+  }
+  return "";
+}
+
 /** Read <option>/<optgroup> children into a flat model we can render ourselves. */
 function parseChildren(children: React.ReactNode): Item[] {
   const items: Item[] = [];
@@ -42,7 +60,7 @@ function parseChildren(children: React.ReactNode): Item[] {
         children?: React.ReactNode;
         disabled?: boolean;
       };
-      const label = typeof props.children === "string" ? props.children : String(props.children ?? "");
+      const label = textOf(props.children);
       items.push({
         kind: "option",
         value: String(props.value ?? label),

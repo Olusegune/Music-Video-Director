@@ -144,3 +144,21 @@ describe("Select", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 });
+
+describe("option labels", () => {
+  // String(children) joins an array with commas, so an interpolated option
+  // rendered as "Intro, — ,neon hums" in the live app.
+  it("flattens an option built from several children", async () => {
+    const label = "Intro";
+    const detail = "neon hums over an empty street";
+    render(
+      <Select value="a" onChange={() => {}}>
+        <option value="a">
+          {label} — {detail}
+        </option>
+      </Select>
+    );
+    expect(screen.getByRole("combobox")).toHaveTextContent("Intro — neon hums over an empty street");
+    expect(screen.getByRole("combobox")).not.toHaveTextContent(",");
+  });
+});
