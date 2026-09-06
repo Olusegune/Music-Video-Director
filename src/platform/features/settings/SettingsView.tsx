@@ -82,7 +82,7 @@ export function SettingsView() {
         </p>
       </header>
 
-      <div className="max-w-3xl space-y-6 p-8">
+      <div className="max-w-5xl space-y-6 p-8">
         {!isTauri && (
           <div className="flex items-start gap-2 rounded-[var(--radius-card)] border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -93,34 +93,38 @@ export function SettingsView() {
           </div>
         )}
 
-        {/* Startup / Welcome */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clapperboard className="h-4 w-4 text-primary" /> Startup
-            </CardTitle>
-            <CardDescription>
-              Control the welcome screen shown when the app launches.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={showWelcome}
-                onChange={(e) => toggleWelcome(e.target.checked)}
-                className="h-4 w-4 accent-[var(--color-primary)]"
-              />
-              Show the welcome screen at startup
-            </label>
-            <Button variant="secondary" size="sm" onClick={() => setWelcomeOpen(true)}>
-              <Clapperboard className="h-4 w-4" /> Show welcome now
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Two short, unrelated cards side by side once there's room — the
+            narrow single-column layout left most of the screen empty here. */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clapperboard className="h-4 w-4 text-primary" /> Startup
+              </CardTitle>
+              <CardDescription>
+                Control the welcome screen shown when the app launches.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={showWelcome}
+                  onChange={(e) => toggleWelcome(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--color-primary)]"
+                />
+                Show the welcome screen at startup
+              </label>
+              <Button variant="secondary" size="sm" onClick={() => setWelcomeOpen(true)}>
+                <Clapperboard className="h-4 w-4" /> Show welcome now
+              </Button>
+            </CardContent>
+          </Card>
+
+          <AboutCard />
+        </div>
 
         <SnapshotsCard />
-        <AboutCard />
 
         {/* Router */}
         <Card>
@@ -193,6 +197,7 @@ export function SettingsView() {
         </Card>
 
         {/* Keys grouped by capability */}
+        <div className="grid gap-6 lg:grid-cols-2">
         {CAP_ORDER.map((cap) => (
           <Card key={cap}>
             <CardHeader>
@@ -223,6 +228,7 @@ export function SettingsView() {
             </CardContent>
           </Card>
         ))}
+        </div>
 
         <p className="text-[11px] text-muted">
           {PROVIDERS.length} providers in the catalog ·{" "}
@@ -361,10 +367,19 @@ function AboutCard() {
   );
 }
 
-/** Session snapshots — manual restore points captured by the autosave heartbeat. */
-function SnapshotsCard() {
+const SNAPSHOT_PREVIEW_COUNT = 3;
+
+/** Session snapshots — manual restore points captured by the autosave heartbeat.
+ *  Exported for tests: the collapse-to-a-handful behavior below. */
+export function SnapshotsCard() {
   const confirm = useConfirm();
   const [snaps, setSnaps] = useState<Snapshot[]>(() => loadSnapshots());
+  // The autosave heartbeat fires every ~20s while the app is open, so a
+  // working session accumulates a full page of identical-looking rows within
+  // minutes — this was the first thing on the page, ahead of anything the
+  // user came to Settings for. Collapsed to a handful; the rest are one
+  // click away, not the landing view.
+  const [showAll, setShowAll] = useState(false);
   const refresh = () => setSnaps(loadSnapshots());
 
   const restore = async (s: Snapshot) => {
@@ -400,7 +415,7 @@ function SnapshotsCard() {
         {snaps.length === 0 ? (
           <p className="text-xs text-muted">No snapshots yet — they appear here as you work.</p>
         ) : (
-          snaps.map((s) => (
+          (showAll ? snaps : snaps.slice(0, SNAPSHOT_PREVIEW_COUNT)).map((s) => (
             <div
               key={s.id}
               className="flex items-center justify-between gap-3 rounded-[var(--radius-button)] border border-border px-3 py-2"
@@ -427,6 +442,11 @@ function SnapshotsCard() {
               </div>
             </div>
           ))
+        )}
+        {snaps.length > SNAPSHOT_PREVIEW_COUNT && (
+          <Button variant="ghost" size="sm" className="self-start" onClick={() => setShowAll((v) => !v)}>
+            {showAll ? "Show fewer" : `Show all ${snaps.length} snapshots`}
+          </Button>
         )}
       </CardContent>
     </Card>
