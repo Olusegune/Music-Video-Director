@@ -18,5 +18,24 @@
         "theme": "Dark"
       }
     ]
+  },
+  "bundle": {
+    "icon": [
+      "icons-mv/32x32.png",
+      "icons-mv/128x128.png",
+      "icons-mv/128x128@2x.png",
+      "icons-mv/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons-mv/icon.ico",
+        "headerImage": "icons-mv/installer-header.bmp",
+        "sidebarImage": "icons-mv/installer-sidebar.bmp"
+      },
+      "wix": {
+        "bannerPath": "icons-mv/msi-banner.bmp",
+        "dialogImagePath": "icons-mv/msi-dialog.bmp"
+      }
+    }
   }
 }
