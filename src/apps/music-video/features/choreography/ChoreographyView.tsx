@@ -14,6 +14,7 @@ import {
 import { DANCE_STYLE_META } from "@/apps/music-video/lib/danceStyleMeta";
 import {
   choreographSong,
+  isChoreoStale,
   getChoreo,
   saveChoreo,
   inferStyle,
@@ -352,6 +353,22 @@ export function ChoreographyView() {
           </Button>
         </div>
       </header>
+
+      {/* A routine planned against an older section list is worse than none:
+          it hands chorus shots verse-energy movement while looking complete.
+          Surfaced rather than silently re-planned, because the moment cards
+          below are hand-editable and re-planning discards those edits. */}
+      {plan && isChoreoStale(plan, song) && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-warning/30 bg-warning/5 px-6 py-3">
+          <span className="text-xs text-warning">
+            This routine was planned for an older version of the song&rsquo;s sections — some
+            moments no longer line up with the track.
+          </span>
+          <Button size="sm" variant="secondary" onClick={() => generate()}>
+            <RefreshCw className="h-3.5 w-3.5" /> Re-choreograph to match
+          </Button>
+        </div>
+      )}
 
       {/* AI Choreographer — the panel that frames this as a choreographer's
           workflow, not a spreadsheet. Per-shot Pose sheet / Formation / Motion

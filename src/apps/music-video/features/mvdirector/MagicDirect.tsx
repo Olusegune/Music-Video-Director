@@ -15,7 +15,12 @@ import { loadSongs } from "@/apps/music-video/lib/songBrain";
 import { directSong, saveTreatment } from "@/apps/music-video/lib/mvDirector";
 import { getTemplate } from "@/platform/lib/templates";
 import { loadCastForSong, savePerformer, autoCastFromSong } from "@/apps/music-video/lib/cast";
-import { choreographSong, saveChoreo, getChoreo } from "@/apps/music-video/lib/choreography";
+import {
+  choreographSong,
+  saveChoreo,
+  getChoreo,
+  isChoreoStale,
+} from "@/apps/music-video/lib/choreography";
 import { applyVideoTypeBias } from "@/apps/music-video/lib/videoTypes";
 
 interface Step {
@@ -77,7 +82,11 @@ export function MagicDirect() {
       {
         label: "Choreographing the chorus",
         run: () => {
-          if (!getChoreo(song.id)) saveChoreo(choreographSong(song));
+          // Re-plan when the routine predates the current section list, not
+          // only when it is missing. Re-detecting sections used to leave a
+          // plan behind that still called the new choruses verses.
+          const existing = getChoreo(song.id);
+          if (!existing || isChoreoStale(existing, song)) saveChoreo(choreographSong(song));
         },
       },
       {

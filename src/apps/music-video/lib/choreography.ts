@@ -521,6 +521,30 @@ function loadAll(): ChoreoPlan[] {
   }
 }
 
+/**
+ * Has the song moved on since this routine was planned?
+ *
+ * Choreography is planned once and then read for the life of the song, so
+ * anything that reshapes the section list leaves it behind. Observed on real
+ * data: a track re-detected into three choruses still carried a plan whose
+ * every section was labelled Verse, planned six hours earlier — so the
+ * Director was handing chorus shots verse-energy movement.
+ *
+ * Section ids are the signal. Re-detection mints new ones, so an orphaned
+ * reference means the plan predates the current structure; a surviving id
+ * whose kind or timing changed means the section was retagged or moved.
+ */
+export function isChoreoStale(plan: ChoreoPlan | null | undefined, song: SongMap): boolean {
+  if (!plan) return false; // Absent is missing, not stale — a different case.
+  const current = new Map(song.sections.map((s) => [s.id, s]));
+  return plan.sections.some((planned) => {
+    const live = current.get(planned.sectionId);
+    if (!live) return true;
+    if (live.kind !== planned.kind) return true;
+    return Math.abs(live.start - planned.start) > 0.5;
+  });
+}
+
 export function getChoreo(songId: string): ChoreoPlan | null {
   return loadAll().find((c) => c.songId === songId) ?? null;
 }

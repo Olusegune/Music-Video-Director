@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { choreographSong } from "@/apps/music-video/lib/choreography";
+import { choreographSong, isChoreoStale } from "@/apps/music-video/lib/choreography";
 import type { SongMap, SongSection } from "@/apps/music-video/lib/songBrain";
 
 function section(overrides: Partial<SongSection>): SongSection {
@@ -93,5 +93,59 @@ describe("choreographSong per-song variation", () => {
       [...(p.sections[0].cameraMoves ?? []), ...(p.sections[0].lightingMoves ?? [])].join("|");
 
     expect(sig(first)).toBe(sig(second));
+  });
+});
+
+describe("isChoreoStale", () => {
+  const song = songWith([
+    section({ id: "a", kind: "Verse", label: "Verse 1", start: 0, end: 30 }),
+    section({ id: "b", kind: "Chorus", label: "Chorus 1", start: 30, end: 60 }),
+  ]);
+
+  it("accepts a plan made from the current sections", () => {
+    expect(isChoreoStale(choreographSong(song), song)).toBe(false);
+  });
+
+  it("treats a missing plan as missing, not stale", () => {
+    expect(isChoreoStale(null, song)).toBe(false);
+    expect(isChoreoStale(undefined, song)).toBe(false);
+  });
+
+  // The real case: re-detection mints new section ids, orphaning every
+  // reference. A real track carried a plan calling its choruses verses.
+  it("spots a plan whose sections no longer exist", () => {
+    const plan = choreographSong(song);
+    const reDetected = songWith([
+      section({ id: "fresh-1", kind: "Verse", label: "Verse 1", start: 0, end: 30 }),
+      section({ id: "fresh-2", kind: "Chorus", label: "Chorus 1", start: 30, end: 60 }),
+    ]);
+    expect(isChoreoStale(plan, reDetected)).toBe(true);
+  });
+
+  it("spots a section retagged to a different kind", () => {
+    const plan = choreographSong(song);
+    const retagged = songWith([
+      section({ id: "a", kind: "Verse", label: "Verse 1", start: 0, end: 30 }),
+      section({ id: "b", kind: "Bridge", label: "Bridge", start: 30, end: 60 }),
+    ]);
+    expect(isChoreoStale(plan, retagged)).toBe(true);
+  });
+
+  it("spots a section that moved in time", () => {
+    const plan = choreographSong(song);
+    const shifted = songWith([
+      section({ id: "a", kind: "Verse", label: "Verse 1", start: 0, end: 24 }),
+      section({ id: "b", kind: "Chorus", label: "Chorus 1", start: 24, end: 60 }),
+    ]);
+    expect(isChoreoStale(plan, shifted)).toBe(true);
+  });
+
+  it("tolerates sub-second drift rather than churning", () => {
+    const plan = choreographSong(song);
+    const nudged = songWith([
+      section({ id: "a", kind: "Verse", label: "Verse 1", start: 0, end: 30 }),
+      section({ id: "b", kind: "Chorus", label: "Chorus 1", start: 30.2, end: 60 }),
+    ]);
+    expect(isChoreoStale(plan, nudged)).toBe(false);
   });
 });
