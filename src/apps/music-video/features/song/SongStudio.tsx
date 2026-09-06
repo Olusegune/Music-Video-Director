@@ -234,22 +234,41 @@ export function SongStudio() {
                 No tracks yet. Import an MP3 or WAV to begin.
               </p>
             )}
-            {songs.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setActiveId(s.id)}
-                className={cn(
-                  "group flex w-full items-center gap-2 rounded-[var(--radius-button)] px-2.5 py-2 text-left text-sm transition-colors",
-                  s.id === activeId
-                    ? "bg-primary/12 text-primary"
-                    : "text-muted hover:bg-elevated/60 hover:text-foreground"
-                )}
-              >
-                <AudioLines className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="text-[10px] tabular-nums opacity-70">{s.bpm}</span>
-              </button>
-            ))}
+            {songs.map((s) => {
+              // Two imports of the same file share a name, and the rail
+              // truncates, so the list read as the same track twice with no
+              // way to tell which was which. Only the ambiguous ones get a
+              // second line — an always-on subtitle would just be noise.
+              const ambiguous = songs.filter((o) => o.name === s.name).length > 1;
+              const choruses = s.sections.filter((x) => x.kind === "Chorus").length;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveId(s.id)}
+                  title={s.name}
+                  className={cn(
+                    "group flex w-full items-center gap-2 rounded-[var(--radius-button)] px-2.5 py-2 text-left text-sm transition-colors",
+                    s.id === activeId
+                      ? "bg-primary/12 text-primary"
+                      : "text-muted hover:bg-elevated/60 hover:text-foreground"
+                  )}
+                >
+                  <AudioLines className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{s.name}</span>
+                    {ambiguous && (
+                      <span className="block truncate text-[10px] opacity-70">
+                        {s.sections.length} sections ·{" "}
+                        {choruses > 0
+                          ? `${choruses} chorus${choruses === 1 ? "" : "es"}`
+                          : "no chorus"}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[10px] tabular-nums opacity-70">{s.bpm}</span>
+                </button>
+              );
+            })}
           </div>
         </aside>
 
