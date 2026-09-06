@@ -112,6 +112,27 @@ function briefFragments(brief?: SectionBrief): string[] {
 }
 
 /** Compose the still-frame prompt for a shot. */
+/**
+ * A shot's `idea` reads `“<lyric>” — <shot type>` so the storyboard shows the
+ * line the shot lands on. That is right for the UI and wrong for a prompt: an
+ * image model reads a quoted string as typography to draw, and the lyric was
+ * coming back rendered across the frame as on-screen text.
+ *
+ * The prompt gets the visual half of the idea. The lyric still reaches the
+ * model, but as a performance cue (a mouth caught mid-line) rather than words
+ * to letter.
+ */
+export function ideaForPrompt(shot: MvShot): string {
+  if (!shot.lyric) return shot.idea;
+  // Curly quotes only: that is what the Director Brain emits, and a straight
+  // quote class would break on an apostrophe inside the lyric ("let's").
+  const stripped = shot.idea.replace(/^\s*[“"]([^”"]*)[”"]\s*—\s*/, "").trim();
+  return stripped || shot.shotType;
+}
+
+/** Never render the words; just sing them. */
+const NO_TEXT = "No on-screen text, captions, subtitles, lyrics, lettering, or watermarks.";
+
 export function buildShotImagePrompt(ctx: GenContext): string {
   const { shot, section, treatment, cast, characters, aspect, choreoHint, brief } = ctx;
   const performers = performersForSection(section.approach, cast);
@@ -126,7 +147,8 @@ export function buildShotImagePrompt(ctx: GenContext): string {
     .join(" ");
 
   return [
-    `${shot.idea}.`,
+    `${ideaForPrompt(shot)}.`,
+    shot.lyric ? "The performer is caught mid-line, mouth open, singing." : "",
     `Shot: ${shot.shotType}. Camera: ${shot.movement}. Lighting: ${shot.lighting}.`,
     // Explicit per-shot assignments take precedence over the auto time-based hint.
     shot.choreo?.length
@@ -144,6 +166,7 @@ export function buildShotImagePrompt(ctx: GenContext): string {
     featuring,
     rules,
     `Single music-video still frame, cinematic, ${aspect} aspect ratio, professional color grade, high detail.`,
+    NO_TEXT,
   ]
     .filter(Boolean)
     .join(" ");
@@ -161,7 +184,8 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
   const dur = Math.max(1, Math.round(shot.end - shot.start));
 
   return [
-    `${shot.idea}.`,
+    `${ideaForPrompt(shot)}.`,
+    shot.lyric ? "The performer is singing this line to camera." : "",
     `Camera move: ${shot.movement}. Lighting: ${shot.lighting}.`,
     `Performance: ${shot.performanceNote}`,
     shot.choreo?.length
@@ -175,6 +199,7 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
     `Visual world: ${treatment.visualWorld}`,
     styleDirectionFragment(getDirectorStyle(treatment.directorStyleId)),
     `${dur}s music-video clip, cinematic motion, smooth, high detail.`,
+    NO_TEXT,
   ]
     .filter(Boolean)
     .join(" ");

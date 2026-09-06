@@ -97,3 +97,61 @@ describe("director style in generated prompts", () => {
     }
   });
 });
+
+// The lyric was arriving rendered as typography across the generated frame,
+// because the prompt opened with it in curly quotes.
+describe("lyric text never reaches the frame as typography", () => {
+  const sung: MvShot = {
+    ...shot,
+    lyric: "let's rewind existence,",
+    idea: "“let's rewind existence,” — artist against a pure saturated color field",
+  };
+  const sungCtx = (): GenContext => ({ ...ctx(), shot: sung, section: { ...section, shots: [sung] } });
+
+  it("keeps the quoted lyric out of the image prompt", () => {
+    const prompt = buildShotImagePrompt(sungCtx());
+    expect(prompt).not.toContain("let's rewind existence");
+    expect(prompt).not.toContain("“");
+  });
+
+  it("keeps the quoted lyric out of the video prompt", () => {
+    const prompt = buildShotVideoPrompt(sungCtx());
+    expect(prompt).not.toContain("let's rewind existence");
+  });
+
+  it("still describes the shot the lyric belonged to", () => {
+    expect(buildShotImagePrompt(sungCtx())).toContain("artist against a pure saturated color field");
+  });
+
+  it("says the performer is singing, so the mouth is still right", () => {
+    expect(buildShotImagePrompt(sungCtx()).toLowerCase()).toContain("singing");
+  });
+
+  it("tells the model not to letter anything", () => {
+    expect(buildShotImagePrompt(sungCtx())).toContain("No on-screen text");
+    expect(buildShotVideoPrompt(sungCtx())).toContain("No on-screen text");
+  });
+
+  // The first attempt at this stripped nothing when the lyric contained an
+  // apostrophe, because the quote character class swallowed it.
+  it("strips a lyric that contains an apostrophe", () => {
+    const awkward: MvShot = {
+      ...shot,
+      lyric: "don't look back now",
+      idea: "“don't look back now” — low-angle hero",
+    };
+    const prompt = buildShotImagePrompt({
+      ...ctx(),
+      shot: awkward,
+      section: { ...section, shots: [awkward] },
+    });
+    expect(prompt).not.toContain("don't look back");
+    expect(prompt).toContain("low-angle hero");
+  });
+
+  it("leaves an instrumental shot's idea untouched", () => {
+    const prompt = buildShotImagePrompt(ctx());
+    expect(prompt).toContain("Wide on the rooftop");
+    expect(prompt).not.toContain("singing");
+  });
+});
