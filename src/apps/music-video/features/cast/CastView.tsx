@@ -27,7 +27,7 @@ import {
   type Performer,
   type PerformerRole,
 } from "@/apps/music-video/lib/cast";
-import { newCharacter } from "@/platform/lib/characterDna";
+import { newCharacter, hasVisualDna } from "@/platform/lib/characterDna";
 import { api } from "@/platform/lib/ipc";
 import type { Character } from "@/platform/lib/types";
 import { cn } from "@/platform/lib/utils";
@@ -371,12 +371,24 @@ function PerformerCard({
                 Lip-sync
               </button>
             </div>
-            {linked && (
-              <p className="text-[11px] text-muted">
-                Linked to <span className="text-foreground">{linked.name}</span> — visual DNA
-                {linked.locked ? " (locked)" : ""} carries into generation.
-              </p>
-            )}
+            {linked &&
+              // "Visual DNA carries into generation" is only true when there
+              // is any. A character with no appearance fields contributes a
+              // name and nothing else, so the face drifts shot to shot while
+              // the card promises consistency — the linking itself looks like
+              // the work, and the user has no reason to suspect otherwise.
+              (hasVisualDna(linked) ? (
+                <p className="text-[11px] text-muted">
+                  Linked to <span className="text-foreground">{linked.name}</span> — visual DNA
+                  {linked.locked ? " (locked)" : ""} carries into generation.
+                </p>
+              ) : (
+                <p className="text-[11px] text-warning">
+                  Linked to <span className="font-medium">{linked.name}</span>, but no appearance
+                  is described yet — their face will drift between shots. Add hair, eyes, skin, or
+                  wardrobe in Character Designer to lock the likeness.
+                </p>
+              ))}
           </div>
         </div>
 

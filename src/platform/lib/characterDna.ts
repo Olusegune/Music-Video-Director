@@ -70,6 +70,34 @@ function clause(...parts: (string | undefined | null)[]): string {
  * of this character so models keep the same person. Falls back gracefully when
  * fields are sparse.
  */
+/**
+ * Does this character actually describe a look?
+ *
+ * Linking a performer to a character is presented as locking their likeness,
+ * but the lock is only as real as the fields behind it. A character with a
+ * name and nothing else contributes no visual information at all, so the face
+ * drifts between shots while the UI says consistency is handled. Callers use
+ * this to tell the user which of the two they have.
+ *
+ * Name, role and occupation are deliberately excluded: they identify a person
+ * without describing one.
+ */
+export function hasVisualDna(c: Character): boolean {
+  if ((c.promptDna ?? "").trim()) return true;
+  return Boolean(
+    (c.faceShape ?? "").trim() ||
+      (c.eyeShape ?? "").trim() ||
+      (c.eyeColor ?? "").trim() ||
+      (c.hairStyle ?? "").trim() ||
+      (c.hairColor ?? "").trim() ||
+      (c.skinTone ?? "").trim() ||
+      (c.bodyType ?? "").trim() ||
+      (c.primaryOutfit ?? "").trim() ||
+      (c.accessories ?? "").trim() ||
+      (c.distinguishingFeatures ?? "").trim()
+  );
+}
+
 export function identityAnchor(c: Character): string {
   const who = clause(c.age, c.gender, c.occupation) || c.role || "character";
   return c.name ? `${c.name}, ${who}` : who;
