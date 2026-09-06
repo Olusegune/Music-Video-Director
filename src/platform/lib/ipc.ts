@@ -42,17 +42,20 @@ import { estimateCost } from "@/platform/lib/pricing";
 function trackUsage(
   provider: string,
   model: string | undefined,
-  capability: "image" | "video" | "audio" | "text",
-  extra?: { moduleId?: string; projectId?: string }
+  capability: "image" | "video" | "audio" | "text" | "transcribe",
+  extra?: { moduleId?: string; projectId?: string; units?: number }
 ): void {
-  const { perUnit } = estimateCost(provider, model ?? "", capability, 1);
+  // Most capabilities bill per generation, so one unit is the right default.
+  // Transcription bills per second of audio sent, hence the override.
+  const units = Math.max(1, extra?.units ?? 1);
+  const { perUnit } = estimateCost(provider, model ?? "", capability, units);
   void api.recordUsage({
     provider,
     model: model || "default",
     capability,
     moduleId: extra?.moduleId,
     projectId: extra?.projectId,
-    costUsd: perUnit,
+    costUsd: perUnit * units,
   });
 }
 
@@ -812,6 +815,32 @@ export const api = {
     isTauri
       ? invoke<string>("slice_song_audio", { songId, startSec, durationSec })
       : Promise.resolve(null),
+
+  /**
+   * Transcribe one section's sung lyrics into a draft the user then corrects.
+   *
+   * Returns "" when nothing intelligible was sung — a real answer for an intro
+   * or an instrumental break, not a failure. In the browser there is no FFmpeg
+   * to slice with, so the mock returns null and the caller leaves the box
+   * alone rather than pretending it tried.
+   */
+  transcribeSongSection: async (
+    songId: string,
+    startSec: number,
+    durationSec: number
+  ): Promise<string | null> => {
+    if (!isTauri) return null;
+    const text = await invoke<string>("transcribe_song_section", {
+      songId,
+      startSec,
+      durationSec,
+    });
+    // Priced per second of audio sent, so the section's own length is the unit.
+    trackUsage("gemini", "gemini-3.6-flash", "transcribe", {
+      units: Math.round(durationSec),
+    });
+    return text;
+  },
 
   /**
    * Render the timeline segments + audio into one MP4 via the Rust/FFmpeg core.

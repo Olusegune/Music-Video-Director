@@ -13,7 +13,7 @@ import type { Capability } from "@/platform/lib/types";
 
 // Broader than modelRegistry's PricingKind (image/video only) — this table also
 // prices the audio (ElevenLabs voice) and text (Gemini) generation paths.
-type PricingKind = Capability | "audio";
+type PricingKind = Capability | "audio" | "transcribe";
 
 interface PriceEntry {
   /** Cost in USD per single generation (one image, one video clip, etc.). */
@@ -63,7 +63,8 @@ const PROVIDER_DEFAULTS: Record<string, Partial<Record<PricingKind, PriceEntry>>
   runway: { video: { perUnit: 0.5, basis: "estimate — Runway credit pricing" } },
   happyhorse: { video: { perUnit: 0.3, basis: "estimate" } },
   elevenlabs: { audio: { perUnit: 0.02, basis: "estimate — per generation, ElevenLabs has real usage tracking" } },
-  gemini: { text: { perUnit: 0.002, basis: "estimate — Gemini text-class token pricing" } },
+  gemini: {
+    transcribe: { perUnit: 0.00002, basis: "estimate — Gemini Flash audio input, per second" }, text: { perUnit: 0.002, basis: "estimate — Gemini text-class token pricing" } },
   // No public API cost, or genuinely free/local — never logged as spend.
   local: { image: { perUnit: 0, basis: "local — no cost" } },
   manual: { image: { perUnit: 0, basis: "manual (Midjourney) — billed outside the app" } },

@@ -543,6 +543,7 @@ export function SongView({
         {/* Section editor — lyrics + per-section creative brief */}
         {selectedSection ? (
           <SectionEditor
+            songId={song.id}
             key={selectedSection.id}
             section={selectedSection}
             onPatch={patchSection}

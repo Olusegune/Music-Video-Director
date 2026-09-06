@@ -9,6 +9,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Scissors,
+  AudioLines,
+  Loader2,
 } from "lucide-react";
 import {
   formatTime,
@@ -23,6 +25,7 @@ import {
 } from "@/apps/music-video/lib/performerDetect";
 import { cn } from "@/platform/lib/utils";
 import { Button } from "@/platform/components/ui/button";
+import { api } from "@/platform/lib/ipc";
 import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Card, CardContent } from "@/platform/components/ui/card";
@@ -150,12 +153,46 @@ export function SectionEditor({
   section,
   onPatch,
   onSeek,
+  songId,
 }: {
   section: SongSection;
   onPatch: (patch: Partial<SongSection>) => void;
   onSeek: () => void;
+  /** Needed to transcribe: the slicer works from the song's imported audio. */
+  songId?: string;
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [hearing, setHearing] = useState(false);
+  const [heard, setHeard] = useState<string | null>(null);
+  const [confirmOverwrite, setConfirmOverwrite] = useState(false);
+
+  const hasLyrics = Boolean((section.lyricsText ?? "").trim());
+
+  const transcribe = async () => {
+    setHearing(true);
+    setHeard(null);
+    setConfirmOverwrite(false);
+    try {
+      const text = await api.transcribeSongSection(
+        songId!,
+        section.start,
+        Math.max(1, section.end - section.start)
+      );
+      if (text === null) {
+        setHeard("Transcribing needs the desktop app — there is no audio slicer in the browser.");
+      } else if (text.trim() === "") {
+        // A real answer for an intro or an instrumental break, not a failure.
+        setHeard("No sung words heard in this section.");
+      } else {
+        onPatch({ lyricsText: text });
+        setHeard("Transcribed — read it through and fix anything it misheard.");
+      }
+    } catch (error) {
+      setHeard(error instanceof Error ? error.message : String(error));
+    } finally {
+      setHearing(false);
+    }
+  };
   const color = sectionColor(section.kind);
   const Field = ({
     label,
@@ -202,18 +239,60 @@ export function SectionEditor({
         </button>
       </div>
       <CardContent className="space-y-3 p-4">
-        <label className="block">
-          <span className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted">
-            <AlignLeft className="h-3.5 w-3.5" /> Lyrics — {section.label}
-          </span>
+        <div className="block">
+          {/* The button sits beside the label, not inside it: a control nested
+              in a <label> takes the label's text as its accessible name and
+              steals the click meant for the field. */}
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted">
+            <label htmlFor={`lyrics-${section.id}`} className="flex items-center gap-1.5">
+              <AlignLeft className="h-3.5 w-3.5" /> Lyrics — {section.label}
+            </label>
+            {songId && (
+              <button
+                type="button"
+                onClick={() => (hasLyrics ? setConfirmOverwrite(true) : void transcribe())}
+                disabled={hearing}
+                className="ml-auto inline-flex items-center gap-1 font-medium text-primary hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                title="Listen to this section and write down the words it sings"
+              >
+                {hearing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <AudioLines className="h-3 w-3" />
+                )}
+                {hearing ? "Listening…" : hasLyrics ? "Re-transcribe" : "Transcribe"}
+              </button>
+            )}
+          </div>
+
+          {/* Transcribing replaces the box wholesale, so written lyrics are
+              never overwritten without being asked first. */}
+          {confirmOverwrite && (
+            <div className="mb-2 rounded-md border border-warning/30 bg-warning/10 p-2 text-[11px]">
+              <p className="text-warning">
+                Replace the lyrics already written here with what the model hears?
+              </p>
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" onClick={() => void transcribe()}>
+                  Replace
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirmOverwrite(false)}>
+                  Keep mine
+                </Button>
+              </div>
+            </div>
+          )}
+
           <Textarea
+            id={`lyrics-${section.id}`}
             value={section.lyricsText ?? ""}
             onChange={(e) => onPatch({ lyricsText: e.target.value })}
             placeholder={`Lyrics for ${section.label}… (one line per row)`}
             className="min-h-28"
             aria-label={`Lyrics for ${section.label}`}
           />
-        </label>
+          {heard && <p className="mt-1 text-[11px] text-muted">{heard}</p>}
+        </div>
 
         {/* Who performs this section? — assigned, or detected with a hint. */}
         {(() => {

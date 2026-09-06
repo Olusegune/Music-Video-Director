@@ -1494,3 +1494,88 @@ pub async fn generate_shot_video(
 
     Ok(path_str)
 }
+
+/// Transcribe the sung lyrics of one song section.
+///
+/// Sections already carry exact start/end times, so slicing to the section and
+/// transcribing that is simpler and more accurate than transcribing the whole
+/// track and trying to align words back to boundaries: the text belongs to the
+/// section by construction, and a bad section can be re-run on its own.
+///
+/// Sung vocals are much harder than speech — instrumentation, melisma, doubled
+/// takes and heavy processing all hurt. The prompt below leans on that, and
+/// the result is always presented to the user as a draft to correct, never as
+/// the truth. An empty string means "nothing intelligible here", which is a
+/// real and common answer for an intro or an instrumental break.
+#[tauri::command]
+pub async fn transcribe_song_section(
+    app: AppHandle,
+    song_id: String,
+    start_sec: f64,
+    duration_sec: f64,
+) -> Result<String, String> {
+    use base64::{engine::general_purpose::STANDARD as B64, Engine};
+
+    let key = secrets::get_key("gemini")
+        .map_err(err)?
+        .ok_or("Transcribing lyrics needs a Gemini API key. Add one in Settings → API Keys.")?;
+
+    let clip = slice_song_audio(app, song_id, start_sec, duration_sec)?;
+    let bytes = std::fs::read(&clip).map_err(err)?;
+    let audio = B64.encode(&bytes);
+
+    let prompt = "Transcribe only the sung or rapped lyrics in this audio clip. \
+Write one line per sung line. Do not translate. Do not add punctuation that isn't sung. \
+Do not describe the music, the instruments, or the production. \
+Do not add section labels, timestamps, quotation marks, or commentary. \
+If there are no intelligible words \u{2014} an instrumental, ad-libs only, or unclear vocals \u{2014} \
+reply with exactly: (no lyrics)";
+
+    let body = serde_json::json!({
+        "contents": [{
+            "parts": [
+                { "text": prompt },
+                { "inline_data": { "mime_type": "audio/mp4", "data": audio } }
+            ]
+        }],
+        // Deterministic: the same clip should not transcribe differently each run.
+        "generationConfig": { "temperature": 0.0 }
+    });
+
+    // gemini-2.0-flash was retired and now returns a hard error naming its
+    // replacement, so this is pinned to the current flash model rather than an
+    // alias that could shift under us mid-project.
+    const TRANSCRIBE_MODEL: &str = "gemini-3.6-flash";
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/{TRANSCRIBE_MODEL}:generateContent?key={key}"
+    );
+    let resp = reqwest::Client::new()
+        .post(&url)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Could not reach Gemini: {e}."))?;
+
+    let status = resp.status();
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("Gemini returned something unreadable: {e}."))?;
+    if !status.is_success() {
+        let msg = json["error"]["message"].as_str().unwrap_or("unknown error");
+        return Err(format!("Gemini rejected the transcription request: {msg}"));
+    }
+
+    let text = json["candidates"][0]["content"]["parts"][0]["text"]
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    // Normalise the model's "nothing here" answer to an empty string so the UI
+    // has one thing to check rather than a magic phrase to string-match.
+    if text.eq_ignore_ascii_case("(no lyrics)") || text.is_empty() {
+        return Ok(String::new());
+    }
+    Ok(text)
+}
