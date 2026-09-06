@@ -18,6 +18,7 @@ import {
   Repeat,
   Volume2,
   FileText,
+  AudioLines,
 } from "lucide-react";
 import {
   formatTime,
@@ -35,6 +36,7 @@ import {
   detectAllPerformers,
 } from "@/apps/music-video/lib/performerDetect";
 import { Button } from "@/platform/components/ui/button";
+import { api } from "@/platform/lib/ipc";
 import { Input } from "@/platform/components/ui/input";
 import { Badge } from "@/platform/components/ui/badge";
 import {
@@ -169,6 +171,67 @@ export function SongView({
   // Tauri webview confirm() does not block and returns false, so a handler
   // gated on it silently does nothing.
   const [confirmRedetect, setConfirmRedetect] = useState(false);
+  const [confirmTranscribe, setConfirmTranscribe] = useState(false);
+  const [transcribing, setTranscribing] = useState<{ done: number; total: number } | null>(null);
+  const [transcribeNote, setTranscribeNote] = useState<string | null>(null);
+
+  const sectionsWithLyrics = song.sections.filter((x) => (x.lyricsText ?? "").trim()).length;
+  const sectionsWithoutLyrics = song.sections.length - sectionsWithLyrics;
+
+  /**
+   * Transcribe every section in turn.
+   *
+   * Sequential on purpose: nine parallel calls hammer the provider for no gain
+   * the user can see, and doing them in order means the count on the button is
+   * honest about where it has got to. Sections are written as each one lands,
+   * so a failure part-way keeps whatever already came back instead of
+   * discarding the lot.
+   */
+  const transcribeAll = async (replaceExisting: boolean) => {
+    const targets = song.sections.filter(
+      (x) => replaceExisting || !(x.lyricsText ?? "").trim()
+    );
+    setConfirmTranscribe(false);
+    setTranscribeNote(null);
+    setTranscribing({ done: 0, total: targets.length });
+
+    const filled = new Map<string, string>();
+    let empty = 0;
+    let failed: string | null = null;
+    for (const [i, target] of targets.entries()) {
+      try {
+        const text = await api.transcribeSongSection(
+          song.id,
+          target.start,
+          Math.max(1, target.end - target.start)
+        );
+        if (text === null) {
+          failed = "Transcribing needs the desktop app.";
+          break;
+        }
+        if (text.trim()) filled.set(target.id, text);
+        else empty += 1;
+      } catch (error) {
+        failed = error instanceof Error ? error.message : String(error);
+        break;
+      }
+      setTranscribing({ done: i + 1, total: targets.length });
+    }
+
+    if (filled.size > 0) {
+      setSections(
+        song.sections.map((x) => (filled.has(x.id) ? { ...x, lyricsText: filled.get(x.id)! } : x))
+      );
+    }
+    setTranscribing(null);
+    const parts: string[] = [];
+    if (filled.size > 0)
+      parts.push(`Transcribed ${filled.size} section${filled.size === 1 ? "" : "s"}`);
+    if (empty > 0) parts.push(`${empty} had no words to hear`);
+    if (failed) parts.push(`stopped: ${failed}`);
+    parts.push("read them through and fix anything misheard");
+    setTranscribeNote(parts.join(" · "));
+  };
   const editedSections = song.sections.filter(
     (s) =>
       s.lyricsText?.trim() ||
@@ -434,12 +497,14 @@ export function SongView({
         {/* Song structure — click a section to edit its lyrics + brief */}
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-2">
+            {/* Wraps rather than clipping: this row grew to four actions and the
+                last one was being cut off the edge of the card. */}
+            <div className="flex flex-wrap items-start justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Wand2 className="h-4 w-4 text-accent" />
                 Song structure
               </CardTitle>
-              <div className="flex shrink-0 gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -457,6 +522,18 @@ export function SongView({
                   title="Fold a script or lyric sheet into these sections"
                 >
                   <FileText className="h-3.5 w-3.5" /> Use a script
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setConfirmTranscribe(true)}
+                  disabled={!hasAudio || Boolean(transcribing) || confirmTranscribe}
+                  title="Listen to every section and write down the words it sings"
+                >
+                  <AudioLines className={cn("h-3.5 w-3.5", transcribing && "animate-pulse")} />
+                  {transcribing
+                    ? `Transcribing ${transcribing.done}/${transcribing.total}…`
+                    : "Transcribe lyrics"}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={autoDetectPerformers}>
                   <Mic2 className="h-3.5 w-3.5" /> Auto-detect performers
@@ -509,6 +586,50 @@ export function SongView({
                   </Button>
                 </div>
               </div>
+            )}
+
+            {confirmTranscribe && (
+              <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+                <p className="text-sm font-medium">Transcribe the lyrics from the audio?</p>
+                <p className="mt-1 text-xs text-muted">
+                  Each section is listened to on its own and the words written into its box.
+                  Sung lyrics are harder to hear than speech, so read the result through — treat
+                  it as a first pass, not a transcript.
+                  {sectionsWithLyrics > 0 && (
+                    <>
+                      {" "}
+                      {sectionsWithLyrics} section{sectionsWithLyrics === 1 ? " already has" : "s already have"}{" "}
+                      words in {sectionsWithLyrics === 1 ? "it" : "them"}.
+                    </>
+                  )}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {sectionsWithoutLyrics > 0 && (
+                    <Button size="sm" onClick={() => void transcribeAll(false)}>
+                      Fill the {sectionsWithoutLyrics} empty one
+                      {sectionsWithoutLyrics === 1 ? "" : "s"}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={sectionsWithoutLyrics > 0 ? "secondary" : "primary"}
+                    onClick={() => void transcribeAll(true)}
+                  >
+                    Replace all {song.sections.length}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setConfirmTranscribe(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {transcribeNote && !confirmTranscribe && (
+              <p className="mt-2 text-xs text-muted">{transcribeNote}</p>
             )}
           </CardHeader>
           <CardContent className="space-y-2">
