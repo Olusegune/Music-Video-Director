@@ -13,7 +13,23 @@ const FAL_MODEL: &str = "fal-ai/flux/schnell";
 const IMAGEN_MODEL: &str = "imagen-3.0-generate-002";
 /// Gemini "Nano Banana" image generation via generateContent (supports
 /// reference images). GA id first, with the older preview id as a fallback.
-const GEMINI_IMAGE_MODELS: [&str; 2] = ["gemini-2.5-flash-image", "gemini-2.5-flash-image-preview"];
+/// Image models to try, best first.
+///
+/// Kept current against what the key can actually reach — see
+/// `src-tauri/tests/list_models.rs`, which asks Google directly. Ids get
+/// retired under the app faster than anyone notices: this list previously held
+/// gemini-2.5-flash-image-preview, which now 404s, and the Imagen fallback
+/// pointed at imagen-3.0-generate-002, which is not offered at all any more.
+///
+/// gemini-3-pro-image is the model the UI calls "Nano Banana Pro". The 3.x
+/// entries are also the ones that honour generationConfig.imageConfig, which
+/// is how aspect ratio is actually set.
+const GEMINI_IMAGE_MODELS: [&str; 4] = [
+    "gemini-3-pro-image",
+    "gemini-3.1-flash-image",
+    "gemini-3-pro-image-preview",
+    "gemini-2.5-flash-image",
+];
 const OPENAI_IMAGE_MODEL: &str = "gpt-image-1";
 const STABILITY_ENGINE: &str = "stable-diffusion-xl-1024-v1-0";
 

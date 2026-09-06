@@ -77,6 +77,7 @@ pub fn run() {
             commands::import_song_audio,
             commands::slice_song_audio,
             commands::transcribe_song_section,
+            commands::list_gemini_models,
             commands::render_music_video,
             commands::check_ffmpeg,
             commands::install_ffmpeg,

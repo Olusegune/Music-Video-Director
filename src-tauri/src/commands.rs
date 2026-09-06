@@ -1579,3 +1579,60 @@ reply with exactly: (no lyrics)";
     }
     Ok(text)
 }
+
+/// List the image-capable models the configured Gemini key can actually reach.
+///
+/// Twice in one day a batch failed because a model id had been retired under
+/// the app: gemini-2.0-flash for transcription, then gemini-2.5-flash-image
+/// and imagen-3.0-generate-002 for frames. The 404 tells you to call
+/// ListModels, which needs the key — so the app asks on the user's behalf
+/// rather than leaving them to guess which id is current.
+#[tauri::command]
+pub async fn list_gemini_models() -> Result<Vec<String>, String> {
+    let key = secrets::get_key("gemini")
+        .map_err(err)?
+        .or(secrets::get_key("google_imagen").map_err(err)?)
+        .ok_or("No Gemini or Google key set. Add one in Settings → API Keys.")?;
+
+    let url =
+        format!("https://generativelanguage.googleapis.com/v1beta/models?key={key}&pageSize=200");
+    let resp = reqwest::Client::new()
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Could not reach Gemini: {e}."))?;
+    let status = resp.status();
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("Gemini returned something unreadable: {e}."))?;
+    if !status.is_success() {
+        let msg = json["error"]["message"].as_str().unwrap_or("unknown error");
+        return Err(format!("Gemini rejected the model list request: {msg}"));
+    }
+
+    let mut out: Vec<String> = json["models"]
+        .as_array()
+        .map(|models| {
+            models
+                .iter()
+                .filter(|m| {
+                    // Keep anything that can return an image, plus the plain
+                    // generateContent models so a transcription id is visible too.
+                    m["supportedGenerationMethods"]
+                        .as_array()
+                        .map(|ms| {
+                            ms.iter().any(|s| {
+                                let s = s.as_str().unwrap_or("");
+                                s == "generateContent" || s == "predict"
+                            })
+                        })
+                        .unwrap_or(false)
+                })
+                .filter_map(|m| m["name"].as_str().map(|s| s.trim_start_matches("models/").to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+    out.sort();
+    Ok(out)
+}
