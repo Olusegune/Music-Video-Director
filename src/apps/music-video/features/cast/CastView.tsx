@@ -190,7 +190,8 @@ function EmptyState({ onAdd }: { onAdd: (role?: PerformerRole) => void }) {
   );
 }
 
-function PerformerCard({
+/** Exported for tests: the deep-link from the appearance warning to Character Designer. */
+export function PerformerCard({
   performer,
   characters,
   onChange,
@@ -204,6 +205,7 @@ function PerformerCard({
   onCharacterAdded: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const openCharacterCard = useAppStore((s) => s.openCharacterCard);
   const [uploading, setUploading] = useState(false);
   const color = roleColor(performer.role);
   const linked = characters.find((c) => c.id === performer.characterId);
@@ -383,11 +385,20 @@ function PerformerCard({
                   {linked.locked ? " (locked)" : ""} carries into generation.
                 </p>
               ) : (
-                <p className="text-[11px] text-warning">
-                  Linked to <span className="font-medium">{linked.name}</span>, but no appearance
-                  is described yet — their face will drift between shots. Add hair, eyes, skin, or
-                  wardrobe in Character Designer to lock the likeness.
-                </p>
+                <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/8 px-2 py-1.5">
+                  <p className="flex-1 text-[11px] text-warning">
+                    Linked to <span className="font-medium">{linked.name}</span>, but no appearance
+                    is described yet — their face will drift between shots.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-6 shrink-0 px-2 text-[11px]"
+                    onClick={() => openCharacterCard(linked.id)}
+                  >
+                    Describe them
+                  </Button>
+                </div>
               ))}
           </div>
         </div>

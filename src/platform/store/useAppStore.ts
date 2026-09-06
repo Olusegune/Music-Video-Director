@@ -122,6 +122,11 @@ interface AppState {
   openBrandKits: () => void;
   openAssets: () => void;
   openCharacters: () => void;
+  /** Opens Character Designer straight into one character's full editor — used by
+   *  the Cast screen's "no appearance described" warning so fixing it is one click,
+   *  not "open Character Designer and go find them yourself." */
+  openCharacterCard: (characterId: string) => void;
+  consumePendingCharacterCardId: () => string | null;
   openWorld: () => void;
   openProps: () => void;
   openScripts: () => void;
@@ -138,6 +143,9 @@ interface AppState {
   openModuleProject: (moduleId: OpenableModuleId, projectId: string) => void;
   /** A module reads this on mount to select the project a deep-open requested. */
   pendingProjectOpen: { moduleId: OpenableModuleId; projectId: string } | null;
+  /** Set by openCharacterCard, cleared the moment Character Designer consumes it — a
+   *  one-shot deep link, not durable navigation state, matching pendingProjectOpen. */
+  pendingCharacterCardId: string | null;
   consumePendingProjectOpen: (moduleId: OpenableModuleId) => string | null;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
@@ -164,6 +172,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   view: "dashboard",
   activeProjectId: null,
   pendingProjectOpen: null,
+  pendingCharacterCardId: null,
   activeSongId: initialSongId,
   activeTemplateId: templateForSong(initialSongId),
   workspaceMode: "storyboard",
@@ -290,6 +299,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   openBrandKits: () => set({ view: "brandkits" }),
   openAssets: () => set({ view: "assets" }),
   openCharacters: () => set({ view: "characters" }),
+  openCharacterCard: (characterId) =>
+    set({ view: "characters", pendingCharacterCardId: characterId }),
+  consumePendingCharacterCardId: () => {
+    const id = get().pendingCharacterCardId;
+    if (id) set({ pendingCharacterCardId: null });
+    return id;
+  },
   openWorld: () => set({ view: "world" }),
   openProps: () => set({ view: "props" }),
   openScripts: () => set({ view: "scripts" }),

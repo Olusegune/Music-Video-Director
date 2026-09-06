@@ -69,6 +69,7 @@ import { enhanceBibleProfile, textProviderIsReady } from "@/platform/features/dn
 import { BibleStageBadge } from "@/platform/features/dna/BibleStageBadge";
 import { extractTextFromFile } from "@/platform/lib/docParse";
 import { Select } from "@/platform/components/ui/select";
+import { useAppStore } from "@/platform/store/useAppStore";
 import {
   extractCharacterFields,
   CHARACTER_IMPORT_FIELDS,
@@ -90,6 +91,17 @@ export function CharacterBible() {
     queryKey: ["characters"],
     queryFn: api.listCharacters,
   });
+
+  // A one-shot deep link from elsewhere (Cast's "no appearance described"
+  // warning): jump straight into that character's full editor once, then
+  // forget it — this must not reopen every time the user returns here.
+  const consumePendingCharacterCardId = useAppStore((s) => s.consumePendingCharacterCardId);
+  useEffect(() => {
+    const pendingId = consumePendingCharacterCardId();
+    if (pendingId) setCardId(pendingId);
+    // Runs once per mount by design — see the comment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const create = useMutation({
     mutationFn: (c: Character) => api.saveCharacter(c).then(() => c),
