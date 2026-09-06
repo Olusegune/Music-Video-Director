@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { directSong } from "@/apps/music-video/lib/mvDirector";
+import {
+  directSong,
+  isTreatmentStale,
+  generatedShotCount,
+} from "@/apps/music-video/lib/mvDirector";
 import type { SongMap, SongSection } from "@/apps/music-video/lib/songBrain";
 
 function section(overrides: Partial<SongSection>): SongSection {
@@ -115,5 +119,70 @@ describe("directSong with a director style", () => {
     const bogus = directSong({ ...song, directorStyleId: "not-a-real-style" });
     expect(bogus.directorStyleId).toBeUndefined();
     expect(bogus.sections.length).toBe(directSong(song).sections.length);
+  });
+});
+
+describe("isTreatmentStale", () => {
+  const sections = [
+    section({ id: "a", kind: "Verse", start: 0, end: 30, energy: 0.5 }),
+    section({ id: "b", kind: "Chorus", label: "Chorus 1", start: 30, end: 60, energy: 0.9 }),
+  ];
+  const base = songWith("t1", sections);
+
+  it("accepts a treatment directed from the current sections", () => {
+    expect(isTreatmentStale(directSong(base), base)).toBe(false);
+  });
+
+  it("treats a missing treatment as missing, not stale", () => {
+    expect(isTreatmentStale(null, base)).toBe(false);
+    expect(isTreatmentStale(undefined, base)).toBe(false);
+  });
+
+  // Re-detection mints new section ids, orphaning every reference — observed
+  // on a real production whose nine references all dangled.
+  it("spots a treatment whose sections no longer exist", () => {
+    const treatment = directSong(base);
+    const reDetected = songWith("t1", [
+      section({ id: "new-a", kind: "Verse", start: 0, end: 30, energy: 0.5 }),
+      section({ id: "new-b", kind: "Chorus", label: "Chorus 1", start: 30, end: 60, energy: 0.9 }),
+    ]);
+    expect(isTreatmentStale(treatment, reDetected)).toBe(true);
+  });
+
+  it("spots a section retagged to another kind", () => {
+    const treatment = directSong(base);
+    const retagged = songWith("t1", [
+      section({ id: "a", kind: "Verse", start: 0, end: 30, energy: 0.5 }),
+      section({ id: "b", kind: "Bridge", label: "Bridge", start: 30, end: 60, energy: 0.9 }),
+    ]);
+    expect(isTreatmentStale(treatment, retagged)).toBe(true);
+  });
+
+  it("tolerates sub-second drift rather than nagging", () => {
+    const treatment = directSong(base);
+    const nudged = songWith("t1", [
+      section({ id: "a", kind: "Verse", start: 0, end: 30, energy: 0.5 }),
+      section({ id: "b", kind: "Chorus", label: "Chorus 1", start: 30.3, end: 60, energy: 0.9 }),
+    ]);
+    expect(isTreatmentStale(treatment, nudged)).toBe(false);
+  });
+});
+
+describe("generatedShotCount", () => {
+  it("counts the work a re-direct would discard", () => {
+    const treatment = directSong(songWith("g1", [section({ id: "a", kind: "Chorus", energy: 0.9 })]));
+    expect(generatedShotCount(treatment)).toBe(0);
+
+    treatment.sections[0].shots[0].imageUrl = "asset://frame.png";
+    if (treatment.sections[0].shots[1]) {
+      treatment.sections[0].shots[1].videoUrl = "asset://clip.mp4";
+      expect(generatedShotCount(treatment)).toBe(2);
+    } else {
+      expect(generatedShotCount(treatment)).toBe(1);
+    }
+  });
+
+  it("counts nothing for no treatment", () => {
+    expect(generatedShotCount(null)).toBe(0);
   });
 });

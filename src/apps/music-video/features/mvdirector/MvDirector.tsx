@@ -19,6 +19,8 @@ import {
   directSong,
   getTreatment,
   saveTreatment,
+  isTreatmentStale,
+  generatedShotCount,
   type MvTreatment,
   type MvSectionPlan,
   type MvShot,
@@ -1038,6 +1040,24 @@ export function MvDirector() {
           >
             Open API Keys
           </button>
+        </div>
+      )}
+
+      {/* A treatment planned against an older section list still renders a
+          full shot list, so nothing looks wrong — but every per-section brief
+          has stopped reaching the prompts. Reported rather than auto-fixed:
+          re-directing discards generated frames and clips that cost money. */}
+      {treatment && song && isTreatmentStale(treatment, song) && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
+          <span>
+            This shot list was directed before the song&rsquo;s sections changed, so per-section
+            lyrics, performers, and notes are no longer reaching it.
+            {generatedShotCount(treatment) > 0
+              ? ` Re-directing will rebuild the shot list and discard ${generatedShotCount(treatment)} generated frame${
+                  generatedShotCount(treatment) === 1 ? "" : "s"
+                } and clip${generatedShotCount(treatment) === 1 ? "" : "s"}.`
+              : " Re-direct to rebuild it."}
+          </span>
         </div>
       )}
 

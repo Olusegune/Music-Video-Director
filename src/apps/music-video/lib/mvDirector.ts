@@ -562,6 +562,43 @@ export function loadAllTreatments(): MvTreatment[] {
 }
 
 const tmplKey = (id?: string | null) => id ?? "none";
+/**
+ * Has the song been reshaped since this treatment was directed?
+ *
+ * A treatment is planned against a specific section list and then read for the
+ * life of the production. Re-detecting sections mints new ids, so every
+ * reference in the treatment is orphaned — briefForSection stops finding
+ * anything, and the per-section lyrics, performer and camera notes quietly
+ * stop reaching the prompts while the shot list still looks complete.
+ *
+ * Observed on real data: a track re-detected at 23:13 still carried a
+ * treatment from 22:36 with all nine section references dangling.
+ *
+ * Deliberately only reported, never auto-fixed. Shots carry generated frames
+ * and clips that cost real money, and re-directing discards them — that has to
+ * be the user's call.
+ */
+export function isTreatmentStale(
+  treatment: MvTreatment | null | undefined,
+  song: SongMap
+): boolean {
+  if (!treatment) return false;
+  const current = new Map(song.sections.map((s) => [s.id, s]));
+  return treatment.sections.some((planned) => {
+    const live = current.get(planned.sectionId);
+    if (!live) return true;
+    return live.kind !== planned.kind || Math.abs(live.start - planned.start) > 0.5;
+  });
+}
+
+/** How much generated work a re-direct would discard. */
+export function generatedShotCount(treatment: MvTreatment | null | undefined): number {
+  if (!treatment) return 0;
+  return treatment.sections
+    .flatMap((s) => s.shots)
+    .filter((sh) => sh.imageUrl || sh.videoUrl).length;
+}
+
 const sameSlot = (t: MvTreatment, songId: string, templateId?: string | null) =>
   t.songId === songId && tmplKey(t.templateId) === tmplKey(templateId);
 
