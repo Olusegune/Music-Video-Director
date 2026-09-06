@@ -19,6 +19,8 @@ import type { MvTemplate } from "@/platform/lib/templates";
 import {
   getDirectorStyle,
   blendPool,
+  styleVisualWorld,
+  styleOrBase,
   type DirectorStyle,
 } from "@/apps/music-video/lib/directorStyles";
 
@@ -286,13 +288,13 @@ function bandFor(energy: number): "high" | "mid" | "low" {
 function moveFor(energy: number, i: number, flavor?: string[]): string {
   const band = bandFor(energy);
   const base = band === "high" ? MOVE_HIGH : band === "mid" ? MOVE_MID : MOVE_LOW;
-  return pick(blendPool(base, flavor), i);
+  return styleOrBase(base, flavor, i);
 }
 
 function lightFor(energy: number, i: number, flavor?: string[]): string {
   const band = bandFor(energy);
   const base = band === "high" ? LIGHT_HIGH : band === "mid" ? LIGHT_MID : LIGHT_LOW;
-  return pick(blendPool(base, flavor), i);
+  return styleOrBase(base, flavor, i);
 }
 
 function transitionFor(energy: number, i: number, isSectionEnd: boolean): string {
@@ -452,9 +454,14 @@ export function directSong(
   return {
     songId: song.id,
     logline: buildLogline(song, template),
+    // A template is an explicit choice and wins. With no template, an explicit
+    // style beats the generic fallback world, which would otherwise contradict
+    // it in the same prompt.
     visualWorld: template
       ? `${template.visualStyle} Palette: ${template.palette.join(", ")}. ${template.setDirection}`
-      : buildVisualWorld(song),
+      : style
+        ? styleVisualWorld(style)
+        : buildVisualWorld(song),
     directorStyleId: style?.id,
     directorStyleName: style?.name,
     energyArc: buildEnergyArc(song.sections),

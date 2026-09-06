@@ -637,8 +637,57 @@ export function styleDirectionFragment(style?: DirectorStyle | null): string {
   return `Style direction: ${style.direction}`;
 }
 
-/** Merge a style's flavor into a base pool without losing the base variety. */
+/**
+ * Merge a style's flavor into a base pool.
+ *
+ * Prepending the flavor once is not enough. Selection is index-based
+ * (`pick(pool, i)`), so with four flavor entries in front of eight base ones a
+ * style's own vocabulary wins only a third of the time — measured on a real
+ * track, one style produced a shot, camera move and lighting identical to
+ * choosing no style at all. A picker whose effect is invisible two times in
+ * three is not a feature.
+ *
+ * The flavor is repeated until it outnumbers the base roughly two to one, so
+ * the style leads while the base still supplies variety and the result stays
+ * deterministic for a given index.
+ */
 export function blendPool(base: string[], flavor?: string[]): string[] {
   if (!flavor?.length) return base;
-  return [...flavor, ...base];
+  const target = Math.max(1, Math.ceil((base.length * 2) / flavor.length));
+  const weighted: string[] = [];
+  for (let i = 0; i < target; i++) weighted.push(...flavor);
+  return [...weighted, ...base];
+}
+
+/**
+ * The world description to use when a style is chosen but no template is.
+ *
+ * The generic fallback world ("bold, saturated color and hard light; haze,
+ * neon") is a guess made in the absence of any user choice. Left in place it
+ * actively fights an explicit style — an art-house pick was arriving with
+ * "cold flat light" and "saturated neon" in the same prompt. An explicit
+ * choice beats a guess.
+ *
+ * It describes texture and palette rather than restating `direction`, which
+ * the prompt already carries as its own clause; repeating one sentence twice
+ * in a prompt wastes budget and over-weights it against everything else.
+ */
+export function styleVisualWorld(style: DirectorStyle): string {
+  const palette = style.palette?.length ? ` Palette: ${style.palette.join(", ")}.` : "";
+  return `${style.techniques.join(", ")}.${palette}`;
+}
+
+/**
+ * Camera and lighting vocabulary for a shot.
+ *
+ * Unlike shot ideas, these are not blended with the generic pools. A
+ * director's lighting and camera language *is* the signature, and a generic
+ * entry drawn alongside it doesn't read as variety, it reads as a mistake —
+ * an art-house pick was drawing "neon rim with flicker accents" against its
+ * own "cold flat light". Real videos hold a lighting scheme across shots, so
+ * a small exclusive set is truer than a mixed larger one.
+ */
+export function styleOrBase(base: string[], flavor: string[] | undefined, i: number): string {
+  const pool = flavor?.length ? flavor : base;
+  return pool[Math.abs(i) % pool.length];
 }
