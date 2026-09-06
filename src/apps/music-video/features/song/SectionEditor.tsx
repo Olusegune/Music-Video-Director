@@ -5,8 +5,6 @@ import {
   Trash2,
   AlignLeft,
   Mic2,
-  ChevronDown,
-  ChevronRight,
   SlidersHorizontal,
   Scissors,
   AudioLines,
@@ -30,6 +28,7 @@ import { Input } from "@/platform/components/ui/input";
 import { Textarea } from "@/platform/components/ui/textarea";
 import { Card, CardContent } from "@/platform/components/ui/card";
 import { Select } from "@/platform/components/ui/select";
+import { InspectorGroup } from "@/platform/components/ui/inspector-group";
 
 export function SectionRow({
   section,
@@ -332,21 +331,14 @@ export function SectionEditor({
           );
         })()}
 
-        <button
-          onClick={() => setShowAdvanced((v) => !v)}
-          className="flex items-center gap-1.5 text-[11px] font-medium text-muted hover:text-foreground"
+        <InspectorGroup
+          icon={<SlidersHorizontal className="h-3 w-3" />}
+          title="Advanced — mood, visual style, choreography, energy"
+          defaultOpen={false}
+          open={showAdvanced}
+          onOpenChange={setShowAdvanced}
         >
-          {showAdvanced ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
-          )}
-          <SlidersHorizontal className="h-3 w-3" />
-          Advanced — mood, visual style, choreography, energy
-        </button>
-
-        {showAdvanced && (
-          <>
+          <div className="space-y-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field
                 label="Lead vocalist(s)"
@@ -412,8 +404,8 @@ export function SectionEditor({
                 {Math.round((section.energy ?? 0.5) * 100)}
               </span>
             </div>
-          </>
-        )}
+          </div>
+        </InspectorGroup>
       </CardContent>
     </Card>
   );
