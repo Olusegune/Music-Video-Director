@@ -7,6 +7,8 @@ import {
   flushDurableStore,
   isDurableStoreReady,
   __resetDurableStoreForTests,
+  reclaimableBytes,
+  reclaimMigratedCopies,
 } from "@/platform/lib/durableStore";
 
 // The store talks to Tauri through a lazy `import("@tauri-apps/api/core")`,
@@ -167,5 +169,57 @@ describe("browser fallback (no Tauri)", () => {
     setDoc("mf.songs", '[{"id":"updated"}]');
     expect(localStorage.getItem("mf.songs")).toBe('[{"id":"updated"}]');
     expect(invokeMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("reclaiming migrated copies", () => {
+  const value = '[{"id":"s1"}]';
+
+  const hydrateWithLegacy = async () => {
+    setTauri(true);
+    localStorage.setItem("mf.songs", value);
+    invokeMock.mockImplementation((cmd: string) =>
+      cmd === "doc_get_all" ? Promise.resolve([]) : Promise.resolve()
+    );
+    await hydrateDurableStore();
+  };
+
+  // Migration leaves the originals behind on purpose, but once SQLite holds
+  // them they keep the storage warning lit and push the user toward deleting
+  // real productions to free space nothing needs.
+  it("reports and releases a copy the database has taken over", async () => {
+    await hydrateWithLegacy();
+
+    expect(reclaimableBytes()).toBeGreaterThan(0);
+    expect(reclaimMigratedCopies()).toBe(1);
+    expect(localStorage.getItem("mf.songs")).toBeNull();
+    expect(reclaimableBytes()).toBe(0);
+  });
+
+  // The database still serves it, so releasing the duplicate must not change
+  // what the app reads.
+  it("leaves the value readable after release", async () => {
+    await hydrateWithLegacy();
+    reclaimMigratedCopies();
+    expect(getDoc("mf.songs")).toBe(value);
+  });
+
+  it("releases nothing before hydration", () => {
+    setTauri(true);
+    localStorage.setItem("mf.songs", value);
+    expect(reclaimableBytes()).toBe(0);
+    expect(reclaimMigratedCopies()).toBe(0);
+    expect(localStorage.getItem("mf.songs")).toBe(value);
+  });
+
+  // Outside the desktop app localStorage is the only store, so these copies
+  // are the originals, not duplicates.
+  it("releases nothing when there is no database behind it", async () => {
+    setTauri(false);
+    localStorage.setItem("mf.songs", value);
+    await hydrateDurableStore();
+    expect(reclaimableBytes()).toBe(0);
+    expect(reclaimMigratedCopies()).toBe(0);
+    expect(localStorage.getItem("mf.songs")).toBe(value);
   });
 });

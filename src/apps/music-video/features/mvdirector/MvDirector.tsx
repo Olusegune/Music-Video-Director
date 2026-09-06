@@ -1047,8 +1047,9 @@ export function MvDirector() {
             No Chorus was detected in this song, so none of the {treatment?.sections.flatMap((s) => s.shots).length ?? 0} shots
             are directed as a performance — this will render as b-roll only,
             with nobody singing, dancing, or on camera anywhere in the video.
-            Paste the song's lyrics or manually mark a section as Chorus in
-            Song Studio, then re-direct.
+            In Song Studio, try &ldquo;Re-detect sections&rdquo; first — it re-reads the
+            audio with the current detector. Failing that, paste the lyrics or
+            retag a section as Chorus by hand, then re-direct.
           </span>
           <button
             onClick={openSong}

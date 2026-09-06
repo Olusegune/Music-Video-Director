@@ -125,6 +125,49 @@ export async function hydrateDurableStore(): Promise<void> {
   hydrated = true;
 }
 
+/**
+ * Bytes of localStorage still holding a copy of something now in SQLite.
+ *
+ * Migration deliberately leaves the originals behind so a failed or
+ * interrupted move can be retried. Once the database genuinely holds the same
+ * key, that copy is dead weight — and worse than dead weight, because it
+ * keeps the storage-pressure warning lit and pushes the user toward deleting
+ * real productions to reclaim space nothing needs.
+ */
+export function reclaimableBytes(): number {
+  if (!hydrated || !tauriAvailable()) return 0;
+  let total = 0;
+  for (const key of DURABLE_KEYS) {
+    if (!cache.has(key)) continue; // Not in the database — not safe to drop.
+    const legacy = localStorage.getItem(key);
+    if (legacy != null) total += key.length + legacy.length;
+  }
+  return total * 2; // UTF-16 code units, matching storageBytesUsed().
+}
+
+/**
+ * Drop the localStorage copies the database has already taken over.
+ *
+ * Only ever removes a key the cache proves SQLite is serving, and only in the
+ * desktop app where SQLite is the real store — in a plain browser these
+ * copies are still the only copy. Returns the number of keys released.
+ */
+export function reclaimMigratedCopies(): number {
+  if (!hydrated || !tauriAvailable()) return 0;
+  let released = 0;
+  for (const key of DURABLE_KEYS) {
+    if (!cache.has(key)) continue;
+    if (localStorage.getItem(key) == null) continue;
+    try {
+      localStorage.removeItem(key);
+      released += 1;
+    } catch {
+      // A failed removal is harmless: the copy simply stays.
+    }
+  }
+  return released;
+}
+
 /** True once hydration has run. Reads before this point return nothing, which
  *  would look like data loss — callers should not race it. */
 export function isDurableStoreReady(): boolean {
