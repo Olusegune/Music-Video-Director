@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, XCircle } from "lucide-react";
 import { cn } from "@/platform/lib/utils";
 
@@ -28,9 +28,19 @@ export interface HealthIssue {
 export function ProductionHealth({ issues }: { issues: HealthIssue[] }) {
   const blocking = issues.filter((i) => i.level === "blocking");
   const warnings = issues.filter((i) => i.level === "warning");
-  // Anything blocking is worth the room; a list of warnings is not.
-  const [open, setOpen] = useState(false);
-  const expanded = open || blocking.length > 0;
+  // Anything blocking opens the strip on arrival; a list of warnings does not.
+  //
+  // It opens itself rather than being pinned open. Forcing `expanded` true
+  // while a blocker existed left the chevron toggling state nothing read — a
+  // control that looks live and does nothing. The user can now fold this back
+  // to its headline, which still names the blocking issue, so the news is
+  // never hidden; what they cannot do is dismiss it while it is still true.
+  const blockingKey = blocking.map((i) => i.id).join("|");
+  const [open, setOpen] = useState(blocking.length > 0);
+  useEffect(() => {
+    if (blockingKey) setOpen(true);
+  }, [blockingKey]);
+  const expanded = open;
 
   if (issues.length === 0) return null;
 

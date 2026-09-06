@@ -32,8 +32,8 @@ describe("ProductionHealth", () => {
   });
 
   // "Nobody is on camera anywhere" is not the same news as "three shots need
-  // a clip", and must not be collapsed behind a chevron.
-  it("stays expanded when something is blocking", () => {
+  // a clip", so it opens the strip rather than waiting behind a chevron.
+  it("opens itself when something is blocking", () => {
     render(<ProductionHealth issues={[block("x", "Nobody on camera"), warn("a", "Minor")]} />);
     expect(screen.getByRole("button", { expanded: true })).toBeInTheDocument();
     const items = screen.getAllByRole("listitem");
@@ -49,6 +49,25 @@ describe("ProductionHealth", () => {
     expect(screen.getAllByRole("button")[0]).toHaveTextContent("Serious thing");
     // And the blocking issue is listed first, ahead of the warning.
     expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Serious thing");
+  });
+
+  // The chevron used to be inert whenever a blocker existed: it toggled state
+  // that `expanded` ignored. Folding it away is allowed; the headline still
+  // carries the blocking summary, so nothing is hidden.
+  it("can be folded back up even while blocking, without losing the headline", async () => {
+    render(<ProductionHealth issues={[block("x", "Nobody on camera"), warn("a", "Minor")]} />);
+    await userEvent.click(screen.getByRole("button", { expanded: true }));
+    expect(screen.getByRole("button", { expanded: false })).toBeInTheDocument();
+    expect(screen.queryByText("Minor")).not.toBeInTheDocument();
+    expect(screen.getByText("Nobody on camera")).toBeInTheDocument();
+  });
+
+  it("re-opens when a new blocking issue arrives after being folded away", async () => {
+    const { rerender } = render(<ProductionHealth issues={[block("x", "First blocker")]} />);
+    await userEvent.click(screen.getByRole("button", { expanded: true }));
+    expect(screen.getByRole("button", { expanded: false })).toBeInTheDocument();
+    rerender(<ProductionHealth issues={[block("y", "A different blocker")]} />);
+    expect(screen.getByRole("button", { expanded: true })).toBeInTheDocument();
   });
 
   it("runs an issue's action", async () => {
