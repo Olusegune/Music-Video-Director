@@ -41,7 +41,16 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
 
 /** Keys owned by this store. Anything not listed keeps using localStorage —
  *  small settings records are fine there and not worth the migration risk. */
-export const DURABLE_KEYS = ["mf.songs", "mf.treatments", "mf.choreo", "mf.cast"] as const;
+// mf.snapshots joins these because twelve full-state copies had taken 9 MB of
+// a 9.8 MB localStorage budget, and because a snapshot that cannot restore the
+// durable keys is not a backup at all.
+export const DURABLE_KEYS = [
+  "mf.songs",
+  "mf.treatments",
+  "mf.choreo",
+  "mf.cast",
+  "mf.snapshots",
+] as const;
 
 const cache = new Map<string, string>();
 let hydrated = false;

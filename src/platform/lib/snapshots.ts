@@ -1,9 +1,22 @@
 // Session snapshots + crash recovery.
 //
-// Everything in the app already persists to localStorage on every change, so a
-// normal restart never loses data. This adds two things on top: timestamped
-// snapshots the user can roll back to, and crash detection — if the app didn't
-// shut down cleanly last time, we offer to restore the most recent snapshot.
+// Everything in the app already persists on every change, so a normal restart
+// never loses data. This adds two things on top: timestamped snapshots the
+// user can roll back to, and crash detection — if the app didn't shut down
+// cleanly last time, we offer to restore the most recent snapshot.
+//
+// Songs, treatments, choreography and cast live in SQLite behind the durable
+// store, not localStorage. Reading or writing them here through localStorage
+// therefore captures stale copies and restores nothing the app will ever read
+// — which silently broke the recovery button this whole file exists to
+// provide. Every durable key goes through getDoc/setDoc; everything else is
+// still plain localStorage.
+//
+// Safe to call getDoc/setDoc at module level because main.tsx awaits
+// hydrateDurableStore() before mounting, and every caller here is inside a
+// mounted component.
+
+import { getDoc, setDoc, deleteDoc, DURABLE_KEYS } from "@/platform/lib/durableStore";
 
 const LS_SNAPSHOTS = "mf.snapshots";
 const LS_SESSION_OPEN = "mf.sessionOpen";
@@ -19,11 +32,18 @@ export interface Snapshot {
   data: Record<string, string>;
 }
 
+const DURABLE = new Set<string>(DURABLE_KEYS);
+
 function captureState(): Record<string, string> {
   const data: Record<string, string> = {};
+  for (const k of DURABLE_KEYS) {
+    if (EXCLUDED.has(k)) continue;
+    const v = getDoc(k);
+    if (v != null) data[k] = v;
+  }
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k || !k.startsWith("mf.") || EXCLUDED.has(k)) continue;
+    if (!k || !k.startsWith("mf.") || EXCLUDED.has(k) || DURABLE.has(k)) continue;
     const v = localStorage.getItem(k);
     if (v != null) data[k] = v;
   }
@@ -41,7 +61,7 @@ export function stateSignature(): string {
 
 export function loadSnapshots(): Snapshot[] {
   try {
-    const raw = localStorage.getItem(LS_SNAPSHOTS);
+    const raw = getDoc(LS_SNAPSHOTS);
     return raw ? (JSON.parse(raw) as Snapshot[]) : [];
   } catch {
     return [];
@@ -49,19 +69,10 @@ export function loadSnapshots(): Snapshot[] {
 }
 
 function saveSnapshots(list: Snapshot[]): void {
-  try {
-    localStorage.setItem(LS_SNAPSHOTS, JSON.stringify(list.slice(0, MAX_SNAPSHOTS)));
-  } catch {
-    // storage full — drop the oldest half and retry once
-    try {
-      localStorage.setItem(
-        LS_SNAPSHOTS,
-        JSON.stringify(list.slice(0, Math.ceil(MAX_SNAPSHOTS / 2)))
-      );
-    } catch {
-      /* give up silently */
-    }
-  }
+  // Snapshots are a durable key themselves, so this lands in SQLite rather
+  // than competing with production data for the localStorage quota — twelve
+  // full-state copies had grown to 9 MB of a 9.8 MB budget.
+  setDoc(LS_SNAPSHOTS, JSON.stringify(list.slice(0, MAX_SNAPSHOTS)));
 }
 
 /**
@@ -101,14 +112,22 @@ export function latestSnapshot(): Snapshot | null {
 export function restoreSnapshot(id: string): boolean {
   const snap = loadSnapshots().find((s) => s.id === id);
   if (!snap) return false;
-  // Clear current production keys, then write the snapshot's.
+  // Clear current production keys, then write the snapshot's — each through
+  // whichever store actually backs it.
   const toClear: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith("mf.") && !EXCLUDED.has(k)) toClear.push(k);
+    if (k && k.startsWith("mf.") && !EXCLUDED.has(k) && !DURABLE.has(k)) toClear.push(k);
   }
   toClear.forEach((k) => localStorage.removeItem(k));
-  for (const [k, v] of Object.entries(snap.data)) localStorage.setItem(k, v);
+  for (const k of DURABLE_KEYS) {
+    if (EXCLUDED.has(k)) continue;
+    if (!(k in snap.data)) deleteDoc(k);
+  }
+  for (const [k, v] of Object.entries(snap.data)) {
+    if (DURABLE.has(k)) setDoc(k, v);
+    else localStorage.setItem(k, v);
+  }
   return true;
 }
 
