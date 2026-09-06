@@ -248,10 +248,14 @@ export function AnimationLab() {
           )}
         </div>
 
-        {/* Generation panel + recent animations — full width, like every
-            other page, instead of the old fixed max-w-md column. */}
+        {/* Generation panel + recent animations. Widened again from max-w-2xl:
+            that still left roughly half the pane empty on anything wider than
+            a laptop screen — the exact "left-heavy layout, unused space"
+            problem this screen was flagged for. GenerationPanel's own fields
+            are full-width rows or 2-up grids, so more room just gives each
+            field more breathing room rather than distorting anything. */}
         <div className="flex min-h-0 flex-col overflow-y-auto p-6">
-          <div className="max-w-2xl">
+          <div className="max-w-4xl">
             <GenerationPanel
               key={`${characterId}:${environmentId}:${propId}:${motionKey}`}
               title="Generate motion test"
