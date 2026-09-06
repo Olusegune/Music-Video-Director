@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  ArrowRight,
   BookOpen,
   Clapperboard,
   Loader2,
@@ -43,6 +44,7 @@ export function MagicOutputScreen() {
   const openSong = useAppStore((state) => state.openSong);
   const openCast = useAppStore((state) => state.openCast);
   const openTimelineToRender = useAppStore((state) => state.openTimelineToRender);
+  const openDirectAtSection = useAppStore((state) => state.openDirectAtSection);
   const [regenerating, setRegenerating] = useState(false);
   const [changingStory, setChangingStory] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -70,7 +72,15 @@ export function MagicOutputScreen() {
     );
 
   const allShots = treatment.sections.flatMap((section) => section.shots);
-  const keyMoments = allShots.filter((shot) => shot.lyric || shot.idea).slice(0, 6);
+  // One card per scene, not "the first few shots that happened to have a
+  // lyric" — a filmstrip of arbitrary early shots doesn't read as an overview
+  // of the video at all, and gave no way to jump into a specific scene. Each
+  // card's hero frame is the first generated frame in that section, so a
+  // partly-rendered production shows real progress where it exists.
+  const sectionCards = treatment.sections.map((section) => ({
+    section,
+    hero: section.shots.find((sh) => sh.imageUrl) ?? section.shots[0],
+  }));
   const renderedShots = allShots.filter((shot) => shot.imageUrl || shot.videoUrl).length;
   const storyFeeling = findStoryFeeling(song.storyFeeling);
   const storyLabel = storyFeeling?.key !== "none" ? storyFeeling?.label : null;
@@ -111,7 +121,7 @@ export function MagicOutputScreen() {
       <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
         <RevealStage revealed title="Treatment premiere" className="border-warning/30 p-0">
           <div className="relative min-h-[360px] overflow-hidden rounded-xl bg-black">
-            <ShotBoard shot={keyMoments[0] ?? allShots[0]} hero />
+            <ShotBoard shot={sectionCards[0]?.hero ?? allShots[0]} hero />
             <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
               <div className="text-xs font-semibold uppercase tracking-[0.3em] text-warning">
@@ -125,10 +135,29 @@ export function MagicOutputScreen() {
           </div>
         </RevealStage>
 
-        <Filmstrip label="Storyboard filmstrip">
-          {keyMoments.map((shot) => (
-            <FilmstripItem key={shot.id} className="animate-[studio-enter_220ms_ease-out_both]">
-              <ShotBoard shot={shot} />
+        <Filmstrip label="Scenes">
+          {sectionCards.map(({ section, hero }) => (
+            <FilmstripItem
+              key={section.sectionId}
+              className="animate-[studio-enter_220ms_ease-out_both]"
+            >
+              <button
+                type="button"
+                onClick={() => openDirectAtSection(section.sectionId)}
+                className="group block w-full text-left"
+                title={`Open ${section.label} in Direct`}
+              >
+                <ShotBoard shot={hero} />
+                <div className="mt-1.5 flex items-center justify-between gap-2 px-0.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold">{section.label}</p>
+                    <p className="text-[11px] text-muted">
+                      {section.shots.length} {section.shots.length === 1 ? "shot" : "shots"}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                </div>
+              </button>
             </FilmstripItem>
           ))}
         </Filmstrip>

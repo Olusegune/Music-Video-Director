@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowLeft,
   Clapperboard,
   Wand2,
   RefreshCw,
@@ -106,6 +107,7 @@ export function MvDirector() {
   const openApiKeys = useAppStore((s) => s.openApiKeys);
   const openHelp = useAppStore((s) => s.openHelp);
   const openTemplates = useAppStore((s) => s.openTemplates);
+  const openMagicOutput = useAppStore((s) => s.openMagicOutput);
   const activeTemplateId = useAppStore((s) => s.activeTemplateId);
   const { isConfigured, isReady } = useProviderReadiness();
 
@@ -116,6 +118,18 @@ export function MvDirector() {
   );
 
   const [treatment, setTreatment] = useState<MvTreatment | null>(null);
+
+  // A one-shot deep link from the Story screen's "Open in Direct" — jumps
+  // straight to that section's first shot instead of the song's first shot.
+  // The lazy useState initializer runs synchronously on first render, before
+  // DirectConsole ever mounts, so there is no frame where it shows the wrong
+  // shot first and then jumps.
+  const consumePendingDirectSectionId = useAppStore((s) => s.consumePendingDirectSectionId);
+  const [pendingSectionId] = useState<string | null>(() => consumePendingDirectSectionId());
+  const initialShotId = useMemo(() => {
+    if (!treatment || !pendingSectionId) return undefined;
+    return treatment.sections.find((s) => s.sectionId === pendingSectionId)?.shots[0]?.id;
+  }, [treatment, pendingSectionId]);
 
   // Load the treatment for the active (song, template) — each template keeps its
   // own shot list + frames, so switching templates loads its own version.
@@ -731,6 +745,13 @@ export function MvDirector() {
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
+          <button
+            onClick={openMagicOutput}
+            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted transition-colors hover:bg-elevated hover:text-foreground"
+            title="Back to the scene overview"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Story
+          </button>
           <div className="grad-primary flex h-9 w-9 items-center justify-center rounded-lg">
             <Clapperboard className="h-4.5 w-4.5 text-white" />
           </div>
@@ -1217,6 +1238,7 @@ export function MvDirector() {
             continuityFor={continuityFor}
             bpm={song?.bpm ?? 0}
             startExpanded={viewMode === "expert"}
+            initialShotId={initialShotId}
           />
         ) : (
           <TreatmentView

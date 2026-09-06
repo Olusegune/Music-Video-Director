@@ -53,6 +53,7 @@ describe("navigation model", () => {
 
     expect(musicVideo?.subItems?.map((item) => item.view)).toEqual([
       "song",
+      "magicoutput",
       "mvdirector",
       "templates",
       "cast",

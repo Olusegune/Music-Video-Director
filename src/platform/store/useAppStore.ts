@@ -127,6 +127,8 @@ interface AppState {
    *  not "open Character Designer and go find them yourself." */
   openCharacterCard: (characterId: string) => void;
   consumePendingCharacterCardId: () => string | null;
+  openDirectAtSection: (sectionId: string) => void;
+  consumePendingDirectSectionId: () => string | null;
   openWorld: () => void;
   openProps: () => void;
   openScripts: () => void;
@@ -146,6 +148,9 @@ interface AppState {
   /** Set by openCharacterCard, cleared the moment Character Designer consumes it — a
    *  one-shot deep link, not durable navigation state, matching pendingProjectOpen. */
   pendingCharacterCardId: string | null;
+  /** Same one-shot shape, for the Story screen's "Open in Direct" link on a
+   *  scene card — jumps Direct straight to that section's first shot. */
+  pendingDirectSectionId: string | null;
   consumePendingProjectOpen: (moduleId: OpenableModuleId) => string | null;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   toggleInspector: () => void;
@@ -173,6 +178,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeProjectId: null,
   pendingProjectOpen: null,
   pendingCharacterCardId: null,
+  pendingDirectSectionId: null,
   activeSongId: initialSongId,
   activeTemplateId: templateForSong(initialSongId),
   workspaceMode: "storyboard",
@@ -304,6 +310,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   consumePendingCharacterCardId: () => {
     const id = get().pendingCharacterCardId;
     if (id) set({ pendingCharacterCardId: null });
+    return id;
+  },
+  openDirectAtSection: (sectionId) =>
+    set({ view: "mvdirector", pendingDirectSectionId: sectionId }),
+  consumePendingDirectSectionId: () => {
+    const id = get().pendingDirectSectionId;
+    if (id) set({ pendingDirectSectionId: null });
     return id;
   },
   openWorld: () => set({ view: "world" }),

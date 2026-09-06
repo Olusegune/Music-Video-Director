@@ -50,13 +50,14 @@ function makeTreatment(): MvTreatment {
   } as MvTreatment;
 }
 
-function setup() {
+function setup(initialShotId?: string) {
   const treatment = makeTreatment();
   const qc = new QueryClient();
   render(
     <QueryClientProvider client={qc}>
     <DirectConsole
       treatment={treatment}
+      initialShotId={initialShotId}
       onChange={vi.fn()}
       onGenerate={vi.fn()}
       onGenerateClip={vi.fn()}
@@ -80,6 +81,31 @@ function setup() {
   );
   return { treatment };
 }
+
+describe("DirectConsole deep link", () => {
+  // The Story screen's scene cards jump here via initialShotId, which used
+  // to not exist at all — the console always opened on the song's first shot
+  // regardless of which scene the user actually clicked.
+  it("opens on the deep-linked shot's section, not the song's first shot", () => {
+    setup("c1");
+    expect(screen.getByRole("button", { name: /Chorus 1/ })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    expect(screen.getByRole("button", { name: /Verse 1/ })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
+  });
+
+  it("falls back to the song's first shot with no deep link", () => {
+    setup();
+    expect(screen.getByRole("button", { name: /Verse 1/ })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+  });
+});
 
 describe("DirectConsole scene rail", () => {
   it("states each section's shot count in its header", () => {

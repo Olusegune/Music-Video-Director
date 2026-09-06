@@ -51,6 +51,7 @@ export function DirectConsole({
   continuityFor,
   bpm,
   startExpanded,
+  initialShotId,
 }: {
   treatment: MvTreatment;
   onChange: (t: MvTreatment) => void;
@@ -72,12 +73,15 @@ export function DirectConsole({
   continuityFor: (section: MvSectionPlan, shot: MvShot) => ContinuityInfo;
   bpm: number;
   startExpanded?: boolean;
+  /** A deep link (e.g. from the Story screen's "Open in Direct") lands here
+   *  instead of the first shot in the song. */
+  initialShotId?: string;
 }) {
   // Flat, ordered (section, shot) pairs — the console's unit of navigation.
   const flat = treatment.sections.flatMap((section) =>
     section.shots.map((shot) => ({ section, shot }))
   );
-  const [selectedId, setSelectedId] = useState<string>(flat[0]?.shot.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(initialShotId ?? flat[0]?.shot.id ?? "");
   // A section's thumbnail grid used to always render in full — nine sections
   // meant nine always-expanded grids, the full shot count on screen at once
   // regardless of where you actually were in the song. Only explicit user

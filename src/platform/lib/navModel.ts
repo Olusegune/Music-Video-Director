@@ -81,6 +81,7 @@ export interface NavSectionModel {
 const STUDIO_SUB_ITEMS: Partial<Record<ConcreteModuleId, NavItemModel[]>> = {
   musicvideo: [
     { id: "song", label: "Song Studio", view: "song", icon: "music" },
+    { id: "story", label: "Story", view: "magicoutput", icon: "book" },
     { id: "direct", label: "Direct", view: "mvdirector", icon: "video" },
     { id: "templates", label: "Templates", view: "templates", icon: "templates" },
     { id: "cast", label: "Cast", view: "cast", icon: "users" },

@@ -267,9 +267,15 @@ export function Sidebar() {
   );
 }
 
-function useNavigateToView(): (view: View) => void {
+/** Exported for tests: this dispatch table has silently dropped a view before
+ *  (magicoutput/"Story" was clickable, highlighted on hover, and did nothing —
+ *  a NAV_MODEL entry with no matching table row) and nothing caught it, since
+ *  every view-reachability test exercised NAV_MODEL or the store in isolation,
+ *  never this table. */
+export function useNavigateToView(): (view: View) => void {
   const openSong = useAppStore((s) => s.openSong);
   const openMvDirector = useAppStore((s) => s.openMvDirector);
+  const openMagicOutput = useAppStore((s) => s.openMagicOutput);
   const openCast = useAppStore((s) => s.openCast);
   const openChoreography = useAppStore((s) => s.openChoreography);
   const openTimeline = useAppStore((s) => s.openTimeline);
@@ -296,6 +302,7 @@ function useNavigateToView(): (view: View) => void {
     const actions: Partial<Record<View, () => void>> = {
       song: openSong,
       mvdirector: openMvDirector,
+      magicoutput: openMagicOutput,
       cast: openCast,
       choreography: openChoreography,
       timeline: openTimeline,
