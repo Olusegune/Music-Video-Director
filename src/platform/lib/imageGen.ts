@@ -250,7 +250,17 @@ export function findSize(id: string): SizePreset {
   return SIZE_PRESETS.find((s) => s.id === id) ?? SIZE_PRESETS[1];
 }
 
-const clampDim = (n: number) => Math.max(256, Math.min(2048, Math.round(n)));
+// Image models work in latent space and want both dimensions on a multiple of
+// 8 — many pipelines want 16, and several APIs reject anything else outright
+// rather than rounding for you. Plain rounding produced 819x1024 for 4:5,
+// 1024x439 for 21:9 and 1024x428 for 2.39:1: five of the nine offered ratios
+// came out misaligned, which is why generated frames did not match the aspect
+// that was asked for.
+const DIM_STEP = 16;
+const clampDim = (n: number) => {
+  const stepped = Math.round(n / DIM_STEP) * DIM_STEP;
+  return Math.max(256, Math.min(2048, stepped));
+};
 
 /** Resolve the final pixel dimensions from aspect + size preset (+ custom). */
 export function resolveSize(

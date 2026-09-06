@@ -83,7 +83,13 @@ function briefForSection(song: SongMap | null, sectionId: string) {
 }
 
 /** Image models that have a direct API (exclude manual/copy-prompt ones). */
-const MV_ASPECTS = ["16:9", "9:16", "2.39:1", "4:5", "1:1"];
+// One source of truth with the rest of the app. This list used to be its own
+// thing: it offered 2.39:1, which no provider accepts as an aspect and which
+// resolved to a misaligned 1024x428, and it left out 21:9 entirely — so the
+// cinematic-scope option people actually wanted was missing and the one on
+// offer did not work. Ordered widest-first because a music video is usually
+// framed landscape.
+export const MV_ASPECTS = ["16:9", "21:9", "9:16", "4:5", "3:4", "1:1"] as const;
 /** Quality presets (long-edge) the user picks per render. */
 const SIZE_OPTS = SIZE_PRESETS.filter((s) => s.long);
 const SIZE_LABEL: Record<string, string> = {
