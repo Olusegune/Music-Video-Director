@@ -2,13 +2,27 @@
 
 Director Studio is a local-first creative production suite for Windows. It brings five specialist studios into one cohesive desktop app:
 
-- Music Video Director — song-aware treatments, cast, choreography, timeline, and export.
+- Music Video Director — song-aware treatments, lyric transcription, director styles, cast, choreography, timeline, and export.
 - Motion Studio — explainers, commercials, product reveals, UI animation, and motion templates.
 - Glam Studio — luxury campaign planning, product hero generation, format packs, and export.
 - Web Studio — responsive site planning, page compilation, SEO, and export.
 - Campaign Studio — launch strategy, channel planning, production handoffs, calendars, and campaign packages.
 
 Shared libraries — Character Bible, World Bible, Props & Vehicles, Asset Library, Brand Kits, and Script Studio — keep production DNA reusable across the whole Director Studio ecosystem.
+
+## Music Video Director
+
+Shipped as its own edition (`npm run tauri:build:mv`) as well as inside the suite.
+
+- **Song Brain** — imports a track and detects tempo, beat grid, energy and sections locally, with no API key.
+- **Lyrics** — type them, fold in a script or lyric sheet, or transcribe them from the audio a section at a time. Transcription is a draft to correct: sung words are much harder to make out than speech, and it never replaces written lyrics without asking.
+- **Director styles** — 21 filmmakers as an optional layer over the Style template, feeding shot ideas, camera, lighting and cutting pace into every prompt. The craft is sent to the models; the director's name never is.
+- **Cast and Character DNA** — lock a performer's likeness so the same face carries across shots. A character with no appearance fields cannot do this, and the cast card says so.
+- **Choreography** — moves and formations built from the lyrics and section energy, injected into the prompts rather than described in the UI alone.
+- **Direct** — a beat-synced treatment and shot list, with a health strip that names anything blocking a render before you spend on one.
+- **Timeline and render** — frames, clips and the song mixed to MP4 through FFmpeg.
+
+Known limitation: lip-sync is not frame-accurate. Clips carry plausible mouth motion, not audio-locked sync.
 
 ## Stack
 

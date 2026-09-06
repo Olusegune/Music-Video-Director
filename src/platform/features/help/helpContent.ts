@@ -23,6 +23,7 @@ export interface HelpArticle {
 
 const updatedAt = "2026-07-08";
 const performanceGuideUpdatedAt = "2026-09-05";
+const sept6 = "2026-09-06";
 
 export const HELP_ARTICLES: HelpArticle[] = [
   {
@@ -112,7 +113,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         steps: [
           "Inside Music Video Director, open Song Studio and import a track.",
-          "Add lyrics or a script, confirm sections, and choose performers.",
+          "Add the words: type them, press “Transcribe lyrics” to write them from the audio, or press “Use a script” to fold a script or lyric sheet into the sections.",
+          "Confirm the sections and choose a performer for each one.",
           "In Cast, link each performer's Character DNA to a character with a generated portrait or Turnaround Sheet — this is what keeps them looking like the same person in every shot.",
           "Open Direct to create the treatment and shot plan.",
           "Refine Cast and Choreography, then finish in Timeline and Export.",
@@ -120,6 +122,97 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
       {
         tip: "If a render comes back as landscapes with nobody performing, see “Getting real performances, not just b-roll” below — it's almost always one specific, fixable thing.",
+      },
+    ],
+  },
+  {
+    id: "mv-lyrics",
+    title: "Getting the words into the song",
+    section: "Music Video Director",
+    relatedViews: ["song"],
+    updatedAt: sept6,
+    keywords: "lyrics transcribe transcription script lyric sheet words sections audio",
+    action: { label: "Open Song Studio", view: "song" },
+    blocks: [
+      {
+        body: "Lyrics are not decoration — the Director builds each shot around the line being sung at that moment, so the words are what turn a section into specific images. There are three ways to get them in.",
+      },
+      {
+        heading: "Transcribe them from the audio",
+        body: "“Transcribe lyrics” listens to each section on its own and writes what it hears into that section's box. Because sections already carry exact start and end times, the words land in the right place without you aligning anything.",
+        steps: [
+          "Open Song Studio and select the track.",
+          "Press “Transcribe lyrics” in the Song structure header to do the whole song, or “Transcribe” beside a single section's lyric box to do just that one.",
+          "Read the result through and correct it — see the warning below.",
+        ],
+        tip: "Sung words are much harder to make out than speech: instrumentation, held notes, doubled takes and heavy processing all cost accuracy. Treat what comes back as a first pass that saves typing, not as a transcript. It will never replace lyrics you wrote without asking first.",
+      },
+      {
+        heading: "Fold in a script or lyric sheet",
+        body: "“Use a script” takes a script or lyric sheet you already have and matches its [Verse] / [Chorus] blocks to the song's detected sections, so its words, action and movement cues become each section's brief. It shows you the mapping before applying it and says what it could not place.",
+      },
+      {
+        heading: "Type them",
+        body: "Select a section and write into its Lyrics box, one line per row. Nothing is lost either way — transcription and scripts both write into the same field you would type into.",
+      },
+      {
+        heading: "If you change the words afterwards",
+        body: "Re-direct the song. The shot list is built from the words as they were when you directed, so edits made after that do not reach the prompts until it is rebuilt. Direct says so plainly when its shot list no longer matches the song.",
+      },
+    ],
+  },
+  {
+    id: "mv-director-styles",
+    title: "Directing in the style of a filmmaker",
+    section: "Music Video Director",
+    relatedViews: ["song", "mvdirector", "templates"],
+    updatedAt: sept6,
+    keywords: "director style inspiration michel gondry hype williams fincher glazer look reference filmmaker",
+    action: { label: "Open Direct", view: "mvdirector" },
+    blocks: [
+      {
+        body: "A director style is an optional layer of craft over your chosen Style template. The template answers what kind of video this is — Afrobeats, Performance, Dance. A director style answers whose craft it is shot with. The two combine: Afrobeats shot with the gloss and fisheye of a Hype Williams video is a real brief, and both parts survive.",
+      },
+      {
+        heading: "What it actually changes",
+        body: "The style feeds shot ideas, camera moves, lighting and cutting pace into the Director, and a sentence of craft direction into every image and clip prompt. Choosing one visibly changes the treatment: the same chorus can come back as a saturated wide-angle hero shot or as a cold, static, alienated frame.",
+      },
+      {
+        heading: "Skipping it is a real option",
+        body: "Leave it unset and nothing is added — the prompts read exactly as they did before the feature existed. It is an accelerant for people who know the look they want, not a step to get past.",
+      },
+      {
+        heading: "Why the prompts never name the director",
+        body: "The name is an inspiration credit in this app, where you chose it. It is deliberately not sent to the image models. Naming a living person tends not to work — several providers filter artist names, and the rest largely ignore them — while the craft behind the name is something a model can act on: fisheye distortion, saturated colour fields, sculptural light, long held takes. It also matters that a generated frame should not imply a real director made or endorsed it. Styles are not ownable; a person's identity is a different thing.",
+      },
+    ],
+  },
+  {
+    id: "mv-keeping-in-step",
+    title: "When the app says something no longer matches",
+    section: "Music Video Director",
+    relatedViews: ["song", "mvdirector", "choreography"],
+    updatedAt: sept6,
+    keywords: "stale shot list re-direct re-choreograph sections changed health warnings banner",
+    action: { label: "Open Direct", view: "mvdirector" },
+    blocks: [
+      {
+        body: "A production is a chain: sections come from the audio, the shot list is built from the sections, and the choreography is planned against both. Change something early and the things built on top of it are describing a song that has moved.",
+      },
+      {
+        heading: "What you will see",
+        steps: [
+          "Direct shows a health strip listing what needs attention, worst first. Anything blocking opens it; you can fold it back to its headline once you have read it, but it will not disappear while the problem is real.",
+          "“This shot list no longer matches the song” means the sections changed after it was built. Re-direct rebuilds it. It names how many generated frames or clips that will discard, so you can decide.",
+          "Choreography shows its own banner when a routine was planned against older sections, with one button to re-plan it.",
+        ],
+      },
+      {
+        heading: "Why it warns instead of fixing it for you",
+        body: "Rebuilding a shot list discards frames and clips you may have paid for. Re-planning choreography discards hand edits. Where nothing is at stake the app just does it — choreography re-plans itself on the automated path. Where something is, it tells you and waits.",
+      },
+      {
+        tip: "If a check reads oddly — for instance claiming no chorus was detected on a song that plainly has three — look first at whether the shot list is stale. Everything measured against an old plan describes the old plan.",
       },
     ],
   },
@@ -140,7 +233,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
         heading: "1. No Chorus was detected",
         body: "Only Chorus/Drop sections (and loud Instrumentals) are directed as performance shots — Intro and Outro are meant to be pure b-roll, the way most real music videos open and close. If a song comes back with only Intro/Verse/Outro and no Chorus, the detector had nothing to work with — it partly relies on lyrics to find the repeated phrase that marks a chorus.",
         steps: [
-          "In Song Studio, paste the song's lyrics if you haven't — even a rough transcript helps.",
+          "In Song Studio, press “Re-detect sections” — detection has improved, and a track imported earlier may split into real choruses now.",
+          "If a section still has no words, use “Transcribe lyrics” to write them from the audio. Chorus detection partly relies on lyrics to find the repeated phrase that marks a chorus, so filling them in often changes the result.",
           "If a song still won't split into a real Chorus, select the section in the song structure list and use the manual split control to mark the loudest, most repeated stretch as Chorus yourself.",
           "Direct (or re-direct) the treatment — Direct shows a red banner naming exactly this problem whenever a treatment has zero performance shots, so you don't find out after rendering.",
         ],

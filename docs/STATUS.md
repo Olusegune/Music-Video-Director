@@ -3,7 +3,29 @@
 > Living document: what shipped, known issues, next steps. Update at every
 > phase boundary so any agent/session can resume cold.
 
-Last updated: 2026-07-11
+Last updated: 2026-09-06
+
+- **Music Video Director — lyrics, director styles, and a staleness sweep (2026-09-06)**: six features plus the bugs found while shipping them.
+
+  **New**
+  - **Lyric transcription.** `transcribe_song_section` (Rust) slices one section with the FFmpeg slicer built for lip-sync and sends it to Gemini. Per section, not per track: sections already carry exact times, so the text belongs to the right one by construction and a bad section re-runs alone. `SectionEditor` has a per-section button; `SongView` has "Transcribe lyrics" for the whole song, offering "fill the empty ones" and "replace all" separately. Never overwrites written lyrics without asking. An empty result means "nothing intelligible here" — a real answer for an intro, not a failure.
+  - **Director styles** (`directorStyles.ts`). 21 filmmakers as an orthogonal layer over `MvTemplate`, the same relationship `videoTypes.ts` already has. Feeds shot ideas, camera, lighting, cut bias and a craft sentence into every prompt. **The director's name is never sent to a model** — providers filter or ignore artist names, and a generated frame should not imply a real person endorsed it. A test asserts no surname appears in model-facing text.
+  - **Script alignment** (`scriptAlign.ts`). Folds a script or lyric sheet into detected sections by `SectionKind` sequence, then reading order, and reports what it could not place.
+  - **Production health strip** (`ProductionHealth.tsx`). Replaced four equal-weight banners with one severity-ranked strip. Blocking issues open it; the user can fold it back to its headline but cannot dismiss it while the problem is true.
+  - **MV icon set** (`scripts/make-mv-icons.py`, `src-tauri/icons-mv/`). The MV build had no `bundle` section and inherited the suite's "DIRECTOR STUDIO" icons. Regenerates the app's own sidebar mark plus NSIS/WiX installer artwork.
+
+  **Bugs found and fixed**
+  - **Crash recovery did nothing.** The SQLite migration moved songs/treatments/choreo/cast into the database; `snapshots.ts` kept reading and writing localStorage. "Restore snapshot" cleared keys nothing reads and restored nothing the app loads. Snapshots are now a durable key — which also moved 9 MB of full-state copies out of a 9.8 MB localStorage budget.
+  - **Timed lyrics drifted from section text.** `directSong` reads `song.lyrics`, not `section.lyricsText`. `patchSection` rebuilt it; `setSections` — used by bulk transcription, split and delete — did not. Nine transcribed sections reached no prompt. Both now go through `songWithSections`.
+  - **Diagnosis computed from a stale plan.** The health strip reported "No Chorus was detected" for a song with three, because it measured a treatment that predated the sections. A stale shot list now leads and the derived checks stand down.
+  - **Spend double-counted.** `estimateCost` already multiplies by `units` and returns the total under the name `perUnit`; `trackUsage` multiplied again, billing 87 seconds of audio as 87 x 87 x rate.
+  - **Storage banner told users to delete work.** It named productions as the cause when the space was snapshots, and productions no longer live there at all.
+  - **Dead control.** The health strip's chevron toggled state that `expanded` ignored whenever anything was blocking.
+
+  **Open**
+  - **Frame-accurate lip-sync is still unsolved.** Veo produces plausible mouth motion, not audio-locked sync. This is the central missing capability for the edition.
+  - **Staleness is hand-rolled per artifact.** Sections, treatments, choreography, timed lyrics and the diagnosis each grew their own check, and each was silently wrong at least once. A single staleness model is the obvious next architectural step.
+  - **Likeness depends on data most users will not enter.** Cast cards now say whether a character has appearance fields, but a character with none cannot hold a face across shots.
 
 - **Phase 5 — Evenness Sweep, closing the platform program (2026-07-11)**: the last phase of `docs/PLATFORM-CONSISTENCY-AUDIT-2026-07.md` is complete. (1) Motion Studio's "Export placeholder" is now a real production-script export (Markdown shot list + project JSON, zipped) that registers a deliverable — the last gap-matrix cell that was still faking its export. (2) `ProjectHome` (hero Magic Flow CTA + Resume + Recent grid) is live in Glam, Web, and Campaign, reachable via a new `onHome` action in `ModuleHeader`; this also fixed a real bug where `active = projects.find(...) ?? projects[0] ?? null` made "no active project" unreachable once any project existed, permanently pinning returning users into a workbench. Motion (already auto-resumes) and Music Video (Song Studio is a deliberately different entry point) were left alone. (3) A GenerateBar audit across every module found one real violation — the legacy Project workspace's "Generate Pack" button was silently disabled with no visible reason, and Export Center's empty state was a dead end with no pointer to the action; both fixed. (4) Terminology pass: fixed "Magic Mode" → "Magic Flow" in the five remaining user-facing strings (MagicFlowButton labels, Help Center article/tip/body) that had drifted from the naming decision in `docs/GUIDED-FLOW-AND-SPLASH-ADDENDUM.md`; fixed a deliverable/asset label mismatch in Campaign's launch-kit summary. See the Terminology Glossary and the closed-out gap matrix below.
 
