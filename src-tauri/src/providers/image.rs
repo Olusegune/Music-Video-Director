@@ -18,16 +18,25 @@ const OPENAI_IMAGE_MODEL: &str = "gpt-image-1";
 const STABILITY_ENGINE: &str = "stable-diffusion-xl-1024-v1-0";
 
 /// Map a requested w/h to the nearest Imagen/Gemini aspect-ratio token.
+///
+/// The table is the set the image models actually accept. It used to hold only
+/// five entries, so 21:9 and 4:5 both collapsed to their nearest neighbour and
+/// a request for cinematic scope came back as plain widescreen.
 fn imagen_aspect(width: u32, height: u32) -> &'static str {
     if width == 0 || height == 0 {
         return "1:1";
     }
     let r = width as f32 / height as f32;
     let table = [
+        (21.0 / 9.0, "21:9"),
         (16.0 / 9.0, "16:9"),
+        (3.0 / 2.0, "3:2"),
         (4.0 / 3.0, "4:3"),
+        (5.0 / 4.0, "5:4"),
         (1.0, "1:1"),
+        (4.0 / 5.0, "4:5"),
         (3.0 / 4.0, "3:4"),
+        (2.0 / 3.0, "2:3"),
         (9.0 / 16.0, "9:16"),
     ];
     table
@@ -313,15 +322,22 @@ impl GoogleImagenProvider {
             .iter()
             .map(|b| json!({ "inline_data": { "mime_type": "image/png", "data": B64.encode(b) } }))
             .collect();
-        parts.push(json!({
-            "text": format!("{prompt} Aspect ratio {}.", imagen_aspect(width, height))
-        }));
+        parts.push(json!({ "text": prompt }));
 
+        // Aspect has to go in imageConfig. Appending "Aspect ratio 16:9." to the
+        // prompt text — which is all this used to do — is not something the
+        // model acts on: every frame came back 1024x1024 whatever was asked
+        // for, which is why rendered videos were pillarboxed inside their own
+        // 16:9 output.
+        let aspect = imagen_aspect(width, height);
         let resp = reqwest::Client::new()
             .post(&url)
             .json(&json!({
                 "contents": [{ "parts": parts }],
-                "generationConfig": { "responseModalities": ["TEXT", "IMAGE"] }
+                "generationConfig": {
+                    "responseModalities": ["TEXT", "IMAGE"],
+                    "imageConfig": { "aspectRatio": aspect }
+                }
             }))
             .send()
             .await
@@ -645,5 +661,35 @@ impl ImageProvider for GrokImageProvider {
             .bytes()
             .await?;
         Ok(bytes.to_vec())
+    }
+}
+
+#[cfg(test)]
+mod aspect_tests {
+    use super::imagen_aspect;
+
+    // A request for 21:9 used to land on 16:9 because the table only held five
+    // entries, so cinematic scope silently became plain widescreen.
+    #[test]
+    fn maps_each_offered_ratio_to_itself() {
+        for (w, h, want) in [
+            (1024u32, 432u32, "21:9"),
+            (1024, 576, "16:9"),
+            (1024, 688, "3:2"),
+            (1024, 768, "4:3"),
+            (1024, 1024, "1:1"),
+            (816, 1024, "4:5"),
+            (768, 1024, "3:4"),
+            (688, 1024, "2:3"),
+            (576, 1024, "9:16"),
+        ] {
+            assert_eq!(imagen_aspect(w, h), want, "{w}x{h}");
+        }
+    }
+
+    #[test]
+    fn falls_back_rather_than_dividing_by_zero() {
+        assert_eq!(imagen_aspect(0, 0), "1:1");
+        assert_eq!(imagen_aspect(1024, 0), "1:1");
     }
 }
