@@ -111,6 +111,8 @@ export interface SongMap {
   /** Optional director style the production is inspired by, per-song. Absent
    *  means the user skipped it, which must stay a genuine no-op. */
   directorStyleId?: string;
+  /** Title of the script folded into this song, when one was applied. */
+  scriptTitle?: string;
   /** Magic Mode's Story Mode — the chosen story feeling, per-song. */
   storyFeeling?: string;
   /** User-written custom story idea (only meaningful when storyFeeling === "custom"). */

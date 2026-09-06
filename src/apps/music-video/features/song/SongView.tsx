@@ -49,6 +49,7 @@ import { useAudioPlayer } from "@/apps/music-video/lib/audioPlayer";
 import { VoiceLab } from "./VoiceLab";
 import { SectionRow, SectionEditor } from "./SectionEditor";
 import { SongMapCanvas } from "./SongMapCanvas";
+import { ScriptAlignPanel } from "./ScriptAlignPanel";
 import { cn } from "@/platform/lib/utils";
 
 /** Build timed lyric lines from each section's lyricsText (spread across its span). */
@@ -122,6 +123,8 @@ export function SongView({
   const togglePlay = () => player.toggle();
 
   const setSections = (sections: SongSection[]) => onChange({ ...song, sections });
+
+  const [scriptOpen, setScriptOpen] = useState(false);
 
   // Manual override for auto-detection: split one section into two at a
   // chosen moment — e.g. "the chorus actually starts here", which the
@@ -447,6 +450,14 @@ export function SongView({
                   <Radio className={cn("h-3.5 w-3.5", redetecting && "animate-pulse")} />
                   {redetecting ? "Re-detecting…" : "Re-detect sections"}
                 </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setScriptOpen((v) => !v)}
+                  title="Fold a script or lyric sheet into these sections"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Use a script
+                </Button>
                 <Button variant="secondary" size="sm" onClick={autoDetectPerformers}>
                   <Mic2 className="h-3.5 w-3.5" /> Auto-detect performers
                 </Button>
@@ -467,6 +478,18 @@ export function SongView({
               )}
               {redetectError && <span className="ml-1 text-danger">{redetectError}</span>}
             </CardDescription>
+            {scriptOpen && (
+              <div className="mt-3">
+                <ScriptAlignPanel
+                  song={song}
+                  onApply={(next) => {
+                    onChange(next);
+                    setScriptOpen(false);
+                  }}
+                  onCancel={() => setScriptOpen(false)}
+                />
+              </div>
+            )}
             {confirmRedetect && (
               <div className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
                 <p className="text-sm font-medium">
