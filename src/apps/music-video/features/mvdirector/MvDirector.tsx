@@ -15,6 +15,7 @@ import {
   HelpCircle,
   SlidersHorizontal,
 } from "lucide-react";
+import { ProductionHealth } from "@/apps/music-video/features/mvdirector/ProductionHealth";
 import {
   directSong,
   getTreatment,
@@ -1043,69 +1044,70 @@ export function MvDirector() {
         </div>
       )}
 
-      {/* A treatment planned against an older section list still renders a
-          full shot list, so nothing looks wrong — but every per-section brief
-          has stopped reaching the prompts. Reported rather than auto-fixed:
-          re-directing discards generated frames and clips that cost money. */}
-      {treatment && song && isTreatmentStale(treatment, song) && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
-          <span>
-            This shot list was directed before the song&rsquo;s sections changed, so per-section
-            lyrics, performers, and notes are no longer reaching it.
-            {generatedShotCount(treatment) > 0
-              ? ` Re-directing will rebuild the shot list and discard ${generatedShotCount(treatment)} generated frame${
-                  generatedShotCount(treatment) === 1 ? "" : "s"
-                } and clip${generatedShotCount(treatment) === 1 ? "" : "s"}.`
-              : " Re-direct to rebuild it."}
-          </span>
-        </div>
-      )}
-
-      {hasNoPerformanceShots && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-danger/30 bg-danger/10 px-6 py-2 text-xs text-danger">
-          <span>
-            No Chorus was detected in this song, so none of the {treatment?.sections.flatMap((s) => s.shots).length ?? 0} shots
-            are directed as a performance — this will render as b-roll only,
-            with nobody singing, dancing, or on camera anywhere in the video.
-            In Song Studio, try &ldquo;Re-detect sections&rdquo; first — it re-reads the
-            audio with the current detector. Failing that, paste the lyrics or
-            retag a section as Chorus by hand, then re-direct.
-          </span>
-          <button
-            onClick={openSong}
-            className="ml-auto font-semibold underline hover:no-underline"
-          >
-            Open Song Studio
-          </button>
-        </div>
-      )}
-
-      {treatment && sectionsNeedingPerformer > 0 && (
-        <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
-          <span>
-            {sectionsNeedingPerformer} section{sectionsNeedingPerformer === 1 ? "" : "s"} of this
-            song {sectionsNeedingPerformer === 1 ? "has" : "have"} no performer assigned — those
-            shots will render with nobody on camera. Assign a performer for each section in Song
-            Studio.
-          </span>
-        </div>
-      )}
-
-      {treatment && performanceShotsMissingClip > 0 && (
-        <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-warning">
-          <span>
-            {performanceShotsMissingClip} performance shot
-            {performanceShotsMissingClip === 1 ? "" : "s"} still {performanceShotsMissingClip === 1 ? "has" : "have"} only a still frame, not a moving clip — the final render will show a static image for {performanceShotsMissingClip === 1 ? "it" : "them"} instead of a performance.
-          </span>
-          <button
-            onClick={() => generateAllClips()}
-            disabled={clipBatch !== null || batch !== null || !videoReady}
-            className="ml-auto font-semibold underline hover:no-underline disabled:no-underline disabled:opacity-50"
-          >
-            Generate all clips
-          </button>
-        </div>
-      )}
+      {/* One health strip instead of four stacked banners — see
+          ProductionHealth for why. */}
+      <ProductionHealth
+        issues={[
+          ...(hasNoPerformanceShots
+            ? [
+                {
+                  id: "no-performance",
+                  level: "blocking" as const,
+                  summary: "Nobody is on camera anywhere in this video.",
+                  detail: `No Chorus was detected, so none of the ${
+                    treatment?.sections.flatMap((s) => s.shots).length ?? 0
+                  } shots are directed as a performance — it will render as b-roll only. In Song Studio, try "Re-detect sections" first; failing that, retag a section as Chorus by hand, then re-direct.`,
+                  action: { label: "Open Song Studio", onClick: openSong },
+                },
+              ]
+            : []),
+          ...(treatment && song && isTreatmentStale(treatment, song)
+            ? [
+                {
+                  id: "stale-treatment",
+                  level: "warning" as const,
+                  summary: "This shot list predates the song's current sections.",
+                  detail:
+                    generatedShotCount(treatment) > 0
+                      ? `Per-section lyrics, performers and notes are no longer reaching it. Re-directing rebuilds the list and discards ${generatedShotCount(
+                          treatment
+                        )} generated frame/clip${generatedShotCount(treatment) === 1 ? "" : "s"}.`
+                      : "Per-section lyrics, performers and notes are no longer reaching it. Re-direct to rebuild it.",
+                },
+              ]
+            : []),
+          ...(treatment && sectionsNeedingPerformer > 0
+            ? [
+                {
+                  id: "needs-performer",
+                  level: "warning" as const,
+                  summary: `${sectionsNeedingPerformer} section${
+                    sectionsNeedingPerformer === 1 ? "" : "s"
+                  } ${sectionsNeedingPerformer === 1 ? "has" : "have"} no performer.`,
+                  detail: "Those shots render with nobody on camera. Assign one in Song Studio.",
+                  action: { label: "Open Song Studio", onClick: openSong },
+                },
+              ]
+            : []),
+          ...(treatment && performanceShotsMissingClip > 0
+            ? [
+                {
+                  id: "missing-clips",
+                  level: "warning" as const,
+                  summary: `${performanceShotsMissingClip} performance shot${
+                    performanceShotsMissingClip === 1 ? "" : "s"
+                  } still ${performanceShotsMissingClip === 1 ? "has" : "have"} only a still frame.`,
+                  detail:
+                    "The final render will hold a static image there instead of a performance.",
+                  action: {
+                    label: "Generate all clips",
+                    onClick: () => generateAllClips(),
+                  },
+                },
+              ]
+            : []),
+        ]}
+      />
 
       {genError && (
         <div className="border-b border-danger/30 bg-danger/10 px-6 py-2 text-xs text-danger">
