@@ -3,7 +3,10 @@ import { AlertTriangle, Archive } from "lucide-react";
 import {
   storageBytesUsed,
   isStorageUnderPressure,
+  largestStorageEntries,
+  describeStorageKey,
   STORAGE_SOFT_LIMIT_BYTES,
+  type StorageEntry,
 } from "@/platform/lib/storage";
 import { reclaimableBytes, reclaimMigratedCopies } from "@/platform/lib/durableStore";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -16,25 +19,31 @@ function mb(bytes: number): string {
  * Browser storage has a hard ceiling (~5–10MB per origin), and past it saves
  * simply fail. This warns while there's still room to act.
  *
- * It also has to be honest about *what* is full. Since productions moved to
- * SQLite, most of what fills localStorage is the copies migration left behind
- * on purpose. Telling the user to "delete a production to free space" in that
- * state is worse than unhelpful — it asks them to destroy real work to
- * reclaim space nothing needs. So reclaimable duplication is offered as a
- * one-click release, and deleting productions is only suggested when the
- * remaining pressure is genuinely theirs.
+ * It also has to be honest about *what* is full, because the old copy —
+ * "productions are saved in browser storage… delete a production to free
+ * space" — was often simply wrong. Since productions moved to SQLite, some of
+ * what remains is duplication migration left behind on purpose, and asking the
+ * user to destroy real work to reclaim that is worse than unhelpful.
+ *
+ * Measured on a real machine: 9.8 MB used, of which only 0.7 MB was migration
+ * residue. So neither explanation is safe to assume. Reclaimable duplication
+ * is offered as a one-click release when there is any, and otherwise the
+ * banner names the largest keys rather than guessing — a diagnosis instead of
+ * an alarm.
  */
 export function StoragePressureBanner() {
   const [used, setUsed] = useState(0);
   const [pressured, setPressured] = useState(false);
   const [reclaimable, setReclaimable] = useState(0);
   const [justReclaimed, setJustReclaimed] = useState(0);
+  const [biggest, setBiggest] = useState<StorageEntry[]>([]);
   const openProjects = useAppStore((s) => s.openProjects);
 
   const check = useCallback(() => {
     setUsed(storageBytesUsed());
     setPressured(isStorageUnderPressure());
     setReclaimable(reclaimableBytes());
+    setBiggest(largestStorageEntries(3));
   }, []);
 
   useEffect(() => {
@@ -88,8 +97,18 @@ export function StoragePressureBanner() {
             </>
           ) : (
             <>
-              Productions are saved in browser storage, which has a hard limit. Once it fills, new
-              saves will fail. Export or delete a production you&rsquo;ve finished to free space.
+              Once it fills, new saves will fail.
+              {biggest.length > 0 && (
+                <>
+                  {" "}
+                  Most of it is{" "}
+                  {biggest
+                    .map((e) => `${describeStorageKey(e.key)} (${mb(e.bytes)})`)
+                    .join(", ")}
+                  .
+                </>
+              )}{" "}
+              Export or delete a production you&rsquo;ve finished to free space.
             </>
           )}
         </p>

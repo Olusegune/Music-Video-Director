@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import {
   isQuotaError,
   safeSetItem,
   storageBytesUsed,
   isStorageUnderPressure,
+  largestStorageEntries,
+  describeStorageKey,
   STORAGE_SOFT_LIMIT_BYTES,
 } from "@/platform/lib/storage";
 
@@ -98,5 +100,37 @@ describe("storage pressure", () => {
     vi.spyOn(Storage.prototype, "getItem").mockReturnValue("x".repeat(over / 2));
     vi.spyOn(Storage.prototype, "length", "get").mockReturnValue(1);
     expect(isStorageUnderPressure()).toBe(true);
+  });
+});
+
+describe("storage breakdown", () => {
+  beforeEach(() => localStorage.clear());
+
+  // "Local storage is full — delete a production" is a dead end when the space
+  // isn't productions. On a real machine 9 of 9.8 MB was something else.
+  it("names the biggest entries, largest first", () => {
+    localStorage.setItem("mf.songs", "x".repeat(100));
+    localStorage.setItem("mf.snapshots", "x".repeat(1000));
+    localStorage.setItem("mf.cast", "x".repeat(10));
+
+    const top = largestStorageEntries(2);
+    expect(top.map((e) => e.key)).toEqual(["mf.snapshots", "mf.songs"]);
+    expect(top[0].bytes).toBeGreaterThan(top[1].bytes);
+  });
+
+  it("counts both key and value, in UTF-16 units", () => {
+    localStorage.setItem("ab", "cd");
+    expect(largestStorageEntries(1)[0].bytes).toBe((2 + 2) * 2);
+  });
+
+  it("returns nothing for empty storage", () => {
+    expect(largestStorageEntries()).toEqual([]);
+  });
+
+  it("gives storage keys names a person recognises", () => {
+    expect(describeStorageKey("mf.treatments")).toBe("Shot lists");
+    expect(describeStorageKey("mf.snapshots")).toBe("Session snapshots");
+    // Unknown keys still read better without the internal prefix.
+    expect(describeStorageKey("mf.somethingNew")).toBe("somethingNew");
   });
 });

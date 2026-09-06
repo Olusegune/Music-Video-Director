@@ -76,6 +76,53 @@ export function safeSetItem(key: string, value: string): boolean {
 
 /** Rough bytes currently held in localStorage for this origin. Cheap enough
  *  to call on a settings/dashboard render, not in a hot loop. */
+export interface StorageEntry {
+  key: string;
+  bytes: number;
+}
+
+/**
+ * The biggest things in local storage, largest first.
+ *
+ * "Local storage is full — export or delete a production" is a dead end when
+ * the space isn't actually productions. On this machine 9 of 9.8 MB was
+ * something else entirely, and the banner had no way to say what. Naming the
+ * largest keys turns an alarm into a diagnosis the user can act on.
+ */
+export function largestStorageEntries(limit = 4): StorageEntry[] {
+  if (typeof localStorage === "undefined") return [];
+  const entries: StorageEntry[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      entries.push({
+        key,
+        bytes: (key.length + (localStorage.getItem(key)?.length ?? 0)) * 2,
+      });
+    }
+  } catch {
+    return entries.sort((a, b) => b.bytes - a.bytes).slice(0, limit);
+  }
+  return entries.sort((a, b) => b.bytes - a.bytes).slice(0, limit);
+}
+
+/** Turn a storage key into something a person recognises. */
+export function describeStorageKey(key: string): string {
+  const known: Record<string, string> = {
+    "mf.songs": "Songs",
+    "mf.treatments": "Shot lists",
+    "mf.choreo": "Choreography",
+    "mf.cast": "Cast",
+    "mf.snapshots": "Session snapshots",
+    "mf.scripts": "Scripts",
+    "mf.characters": "Characters",
+    "mf.assets": "Generated assets",
+    "mf.projects": "Projects",
+  };
+  return known[key] ?? key.replace(/^mf\./, "");
+}
+
 export function storageBytesUsed(): number {
   if (typeof localStorage === "undefined") return 0;
   let total = 0;
