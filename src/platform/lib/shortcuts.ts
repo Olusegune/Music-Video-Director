@@ -39,6 +39,9 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ["Ctrl", "3"], label: "Cast" },
       { keys: ["Ctrl", "4"], label: "Choreography" },
       { keys: ["Ctrl", "5"], label: "Timeline" },
+      { keys: ["Ctrl", "6"], label: "Story" },
+      { keys: ["Ctrl", "7"], label: "Templates" },
+      { keys: ["Ctrl", "8"], label: "Animation Lab" },
     ],
   },
 ];

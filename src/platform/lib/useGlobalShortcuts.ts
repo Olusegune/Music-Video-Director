@@ -65,7 +65,10 @@ export function useGlobalShortcuts(): void {
         }
       }
 
-      // Ctrl+1..5 — jump between the music-video stages.
+      // Ctrl+1..8 — jump between the music-video stages. 1-5 predate Story,
+      // Templates, and Animation Lab joining the sidebar; those three were
+      // appended at 6-8 rather than renumbering everything and breaking
+      // muscle memory for the original five.
       if (e.ctrlKey && !e.altKey && !e.metaKey) {
         const map: Record<string, () => void> = {
           "1": s.openSong,
@@ -73,6 +76,9 @@ export function useGlobalShortcuts(): void {
           "3": s.openCast,
           "4": s.openChoreography,
           "5": s.openTimeline,
+          "6": s.openMagicOutput,
+          "7": s.openTemplates,
+          "8": s.openAnimation,
         };
         const fn = map[e.key];
         if (fn) {

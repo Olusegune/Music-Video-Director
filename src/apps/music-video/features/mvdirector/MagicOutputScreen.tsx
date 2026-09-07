@@ -117,7 +117,8 @@ export function MagicOutputScreen() {
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="border-b border-border px-8 py-6 text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight">Your treatment is ready.</h1>
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Story</div>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Your treatment is ready.</h1>
         <p className="mt-2 text-sm text-muted">
           {allShots.length} shots directed across {treatment.sections.length} sections — render when
           you’re ready.

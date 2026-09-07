@@ -65,6 +65,17 @@ function renderWithClient() {
   );
 }
 
+describe("MagicOutputScreen", () => {
+  it("labels itself 'Story', matching the sidebar item that opens it", () => {
+    // The sidebar's nav item for this screen is "Story" (navModel.ts), but
+    // the screen itself only ever said "Your treatment is ready." — nothing
+    // on screen echoed the nav label, so there was no on-page confirmation
+    // you'd landed where the sidebar said you would.
+    renderWithClient();
+    expect(screen.getByText("Story")).toBeInTheDocument();
+  });
+});
+
 describe("MagicOutputScreen scene cards", () => {
   it("shows one card per section, not an arbitrary handful of shots", () => {
     renderWithClient();
