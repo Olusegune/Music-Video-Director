@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DirectorStylePicker } from "./DirectorStyleStep";
 import { DIRECTOR_STYLES } from "@/apps/music-video/lib/directorStyles";
@@ -46,5 +46,28 @@ describe("DirectorStylePicker", () => {
   it("shows no technique panel while no style is chosen", () => {
     render(<DirectorStylePicker value={null} onChange={vi.fn()} />);
     expect(screen.queryByText(/techniques woven into every shot/)).not.toBeInTheDocument();
+  });
+
+  // Every card used to render an arbitrary CSS gradient in the style's accent
+  // colors — decorative, not actual art. Real photos now ship at
+  // /director-style-art/<id>.jpg, tried before any gradient renders.
+  it("tries the real preset photo before falling back to a gradient", () => {
+    render(<DirectorStylePicker value={null} onChange={vi.fn()} />);
+    const card = screen.getByRole("button", { name: /Hype Williams/ });
+    const img = card.querySelector("img");
+    expect(img).toHaveAttribute("src", "/director-style-art/glossy-kinetic-hiphop.jpg");
+  });
+
+  it("falls back to the gradient only once every image extension 404s", () => {
+    render(<DirectorStylePicker value={null} onChange={vi.fn()} />);
+    const card = screen.getByRole("button", { name: /Hype Williams/ });
+    for (const ext of ["jpg", "png", "jpeg", "webp"]) {
+      const img = card.querySelector("img");
+      expect(img).toHaveAttribute("src", `/director-style-art/glossy-kinetic-hiphop.${ext}`);
+      fireEvent.error(img!);
+    }
+    expect(card.querySelector("img")).not.toBeInTheDocument();
+    const swatch = card.firstElementChild as HTMLElement;
+    expect(swatch.style.background).toMatch(/linear-gradient/);
   });
 });
