@@ -2,6 +2,13 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Mirrors vite.config.ts's define — this config doesn't inherit from it,
+  // so anything referencing __APP_VERSION__ (Settings' About card) threw
+  // "not defined" until now, just never caught because nothing had
+  // rendered that component in a test before.
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? "1.0.0"),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

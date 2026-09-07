@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Settings,
-  Film,
   Folder,
   Sparkles,
   Palette,
@@ -104,9 +103,11 @@ export function Sidebar() {
           className={cn("flex items-center gap-2 text-left", collapsed ? "" : "flex-1")}
           title={`${PRODUCT_NAME} — Dashboard`}
         >
-          <div className="grad-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-primary/30">
-            <Film className="h-4 w-4 text-white" />
-          </div>
+          <img
+            src="/app-icon.png"
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-lg shadow-sm shadow-primary/30"
+          />
           {!collapsed && (
             <div className="leading-tight">
               <div className="flex items-center gap-1.5">

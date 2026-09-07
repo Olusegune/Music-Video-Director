@@ -12,7 +12,6 @@ import {
   RotateCcw,
   Trash2,
   Info,
-  Film,
 } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import { getShowWelcome, setShowWelcome } from "@/platform/lib/settings";
@@ -327,8 +326,8 @@ function ProviderRow({
   );
 }
 
-/** About + version info, with an honest note on updates. */
-function AboutCard() {
+/** About + version info, with an honest note on updates. Exported for tests. */
+export function AboutCard() {
   return (
     <Card>
       <CardHeader>
@@ -339,9 +338,7 @@ function AboutCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-3">
-          <span className="grad-primary flex h-10 w-10 items-center justify-center rounded-xl">
-            <Film className="h-5 w-5 text-white" />
-          </span>
+          <img src="/app-icon.png" alt="" className="h-10 w-10 rounded-xl" />
           <div>
             <div className="text-sm font-semibold">Director Studio</div>
             <div className="text-xs text-muted">
