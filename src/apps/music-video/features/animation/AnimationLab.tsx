@@ -32,6 +32,26 @@ const VIDEO_GEN_MODELS: GenModel[] = VIDEO_MODELS.map((m) => ({
   keyIds: m.keyIds,
 }));
 
+/** The step-number + uppercase-label convention already used for Choreography's
+ *  "PERFORMERS" / "ENERGY MAP" sections — reused here rather than inventing a
+ *  new visual language. This screen's flow already runs top-to-bottom,
+ *  left-to-right in the right order (subject, then motion, then generate,
+ *  then the saved gallery); what it lacked was anything saying so — the
+ *  "where am I, what's next" the platform-wide UX pass asked every screen to
+ *  answer. Purely organizational: no control moved, nothing behaves
+ *  differently, generation is still the same GenerationPanel doing preview
+ *  and pick as one step (it isn't three separate ones to split apart). */
+function StepLabel({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold not-italic normal-case text-primary">
+        {n}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function IconSelect({
   value,
   onChange,
@@ -175,53 +195,58 @@ export function AnimationLab() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[24rem_1fr]">
         {/* Controls */}
-        <div className="flex flex-col gap-4 overflow-y-auto border-r border-border p-6">
-          <div className="flex flex-col gap-1.5">
-            <Label>Character</Label>
-            <IconSelect
-              value={characterId}
-              onChange={setCharacterId}
-              icon={<Users className="h-3.5 w-3.5" />}
-            >
-              <option value="">None</option>
-              {characters.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </IconSelect>
+        <div className="flex flex-col gap-5 overflow-y-auto border-r border-border p-6">
+          <div>
+            <StepLabel n={1}>Choose your subject</StepLabel>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Character</Label>
+                <IconSelect
+                  value={characterId}
+                  onChange={setCharacterId}
+                  icon={<Users className="h-3.5 w-3.5" />}
+                >
+                  <option value="">None</option>
+                  {characters.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </IconSelect>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>Environment</Label>
+                <IconSelect
+                  value={environmentId}
+                  onChange={setEnvironmentId}
+                  icon={<Globe className="h-3.5 w-3.5" />}
+                >
+                  <option value="">None</option>
+                  {environments.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </IconSelect>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>Prop / Vehicle</Label>
+                <IconSelect value={propId} onChange={setPropId} icon={<Package className="h-3.5 w-3.5" />}>
+                  <option value="">None</option>
+                  {props.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.category})
+                    </option>
+                  ))}
+                </IconSelect>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Environment</Label>
-            <IconSelect
-              value={environmentId}
-              onChange={setEnvironmentId}
-              icon={<Globe className="h-3.5 w-3.5" />}
-            >
-              <option value="">None</option>
-              {environments.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </IconSelect>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Prop / Vehicle</Label>
-            <IconSelect value={propId} onChange={setPropId} icon={<Package className="h-3.5 w-3.5" />}>
-              <option value="">None</option>
-              {props.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.category})
-                </option>
-              ))}
-            </IconSelect>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Motion test</Label>
+          <div className="border-t border-border pt-5">
+            <StepLabel n={2}>Pick a motion test</StepLabel>
             <div className="grid grid-cols-2 gap-2">
               {MOTION_TYPES.map((m) => (
                 <button
@@ -238,14 +263,14 @@ export function AnimationLab() {
                 </button>
               ))}
             </div>
-          </div>
 
-          {refs.length > 0 && (
-            <p className="rounded-md border border-border bg-elevated/40 px-3 py-2 text-[11px] text-muted">
-              {refs.length} reference {refs.length === 1 ? "frame" : "frames"} from your locked
-              assets will drive the clip — same look, in motion.
-            </p>
-          )}
+            {refs.length > 0 && (
+              <p className="mt-3 rounded-md border border-border bg-elevated/40 px-3 py-2 text-[11px] text-muted">
+                {refs.length} reference {refs.length === 1 ? "frame" : "frames"} from your locked
+                assets will drive the clip — same look, in motion.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Generation panel + recent animations. Widened again from max-w-2xl:
@@ -256,6 +281,7 @@ export function AnimationLab() {
             field more breathing room rather than distorting anything. */}
         <div className="flex min-h-0 flex-col overflow-y-auto p-6">
           <div className="max-w-4xl">
+            <StepLabel n={3}>Generate &amp; preview</StepLabel>
             <GenerationPanel
               key={`${characterId}:${environmentId}:${propId}:${motionKey}`}
               title="Generate motion test"
@@ -277,7 +303,7 @@ export function AnimationLab() {
           </div>
 
           <div className="mt-8">
-            <Label className="mb-2 block">Recent Animations</Label>
+            <StepLabel n={4}>Saved tests</StepLabel>
             {tests.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border py-12 text-center">
                 <Film className="mb-3 h-8 w-8 text-muted" />
