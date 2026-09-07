@@ -144,6 +144,33 @@ export function ModelRegistryView() {
 
   const activeDefault = loadRouterConfig();
 
+  // "Recommended" surfaces one model per workflow the user could act on right
+  // now — not an editorial quality ranking, which nothing in this registry's
+  // data actually supports (there is no speed/cost/quality field to rank by,
+  // and inventing one would be exactly the kind of unearned claim flagged
+  // elsewhere in this app already). The one thing that IS real: a model that
+  // is wired, has a key configured, and has passed a live connection test.
+  // That is worth putting first; everything else stays in the full catalog
+  // below, untouched.
+  const recommended = useMemo(() => {
+    const seen = new Set<Workflow>();
+    const picks: { workflow: Workflow; model: (typeof MODEL_REGISTRY)[number] }[] = [];
+    for (const m of MODEL_REGISTRY) {
+      if (kind !== "all" && m.kind !== kind) continue;
+      if (!m.available) continue;
+      if (!configuredProviders.has(m.providerKey as ProviderId)) continue;
+      if (getMeta(m.providerKey as ProviderId).lastStatus !== "connected") continue;
+      for (const w of m.workflows) {
+        if (seen.has(w)) continue;
+        seen.add(w);
+        picks.push({ workflow: w, model: m });
+      }
+    }
+    return picks.slice(0, 6);
+    // metaVersion changes after every Test Connection run — recompute then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, configuredProviders, metaVersion]);
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <header className="border-b border-border px-8 py-5">
@@ -236,6 +263,37 @@ export function ModelRegistryView() {
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-8">
+        <section data-testid="recommended-strip">
+          <div className="mb-2 flex items-center gap-1.5">
+            <Star className="h-3.5 w-3.5 text-primary" />
+            <h2 className="text-sm font-semibold">Recommended for your setup</h2>
+          </div>
+          {recommended.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recommended.map(({ workflow: w, model: m }) => (
+                <div
+                  key={`${w}:${m.id}`}
+                  className="flex items-center gap-2 rounded-[var(--radius-card)] border border-primary/30 bg-primary/5 px-3 py-2 text-xs"
+                >
+                  <div>
+                    <div className="font-medium">{m.family} {m.variant}</div>
+                    <div className="text-[10px] text-muted">{w.replace(/-/g, " ")}</div>
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => setAsDefault(m.providerKey, m.kind)}>
+                    Use
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted">
+              Configure a key and run "Test" on a provider below to see picks here — this only
+              ever shows a model that is wired, has a key set, and has actually passed a
+              connection test, not a guess.
+            </p>
+          )}
+        </section>
+
         {filtered.map((p) => (
           <section key={p.id}>
             <div className="mb-2 flex items-center gap-2">
