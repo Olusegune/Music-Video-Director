@@ -3,7 +3,8 @@
   "productName": "Wheelbarrow Music Video Director",
   "identifier": "ai.wheelbarrow.musicvideodirector",
   "build": {
-    "beforeBuildCommand": "npm run build:mv"
+    "beforeBuildCommand": "npm run build:mv",
+    "beforeBundleCommand": "node scripts/fix-windows-icon.mjs"
   },
   "app": {
     "windows": [

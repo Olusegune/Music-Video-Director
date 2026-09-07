@@ -27,3 +27,5 @@ dist-portable/
 # Release artifacts / installers
 *.exe
 *.msi
+# ...except vendored build tooling, not a release artifact.
+!tools/rcedit.exe
