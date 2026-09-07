@@ -4,7 +4,9 @@ import {
   BookMarked,
   BookOpen,
   Clapperboard,
+  LayoutGrid,
   Loader2,
+  Music,
   Palette,
   RefreshCw,
   SlidersHorizontal,
@@ -43,6 +45,7 @@ export function MagicOutputScreen() {
   const activeSongId = useAppStore((state) => state.activeSongId);
   const activeTemplateId = useAppStore((state) => state.activeTemplateId);
   const openMvDirector = useAppStore((state) => state.openMvDirector);
+  const openDashboard = useAppStore((state) => state.openDashboard);
   const openTemplates = useAppStore((state) => state.openTemplates);
   const openSong = useAppStore((state) => state.openSong);
   const openCast = useAppStore((state) => state.openCast);
@@ -66,14 +69,39 @@ export function MagicOutputScreen() {
   const cast = useMemo(() => loadCast(), [refreshTick]);
 
   if (!song)
-    return <Empty message="No production selected. Head back to the Dashboard to start one." />;
+    return (
+      <div className="flex h-full items-center justify-center p-10">
+        <div className="max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-elevated">
+            <LayoutGrid className="h-7 w-7 text-muted" />
+          </div>
+          <h2 className="text-base font-semibold">No production selected</h2>
+          <p className="mt-1 text-sm text-muted">
+            Head back to the Dashboard to start one, or pick a project from your library.
+          </p>
+          <Button className="mt-4" onClick={openDashboard}>
+            <LayoutGrid className="h-4 w-4" />
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   if (!treatment)
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
-        <p className="text-sm text-muted">
-          No plan yet for “{song.name}” — direct it first from Song Studio.
-        </p>
-        <Button onClick={openSong}>Go to Song Studio</Button>
+      <div className="flex h-full items-center justify-center p-10">
+        <div className="max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-elevated">
+            <Music className="h-7 w-7 text-muted" />
+          </div>
+          <h2 className="text-base font-semibold">No plan yet</h2>
+          <p className="mt-1 text-sm text-muted">
+            “{song.name}” hasn’t been directed yet — Story shows the treatment once one exists.
+          </p>
+          <Button className="mt-4" onClick={openSong}>
+            <Music className="h-4 w-4" />
+            Go to Song Studio
+          </Button>
+        </div>
       </div>
     );
 
@@ -255,13 +283,6 @@ export function MagicOutputScreen() {
   );
 }
 
-function Empty({ message }: { message: string }) {
-  return (
-    <div className="flex h-full items-center justify-center p-10 text-center text-sm text-muted">
-      {message}
-    </div>
-  );
-}
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div>
