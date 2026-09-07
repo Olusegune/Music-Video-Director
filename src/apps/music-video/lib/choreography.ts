@@ -109,6 +109,9 @@ export function defaultPerformance(kind: SectionKind, energy: number): Performan
 export interface ChoreoPlan {
   songId: string;
   style: string;
+  /** How performers are arranged — Group (the default) reproduces every plan
+   *  made before this field existed, so it is safe to leave unset on those. */
+  formationIntent?: FormationIntentKey;
   /** Sections that did not get a set routine (natural movement). */
   freeSections: string[];
   sections: ChoreoSection[];
@@ -331,6 +334,118 @@ export function inferStyle(song: SongMap): string {
 
 export const CHOREO_STYLES = Object.keys(STYLES);
 
+// --- formation intent --------------------------------------------------
+//
+// The dance style (above) answers "what does the movement look like" —
+// Hip Hop vs Contemporary vs Gospel. Formation intent is a second, separate
+// axis: "how many performers, and how are they arranged" — a solo hero shot
+// reads nothing like a five-person unison line, regardless of dance style.
+// The two compose: "Contemporary, Solo" and "Contemporary, Group" are both
+// real, different briefs.
+//
+// "Group" is the default and deliberately makes no change at all — every
+// STYLES formations/accents pool above was already written assuming a small
+// group, so this preserves every existing choreographed plan and every test
+// byte-for-byte. The other five presets override formations (and, for
+// Freestyle, accents) with intent-specific language; moves and poses stay
+// from the chosen dance style, since a solo dancer doing Hip Hop still moves
+// like Hip Hop — only the arrangement changes.
+//
+// Narrative Movement is the one genuine exception: blocking (walk, turn,
+// glance, sit) is not a smaller version of danced 8-counts, so it replaces
+// moves, accents, formations AND poses with a non-dance vocabulary, and
+// loosens the performance-section gate below — narrative blocking belongs in
+// a quiet verse just as much as a chorus, unlike danced choreography.
+
+export type FormationIntentKey = "group" | "solo" | "duo" | "freestyle" | "stage" | "narrative";
+
+export interface FormationIntent {
+  key: FormationIntentKey;
+  label: string;
+  tagline: string;
+}
+
+export const FORMATION_INTENTS: FormationIntent[] = [
+  { key: "group", label: "Group", tagline: "Full crew, unison formations." },
+  { key: "solo", label: "Solo Performance", tagline: "One performer, full frame." },
+  { key: "duo", label: "Duo", tagline: "Two performers, mirrored or facing." },
+  { key: "freestyle", label: "Freestyle", tagline: "Loose, improvised, no fixed formation." },
+  { key: "stage", label: "Stage Performance", tagline: "Theatrical staging, tiered and grand." },
+  { key: "narrative", label: "Narrative Movement", tagline: "Blocking and gesture, not counted dance." },
+];
+
+interface FormationOverride {
+  formations: string[];
+  accents?: string[];
+  /** Narrative only — a non-dance vocabulary replaces the whole style. */
+  moves?: string[];
+  poses?: string[];
+}
+
+const FORMATION_OVERRIDES: Partial<Record<FormationIntentKey, FormationOverride>> = {
+  solo: {
+    formations: [
+      "center frame, full attention",
+      "isolated spotlight position",
+      "camera-facing, nowhere to hide",
+      "alone in the frame",
+    ],
+    accents: ["hold for the camera", "commit to the close-up", "own the silence", "direct eye contact accent"],
+  },
+  duo: {
+    formations: [
+      "facing partner, mirrored",
+      "side by side, matched",
+      "close duo, connected",
+      "call-and-response pair",
+    ],
+    accents: ["mirror on the hit", "trade the move", "connect and release", "matched freeze"],
+  },
+  freestyle: {
+    formations: [
+      "loose scatter, no fixed spot",
+      "organic drift",
+      "everyone finds their own space",
+      "unstructured crew",
+    ],
+    accents: ["ride the groove, no set hit", "loose freeze, whenever it lands", "personal flourish", "vibe, not count"],
+  },
+  stage: {
+    formations: [
+      "tiered staging, lead downstage",
+      "symmetrical ensemble block",
+      "diagonal grand line",
+      "upstage reveal, downstage focus",
+    ],
+    accents: ["hit on the orchestral stab", "tableau freeze", "spotlight pose", "grand unison snap"],
+  },
+  narrative: {
+    moves: [
+      "walk toward camera",
+      "turn away mid-thought",
+      "reach for something just out of frame",
+      "sit down heavily",
+      "glance back over the shoulder",
+      "pace, caught in thought",
+      "lean against a wall",
+      "cross the room",
+    ],
+    accents: ["pause, caught in the moment", "half-turn on the beat", "let the silence sit", "small natural gesture"],
+    formations: [
+      "alone in the space",
+      "two people, distance between them",
+      "crossing paths",
+      "framed in a doorway",
+    ],
+    poses: [
+      "mid-stride, caught in motion",
+      "leaning, looking away",
+      "turned back to camera",
+      "seated, head down",
+    ],
+  },
+};
+
 // --- helpers ---------------------------------------------------------------
 
 function pick<T>(pool: T[], i: number): T {
@@ -397,7 +512,11 @@ function lyricAwarePick<T extends string>(pool: T[], words: string[], i: number)
   return pick(pool, i);
 }
 
-function isPerformanceSection(s: SongSection): boolean {
+function isPerformanceSection(s: SongSection, intent: FormationIntentKey): boolean {
+  // Narrative blocking is written for the story, not the drop — it belongs
+  // in a quiet verse just as much as a chorus, so every section gets a plan
+  // rather than being gated by energy the way danced choreography is.
+  if (intent === "narrative") return true;
   if (s.kind === "Chorus" || s.kind === "Drop" || s.kind === "Pre-Chorus") return true;
   if (s.kind === "Instrumental" && s.energy >= 0.5) return true;
   return s.energy >= 0.7;
@@ -412,17 +531,34 @@ function intensityFor(energy: number): string {
 
 // --- main ------------------------------------------------------------------
 
-export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
+export function choreographSong(
+  song: SongMap,
+  styleName?: string,
+  formationIntentKey?: FormationIntentKey
+): ChoreoPlan {
   const style = styleName && STYLES[styleName] ? styleName : inferStyle(song);
   const base = STYLES[style] ?? STYLES[DEFAULT_STYLE];
+  const intent: FormationIntentKey = formationIntentKey ?? "group";
+  const override = FORMATION_OVERRIDES[intent];
   // A director style contributes movement *quality* on top of the dance
   // vocabulary — the same steps read differently when the brief asks for
   // jointed inhuman articulation rather than clean tight unison. Its terms go
   // first so they lead, without discarding the dance style's own range.
-  const directorFlavor = getDirectorStyle(song.directorStyleId)?.choreoFlavor;
-  const vocab: StyleVocab = directorFlavor?.length
+  // Skipped for Narrative Movement: that vocabulary is blocking, not dance,
+  // so a director style's dance-movement flavor doesn't belong in it.
+  const directorFlavor =
+    intent === "narrative" ? undefined : getDirectorStyle(song.directorStyleId)?.choreoFlavor;
+  const styled: StyleVocab = directorFlavor?.length
     ? { ...base, moves: [...directorFlavor, ...base.moves], formations: [...directorFlavor, ...base.formations] }
     : base;
+  const vocab: StyleVocab = override
+    ? {
+        moves: override.moves ?? styled.moves,
+        accents: override.accents ?? styled.accents,
+        formations: override.formations,
+        poses: override.poses ?? styled.poses,
+      }
+    : styled;
   const bars = barTimes(song);
   const barDur = (60 / Math.max(1, song.bpm)) * song.beatsPerBar;
 
@@ -432,7 +568,7 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
   const freeSections: string[] = [];
 
   song.sections.forEach((section, si) => {
-    if (!isPerformanceSection(section)) {
+    if (!isPerformanceSection(section, intent)) {
       freeSections.push(section.label);
       return;
     }
@@ -499,6 +635,7 @@ export function choreographSong(song: SongMap, styleName?: string): ChoreoPlan {
   return {
     songId: song.id,
     style,
+    formationIntent: intent,
     freeSections,
     sections,
     createdAt: now,

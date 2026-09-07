@@ -20,9 +20,11 @@ import {
   inferStyle,
   defaultPerformance,
   CHOREO_STYLES,
+  FORMATION_INTENTS,
   type ChoreoPlan,
   type ChoreoSection,
   type PerformanceBrief,
+  type FormationIntentKey,
 } from "@/apps/music-video/lib/choreography";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -65,6 +67,39 @@ const VIDEO_GEN_MODELS = VIDEO_MODELS.map((m) => ({
 
 /** Compact trigger + popover grid — replaces a plain <select> with the same
  *  visual-card language as Magic Mode's Video Type step. */
+/** Compact preset row for formation intent — Solo/Duo/Group/Freestyle/Stage/
+ *  Narrative Movement. Deliberately buttons, not a dropdown: these are six
+ *  fixed, named choices meant to be scannable at a glance, the same reasoning
+ *  as the Motion-test preset row in Animation Lab. */
+/** Exported for tests. */
+export function FormationIntentPicker({
+  value,
+  onChange,
+}: {
+  value: FormationIntentKey;
+  onChange: (key: FormationIntentKey) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {FORMATION_INTENTS.map((f) => (
+        <button
+          key={f.key}
+          onClick={() => onChange(f.key)}
+          title={f.tagline}
+          className={cn(
+            "rounded-[var(--radius-button)] border px-2.5 py-1 text-xs font-medium transition-colors",
+            value === f.key
+              ? "border-primary bg-primary/12 text-foreground"
+              : "border-border text-muted hover:bg-elevated"
+          )}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function StylePicker({ value, onChange }: { value: string; onChange: (s: string) => void }) {
   const [open, setOpen] = useState(false);
   const meta = DANCE_STYLE_META[value];
@@ -236,6 +271,7 @@ export function ChoreographyView() {
 
   const [plan, setPlan] = useState<ChoreoPlan | null>(null);
   const [style, setStyle] = useState<string>("");
+  const [formationIntent, setFormationIntent] = useState<FormationIntentKey>("group");
   // Display tier follows the platform-wide StudioMode (Sidebar switch):
   // Director mode → guided view; Studio and Creator → professional view.
   const studioMode = useAppStore((s) => s.studioMode);
@@ -275,6 +311,7 @@ export function ChoreographyView() {
     const existing = getChoreo(song.id);
     setPlan(existing);
     setStyle(existing?.style ?? castDefaultStyle ?? inferStyle(song));
+    setFormationIntent(existing?.formationIntent ?? "group");
   }, [song, activeSongId, setActiveSong, castDefaultStyle]);
 
   // `styleOverride` lets the empty state's four starting points each nudge
@@ -282,12 +319,18 @@ export function ChoreographyView() {
   // choreographSong() call, just a different style vocabulary. `openSignature`
   // chains straight into the motion-test generator on the freshly-built plan
   // (not stale `plan` state, since the generate above hasn't re-rendered yet).
-  const generate = (styleOverride?: string, openSignature?: boolean) => {
+  const generate = (
+    styleOverride?: string,
+    openSignature?: boolean,
+    intentOverride?: FormationIntentKey
+  ) => {
     if (!song) return;
-    const p = choreographSong(song, styleOverride ?? style);
+    const nextIntent = intentOverride ?? formationIntent;
+    const p = choreographSong(song, styleOverride ?? style, nextIntent);
     saveChoreo(p);
     setPlan(p);
     setStyle(p.style);
+    setFormationIntent(nextIntent);
     if (openSignature && p.sections.length > 0) {
       const hero = [...p.sections].sort((a, b) => b.energy - a.energy)[0];
       setGen({ section: hero, mode: "motion", character: null });
@@ -341,16 +384,24 @@ export function ChoreographyView() {
           {/* Display tier follows the platform-wide Director / Studio /
               Creator switch in the Sidebar (StudioMode, decision D1). */}
         </div>
-        <div className="flex items-center gap-2">
-          <StylePicker value={style} onChange={setStyle} />
-          <Button
-            variant="primary"
-            onClick={() => generate()}
-            title="Plans moves, formations, and poses from each section's tempo and energy — biased toward its lyrics and any choreography/story notes when they suggest a gesture (e.g. 'reach for the sky', 'kneel and pray')"
-          >
-            {plan ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-            {plan ? "Re-choreograph" : "Choreograph"}
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <StylePicker value={style} onChange={setStyle} />
+            <Button
+              variant="primary"
+              onClick={() => generate()}
+              title="Plans moves, formations, and poses from each section's tempo and energy — biased toward its lyrics and any choreography/story notes when they suggest a gesture (e.g. 'reach for the sky', 'kneel and pray')"
+            >
+              {plan ? <RefreshCw className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+              {plan ? "Re-choreograph" : "Choreograph"}
+            </Button>
+          </div>
+          {/* How performers are arranged — orthogonal to dance style: "Pop /
+              Commercial, Solo" and "Pop / Commercial, Group" are both real,
+              different briefs. Picking one only updates the selection; it
+              takes effect on the next Choreograph / Re-choreograph, the same
+              as changing the style above already does. */}
+          <FormationIntentPicker value={formationIntent} onChange={setFormationIntent} />
         </div>
       </header>
 
