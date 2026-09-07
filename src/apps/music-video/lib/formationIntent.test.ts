@@ -62,7 +62,14 @@ describe("choreographSong formation intent", () => {
     const song = songWith([section({})]);
     const withoutArg = choreographSong(song, "Pop / Commercial");
     const withGroup = choreographSong(song, "Pop / Commercial", "group");
-    expect(withGroup).toEqual({ ...withoutArg, formationIntent: "group" });
+    // createdAt/updatedAt are stamped fresh on each call, so two independent
+    // choreographSong() calls can land a millisecond apart — this used to
+    // toEqual() the two full plans and flake whenever that happened. Compare
+    // the fields an explicit "group" argument could actually change instead.
+    expect(withGroup.formationIntent).toBe("group");
+    expect(withGroup.sections).toEqual(withoutArg.sections);
+    expect(withGroup.freeSections).toEqual(withoutArg.freeSections);
+    expect(withGroup.style).toBe(withoutArg.style);
     expect(GROUP_FORMATIONS).toContain(withoutArg.sections[0].formation);
   });
 
