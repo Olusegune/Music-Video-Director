@@ -57,6 +57,11 @@ interface AppState {
   activeProjectId: string | null;
   activeSongId: string | null;
   activeTemplateId: string | null;
+  /** A brand kit is cross-project by design ("preserve visual identity
+   *  across every project"), so unlike activeTemplateId this is not
+   *  reset or rebound per song — it stays whatever the user last chose
+   *  until they change it. null means no brand kit is applied. */
+  activeBrandKitId: string | null;
   workspaceMode: WorkspaceMode;
   inspectorOpen: boolean;
   welcomeOpen: boolean;
@@ -117,6 +122,7 @@ interface AppState {
   syncFromStorage: () => void;
   setActiveSong: (id: string | null) => void;
   setActiveTemplate: (id: string | null) => void;
+  setActiveBrandKit: (id: string | null) => void;
   openDashboard: () => void;
   openSettings: () => void;
   openBrandKits: () => void;
@@ -181,6 +187,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDirectSectionId: null,
   activeSongId: initialSongId,
   activeTemplateId: templateForSong(initialSongId),
+  activeBrandKitId: (() => {
+    try {
+      return localStorage.getItem("mf.activeBrandKitId") || null;
+    } catch {
+      return null;
+    }
+  })(),
   workspaceMode: "storyboard",
   inspectorOpen: true,
   welcomeOpen: getShowWelcome(),
@@ -299,6 +312,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (s.activeSongId) saveBoundProductionTemplate(s.activeSongId, id);
       return { activeTemplateId: id };
     });
+  },
+  setActiveBrandKit: (id) => {
+    try {
+      if (id) localStorage.setItem("mf.activeBrandKitId", id);
+      else localStorage.removeItem("mf.activeBrandKitId");
+    } catch {
+      /* best-effort — losing this just means re-selecting once, not data loss */
+    }
+    set({ activeBrandKitId: id });
   },
   openDashboard: () => set({ view: "dashboard", activeProjectId: null }),
   openSettings: () => set({ view: "settings" }),

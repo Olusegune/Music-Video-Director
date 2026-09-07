@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MagicOutputScreen } from "./MagicOutputScreen";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { saveSong, type SongMap, type SongSection } from "@/apps/music-video/lib/songBrain";
@@ -55,15 +56,24 @@ beforeEach(async () => {
   useAppStore.setState({ activeSongId: "song-1", pendingDirectSectionId: null, view: "magicoutput" });
 });
 
+function renderWithClient() {
+  const qc = new QueryClient();
+  render(
+    <QueryClientProvider client={qc}>
+      <MagicOutputScreen />
+    </QueryClientProvider>
+  );
+}
+
 describe("MagicOutputScreen scene cards", () => {
   it("shows one card per section, not an arbitrary handful of shots", () => {
-    render(<MagicOutputScreen />);
+    renderWithClient();
     expect(screen.getByText("Verse 1")).toBeInTheDocument();
     expect(screen.getByText("Chorus 1")).toBeInTheDocument();
   });
 
   it("opens Direct at that exact section when a card is clicked", async () => {
-    render(<MagicOutputScreen />);
+    renderWithClient();
     await userEvent.click(screen.getByTitle("Open Chorus 1 in Direct"));
 
     expect(useAppStore.getState().view).toBe("mvdirector");

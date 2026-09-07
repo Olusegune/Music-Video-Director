@@ -144,6 +144,9 @@ export function MvDirector() {
     queryKey: ["characters"],
     queryFn: api.listCharacters,
   });
+  const { data: brandKits = [] } = useQuery({ queryKey: ["brandkits"], queryFn: api.listBrandKits });
+  const activeBrandKitId = useAppStore((s) => s.activeBrandKitId);
+  const activeBrandKit = brandKits.find((k) => k.id === activeBrandKitId) ?? null;
   const [cast] = useState(() => loadCast());
   const [modelId, setModelId] = useState(GEN_MODELS[0].id);
   const [videoModelId, setVideoModelId] = useState(VIDEO_MODELS[0].id);
@@ -263,7 +266,7 @@ export function MvDirector() {
       const prior = bestPriorTreatment(song.id, activeTemplateId);
       const { treatment: t, carried, dropped } = carryGeneratedWork(
         prior,
-        directSong(song, getTemplate(activeTemplateId))
+        directSong(song, getTemplate(activeTemplateId), undefined, activeBrandKit)
       );
       saveTreatment(t);
       setTreatment(t);

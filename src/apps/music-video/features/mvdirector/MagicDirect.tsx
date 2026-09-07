@@ -8,6 +8,8 @@
 // Director UI. Director Mode is reached only via that screen's own button.
 
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/platform/lib/ipc";
 import { Sparkles, Check, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/platform/components/ui/button";
 import { useAppStore } from "@/platform/store/useAppStore";
@@ -39,6 +41,9 @@ export function MagicDirect() {
   const setActiveSong = useAppStore((s) => s.setActiveSong);
   const openMagicOutput = useAppStore((s) => s.openMagicOutput);
   const activeTemplateId = useAppStore((s) => s.activeTemplateId);
+  const activeBrandKitId = useAppStore((s) => s.activeBrandKitId);
+  const { data: brandKits = [] } = useQuery({ queryKey: ["brandkits"], queryFn: api.listBrandKits });
+  const activeBrandKit = brandKits.find((k) => k.id === activeBrandKitId) ?? null;
 
   const [stepIndex, setStepIndex] = useState(0);
   const [done, setDone] = useState(false);
@@ -84,7 +89,7 @@ export function MagicDirect() {
         label: "Planning the beat-synced shot list",
         run: () =>
           saveTreatment(
-            carryGeneratedWork(getTreatment(song.id, template?.id), directSong(song, template))
+            carryGeneratedWork(getTreatment(song.id, template?.id), directSong(song, template, undefined, activeBrandKit))
               .treatment
           ),
       },

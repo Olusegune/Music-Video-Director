@@ -10,6 +10,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/platform/lib/ipc";
 import { useAppStore } from "@/platform/store/useAppStore";
 import { loadSongs, saveSong, type SongMap } from "@/apps/music-video/lib/songBrain";
 import {
@@ -45,6 +47,9 @@ export function MagicOutputScreen() {
   const openCast = useAppStore((state) => state.openCast);
   const openTimelineToRender = useAppStore((state) => state.openTimelineToRender);
   const openDirectAtSection = useAppStore((state) => state.openDirectAtSection);
+  const activeBrandKitId = useAppStore((state) => state.activeBrandKitId);
+  const { data: brandKits = [] } = useQuery({ queryKey: ["brandkits"], queryFn: api.listBrandKits });
+  const activeBrandKit = brandKits.find((k) => k.id === activeBrandKitId) ?? null;
   const [regenerating, setRegenerating] = useState(false);
   const [changingStory, setChangingStory] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -90,7 +95,7 @@ export function MagicOutputScreen() {
       saveTreatment(
         carryGeneratedWork(
           treatment,
-          directSong(song, applyVideoTypeBias(template, song.videoType))
+          directSong(song, applyVideoTypeBias(template, song.videoType), undefined, activeBrandKit)
         ).treatment
       );
     } finally {

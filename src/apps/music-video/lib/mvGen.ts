@@ -163,6 +163,7 @@ export function buildShotImagePrompt(ctx: GenContext): string {
     // treatment so every existing call site picks it up. Empty when none was
     // chosen, so skipping leaves the prompt exactly as it was before.
     styleDirectionFragment(getDirectorStyle(treatment.directorStyleId)),
+    treatment.brandKitDirection ?? "",
     featuring,
     rules,
     `Single music-video still frame, cinematic, ${aspect} aspect ratio, professional color grade, high detail.`,
@@ -198,6 +199,7 @@ export function buildShotVideoPrompt(ctx: GenContext): string {
     featuring,
     `Visual world: ${treatment.visualWorld}`,
     styleDirectionFragment(getDirectorStyle(treatment.directorStyleId)),
+    treatment.brandKitDirection ?? "",
     `${dur}s music-video clip, cinematic motion, smooth, high detail.`,
     NO_TEXT,
   ]

@@ -4,15 +4,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrandKitManager } from "./BrandKitManager";
 
 // The header subtitle used to be a fixed string naming Glam, Web, and
-// Campaign Studios regardless of which studios this build actually ships.
-// This file runs under the suite build's real, unmocked module state (all
-// five studios enabled) and checks the subtitle still names them correctly
-// there. See BrandKitManager.standalone.copy.test.tsx for the single-studio
-// build's honest alternative copy — kept in a separate file rather than
-// switching mocks mid-file, since doing that with vi.resetModules() caused a
-// real, reproducible flake in an unrelated test file elsewhere in the suite
-// (confirmed: ~60% failure rate across five full-suite runs, always the same
-// test, always passing in isolation — a global side effect, not a fluke).
+// Campaign Studios regardless of which studios this build actually ships,
+// and never mentioned Music Video Director at all — even after it gained a
+// real brand-kit integration (an active kit's palette/visual rules folded
+// into every generated prompt; see brandKitDirectionFragment in
+// mvDirector.ts). This file runs under the suite build's real, unmocked
+// module state (all five studios enabled) and checks the subtitle names all
+// four correctly. See BrandKitManager.standalone.copy.test.tsx for the
+// single-studio build's alternative copy — kept in a separate file rather
+// than switching mocks mid-file, since doing that with vi.resetModules()
+// caused a real, reproducible flake in an unrelated test file elsewhere in
+// the suite (confirmed: ~60% failure rate across five full-suite runs,
+// always the same test, always passing in isolation — a global side effect,
+// not a fluke).
 
 vi.mock("@/platform/lib/ipc", async () => {
   const actual = await vi.importActual<typeof import("@/platform/lib/ipc")>("@/platform/lib/ipc");
@@ -22,7 +26,7 @@ vi.mock("@/platform/lib/ipc", async () => {
 afterEach(cleanup);
 
 describe("BrandKitManager copy — suite build (default test environment)", () => {
-  it("names the studios that actually share brand kits when more than one exists", async () => {
+  it("names Music Video Director alongside the studios that also share brand kits", async () => {
     const qc = new QueryClient();
     render(
       <QueryClientProvider client={qc}>
@@ -30,7 +34,9 @@ describe("BrandKitManager copy — suite build (default test environment)", () =
       </QueryClientProvider>
     );
     expect(
-      await screen.findByText(/Shared by Glam, Web, and Campaign Studios/)
+      await screen.findByText(
+        /Applied at generation — Music Video Director and Glam, Web, and Campaign Studios/
+      )
     ).toBeInTheDocument();
   });
 });

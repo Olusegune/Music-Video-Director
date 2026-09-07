@@ -16,6 +16,7 @@ import {
   type SectionKind,
 } from "@/apps/music-video/lib/songBrain";
 import type { MvTemplate } from "@/platform/lib/templates";
+import type { BrandKit } from "@/platform/lib/types";
 import {
   getDirectorStyle,
   blendPool,
@@ -111,6 +112,15 @@ export interface MvTreatment {
   /** Which director style shaped this treatment, if any. */
   directorStyleId?: string;
   directorStyleName?: string;
+  /** Which brand kit shaped this treatment's palette/visual-rules fragment,
+   *  if any. brandKitDirection is precomputed at direct-time (the same
+   *  pattern visualWorld itself already uses) so prompt builders read it
+   *  directly with no further lookup — a brand kit is fetched asynchronously
+   *  (api.listBrandKits), and prompt composition is a pure, synchronous
+   *  function, so it cannot resolve one on its own. */
+  brandKitId?: string;
+  brandKitName?: string;
+  brandKitDirection?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -372,7 +382,8 @@ function shotBoundaries(start: number, end: number, count: number, beats: number
 export function directSong(
   song: SongMap,
   template?: MvTemplate | null,
-  styleOverride?: DirectorStyle | null
+  styleOverride?: DirectorStyle | null,
+  brandKit?: BrandKit | null
 ): MvTreatment {
   const beats = beatTimes(song);
   const seed = songSeed(song.id);
@@ -464,6 +475,9 @@ export function directSong(
         : buildVisualWorld(song),
     directorStyleId: style?.id,
     directorStyleName: style?.name,
+    brandKitId: brandKit?.id,
+    brandKitName: brandKit?.name,
+    brandKitDirection: brandKitDirectionFragment(brandKit),
     energyArc: buildEnergyArc(song.sections),
     sections,
     templateId: template?.id,
@@ -471,6 +485,24 @@ export function directSong(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/**
+ * The sentence a brand kit contributes to every prompt, or "" when none is
+ * chosen — same "skipping costs nothing" contract as styleDirectionFragment
+ * in directorStyles.ts. Only the fields that describe *what a frame should
+ * look like* (palette, visual rules) go into the fragment; "voice" is
+ * written-copy tone, not a visual instruction, so it's left out rather than
+ * stretched into something it isn't.
+ */
+function brandKitDirectionFragment(kit?: BrandKit | null): string {
+  if (!kit) return "";
+  const parts = [
+    kit.colors?.length ? `brand palette ${kit.colors.join(", ")}` : "",
+    kit.visualRules?.trim() || "",
+  ].filter(Boolean);
+  if (!parts.length) return "";
+  return `Brand identity: ${parts.join("; ")}.`;
 }
 
 // --- treatment summary text -------------------------------------------------

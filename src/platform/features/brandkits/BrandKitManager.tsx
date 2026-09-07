@@ -5,6 +5,7 @@ import { api } from "@/platform/lib/ipc";
 import { listDeliverables } from "@/platform/lib/deliverables";
 import { isModuleEnabled } from "@/platform/lib/productConfig";
 import type { BrandKit } from "@/platform/lib/types";
+import { useAppStore } from "@/platform/store/useAppStore";
 import { Button } from "@/platform/components/ui/button";
 import { Label } from "@/platform/components/ui/label";
 import { Input } from "@/platform/components/ui/input";
@@ -17,16 +18,16 @@ const TONES = ["Confident", "Editorial", "Playful", "Minimal", "Technical", "War
 
 // Which studios actually apply a brand kit at generation, in *this* build —
 // the "Shared by Glam, Web, and Campaign Studios" subtitle used to be a fixed
-// string naming all three regardless of edition. In the standalone Music
-// Video Director build none of them exist (ENABLED_MODULES is
-// ["musicvideo"] only), and Music Video Director itself never reads brand
-// kit data (it has its own dedicated production flow, not the shared
-// ProjectWorkspace those three studios use) — so the old copy named three
-// products the user couldn't open, promising an effect nothing in the build
-// produces. BrandKitCard already computed this same enabled-studio list
-// per-kit; this hoists the same check to the header that was the one place
-// in this file the edition split hadn't reached.
+// string naming all three regardless of edition, and in the standalone Music
+// Video Director build (ENABLED_MODULES === ["musicvideo"]) none of them
+// exist. Music Video Director itself now reads an active kit's palette and
+// visual rules into every generated prompt (see brandKitDirectionFragment in
+// mvDirector.ts) — it wasn't wired in when this list was first written, so
+// it's included unconditionally rather than gated by isModuleEnabled the way
+// the other three are: it's not a studio door that can be compiled out, it's
+// this file's own edition.
 const SHARING_STUDIOS = [
+  { label: "Music Video", moduleId: "musicvideo" as const },
   { label: "Glam", moduleId: "glam" as const },
   { label: "Web", moduleId: "web" as const },
   { label: "Campaign", moduleId: "campaign" as const },
@@ -36,6 +37,22 @@ function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   if (names.length === 2) return `${names[0]} and ${names[1]}`;
   return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
+/** "Music Video" plus a mechanical "Studio(s)" suffix reads oddly — the
+ *  product is "Music Video Director," not "Music Video Studio." Composed
+ *  explicitly rather than stretching joinName()'s generic template over a
+ *  case it wasn't built for. */
+function sharingSubtitle(studios: string[]): string {
+  const rest = studios.filter((s) => s !== "Music Video");
+  const usesMv = studios.includes("Music Video");
+  if (!usesMv && rest.length === 0) return "";
+  if (usesMv && rest.length === 0) return "Applied to every prompt Music Video Director generates.";
+  const suffix = rest.length > 1 ? "Studios" : "Studio";
+  const others = `${joinNames(rest)} ${suffix}`;
+  return usesMv
+    ? `Applied at generation — Music Video Director and ${others}.`
+    : `Shared by ${others} · visual identity applied at generation.`;
 }
 
 export function BrandKitManager() {
@@ -54,15 +71,14 @@ export function BrandKitManager() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brandkits"] }),
   });
   const sharingNames = SHARING_STUDIOS.map((s) => s.label);
+  const subtitle = sharingSubtitle(sharingNames);
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="flex items-center justify-between border-b border-border px-8 py-5">
         <div>
           <h1 className="text-lg font-semibold">Brand Kits</h1>
           <p className="text-xs text-muted">
-            {sharingNames.length > 0
-              ? `Shared by ${joinNames(sharingNames)} Studio${sharingNames.length > 1 ? "s" : ""} · visual identity applied at generation.`
-              : "Colors, type, and voice for your own reference — not yet read by any studio in this build."}
+            {subtitle || "Colors, type, and voice for your own reference — not yet read by any studio in this build."}
           </p>
         </div>
         <Button onClick={() => create.mutate()} disabled={create.isPending}>
@@ -74,7 +90,7 @@ export function BrandKitManager() {
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 text-center">
             <Palette className="mb-3 h-8 w-8 text-primary" />
             <p className="text-sm text-muted">
-              {sharingNames.length > 0
+              {subtitle
                 ? "Create a brand kit to keep connected productions visually coherent."
                 : "Create a brand kit to keep your colors, type, and voice in one place."}
             </p>
@@ -91,8 +107,12 @@ export function BrandKitManager() {
   );
 }
 
-function BrandKitCard({ kit }: { kit: BrandKit }) {
+/** Exported for tests: the "use this kit" active-brand-kit toggle. */
+export function BrandKitCard({ kit }: { kit: BrandKit }) {
   const queryClient = useQueryClient();
+  const activeBrandKitId = useAppStore((s) => s.activeBrandKitId);
+  const setActiveBrandKit = useAppStore((s) => s.setActiveBrandKit);
+  const isActive = activeBrandKitId === kit.id;
   const [draft, setDraft] = useState<BrandKit>(kit);
   const [saved, setSaved] = useState(false);
   const deliverables = listDeliverables();
@@ -165,7 +185,30 @@ function BrandKitCard({ kit }: { kit: BrandKit }) {
               {item.label} · {item.count}
             </Badge>
           ))}
-          <Badge variant="default">Music Video · not connected</Badge>
+          {/* This used to be a hardcoded "Music Video · not connected" badge —
+              true when nothing in the build read brand kit data at all.
+              Music Video Director now folds an active kit's palette and
+              visual rules into every generated prompt (see
+              brandKitDirectionFragment in mvDirector.ts); this toggle is
+              what actually turns that on for a given kit. */}
+          <button
+            type="button"
+            onClick={() => setActiveBrandKit(isActive ? null : kit.id)}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors",
+              isActive
+                ? "bg-success/15 text-success"
+                : "bg-elevated text-muted hover:text-foreground"
+            )}
+            title={
+              isActive
+                ? "Applied to Music Video Director's generated prompts — click to stop using it"
+                : "Not currently applied — click to use this kit's palette and visual rules in Music Video Director"
+            }
+          >
+            {isActive && <Check className="h-3 w-3" />}
+            {isActive ? "Music Video · active" : "Music Video · use this kit"}
+          </button>
         </div>
       </CardHeader>
       <CardContent className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
