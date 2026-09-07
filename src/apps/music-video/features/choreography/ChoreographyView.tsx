@@ -81,21 +81,26 @@ export function FormationIntentPicker({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {FORMATION_INTENTS.map((f) => (
-        <button
-          key={f.key}
-          onClick={() => onChange(f.key)}
-          title={f.tagline}
-          className={cn(
-            "rounded-[var(--radius-button)] border px-2.5 py-1 text-xs font-medium transition-colors",
-            value === f.key
-              ? "border-primary bg-primary/12 text-foreground"
-              : "border-border text-muted hover:bg-elevated"
-          )}
-        >
-          {f.label}
-        </button>
-      ))}
+      <span className="mr-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+        Formation
+      </span>
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Formation">
+        {FORMATION_INTENTS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => onChange(f.key)}
+            title={f.tagline}
+            className={cn(
+              "rounded-[var(--radius-button)] border px-2.5 py-1 text-xs font-medium transition-colors",
+              value === f.key
+                ? "border-primary bg-primary/12 text-foreground"
+                : "border-border text-muted hover:bg-elevated"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

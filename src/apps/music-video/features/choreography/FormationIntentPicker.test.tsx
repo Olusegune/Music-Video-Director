@@ -5,6 +5,17 @@ import { FormationIntentPicker } from "./ChoreographyView";
 import { FORMATION_INTENTS } from "@/apps/music-video/lib/choreography";
 
 describe("FormationIntentPicker", () => {
+  it("names itself on screen — the row used to be six unlabeled buttons", () => {
+    // "how performers are arranged, orthogonal to dance style" lived only in
+    // a code comment; nothing on screen or for a screen reader said what
+    // this group of buttons meant, unlike StylePicker next to it (which
+    // self-labels via its own aria-label and its button showing the current
+    // value).
+    render(<FormationIntentPicker value="group" onChange={vi.fn()} />);
+    expect(screen.getByText("Formation")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Formation" })).toBeInTheDocument();
+  });
+
   it("shows all six presets, Group among them", () => {
     render(<FormationIntentPicker value="group" onChange={vi.fn()} />);
     for (const preset of FORMATION_INTENTS) {
