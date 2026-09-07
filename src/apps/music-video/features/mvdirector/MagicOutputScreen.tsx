@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   ArrowRight,
+  BookMarked,
   BookOpen,
   Clapperboard,
   Loader2,
@@ -115,16 +116,32 @@ export function MagicOutputScreen() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
-      <header className="border-b border-border px-8 py-6 text-center">
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Story</div>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Your treatment is ready.</h1>
-        <p className="mt-2 text-sm text-muted">
-          {allShots.length} shots directed across {treatment.sections.length} sections — render when
-          you’re ready.
-        </p>
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto">
+      {/* Same header shell every other Music Video screen uses — this one
+          used to be its own centered, icon-less banner, the odd one out
+          next to Song Studio/Direct/Cast/Choreography/Timeline. */}
+      <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="grad-primary flex h-9 w-9 items-center justify-center rounded-lg">
+            <BookMarked className="h-4.5 w-4.5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold leading-tight">Story</h1>
+            <p className="text-xs text-muted">
+              Directing <span className="text-foreground">{song.name}</span> · {allShots.length} shots
+              · {treatment.sections.length} sections
+            </p>
+          </div>
+        </div>
       </header>
       <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight">Your treatment is ready.</h2>
+          <p className="mt-2 text-sm text-muted">
+            {allShots.length} shots directed across {treatment.sections.length} sections — render
+            when you’re ready.
+          </p>
+        </div>
         <RevealStage revealed title="Treatment premiere" className="border-warning/30 p-0">
           <div className="relative min-h-[360px] overflow-hidden rounded-xl bg-black">
             <ShotBoard shot={sectionCards[0]?.hero ?? allShots[0]} hero />

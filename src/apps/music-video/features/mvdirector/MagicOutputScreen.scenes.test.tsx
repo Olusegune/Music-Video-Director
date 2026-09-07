@@ -74,6 +74,19 @@ describe("MagicOutputScreen", () => {
     renderWithClient();
     expect(screen.getByText("Story")).toBeInTheDocument();
   });
+
+  it("uses the same header shell as Song Studio/Direct/Cast/Choreography/Timeline", () => {
+    // This screen used to be its own centered, icon-less banner — the only
+    // one of eight Music Video screens without the shared icon-badge +
+    // title + subtitle header. "Your treatment is ready." is still here,
+    // just as page content below the standard chrome, not standing in for it.
+    renderWithClient();
+    const heading = screen.getByRole("heading", { level: 1, name: "Story" });
+    const header = heading.closest("header");
+    expect(header).not.toBeNull();
+    expect(header!.querySelector(".grad-primary")).toBeInTheDocument();
+    expect(screen.getByText("Your treatment is ready.")).toBeInTheDocument();
+  });
 });
 
 describe("MagicOutputScreen scene cards", () => {

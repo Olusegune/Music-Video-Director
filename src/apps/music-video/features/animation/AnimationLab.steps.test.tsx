@@ -55,3 +55,16 @@ describe("AnimationLab step labels", () => {
     }
   });
 });
+
+describe("AnimationLab header", () => {
+  it("uses the same header shell as Song Studio/Direct/Cast/Choreography/Timeline", () => {
+    // This screen used to be plain text with no icon badge — the only one
+    // of eight Music Video screens off the shared icon-badge + title +
+    // subtitle header pattern.
+    setup();
+    const heading = screen.getByRole("heading", { level: 1, name: "Animation Lab" });
+    const header = heading.closest("header");
+    expect(header).not.toBeNull();
+    expect(header!.querySelector(".grad-primary")).toBeInTheDocument();
+  });
+});

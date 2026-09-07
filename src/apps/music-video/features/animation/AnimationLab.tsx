@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Play, Trash2, Film, Users, Globe, Package } from "lucide-react";
+import { Play, Trash2, Film, Users, Globe, Package, Clapperboard } from "lucide-react";
 import { api, isTauri } from "@/platform/lib/ipc";
 import {
   MOTION_TYPES,
@@ -182,15 +182,21 @@ export function AnimationLab() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <header className="border-b border-border px-8 py-5">
-        <h1 className="text-lg font-semibold">Animation Lab</h1>
-        <p className="text-xs text-muted">
-          Part of Music Video Director · animate planned shots and transitions.
-        </p>
-        <p className="text-xs text-muted">
-          A motion-testing workspace — pick a subject and a test, dial in the shot, and generate.
-          Same controls as everywhere else.
-        </p>
+      {/* Same header shell every other Music Video screen uses — this one used
+          to be plain text with no icon badge, off the shared pattern. */}
+      <header className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="grad-primary flex h-9 w-9 items-center justify-center rounded-lg">
+            <Clapperboard className="h-4.5 w-4.5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold leading-tight">Animation Lab</h1>
+            <p className="text-xs text-muted">
+              Motion tests for planned shots and transitions — pick a subject and a test, dial in
+              the shot, and generate.
+            </p>
+          </div>
+        </div>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[24rem_1fr]">
