@@ -43,6 +43,7 @@ import { Badge } from "@/platform/components/ui/badge";
 import { CreativeEmptyState } from "@/platform/components/ui/creative-empty-state";
 import { ModuleHeader } from "@/platform/components/visual";
 import { newPerformer, savePerformer } from "@/apps/music-video/lib/cast";
+import { listModuleManifests } from "@/platform/lib/moduleManifest";
 
 const SAMPLE = `INT. RAIN-SOAKED ALLEY - NIGHT
 
@@ -69,6 +70,14 @@ That's a lot of guards for an empty ship.
 
 KIRA
 Empty ships don't need guards.`;
+
+// "Used by all studios" / "Available in every studio" was fixed suite-era
+// copy — technically never false (a script's extracted cast/locations/props
+// really do land in the same Character/World/Prop Bibles every edition
+// reads from), but it implies multiple studios sharing the output, which
+// reads oddly in the standalone Music Video Director build where there is
+// exactly one. Worded for what's actually true in this build instead.
+const MULTI_STUDIO = listModuleManifests().length > 1;
 
 export function ScriptStudio() {
   const queryClient = useQueryClient();
@@ -232,7 +241,11 @@ export function ScriptStudio() {
         module="platform"
         icon={<FileText className="h-5 w-5" />}
         title="Script Studio"
-        subtitle="Feeds your Bibles — used by all studios."
+        subtitle={
+          MULTI_STUDIO
+            ? "Feeds your Bibles — used by all studios."
+            : "Extracts cast, locations, and props into your Character, World, and Prop Bibles."
+        }
         mode={studioMode}
         onModeChange={setStudioMode}
         primaryLabel="Import Script"
@@ -253,7 +266,9 @@ export function ScriptStudio() {
             <span>→</span>
             <Badge>Bibles</Badge>
             <span>→</span>
-            <Badge variant="accent">Available in every studio</Badge>
+            <Badge variant="accent">
+              {MULTI_STUDIO ? "Available in every studio" : "Feeds every Bible"}
+            </Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -386,7 +401,11 @@ export function ScriptStudio() {
               <CreativeEmptyState
                 icon={<FileText />}
                 title="Turn script text into shared production DNA"
-                description="Import lyrics, a screenplay, or any scene notes. Script Studio extracts cast, locations, props, tone, and motifs into the shared Bibles that Music Video Director and every other studio can reuse."
+                description={
+                  MULTI_STUDIO
+                    ? "Import lyrics, a screenplay, or any scene notes. Script Studio extracts cast, locations, props, tone, and motifs into the shared Bibles that Music Video Director and every other studio can reuse."
+                    : "Import lyrics, a screenplay, or any scene notes. Script Studio extracts cast, locations, props, tone, and motifs into your Character, World, and Prop Bibles."
+                }
                 action="Analyze this script"
                 onAction={analyze}
               />

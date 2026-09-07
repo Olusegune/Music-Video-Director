@@ -15,6 +15,29 @@ import { cn } from "@/platform/lib/utils";
 
 const TONES = ["Confident", "Editorial", "Playful", "Minimal", "Technical", "Warm", "Luxury"];
 
+// Which studios actually apply a brand kit at generation, in *this* build —
+// the "Shared by Glam, Web, and Campaign Studios" subtitle used to be a fixed
+// string naming all three regardless of edition. In the standalone Music
+// Video Director build none of them exist (ENABLED_MODULES is
+// ["musicvideo"] only), and Music Video Director itself never reads brand
+// kit data (it has its own dedicated production flow, not the shared
+// ProjectWorkspace those three studios use) — so the old copy named three
+// products the user couldn't open, promising an effect nothing in the build
+// produces. BrandKitCard already computed this same enabled-studio list
+// per-kit; this hoists the same check to the header that was the one place
+// in this file the edition split hadn't reached.
+const SHARING_STUDIOS = [
+  { label: "Glam", moduleId: "glam" as const },
+  { label: "Web", moduleId: "web" as const },
+  { label: "Campaign", moduleId: "campaign" as const },
+].filter((s) => isModuleEnabled(s.moduleId));
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
 export function BrandKitManager() {
   const queryClient = useQueryClient();
   const { data: kits = [] } = useQuery({ queryKey: ["brandkits"], queryFn: api.listBrandKits });
@@ -30,13 +53,16 @@ export function BrandKitManager() {
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brandkits"] }),
   });
+  const sharingNames = SHARING_STUDIOS.map((s) => s.label);
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <header className="flex items-center justify-between border-b border-border px-8 py-5">
         <div>
           <h1 className="text-lg font-semibold">Brand Kits</h1>
           <p className="text-xs text-muted">
-            Shared by Glam, Web, and Campaign Studios · visual identity applied at generation.
+            {sharingNames.length > 0
+              ? `Shared by ${joinNames(sharingNames)} Studio${sharingNames.length > 1 ? "s" : ""} · visual identity applied at generation.`
+              : "Colors, type, and voice for your own reference — not yet read by any studio in this build."}
           </p>
         </div>
         <Button onClick={() => create.mutate()} disabled={create.isPending}>
@@ -48,7 +74,9 @@ export function BrandKitManager() {
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 text-center">
             <Palette className="mb-3 h-8 w-8 text-primary" />
             <p className="text-sm text-muted">
-              Create a brand kit to keep connected productions visually coherent.
+              {sharingNames.length > 0
+                ? "Create a brand kit to keep connected productions visually coherent."
+                : "Create a brand kit to keep your colors, type, and voice in one place."}
             </p>
           </div>
         ) : (
